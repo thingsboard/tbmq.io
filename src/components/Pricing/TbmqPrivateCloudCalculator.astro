@@ -13,7 +13,11 @@ import CalculatorInline from './CalculatorInline.astro';
 					Advanced
 					<span class="calc-tooltip">
 						<Icon name="tabler:info-circle" />
-						<span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Enable network traffic configuration</span></span>
+						<span class="calc-tooltip-text"
+							><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+								>Enable network traffic configuration</span
+							></span
+						>
 					</span>
 				</button>
 			</div>
@@ -22,32 +26,201 @@ import CalculatorInline from './CalculatorInline.astro';
 	<div slot="inputs">
 		<div class="calc-input-group">
 			<div class="calc-input-row">
-				<label class="calc-label">Sessions <span class="calc-tooltip"><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Total unique logical states managed by the broker, identified by Client ID. Active connections and disconnected clients with persistent sessions both occupy quota slots.</span></span></span></label>
-				<input id="mqpc-sessions" type="number" value="5000" min="5000" class="calc-number-input" aria-label="Sessions" />
+				<label class="calc-label"
+					>Sessions <span class="calc-tooltip"
+						><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"
+							><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+								>Total unique logical states managed by the broker, identified by Client ID. Active connections and
+								disconnected clients with persistent sessions both occupy quota slots.</span
+							></span
+						></span
+					></label
+				>
+				<input
+					id="mqpc-sessions"
+					type="number"
+					value="5000"
+					min="5000"
+					class="calc-number-input"
+					aria-label="Sessions"
+				/>
 			</div>
 			<div class="calc-slider-container">
-				<input type="range" id="mqpc-sessions-slider" min="0" max="4" step="0.001" value="0" class="calc-slider" aria-label="Sessions slider" />
-				<div class="calc-tick-marks"><span class="calc-tick" data-val="0"><span class="calc-tick-line"></span><span class="calc-tick-label">5K</span></span><span class="calc-tick" data-val="1"><span class="calc-tick-line"></span><span class="calc-tick-label">25K</span></span><span class="calc-tick" data-val="2"><span class="calc-tick-line"></span><span class="calc-tick-label">50K</span></span><span class="calc-tick" data-val="3"><span class="calc-tick-line"></span><span class="calc-tick-label">100K</span></span><span class="calc-tick" data-val="4"><span class="calc-tick-line"></span><span class="calc-tick-label infinity"><Icon name="tabler:infinity" /></span></span></div>
+				<input
+					type="range"
+					id="mqpc-sessions-slider"
+					min="0"
+					max="4"
+					step="0.001"
+					value="0"
+					class="calc-slider"
+					aria-label="Sessions slider"
+				/>
+				<div class="calc-tick-marks">
+					<span class="calc-tick" data-val="0"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">5K</span></span
+					><span class="calc-tick" data-val="1"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">25K</span></span
+					><span class="calc-tick" data-val="2"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">50K</span></span
+					><span class="calc-tick" data-val="3"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">100K</span></span
+					><span class="calc-tick" data-val="4"
+						><span class="calc-tick-line"></span><span class="calc-tick-label infinity"
+							><Icon name="tabler:infinity" /></span
+						></span>
+				</div>
 			</div>
 		</div>
 		<div class="calc-input-group">
 			<div class="calc-input-row">
-				<label class="calc-label">Throughput (msg/sec) <span class="calc-tooltip"><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Combined number of MQTT PUBLISH packets processed per second, including both incoming (publisher) and outgoing (subscriber) messages.</span></span></span></label>
-				<input id="mqpc-throughput" type="number" value="1000" min="1000" class="calc-number-input" aria-label="Throughput" />
+				<label class="calc-label"
+					>Throughput (msg/sec) <span class="calc-tooltip"
+						><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"
+							><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+								>Combined number of MQTT PUBLISH packets processed per second, including both incoming (publisher) and
+								outgoing (subscriber) messages.</span
+							></span
+						></span
+					></label
+				>
+				<input
+					id="mqpc-throughput"
+					type="number"
+					value="1000"
+					min="1000"
+					class="calc-number-input"
+					aria-label="Throughput"
+				/>
 			</div>
 			<div class="calc-slider-container">
-				<input type="range" id="mqpc-throughput-slider" min="0" max="4" step="0.001" value="0" class="calc-slider" aria-label="Throughput slider" />
-				<div class="calc-tick-marks"><span class="calc-tick" data-val="0"><span class="calc-tick-line"></span><span class="calc-tick-label">1K</span></span><span class="calc-tick" data-val="1"><span class="calc-tick-line"></span><span class="calc-tick-label">5K</span></span><span class="calc-tick" data-val="2"><span class="calc-tick-line"></span><span class="calc-tick-label">10K</span></span><span class="calc-tick" data-val="3"><span class="calc-tick-line"></span><span class="calc-tick-label">50K</span></span><span class="calc-tick" data-val="4"><span class="calc-tick-line"></span><span class="calc-tick-label infinity"><Icon name="tabler:infinity" /></span></span></div>
+				<input
+					type="range"
+					id="mqpc-throughput-slider"
+					min="0"
+					max="4"
+					step="0.001"
+					value="0"
+					class="calc-slider"
+					aria-label="Throughput slider"
+				/>
+				<div class="calc-tick-marks">
+					<span class="calc-tick" data-val="0"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">1K</span></span
+					><span class="calc-tick" data-val="1"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">5K</span></span
+					><span class="calc-tick" data-val="2"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">10K</span></span
+					><span class="calc-tick" data-val="3"
+						><span class="calc-tick-line"></span><span class="calc-tick-label">50K</span></span
+					><span class="calc-tick" data-val="4"
+						><span class="calc-tick-line"></span><span class="calc-tick-label infinity"
+							><Icon name="tabler:infinity" /></span
+						></span>
+				</div>
 			</div>
 		</div>
-		<div class="calc-addons-label">Add-ons <span class="calc-tooltip"><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Unlock advanced optional modules to extend platform functionality.</span></span></span></div>
+		<div class="calc-addons-label">
+			Add-ons <span class="calc-tooltip"
+				><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"
+					><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+						>Unlock advanced optional modules to extend platform functionality.</span
+					></span
+				></span>
+		</div>
 		<div class="calc-addons-grid">
-			<div class="calc-addon-card" id="mqpc-devqa-card"><div class="calc-addon-header"><span class="calc-addon-title">Dev & QA Instances <span class="calc-tooltip"><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Separate environments for development, testing, and CI/CD workflows.</span></span></span></span><label class="calc-toggle"><input type="checkbox" id="mqpc-devqa-toggle" role="switch" aria-label="Toggle Dev and QA Instances" /><span class="calc-toggle-track"></span></label></div><p class="calc-addon-desc">Environments for dev, test & CI/CD.</p>
-				<div class="calc-addon-counter hidden" id="mqpc-devqa-counter"><span>Dev Instances</span><div class="calc-stepper" id="mqpc-dev-stepper"><button type="button" class="calc-stepper-btn" data-action="decrement" disabled aria-label="Decrease dev instances">&minus;</button><input type="number" class="calc-stepper-input" value="1" min="1" id="mqpc-dev" aria-label="Dev instances" /><button type="button" class="calc-stepper-btn" data-action="increment" aria-label="Increase dev instances">+</button></div></div>
+			<div class="calc-addon-card" id="mqpc-devqa-card">
+				<div class="calc-addon-header">
+					<span class="calc-addon-title"
+						>Dev & QA Instances <span class="calc-tooltip"
+							><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"
+								><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+									>Separate environments for development, testing, and CI/CD workflows.</span
+								></span
+							></span
+						></span
+					><label class="calc-toggle"
+						><input
+							type="checkbox"
+							id="mqpc-devqa-toggle"
+							role="switch"
+							aria-label="Toggle Dev and QA Instances"
+						/><span class="calc-toggle-track"></span></label>
+				</div><p class="calc-addon-desc">Environments for dev, test & CI/CD.</p>
+				<div class="calc-addon-counter hidden" id="mqpc-devqa-counter">
+					<span>Dev Instances</span><div class="calc-stepper" id="mqpc-dev-stepper">
+						<button
+							type="button"
+							class="calc-stepper-btn"
+							data-action="decrement"
+							disabled
+							aria-label="Decrease dev instances">&minus;</button
+						><input
+							type="number"
+							class="calc-stepper-input"
+							value="1"
+							min="1"
+							id="mqpc-dev"
+							aria-label="Dev instances"
+						/><button type="button" class="calc-stepper-btn" data-action="increment" aria-label="Increase dev instances"
+							>+</button>
+					</div>
+				</div>
 			</div>
-			<div class="calc-addon-card" id="mqpc-multiaz-card"><div class="calc-addon-header"><span class="calc-addon-title">Multi-AZ <span class="calc-tooltip"><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Enable high availability (HA) and fault tolerance by deploying across multiple availability zones with a guaranteed uptime SLA.</span></span></span></span><label class="calc-toggle"><input type="checkbox" id="mqpc-multiaz-toggle" role="switch" aria-label="Toggle Multi-AZ Deployment" /><span class="calc-toggle-track"></span></label></div><p class="calc-addon-desc">Multi-AZ deployment for high availability.</p></div>
-			<div class="calc-addon-card hidden" id="mqpc-traffic-card"><div class="calc-addon-header"><span class="calc-addon-title">Network Traffic <span class="calc-tooltip"><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body">Expand your data transfer capacity beyond the included limit to ensure uninterrupted connectivity as your message volume scales.</span></span></span></span><label class="calc-toggle"><input type="checkbox" id="mqpc-traffic-toggle" role="switch" aria-label="Toggle Network Traffic" /><span class="calc-toggle-track"></span></label></div><p class="calc-addon-desc">200 GB/month included.</p>
-				<div class="calc-addon-counter hidden" id="mqpc-traffic-counter"><span>Extra GB/month</span><div class="calc-stepper" id="mqpc-traffic-stepper"><button type="button" class="calc-stepper-btn" data-action="decrement" disabled aria-label="Decrease extra traffic">&minus;</button><input type="number" class="calc-stepper-input" value="1" min="1" id="mqpc-traffic" aria-label="Extra network traffic GB" /><button type="button" class="calc-stepper-btn" data-action="increment" aria-label="Increase extra traffic">+</button></div></div>
+			<div class="calc-addon-card" id="mqpc-multiaz-card">
+				<div class="calc-addon-header">
+					<span class="calc-addon-title"
+						>Multi-AZ <span class="calc-tooltip"
+							><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"
+								><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+									>Enable high availability (HA) and fault tolerance by deploying across multiple availability zones
+									with a guaranteed uptime SLA.</span
+								></span
+							></span
+						></span
+					><label class="calc-toggle"
+						><input
+							type="checkbox"
+							id="mqpc-multiaz-toggle"
+							role="switch"
+							aria-label="Toggle Multi-AZ Deployment"
+						/><span class="calc-toggle-track"></span></label>
+				</div><p class="calc-addon-desc">Multi-AZ deployment for high availability.</p>
+			</div>
+			<div class="calc-addon-card hidden" id="mqpc-traffic-card">
+				<div class="calc-addon-header">
+					<span class="calc-addon-title"
+						>Network Traffic <span class="calc-tooltip"
+							><Icon name="tabler:info-circle" /><span class="calc-tooltip-text"
+								><span class="calc-tooltip-arrow"></span><span class="calc-tooltip-body"
+									>Expand your data transfer capacity beyond the included limit to ensure uninterrupted connectivity as
+									your message volume scales.</span
+								></span
+							></span
+						></span
+					><label class="calc-toggle"
+						><input type="checkbox" id="mqpc-traffic-toggle" role="switch" aria-label="Toggle Network Traffic" /><span
+							class="calc-toggle-track"></span></label>
+				</div><p class="calc-addon-desc">200 GB/month included.</p>
+				<div class="calc-addon-counter hidden" id="mqpc-traffic-counter">
+					<span>Extra GB/month</span><div class="calc-stepper" id="mqpc-traffic-stepper">
+						<button
+							type="button"
+							class="calc-stepper-btn"
+							data-action="decrement"
+							disabled
+							aria-label="Decrease extra traffic">&minus;</button
+						><input
+							type="number"
+							class="calc-stepper-input"
+							value="1"
+							min="1"
+							id="mqpc-traffic"
+							aria-label="Extra network traffic GB"
+						/><button type="button" class="calc-stepper-btn" data-action="increment" aria-label="Increase extra traffic"
+							>+</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -65,12 +238,16 @@ import CalculatorInline from './CalculatorInline.astro';
 		const loadCalc = () =>
 			import('~/scripts/pricing/calc-tbmq-pc')
 				.then((m) => m.initMqpcCalc())
-				.catch(() => {/* chunk fetch failed — keep the console clean */});
+				.catch(() => {
+					/* chunk fetch failed — keep the console clean */
+				});
 		document.addEventListener('pricing:product-activated', ((e: CustomEvent) => {
 			if (e.detail === 'tbmq') loadCalc();
 		}) as EventListener);
-		const activeTab = document.querySelector('.product-tab.active') as HTMLElement | null;
-		if (activeTab?.dataset.product === 'tbmq') loadCalc();
+		const tbmqContent = document.querySelector(
+			'.pricing-product-content[data-product-content="tbmq"]'
+		) as HTMLElement | null;
+		if (tbmqContent && tbmqContent.style.display !== 'none') loadCalc();
 	}
 </script>
 
@@ -97,8 +274,14 @@ import CalculatorInline from './CalculatorInline.astro';
 
 	// ─── SLA arrow animation ───
 	@keyframes mqpc-sla-arrow-up {
-		0% { opacity: 1; transform: translateY(0); }
-		100% { opacity: 0; transform: translateY(-12px); }
+		0% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-12px);
+		}
 	}
 
 	.mqpc-sla-arrow-animated {

@@ -1249,6 +1249,23 @@ export const SINGLE_REDIRECTS: SingleRedirect[] = [
  * literal `?query` strings (no placeholder substitution).
  */
 export const NON_DOCS_REDIRECTS: Record<string, string> = {
+	// TBMQ-only site: the MQTT broker product page is now the homepage, and the
+	// removed marketing sections + docs roots collapse to the homepage.
+	'/products/mqtt-broker/': '/',
+	'/services/': '/',
+	'/services/development-services/': '/',
+	'/services/trainings/': '/',
+	'/use-cases/': '/',
+	'/case-studies/': '/',
+	'/clients-feedback/': '/',
+	'/partners/': '/',
+	'/partners/affiliate/': '/',
+	'/partners/hardware/': '/',
+	'/partners/distributors/': '/',
+	'/partners/marketplace/': '/',
+	'/device-library/': '/',
+	'/docs/': '/docs/mqtt-broker/',
+
 	// Services
 	'/services/support/': '/services/',
 

@@ -1,6 +1,5 @@
 ---
 import Header from '../components/Landing/Header.astro';
-import PromoBanner from '../components/PromoBanner.astro';
 import Footer from '../components/Landing/Footer.astro';
 import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
@@ -114,10 +113,14 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 	<body>
 		<GtmNoscript />
 
-		{/* Sticky unit: banner scrolls away, header pins. See `.tb-topbar` in HeaderContent. */}
+		{/* Sticky unit: header pins on scroll. See `.tb-topbar` in HeaderContent. */}
 		<div class="tb-topbar">
-			<PromoBanner />
-			<Header githubLink={githubLink} githubLabel={githubLabel} platformQuery={platformQuery} gitHubPlatform={gitHubPlatform} />
+			<Header
+				githubLink={githubLink}
+				githubLabel={githubLabel}
+				platformQuery={platformQuery}
+				gitHubPlatform={gitHubPlatform}
+			/>
 		</div>
 		<CookieBanner />
 		<UtmTracker />

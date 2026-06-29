@@ -11,8 +11,9 @@ const { data } = Astro.props;
 
 // Only ThingsBoard Cloud (the default tab) carries the page <h1>; the other
 // product tabs are also in the DOM (just display:none), so their titles render
-// as <h2> to keep a single <h1> per page.
-const TitleTag = data.id === 'thingsboard-cloud' ? 'h1' : 'h2';
+// as <h2> to keep a single <h1> per page. TBMQ (mqtt-broker) is the sole
+// section on the standalone installations page, so it also carries the <h1>.
+const TitleTag = data.id === 'thingsboard-cloud' || data.id === 'mqtt-broker' ? 'h1' : 'h2';
 
 const hasDeployGroups = data.deployGroups.length > 0;
 const hasTwoColumns =

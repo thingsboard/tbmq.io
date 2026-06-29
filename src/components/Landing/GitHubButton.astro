@@ -5,7 +5,7 @@ interface Props {
 	platform?: Products;
 }
 
-const { platform = Products.CE } = Astro.props;
+const { platform = Products.TBMQ } = Astro.props;
 
 const repoMap: Partial<Record<Products, string>> = {
 	[Products.CE]: 'thingsboard/thingsboard',

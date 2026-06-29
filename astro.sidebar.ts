@@ -4261,19 +4261,8 @@ export const licenseSidebarTabLinks: SidebarTabLinks = {
  * Order matters: more specific prefixes must come before less specific ones.
  */
 export const sidebarTabLinksByPrefix: ReadonlyArray<[string, SidebarTabLinks]> = [
-	['/docs/pe/', peSidebarTabLinks],
-	['/docs/paas/eu/', paasEuSidebarTabLinks],
-	['/docs/paas/', paasSidebarTabLinks],
-	['/docs/edge/pe/', edgePeSidebarTabLinks],
-	['/docs/edge/', edgeSidebarTabLinks],
 	['/docs/mqtt-broker/pe/', tbmqPeSidebarTabLinks],
 	['/docs/mqtt-broker/', tbmqSidebarTabLinks],
-	['/docs/mobile/pe/', mobilePeSidebarTabLinks],
-	['/docs/mobile/', mobileSidebarTabLinks],
-	['/docs/trendz/', trendzSidebarTabLinks],
-	['/docs/iot-gateway/', gwSidebarTabLinks],
-	['/docs/license-server/', licenseSidebarTabLinks],
-	['/docs/', opensourceSidebarTabLinks],
 ];
 
 /**
@@ -4281,18 +4270,4 @@ export const sidebarTabLinksByPrefix: ReadonlyArray<[string, SidebarTabLinks]> =
  * Route middleware in routeData.ts filters this to show only
  * the relevant version's sidebar items.
  */
-export const sidebar: SidebarConfig = [
-	...opensourceSidebar,
-	...peSidebar,
-	...paasSidebar,
-	...paasEuSidebar,
-	...edgeSidebar,
-	...edgePeSidebar,
-	...gwSidebar,
-	...tbmqSidebar,
-	...tbmqPeSidebar,
-	...mobileSidebar,
-	...mobilePeSidebar,
-	...trendzSidebar,
-	...licenseSidebar,
-];
+export const sidebar: SidebarConfig = [...tbmqSidebar, ...tbmqPeSidebar];

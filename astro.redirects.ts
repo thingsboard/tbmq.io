@@ -1,9 +1,7 @@
 import type { AstroUserConfig } from 'astro';
 import { NON_DOCS_REDIRECTS } from './src/data/redirects.ts';
 import { BLOG_CATEGORIES } from './src/data/blog/categories.ts';
-import { feedbackCategories } from './src/data/clients-feedback/index.ts';
 import { UPGRADE_FAMILIES, getFamilySlug } from './src/models/upgrade-instructions.ts';
-import deviceLibraryRedirects from './scripts/device-library-redirects.json' with { type: 'json' };
 import docsRedirects from './public/redirects.json' with { type: 'json' };
 
 // Thin adapter feeding Astro's config `redirects:`. Source of truth lives in
@@ -23,10 +21,6 @@ export const devFallbackRedirects: Record<string, string> = {
 	'/docs/pe/mobile/search/': '/docs/mobile/pe/search/',
 	'/docs/pe/mqtt-broker/search/': '/docs/mqtt-broker/pe/search/',
 };
-const INDUSTRY_SLUGS = feedbackCategories.map((c) => c.key);
-for (const slug of INDUSTRY_SLUGS) {
-	devFallbackRedirects[`/industries/${slug}/`] = `/clients-feedback/?category=${slug}`;
-}
 for (const cat of BLOG_CATEGORIES) {
 	devFallbackRedirects[`/blog/category/${cat}/`] = `/blog/?category=${cat}`;
 	for (let page = 2; page <= 5; page++) {
@@ -52,12 +46,10 @@ const EDGE_PLATFORMS = ['centos', 'docker', 'ubuntu', 'windows'];
 for (const platform of EDGE_PLATFORMS) {
 	for (const family of UPGRADE_FAMILIES) {
 		const slug = getFamilySlug(family);
-		devFallbackRedirects[
-			`/docs/user-guide/install/edge/upgrade-instructions/${platform}/${slug}/`
-		] = `/docs/edge/installation/upgrade-instructions/${platform}/`;
-		devFallbackRedirects[
-			`/docs/user-guide/install/pe/edge/upgrade-instructions/${platform}/${slug}/`
-		] = `/docs/edge/pe/installation/upgrade-instructions/${platform}/`;
+		devFallbackRedirects[`/docs/user-guide/install/edge/upgrade-instructions/${platform}/${slug}/`] =
+			`/docs/edge/installation/upgrade-instructions/${platform}/`;
+		devFallbackRedirects[`/docs/user-guide/install/pe/edge/upgrade-instructions/${platform}/${slug}/`] =
+			`/docs/edge/pe/installation/upgrade-instructions/${platform}/`;
 	}
 }
 
@@ -75,7 +67,6 @@ for (const platform of TRENDZ_PLATFORMS) {
 
 export const redirects: AstroUserConfig['redirects'] = {
 	...docsRedirects,
-	...deviceLibraryRedirects,
 	...NON_DOCS_REDIRECTS,
 	...devFallbackRedirects,
 };

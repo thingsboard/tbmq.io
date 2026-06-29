@@ -19,9 +19,18 @@ export function getSectionLabel(slug: string): string {
 	if (path.startsWith('uk/')) path = path.slice(3);
 	if (path.startsWith('docs/')) path = path.slice(5);
 	const versionPrefixes = [
-		'pe/', 'paas/eu/', 'paas/', 'edge/pe/', 'edge/',
-		'trendz/', 'iot-gateway/', 'mqtt-broker/pe/', 'mqtt-broker/',
-		'mobile/pe/', 'mobile/', 'license-server/',
+		'pe/',
+		'paas/eu/',
+		'paas/',
+		'edge/pe/',
+		'edge/',
+		'trendz/',
+		'iot-gateway/',
+		'mqtt-broker/pe/',
+		'mqtt-broker/',
+		'mobile/pe/',
+		'mobile/',
+		'license-server/',
 	];
 	for (const prefix of versionPrefixes) {
 		if (path.startsWith(prefix)) {
@@ -69,13 +78,7 @@ export const MARKETING_ALLOWLIST: ReadonlyArray<string> = [
 	'/',
 	'/pricing/',
 	'/products/*',
-	'/industries/*',
-	'/partners/*',
-	'/services/*',
-	'/careers/*',
 	'/community/*',
-	'/clients-feedback/',
-	'/mediakit/',
 	'/contact-us/',
 	'/asset-management/',
 	'/device-management/',

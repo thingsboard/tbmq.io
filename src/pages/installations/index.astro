@@ -1,31 +1,20 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import InnerNavigation from '../../components/Services/InnerNavigation.astro';
 import ProductSection from '../../components/Installations/ProductSection.astro';
-import { products, productTabs } from '~/data/installations';
+import { products } from '~/data/installations';
+
+const tbmq = products.find((p) => p.id === 'mqtt-broker')!;
 ---
 
 <BaseLayout
 	forceLightTheme
-	title="ThingsBoard Installations"
-	description="Choose the best ThingsBoard installation method for your IoT project."
+	title="TBMQ Installation"
+	description="Choose the best TBMQ installation method for your IoT project."
 	pageId="installations"
 >
-	<div class="install-header">
-		<InnerNavigation tabs={productTabs} paramName="product" />
+	<div class="install-content">
+		<ProductSection data={tbmq} />
 	</div>
-
-	{
-		products.map((product, i) => (
-			<div
-				id={`tab-${product.id}`}
-				class="tab-content install-content"
-				style={i > 0 ? 'display:none' : undefined}
-			>
-				<ProductSection data={product} />
-			</div>
-		))
-	}
 </BaseLayout>
 
 <style lang="scss">
@@ -34,34 +23,10 @@ import { products, productTabs } from '~/data/installations';
 		background-color: #fff;
 	}
 
-	.install-header {
-		margin-bottom: 0;
-		padding-top: var(--header-height, 80px);
-		max-width: 1400px;
-		width: 100%;
-		margin-left: auto;
-		margin-right: auto;
-		padding-left: 20px;
-		padding-right: 20px;
-
-		// Override InnerNavigation defaults: bigger tabs, no icon space
-		:global(.inner-navigation .menu-item a) {
-			padding: 16px 28px;
-
-			@media (max-width: 600px) {
-				padding: 8px 16px;
-			}
-
-			&::before {
-				display: none;
-			}
-		}
-	}
-
 	:global(.install-content) {
 		position: relative;
 		z-index: 4;
-		padding-top: 0;
+		padding-top: var(--header-height, 80px);
 		background-color: #f4f8fe;
 		overflow: hidden;
 

@@ -33,6 +33,8 @@ const { platformQuery = '' } = Astro.props;
 								item.label === 'Device Library' ? `/device-library/${platformQuery}` : item.href
 							}
 							data-platform-query={item.label === 'Device Library' ? platformQuery : undefined}
+							target={item.target}
+							rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
 							style="cursor: pointer;"
 						>
 							{item.label}

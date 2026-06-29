@@ -761,19 +761,3 @@ export const products: ProductData[] = [
 		],
 	},
 ];
-
-export const productTabs = products.map((p, i) => ({
-	id: p.id,
-	label: p.id === 'thingsboard-ce'
-		? 'Community Edition'
-		: p.id === 'thingsboard-pe'
-			? 'Professional Edition'
-			: p.id === 'thingsboard-cloud'
-				? 'Cloud'
-				: p.id === 'thingsboard-edge'
-					? 'Edge'
-					: p.id === 'thingsboard-trendz'
-						? 'Trendz'
-						: 'TBMQ',
-	active: i === 0,
-}));

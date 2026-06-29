@@ -966,6 +966,20 @@
 /docs/user-guide/ui/ /docs/user-guide/ 301
 
 # Non-docs redirects (from NON_DOCS_REDIRECTS)
+/products/mqtt-broker/ / 301
+/services/ / 301
+/services/development-services/ / 301
+/services/trainings/ / 301
+/use-cases/ / 301
+/case-studies/ / 301
+/clients-feedback/ / 301
+/partners/ / 301
+/partners/affiliate/ / 301
+/partners/hardware/ / 301
+/partners/distributors/ / 301
+/partners/marketplace/ / 301
+/device-library/ / 301
+/docs/ /docs/mqtt-broker/ 301
 /services/support/ /services/ 301
 /products/trendz/trndz-request-demo/ /products/trendz/request-demo/ 301
 /images/trendz/trndz-request-demo/ /products/trendz/request-demo/ 301

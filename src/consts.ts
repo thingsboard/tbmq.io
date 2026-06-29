@@ -19,7 +19,6 @@ export const SECTION_LABELS: Record<string, string> = {
 	'/industries/': 'Industries',
 	'/partners/': 'Partners',
 	'/services/': 'Services',
-	'/careers/': 'Careers',
 	// Lives at /clients-feedback/ but is surfaced as "About" in the title for SEO.
 	'/clients-feedback/': 'About',
 };
@@ -37,7 +36,5 @@ export function formatMarketingTitle(title: string, section?: string): string {
 }
 
 export function formatDocsTitle(pageTitle: string, productName: string, isIndex: boolean): string {
-	return isIndex
-		? `${DOCS_SUFFIX}${SEP}${productName}`
-		: `${pageTitle}${SEP}${DOCS_SUFFIX}${SEP}${productName}`;
+	return isIndex ? `${DOCS_SUFFIX}${SEP}${productName}` : `${pageTitle}${SEP}${DOCS_SUFFIX}${SEP}${productName}`;
 }

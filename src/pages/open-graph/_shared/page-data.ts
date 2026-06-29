@@ -3,20 +3,13 @@ import { getCollection } from 'astro:content';
 import fs from 'node:fs';
 import path from 'node:path';
 import { allPages } from '~/content';
-import {
-	formatBlogDate,
-	getSectionLabel,
-	isAllowlistedMarketingPath,
-	truncate,
-} from '~/util/ogContext';
+import { formatBlogDate, getSectionLabel, isAllowlistedMarketingPath, truncate } from '~/util/ogContext';
 import { getLanguageFromSlug } from '~/util/path-utils';
 import type { CardProps } from './Card';
 import { getDocsProductMeta } from './product-meta';
 import { getMarketingOverride, getMarketingSection } from './marketing-meta';
 import { BLOG_AUTHORS } from '~/data/blog/authors';
 import { CATEGORY_LABELS } from '~/data/blog/categories';
-import { HARDWARE_PARTNERS } from '~/data/partners/hardware-partners';
-import { jobs } from '~/data/careers/jobs';
 
 export interface CardInput {
 	/** URL-shaped slug used as the path parameter in the endpoint */
@@ -65,9 +58,7 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 
 	// /blog/{post-slug}/
 	for (const post of posts) {
-		const category = post.data.categories?.[0]
-			? prettyCategory(post.data.categories[0]!)
-			: 'Article';
+		const category = post.data.categories?.[0] ? prettyCategory(post.data.categories[0]!) : 'Article';
 		inputs.push({
 			slug: post.id,
 			props: {
@@ -120,58 +111,6 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 	return inputs;
 }
 
-/** case-studies — sourced from per-slug data files under src/data/case-studies/ */
-export async function getCaseStudyCardInputs(): Promise<CardInput[]> {
-	const modules = import.meta.glob<Record<string, unknown>>('/src/data/case-studies/*.ts', { eager: true });
-	return enumerateDataModules<{ pageTitle?: string; title: string; categories?: string[] }>(
-		modules,
-		(data) => ({
-			variant: 'logo',
-			sectionName: 'Case Study',
-			sectionTight: true,
-			eyebrow: data.categories?.[0] ?? 'IoT',
-			title: truncate(data.pageTitle ?? data.title, TITLE_MAX),
-		}),
-	);
-}
-
-/** use-cases — same pattern as case-studies */
-export async function getUseCaseCardInputs(): Promise<CardInput[]> {
-	const modules = import.meta.glob<Record<string, unknown>>('/src/data/use-cases/*.ts', { eager: true });
-	return enumerateDataModules<{ pageTitle?: string; title: string; industry?: string }>(
-		modules,
-		(data) => ({
-			variant: 'logo',
-			sectionName: 'Use Case',
-			sectionTight: true,
-			eyebrow: data.industry ?? 'IoT Solution',
-			title: truncate(data.pageTitle ?? data.title, TITLE_MAX),
-		}),
-	);
-}
-
-/** devices collection */
-export async function getDeviceCardInputs(): Promise<CardInput[]> {
-	const devices = await getCollection('devices');
-	return devices.map((device) => {
-		const [, ...slugParts] = device.id.split('/');
-		const slug = slugParts.join('/');
-		const vendor = device.data.vendor;
-		const hardware = (device.data as { hardwareType?: string }).hardwareType;
-		const eyebrowParts = [vendor, hardware].filter((s): s is string => Boolean(s));
-		return {
-			slug,
-			props: {
-				variant: 'logo' as const,
-				sectionName: 'Device Library',
-				sectionTight: true,
-				eyebrow: eyebrowParts.length > 0 ? eyebrowParts.join(' · ') : 'Hardware',
-				title: truncate(device.data.title, TITLE_MAX),
-			},
-		};
-	});
-}
-
 /** Marketing landings — allowlist of /src/pages/*.astro routes. */
 export async function getMarketingCardInputs(): Promise<CardInput[]> {
 	const root = path.resolve('src/pages');
@@ -196,32 +135,6 @@ export async function getMarketingCardInputs(): Promise<CardInput[]> {
 		});
 }
 
-/** hardware partners — `/partners/hardware/{slug}/` driven by HARDWARE_PARTNERS. */
-export async function getPartnerCardInputs(): Promise<CardInput[]> {
-	return HARDWARE_PARTNERS.map((partner) => ({
-		slug: partner.slug,
-		props: {
-			variant: 'logo' as const,
-			sectionName: 'Partners',
-			eyebrow: 'Hardware Partner',
-			title: truncate(partner.name, TITLE_MAX),
-		},
-	}));
-}
-
-/** careers — `/careers/{slug}/` driven by `jobs` in src/data/careers/jobs.ts. */
-export async function getCareerCardInputs(): Promise<CardInput[]> {
-	return jobs.map((job) => ({
-		slug: job.slug,
-		props: {
-			variant: 'logo' as const,
-			sectionName: 'Careers',
-			eyebrow: job.location || 'Open Position',
-			title: truncate(job.position, TITLE_MAX),
-		},
-	}));
-}
-
 /** Collection-landing cards that have neither a marketing .astro nor a per-collection detail. */
 export async function getCollectionIndexInputs(): Promise<CardInput[]> {
 	return [
@@ -232,36 +145,6 @@ export async function getCollectionIndexInputs(): Promise<CardInput[]> {
 				sectionName: 'Documentation',
 				eyebrow: 'All editions',
 				title: 'ThingsBoard Documentation',
-			},
-		},
-		{
-			slug: 'case-studies-index',
-			props: {
-				variant: 'logo' as const,
-				sectionName: 'Case Studies',
-				sectionTight: true,
-				eyebrow: 'Customer stories',
-				title: 'ThingsBoard Case Studies',
-			},
-		},
-		{
-			slug: 'use-cases-index',
-			props: {
-				variant: 'logo' as const,
-				sectionName: 'Use Cases',
-				sectionTight: true,
-				eyebrow: 'IoT solutions',
-				title: 'ThingsBoard Use Cases',
-			},
-		},
-		{
-			slug: 'device-library-index',
-			props: {
-				variant: 'logo' as const,
-				sectionName: 'Device Library',
-				sectionTight: true,
-				eyebrow: 'Supported hardware',
-				title: 'ThingsBoard Device Library',
 			},
 		},
 	];
@@ -276,37 +159,9 @@ function stripDocsPrefix(slug: string): string {
 	return slug.startsWith('docs/') ? slug.slice(5) : slug;
 }
 
-/**
- * Enumerate per-slug `.ts` data files (case-studies, use-cases). Each module
- * exports one or more named consts; the data record is the one with a `title`
- * field. `index` and `types` modules are skipped.
- */
-function enumerateDataModules<T extends { title: string }>(
-	modules: Record<string, Record<string, unknown>>,
-	pickProps: (data: T) => CardInput['props'],
-): CardInput[] {
-	const out: CardInput[] = [];
-	for (const [filePath, mod] of Object.entries(modules)) {
-		const baseName = filePath.split('/').pop()!.replace(/\.ts$/, '');
-		if (baseName === 'index' || baseName === 'types') continue;
-		const data = Object.values(mod).find(
-			(v): v is T => typeof v === 'object' && v !== null && 'title' in v,
-		);
-		if (!data) continue;
-		out.push({ slug: baseName, props: pickProps(data) });
-	}
-	return out;
-}
-
 /** Walk src/pages/ for .astro files, skipping dynamic [...] routes and known non-content dirs. */
-function walkAstroPages(
-	root: string,
-	rel: string,
-	out: Array<{ slug: string; pathname: string }>
-): void {
-	const SKIP_DIRS = new Set([
-		'open-graph', 'docs', 'blog', 'case-studies', 'use-cases', 'device-library',
-	]);
+function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pathname: string }>): void {
+	const SKIP_DIRS = new Set(['open-graph', 'docs', 'blog', 'case-studies', 'use-cases', 'device-library']);
 	const dir = path.join(root, rel);
 	let entries: fs.Dirent[];
 	try {
@@ -323,9 +178,7 @@ function walkAstroPages(
 		}
 		if (!entry.name.endsWith('.astro')) continue;
 		const baseName = entry.name.replace(/\.astro$/, '');
-		const slug = baseName === 'index'
-			? rel.replace(/\\/g, '/')
-			: path.join(rel, baseName).replace(/\\/g, '/');
+		const slug = baseName === 'index' ? rel.replace(/\\/g, '/') : path.join(rel, baseName).replace(/\\/g, '/');
 		const pathname = '/' + (slug ? slug + '/' : '');
 		out.push({ slug, pathname });
 	}
