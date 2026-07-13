@@ -442,7 +442,7 @@ export const tbPrivateCloudFaq: FaqCategory[] = [
 			{
 				id: 'tb-private-cloud-is-there-a-trial-option-for-private-cloud',
 				question: 'Is there a trial option for Private Cloud?',
-				answer: `<p>Trial access is available on <a target="_blank" href="/installations/choose-region/" rel="noopener noreferrer">ThingsBoard Cloud</a>, which allows you to explore the core features and capabilities of ThingsBoard without setup overhead.</p>
+				answer: `<p>Trial access is available on <a target="_blank" href="https://thingsboard.cloud/signup" rel="noopener noreferrer">ThingsBoard Cloud</a>, which allows you to explore the core features and capabilities of ThingsBoard without setup overhead.</p>
                             <p>For ThingsBoard Private Cloud, trials are not applicable due to the use of dedicated infrastructure and custom deployment.</p>`,
 			},
 			{

@@ -269,7 +269,7 @@ export const products: ProductData[] = [
 			{
 				id: 'TryItNow_PE_StartFree',
 				label: 'Start Free',
-				href: '/installations/choose-region/',
+				href: 'https://thingsboard.cloud/signup',
 				secondary: true,
 			},
 			{

@@ -176,7 +176,6 @@ export const NON_DOCS_REDIRECTS: Record<string, string> = {
 	'/products/trendz/trndz-request-demo/': '/products/trendz/request-demo/',
 	'/images/trendz/trndz-request-demo/': '/products/trendz/request-demo/',
 	'/products/thingsboard-pe/install-thanks/': '/contact-us-thanks/',
-	'/installations/forever-free-cloud/': '/installations/choose-region/',
 	'/support-ukraine/': 'https://u24.gov.ua/',
 };
 
