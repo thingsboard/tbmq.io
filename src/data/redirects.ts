@@ -166,11 +166,9 @@ export const NON_DOCS_REDIRECTS: Record<string, string> = {
 	'/use-cases/': '/',
 	'/case-studies/': '/',
 	'/clients-feedback/': '/',
-	'/partners/': '/',
-	'/partners/affiliate/': '/',
+	// Retained until smart-farming-demo (which still links these) is removed.
 	'/partners/hardware/': '/',
-	'/partners/distributors/': '/',
-	'/partners/marketplace/': '/',
+	'/partners/hardware/program/': '/',
 	'/device-library/': '/',
 	'/docs/': '/docs/mqtt-broker/',
 	'/products/trendz/trndz-request-demo/': '/products/trendz/request-demo/',
