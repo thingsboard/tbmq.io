@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **ThingsBoard documentation site**, built with **Astro + Starlight**. It's a multi-language documentation site with 14 supported languages.
+This is the **TBMQ website** — the documentation and marketing site for **TBMQ**, the open-source MQTT broker by ThingsBoard. It is built with **Astro + Starlight**.
+
+**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the `mqtt-broker/` docs tree plus TBMQ marketing pages). The multi-product scaffolding inherited from upstream — the `Products` enum, `versions.ts`, `astro.sidebar.ts`, the redirect tables, and the content schemas — is **kept intact on purpose** so that changes can still be merged cleanly from the upstream ThingsBoard site. When editing, prefer trimming/deploying content over restructuring these shared files, so the repo stays merge-compatible with upstream.
+
+The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking.
 
 ## Commands
 
@@ -16,37 +20,43 @@ pnpm install
 pnpm dev              # Start dev server
 pnpm build            # Production build
 pnpm build:fast       # Fast build (skips OG image generation) — use this for verification
-
-**Build policy:** Before running any build, always ask the user: "Run `pnpm build:fast` to verify, or skip?"
 pnpm preview          # Preview production build
 
 # Quality checks
 pnpm check            # TypeScript/Astro type checking
 pnpm lint:eslint      # ESLint
-pnpm lint:linkcheck   # Link validation (runs build first)
+pnpm lint:linkcheck   # Link validation (runs a build first)
 pnpm lint:linkcheck:nobuild  # Link validation (skip build)
 pnpm lint:slugcheck   # Validate slugs match across languages
 pnpm format           # Format with Prettier
+pnpm generate:redirects      # Regenerate public/_redirects + public/redirects.json
 ```
+
+**Build policy:** Before running any build, always ask the user: "Run `pnpm build:fast` to verify, or skip?"
 
 ## Architecture
 
 ### Content System
 
-All documentation lives in `src/content/docs/{lang}/` as `.mdx` files with YAML frontmatter. Content uses Astro's Content Collections with type-safe Zod schemas defined in `src/content.config.ts`.
+TBMQ documentation lives in `src/content/docs/docs/mqtt-broker/` as `.mdx` files with YAML frontmatter:
 
-**Schema types** determine frontmatter shape: `base`, `deploy`, `backend`, `cms`, `media`, `integration`, `migration`, `tutorial`, `recipe`. The `type` frontmatter field selects the schema.
+- `src/content/docs/docs/mqtt-broker/` → TBMQ Community Edition pages
+- `src/content/docs/docs/mqtt-broker/pe/` → TBMQ Professional Edition pages
 
-**Sidebar** is configured in `astro.sidebar.ts` with 5 top-level tabs (Start, Guides, Reference, Integrations, Third-Party). Labels are translated via `src/content/nav/{lang}.ts` files.
+Content uses Astro's Content Collections with type-safe Zod schemas defined in `src/content.config.ts`.
+
+**Schema types** determine frontmatter shape: `base`, `deploy`, `backend`, `cms`, `media`, `integration`, `migration`, `tutorial`, `recipe`. The `type` frontmatter field selects the schema. (The schema set is inherited from upstream; TBMQ pages are almost all `base`.)
+
+**Sidebar** is configured in `astro.sidebar.ts`. This file retains the full upstream sidebar definitions for structural compatibility; the TBMQ site renders the TBMQ (`mqtt-broker`) sidebar branch.
 
 ### i18n
 
-- 14 languages configured in `config/locales.ts`
-- English (`en`) is the default/fallback language
-- Each language has its own directory under `src/content/docs/`
-- `i18nReady: true` frontmatter marks pages ready for translation
-- Translation status tracked by Lunaria (`lunaria.config.ts`)
-- Arabic (`ar`) uses RTL
+- **English-only** at present. `astro.config.ts` sets `defaultLocale: 'root'` (English served at the root, no `/en/` prefix).
+- Ukrainian (`uk`) scaffolding exists but is **commented out / disabled** in `astro.config.ts` ("no translations yet").
+- UI-string translations live in `src/content/i18n/` (`en.json`, `uk.json`); `src/content/i18n/i18n.ts` sets `DEFAULT_LOCALE = 'en'`.
+- Translation status is tracked by Lunaria (`lunaria.config.ts`, `uk` configured there).
+
+There is **no** `config/locales.ts` and **no** per-language content directories in this repo — docs are authored once under `src/content/docs/docs/`.
 
 ### Path Alias
 
@@ -54,19 +64,19 @@ All documentation lives in `src/content/docs/{lang}/` as `.mdx` files with YAML 
 
 ### Starlight Customization
 
-Custom component overrides live in `src/components/starlight/` — these replace default Starlight components (Hero, Sidebar, Footer, Search, etc.).
+Custom component overrides live in `src/components/starlight/` — these replace default Starlight components (Hero, Sidebar, Footer, Search, Header, etc.). They are registered in the `starlight({ components: {...} })` block of `astro.config.ts`.
 
-Landing page components are in `src/components/Landing/` (Card, ListCard, SplitCard, Discord).
+Landing/marketing components live under `src/components/` (notably `Landing/`, `MqttBroker/`, `Company/`, `Installations/`).
 
 ### Available Components
 
-Use the `edit-doc` skill for full props, usage examples, and authoring rules for these components:
+Props and usage live in each component file under `src/components/`. Commonly used in docs:
 
 - **ImageGallery** — responsive image grid with lightbox, product suffix resolution, dark theme variants
 - **MultiProductImageGallery** — auto product-suffix wrapper around ImageGallery
 - **DocImage** — single optimized image with width/alignment options
-- **Banner** — product/info banners (peFeature, ce, pe, cloud, trendz variants)
-- **Badge** — tb-badge accent badge for sidebar and page titles
+- **Banner** — product/info banners (peFeature, ce, pe, cloud variants)
+- **Badge** — accent badge for sidebar and page titles
 - **YouTubeVideo** — responsive 16:9 YouTube embed
 - **ConditionalHeading** — TOC-aware heading for use inside JSX conditionals in `_includes`
 - **InstallationCardGrid** — installation option card grid
@@ -76,125 +86,55 @@ Use the `edit-doc` skill for full props, usage examples, and authoring rules for
 
 ### Product System
 
-All product identifiers live in `src/models/site.models.ts` as the `Products` enum:
+All product identifiers live in `src/models/site.models.ts` as the `Products` enum. The enum and its `productDocsPrefix` map are **kept full (all upstream products) for merge compatibility**, but only the TBMQ variants ship content here:
 
-| Enum value | URL prefix | Notes |
-|------------|------------|-------|
-| `CE` | *(empty)* | Default/root product |
-| `PE` | `pe/` | |
-| `PAAS` | `paas/` | Sub-variant: PAAS_EU (`paas/eu/`) |
-| `EDGE` | `edge/` | Sub-variant: EDGE_PE (`edge/pe/`) |
-| `TRENDZ` | `trendz/` | |
-| `GW` | `iot-gateway/` | |
-| `TBMQ` | `mqtt-broker/` | Sub-variant: TBMQ_PE (`mqtt-broker/pe/`) |
-| `MOBILE` | `mobile/` | Sub-variant: MOBILE_PE (`mobile/pe/`) |
-| `LICENSE` | `license-server/` | |
+| Enum value | URL prefix | Content directory |
+|------------|------------|-------------------|
+| `TBMQ` | `mqtt-broker/` | `src/content/docs/docs/mqtt-broker/` |
+| `TBMQ_PE` | `mqtt-broker/pe/` | `src/content/docs/docs/mqtt-broker/pe/` |
 
-**URL pattern:** `/[lang/]docs/[product-prefix][page-slug]/`
+Other enum values (`CE`, `PE`, `PAAS`, `EDGE`, `GW`, `LICENSE`, `TRENDZ`, `MOBILE`, …) exist in the model but have **no content** in this repo. Don't add non-TBMQ product content — this is a TBMQ-only site.
 
-**Content directories** mirror the product prefixes under `src/content/docs/docs/`:
-```
-src/content/docs/docs/
-  ├── user-guide/        ← CE pages
-  ├── pe/user-guide/     ← PE pages
-  ├── paas/              ← Cloud pages
-  ├── edge/              ← Edge pages
-  ├── trendz/            ← Trendz pages
-  ├── iot-gateway/       ← IoT Gateway pages
-  ├── mqtt-broker/       ← TBMQ pages
-  ├── mobile/            ← Mobile pages
-  └── license-server/    ← License Server pages
-```
+**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/mqtt-broker/getting-started/` (CE), `/docs/mqtt-broker/pe/...` (PE).
 
 ### Shared Content via _includes
 
-Documentation pages are thin wrappers that import a shared **include file** and pass the current `product` as a prop. This avoids duplicating content across products.
+Documentation pages are thin wrappers that import a shared **include file** and pass the current `product` as a prop. This avoids duplicating content between CE and PE.
 
 ```
-src/content/_includes/docs/{path}/{page}.mdx   ← actual content (shared)
-src/content/docs/docs/{path}/{page}.mdx         ← CE stub (passes Products.CE)
-src/content/docs/docs/pe/{path}/{page}.mdx      ← PE stub (passes Products.PE)
+src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx   ← actual content (shared)
+src/content/docs/docs/mqtt-broker/{path}/{page}.mdx         ← CE stub (passes Products.TBMQ)
+src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx      ← PE stub (passes Products.TBMQ_PE)
 ```
 
-**Product-conditional content:** wrap it in `<ShowFor product={props.product} show={[Products.PE]}>…</ShowFor>` and write **normal Markdown** inside (`**bold**`, `-`/`1.` lists, `` `code` ``, `<Tabs>`/`<Aside>`/`<Code>` components). Do **not** use `{props.product === … && (<>…</>)}` with hand-written `<p>`/`<ul>`/`<li>`/`<code>` HTML — a JSX `{…}` expression disables Markdown parsing, forcing ugly raw HTML; `<ShowFor>` does not. The one exception: headings inside still use `<ConditionalHeading … showFor="…">` (not `##`), because the TOC plugin needs that metadata to add them conditionally.
-
-See the `edit-doc` skill for detailed _includes rules, conditional rendering patterns, and common pitfalls.
+**Product-conditional content:** wrap it in `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>…</ShowFor>` and write **normal Markdown** inside (`**bold**`, `-`/`1.` lists, `` `code` ``, `<Tabs>`/`<Aside>`/`<Code>` components). Do **not** use `{props.product === … && (<>…</>)}` with hand-written `<p>`/`<ul>`/`<li>`/`<code>` HTML — a JSX `{…}` expression disables Markdown parsing, forcing ugly raw HTML; `<ShowFor>` does not. The one exception: headings inside still use `<ConditionalHeading … showFor="…">` (not `##`), because the TOC plugin needs that metadata to add them conditionally.
 
 ### Version Constants
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-Available: `CE_FULL_VER`, `PE_FULL_VER`, `TRENDZ_VER`, `EDGE_VER`, `EDGE_PE_VER`, `TBMQ_VER`, `TBMQ_PE_VER`.
+For TBMQ, the relevant constants are `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`. The file also retains the other products' constants (`CE_FULL_VER`, `PE_FULL_VER`, `TRENDZ_VER`, `EDGE_VER`, …) for upstream compatibility.
 
 ### Custom Plugins
 
-- `config/plugins/remark-fallback-lang.ts` — marks untranslated content
-- `config/plugins/rehype-tasklist-enhancer.ts` — enhanced task lists
+Registered in `astro.config.ts` (`rehypePlugins`):
+
 - `config/plugins/rehype-mdx-include-headings.ts` — extracts headings from `_includes` MDX files and injects them into the page TOC; supports `<ConditionalHeading>` for product-conditional headings
-- `config/plugins/llms-txt.ts` — generates llms.txt
-- `config/plugins/smoke-test.ts` — build validation
+- `config/plugins/rehype-tasklist-enhancer.ts` — enhanced task lists
+- `config/plugins/expressive-code-max-lines.mjs` — powers the `maxLines`/`collapsible` code-block meta options
+
+`llms.txt` is generated by the route endpoints `src/pages/llms.txt.ts` and `src/pages/llms-small.txt.ts` (skippable in builds via `SKIP_LLMS=true`).
 
 ### Pages vs Content
 
-- `src/content/docs/` — documentation pages rendered by Starlight
-- `src/pages/` — special routes: root redirect, language redirects, 404, OG image generation, use-cases, case-studies
-- `src/pages/[lang]/` — dynamic per-language routes (index, install, tutorial redirects)
+- `src/content/docs/` — documentation pages rendered by Starlight (the `mqtt-broker` tree)
+- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `products/`, `pricing/`, `installations/`, `partners/`, `company/`, `community/`, `contact-us`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt`, plus use-case landing pages (`energy-management`, `smart-farming-demo`, `monitoring-dashboard`, `asset-management`, `device-management`, `iot-data-visualization`, `google-iot-core-alternative`, `ce-vs-pe-diff`)
 
 ### Typography & Design System
 
-All non-doc pages (landing, use-cases, case-studies, standalone pages) share a unified typography system defined as SCSS mixins in `src/styles/_variables.scss`. Use the `typography` skill for the full reference: semantic mixins (`page-title`, `section-title`, `text-m`, etc.), spacing scale, breakpoints, and dark-theme color conventions.
+All non-doc pages (landing, marketing, standalone pages) share a unified typography system defined as SCSS mixins in `src/styles/_variables.scss`.
 
-Key rule: **Never hardcode font values** — use mixins. **Never use compile-time SCSS color variables** for theme-dependent colors — use CSS custom properties (`var(--color-*)`).
-
-### Use-Case Pages
-
-Data-driven pages at `/use-cases/{slug}`. Use the `use-case-pages` skill for data types, page composition, layout, and section components.
-
-Key dirs: `src/data/use-cases/`, `src/components/UseCase/`, `src/pages/use-cases/`.
-
-### Case-Study Pages
-
-Data-driven pages at `/case-studies/{slug}`. Use the `case-study-pages` skill for data types, page composition, layout, and section components.
-
-Key dirs: `src/data/case-studies/`, `src/components/CaseStudy/`, `src/pages/case-studies/`.
-
-### Clients Feedback Page
-
-Data-driven page at `/clients-feedback/`. Key dirs: `src/data/clients-feedback/`, `src/components/Feedback/`, `src/pages/clients-feedback/`.
-
-### Device Library
-
-Catalog of supported hardware + integration guides at `/device-library/` (index) and `/device-library/{slug}/` (detail pages). **Flat slug**, not product-prefixed — one URL per device regardless of platform. Platform context rides on a `?platform=` query parameter that the detail page reads client-side to activate the right CE/PE branch and swap hostname sentinels (`YOUR_TB_HOST` → actual platform host) in code snippets.
-
-Content lives in the `devices` collection, not `docs`:
-
-```
-src/content/devices/en/{slug}.mdx       ← device guides (EN-only; no i18n for this collection)
-src/content.config.ts                   ← `deviceSchema` + `PLATFORM_VALUES` allow-list
-src/util/device-platform.ts             ← platform metadata, sentinel map, query → variant mapping
-src/util/device-images.ts               ← asset-pipeline resolver for catalog thumbnails + hero images
-```
-
-Presentation uses `StarlightPage` with `template: 'doc'` so guide bodies get the same Starlight typography as real docs pages, wrapped in the chrome components under `src/components/DeviceLibrary/`:
-
-```
-DeviceLibrary.astro        ← index: search + filter sidebar + paginated grid (client-side)
-DeviceCard.astro           ← catalog thumbnail card
-DeviceInfoCard.astro       ← detail page hero (product image + spec sheet + CTA)
-PlatformContent.astro      ← wraps `<PlatformContent variant="ce|pe">…</PlatformContent>` blocks
-PlatformToggle.astro       ← CE/PE segmented control (role="group" + aria-pressed)
-DeviceCTAFooter.astro      ← detail page CTA footer
-FilterSidebar.astro        ← search + filter sidebar (reused)
-```
-
-Chrome components all carry `.not-content` so Starlight's markdown flow/typography rules don't apply to them, while the MDX body inside `<Content />` does get full Starlight styling.
-
-**Assets:**
-- `src/assets/devices/{filename}` — catalog thumbnails (referenced by `deviceImageFileName:` frontmatter)
-- `src/assets/devices-library/**` — body content images (screenshots, diagrams, galleries)
-- Both go through Astro's asset pipeline (content-hashed URLs, WebP re-encoding, intrinsic `width`/`height`)
-
-**Redirects:** `scripts/device-library-redirects.json` maps every legacy URL shape (`/docs/devices-library/{slug}/`, `/docs/pe/devices-library/{slug}/`, `/device-library/{platform}/{slug}/`, and the `guides/` variants) to `/device-library/{slug}/?platform={platform}`. Imported at build time by `astro.redirects.ts`. Covers 983/983 inbound URLs from the legacy site.
+Key rules: **Never hardcode font values** — use the mixins. **Never use compile-time SCSS color variables** for theme-dependent colors — use CSS custom properties (`var(--color-*)`).
 
 ## Redirects
 
@@ -202,30 +142,27 @@ Chrome components all carry `.not-content` so Starlight's markdown flow/typograp
 
 | Export | Use for | Example |
 |---|---|---|
-| `SINGLE_REDIRECTS` | one-off `/docs/*` page rename | `{ oldPath: 'pe/user-guide/roadmap', target: '/docs/pe/releases/roadmap/' }` |
-| `CATCH_ALL_REDIRECTS` | `/docs/*` prefix rename (whole tree renamed 1:1) | `{ oldPrefix: 'pe/edge', entries: [] }` → `/docs/pe/edge/* → /docs/edge/pe/:splat` |
+| `SINGLE_REDIRECTS` | one-off `/docs/*` page rename | `{ oldPath: '...', target: '/docs/mqtt-broker/...' }` |
+| `CATCH_ALL_REDIRECTS` | `/docs/*` prefix rename (whole tree renamed 1:1) | prefix → `:splat` |
 | `DYNAMIC_REDIRECTS` | splat / `:placeholder` patterns that aren't a simple prefix rename | `/blog/category/:category/page/* → /blog/?category=:category` |
-| `NON_DOCS_REDIRECTS` | everything outside `/docs/*` (marketing, `/products/*`, `/industries/*`, external targets) | `/iot-use-cases/` → `/use-cases/` |
+| `NON_DOCS_REDIRECTS` | everything outside `/docs/*` (marketing, external targets) | `/iot-use-cases/` → `/use-cases/` |
 
 **Workflow to add a redirect:**
 
 1. Edit `src/data/redirects.ts` (pick the export that matches the pattern).
-2. For new `CATCH_ALL_REDIRECTS` prefixes with empty entries, populate the `newPrefix` field on the same entry — the generator reads it directly.
-3. Run `pnpm generate:redirects` — regenerates `public/_redirects` and `public/redirects.json`.
-4. Commit both the data change and the regenerated output.
+2. Run `pnpm generate:redirects` — regenerates `public/_redirects` and `public/redirects.json`.
+3. Commit both the data change and the regenerated output.
 
 **Two places, two purposes:**
 
-- `public/_redirects` — served by Cloudflare Pages. Gives **real 301s at the edge**. Cloudflare rule: *"Redirects are always followed, regardless of whether or not an asset matches the incoming request."* ([docs](https://developers.cloudflare.com/pages/configuration/redirects/)) — so a matching rule here always wins, even if a static HTML file exists at the same path.
-- `astro.redirects.ts` → `redirects:` — used by Astro in `pnpm dev` / `pnpm preview` so old URLs resolve locally instead of 404-ing. In static build mode these emit a `200 + <meta refresh>` HTML stub, which Cloudflare's edge rule then supersedes in production. The file spreads `public/redirects.json` (all `/docs/*`) + `device-library-redirects.json` + `NON_DOCS_REDIRECTS`, so a single run of `pnpm generate:redirects` keeps dev and prod in sync.
-
-**Why page-based `.astro` redirect stubs are deprecated:** they only emit meta-refresh pages (no real 301), they pollute the sitemap, and they duplicate rules already present in `_redirects`. The generator in `src/data/redirects.ts` → `public/_redirects` covers them all.
+- `public/_redirects` — served by Cloudflare Pages. Gives **real 301s at the edge**. A matching rule here always wins, even if a static HTML file exists at the same path.
+- `astro.redirects.ts` → `redirects:` — used by Astro in `pnpm dev` / `pnpm preview` so old URLs resolve locally instead of 404-ing. It spreads `public/redirects.json` (all `/docs/*`) + `NON_DOCS_REDIRECTS` + dev-fallback redirects, so a single run of `pnpm generate:redirects` keeps dev and prod in sync.
 
 **Hard rules:**
 
-- **Do NOT create new `.astro` stub files** under `src/pages/docs/` that only call `Astro.redirect()`. Put the entry in `src/data/redirects.ts` instead.
-- **Do NOT hand-edit `public/_redirects` or `public/redirects.json`** below the auto-generated markers — they're rewritten by `pnpm generate:redirects`. Edit `src/data/redirects.ts` and regenerate.
-- **Keep dynamic rules (splat / `:placeholder`) under 100.** Cloudflare Pages limit is 2,000 static + 100 dynamic = 2,100 total; the generator already quarantines dynamic rules to the tail block to keep the static zone uncapped.
+- **Do NOT create new `.astro` stub files** under `src/pages/docs/` that only call `Astro.redirect()`. Put the entry in `src/data/redirects.ts` instead (page-based stubs only emit meta-refresh, not real 301s, and pollute the sitemap).
+- **Do NOT hand-edit `public/_redirects` or `public/redirects.json`** below the auto-generated markers — they're rewritten by `pnpm generate:redirects`.
+- **Keep dynamic rules (splat / `:placeholder`) under 100.** Cloudflare Pages limit is 2,000 static + 100 dynamic.
 
 ## OG image generation
 
@@ -234,27 +171,22 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 **Files:**
 - `src/pages/open-graph/_shared/Card.tsx` — template
 - `src/pages/open-graph/_shared/render.ts` — Satori → Resvg pipeline + content-hash cache
-- `src/pages/open-graph/_shared/page-data.ts` — collection enumerators
-- `src/pages/open-graph/_shared/jsx-runtime.ts` — minimal Satori-shaped JSX shim (no React)
-- `src/pages/open-graph/{collection}/[…].png.ts` — six static endpoints (docs, blog, case-studies, use-cases, device-library, pages)
+- `src/pages/open-graph/{collection}/[…].png.ts` — three static endpoints: **docs, blog, pages**
 - `src/util/ogContext.ts` — eyebrow / label helpers + `MARKETING_ALLOWLIST`
 - `src/util/getOgImageUrl.ts` — pathname → OG PNG URL aggregator
 
 **Key facts:**
 - Cache lives at `node_modules/.og-cache/` (gitignored). Bump `TEMPLATE_VERSION` in `render.ts` to invalidate.
-- `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori — endpoints still register paths.
-- Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to `/thingsboard-og.png` via `SeoMeta.astro`.
-- Roboto 400/500/700 (7 subsets each: latin, latin-ext, cyrillic, cyrillic-ext, greek, greek-ext, vietnamese) + Noto Sans Symbols 400 for arrows. CJK / Arabic / Hebrew not covered — render as `.notdef`. Site CSS uses an unrelated system font stack; no `FONT_CREDENTIALS` env var.
-- **Astro dev quirk:** `trailingSlash: 'always'` makes dev-server 404 dynamic-route URLs that end in `.png`. `SeoMeta.astro` and `routeData.ts` append `/` to `og:image` only when `import.meta.env.DEV` so dev links resolve to `localhost:.../foo.png/` while production HTML keeps the clean `.png` URL Cloudflare Pages serves directly.
+- `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori.
+- Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`.
+- **Astro dev quirk:** `trailingSlash: 'always'` makes the dev server 404 dynamic-route URLs that end in `.png`. `og:image` gets a trailing `/` appended only in `import.meta.env.DEV` so dev links resolve while production HTML keeps the clean `.png` URL Cloudflare serves directly.
 
 **To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` and rebuild.
 
-## Releasing a New Version
+## Releasing a New TBMQ Version
 
-Use the `release` skill for the full checklist. Key files:
-- `src/data/versions.ts` — version constants
-- `src/models/upgrade-instructions.ts` — `UPGRADE_VERSIONS` array (newest first)
-- `src/models/releases-table.ts` — `RELEASE_FAMILIES` array (newest first)
+- `src/data/versions.ts` — bump `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`.
+- `src/models/releases-table.ts` and `src/models/upgrade-instructions.ts` — release/upgrade tables if the release adds rows.
 
 ## Code Style
 
@@ -266,4 +198,4 @@ Use the `release` skill for the full checklist. Key files:
 
 GitHub Actions runs: `astro check`, `eslint`, `slugcheck`.
 
-`lint:linkcheck` runs in a separate CI pipeline (not GitHub Actions) because it needs a full build. It must also pass before a PR can merge — so run it locally before requesting review, especially when adding, renaming, or removing pages, changing redirects, or editing internal links. Use `pnpm lint:linkcheck` for a clean check, or `pnpm lint:linkcheck:nobuild` if you already produced a build in this session and just want to re-validate links.
+`lint:linkcheck` runs in a separate CI pipeline (not GitHub Actions) because it needs a full build. It must also pass before a PR can merge — so run it locally before requesting review, especially when adding, renaming, or removing pages, changing redirects, or editing internal links. Use `pnpm lint:linkcheck` for a clean check, or `pnpm lint:linkcheck:nobuild` if you already produced a build in this session.
