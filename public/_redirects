@@ -26,10 +26,6 @@
 
 # Single page redirects
 /docs/paas/guides/cloud-setup/ /installations/ 301
-/docs/user-guide/visualization/ /iot-data-visualization/ 301
-/docs/pe/user-guide/visualization/ /iot-data-visualization/ 301
-/docs/paas/user-guide/visualization/ /iot-data-visualization/ 301
-/docs/paas/eu/user-guide/visualization/ /iot-data-visualization/ 301
 /docs/mqtt-broker/api/ /docs/mqtt-broker/rest-api/ 301
 /docs/mqtt-broker/faq/ /docs/mqtt-broker/why-tbmq/ 301
 /docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/ /docs/mqtt-broker/why-tbmq/ 301
@@ -40,8 +36,6 @@
 /docs/mqtt-broker/white-labeling/ /docs/mqtt-broker/pe/white-labeling/ 301
 /docs/contact-us/ /contact-us/ 301
 /docs/contact-us-thanks/ /contact-us-thanks/ 301
-/docs/services/device-management/ /device-management/ 301
-/docs/services/monitoring-dashboard/ /monitoring-dashboard/ 301
 /docs/mqtt-broker/security/ /docs/mqtt-broker/security/overview/ 301
 
 # Non-docs redirects (from NON_DOCS_REDIRECTS)
@@ -52,13 +46,8 @@
 /use-cases/ / 301
 /case-studies/ / 301
 /clients-feedback/ / 301
-/partners/hardware/ / 301
-/partners/hardware/program/ / 301
 /device-library/ / 301
 /docs/ /docs/mqtt-broker/ 301
-/products/trendz/trndz-request-demo/ /products/trendz/request-demo/ 301
-/images/trendz/trndz-request-demo/ /products/trendz/request-demo/ 301
-/products/thingsboard-pe/install-thanks/ /contact-us-thanks/ 301
 /support-ukraine/ https://u24.gov.ua/ 301
 
 # === End auto-generated redirects ===

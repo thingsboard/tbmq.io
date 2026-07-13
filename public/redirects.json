@@ -1,9 +1,5 @@
 {
   "/docs/paas/guides/cloud-setup/": "/installations/",
-  "/docs/user-guide/visualization/": "/iot-data-visualization/",
-  "/docs/pe/user-guide/visualization/": "/iot-data-visualization/",
-  "/docs/paas/user-guide/visualization/": "/iot-data-visualization/",
-  "/docs/paas/eu/user-guide/visualization/": "/iot-data-visualization/",
   "/docs/mqtt-broker/api/": "/docs/mqtt-broker/rest-api/",
   "/docs/mqtt-broker/faq/": "/docs/mqtt-broker/why-tbmq/",
   "/docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/": "/docs/mqtt-broker/why-tbmq/",
@@ -32,8 +28,6 @@
   "/docs/pe/mqtt-broker/user-guide/ui/mail-server/": "/docs/mqtt-broker/pe/user-guide/ui/settings/",
   "/docs/contact-us/": "/contact-us/",
   "/docs/contact-us-thanks/": "/contact-us-thanks/",
-  "/docs/services/device-management/": "/device-management/",
-  "/docs/services/monitoring-dashboard/": "/monitoring-dashboard/",
   "/docs/mqtt-broker/security/": "/docs/mqtt-broker/security/overview/",
   "/docs/mqtt-broker/install/building-from-source/": "/docs/mqtt-broker/installation/building-from-source/",
   "/docs/mqtt-broker/install/cluster/aws-cluster-setup/": "/docs/mqtt-broker/installation/cluster/aws-cluster-setup/",

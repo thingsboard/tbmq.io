@@ -87,10 +87,6 @@ export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [
 
 export const SINGLE_REDIRECTS: SingleRedirect[] = [
 	{ oldPath: 'paas/guides/cloud-setup', target: '/installations/' },
-	{ oldPath: 'user-guide/visualization', target: '/iot-data-visualization/' },
-	{ oldPath: 'pe/user-guide/visualization', target: '/iot-data-visualization/' },
-	{ oldPath: 'paas/user-guide/visualization', target: '/iot-data-visualization/' },
-	{ oldPath: 'paas/eu/user-guide/visualization', target: '/iot-data-visualization/' },
 	{ oldPath: 'mqtt-broker/api', target: '/docs/mqtt-broker/rest-api/' },
 	{ oldPath: 'mqtt-broker/faq', target: '/docs/mqtt-broker/why-tbmq/' },
 	{
@@ -153,8 +149,6 @@ export const SINGLE_REDIRECTS: SingleRedirect[] = [
 	{ oldPath: 'pe/mqtt-broker/user-guide/ui/mail-server', target: '/docs/mqtt-broker/pe/user-guide/ui/settings/' },
 	{ oldPath: 'contact-us', target: '/contact-us/' },
 	{ oldPath: 'contact-us-thanks', target: '/contact-us-thanks/' },
-	{ oldPath: 'services/device-management', target: '/device-management/' },
-	{ oldPath: 'services/monitoring-dashboard', target: '/monitoring-dashboard/' },
 	{ oldPath: 'mqtt-broker/security', target: '/docs/mqtt-broker/security/overview/' },
 ];
 
@@ -166,14 +160,8 @@ export const NON_DOCS_REDIRECTS: Record<string, string> = {
 	'/use-cases/': '/',
 	'/case-studies/': '/',
 	'/clients-feedback/': '/',
-	// Retained until smart-farming-demo (which still links these) is removed.
-	'/partners/hardware/': '/',
-	'/partners/hardware/program/': '/',
 	'/device-library/': '/',
 	'/docs/': '/docs/mqtt-broker/',
-	'/products/trendz/trndz-request-demo/': '/products/trendz/request-demo/',
-	'/images/trendz/trndz-request-demo/': '/products/trendz/request-demo/',
-	'/products/thingsboard-pe/install-thanks/': '/contact-us-thanks/',
 	'/support-ukraine/': 'https://u24.gov.ua/',
 };
 

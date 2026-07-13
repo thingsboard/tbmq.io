@@ -23,7 +23,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-pe-difference',
 				question: 'How does the Community Edition differ from Professional Edition?',
-				answer: '<p>Community Edition includes essential features for IoT device management, data collection, visualization, and rule processing. The Professional Edition offers advanced features such as white-labeling, RBAC, integrations, etc. You can find a more detailed comparison <a target="_blank" href="/products/thingsboard-pe/" rel="noopener noreferrer">on the ThingsBoard PE page</a>.</p>',
+				answer: '<p>Community Edition includes essential features for IoT device management, data collection, visualization, and rule processing. The Professional Edition offers advanced features such as white-labeling, RBAC, integrations, etc. You can find a more detailed comparison <a target="_blank" href="https://thingsboard.io/products/thingsboard-pe/" rel="noopener noreferrer">on the ThingsBoard PE page</a>.</p>',
 			},
 			{
 				id: 'ce-connect-devices-limit',
@@ -112,7 +112,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'pe-exclusive-features',
 				question: 'What features are exclusive to the Professional Edition?',
-				answer: '<p>The Professional Edition offers advanced features such as white-labeling, RBAC, advanced rule engine capabilities, platform integrations, etc. You can find a more detailed comparison <a target="_blank" href="/products/thingsboard-pe/" rel="noopener noreferrer">on the ThingsBoard PE page</a>.</p>',
+				answer: '<p>The Professional Edition offers advanced features such as white-labeling, RBAC, advanced rule engine capabilities, platform integrations, etc. You can find a more detailed comparison <a target="_blank" href="https://thingsboard.io/products/thingsboard-pe/" rel="noopener noreferrer">on the ThingsBoard PE page</a>.</p>',
 			},
 			{
 				id: 'ce-white-labeling-support',
@@ -142,12 +142,12 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-mobile-app',
 				question: 'Is there a mobile app for Community Edition?',
-				answer: '<p>Yes, there is an <a target="_blank" href="/products/mobile/" rel="noopener noreferrer">mobile app</a> for the Community Edition, based on the Flutter SDK. It is free of charge and open-source under Apache 2.0 license.</p>',
+				answer: '<p>Yes, there is an <a target="_blank" href="https://thingsboard.io/products/mobile/" rel="noopener noreferrer">mobile app</a> for the Community Edition, based on the Flutter SDK. It is free of charge and open-source under Apache 2.0 license.</p>',
 			},
 			{
 				id: 'ce-ai-ml-integrations',
 				question: 'Does Community Edition support AI or machine learning integrations?',
-				answer: '<p>Not natively, but you can use it with <a target="_blank" href="/products/trendz/" rel="noopener noreferrer">Trendz Analytics</a> or integrate external AI/ML services via APIs.</p>',
+				answer: '<p>Not natively, but you can use it with <a target="_blank" href="https://thingsboard.io/products/trendz/" rel="noopener noreferrer">Trendz Analytics</a> or integrate external AI/ML services via APIs.</p>',
 			},
 		],
 	},

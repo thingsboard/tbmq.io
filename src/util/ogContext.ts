@@ -80,16 +80,8 @@ export const MARKETING_ALLOWLIST: ReadonlyArray<string> = [
 	'/products/*',
 	'/community/*',
 	'/contact-us/',
-	'/asset-management/',
-	'/device-management/',
 	'/installations/*',
-	'/iot-data-visualization/',
-	'/monitoring-dashboard/',
-	'/smart-farming-demo/',
-	'/google-iot-core-alternative/',
-	'/ce-vs-pe-diff/',
 	'/cookie-policy/',
-	'/energy-management/',
 	'/company/*',
 ];
 
