@@ -65,7 +65,11 @@ const currentProduct = getVersionFromURL(Astro.url.pathname);
 const currentFamily =
 	FAMILIES.find((f) => f.editions.some((e) => e.product === currentProduct)) ??
 	// If currentProduct is a region variant (PAAS_EU), find the family by region match
-	FAMILIES.find((f) => f.regions?.options.some((r) => r.product === currentProduct))!;
+	FAMILIES.find((f) => f.regions?.options.some((r) => r.product === currentProduct)) ??
+	// Single-product site: root utility pages (search, newsletter-thanks) carry no
+	// product prefix in the URL, so no family matches — fall back to the sole family
+	// instead of crashing on `currentFamily.iconId`.
+	FAMILIES[0];
 
 // Build the existing-pages set used by switchVersionWithFallback (incl. dynamic pages).
 const existingPageIds = new Set(allPages.map((p) => p.id));
