@@ -4,7 +4,7 @@ import SmartImage from '@components/SmartImage.astro';
 const scenarios = [
 	{
 		title: 'Fan-in',
-		titleHref: '/docs/mqtt-broker/reference/100m-connections-performance-test/',
+		titleHref: '/docs/mqtt-broker/pe/reference/100m-connections-performance-test/',
 		subtitle: 'Many-to-one messaging using MQTT wildcards.',
 		description:
 			"Many-to-one communication pattern. Many devices generate a large volume of messages consumed by specific applications. They must be persistent clients with QoS levels set to 1 or 2, capable of retaining all the data even when they're temporarily offline due to restarts or upgrades.",
@@ -16,7 +16,7 @@ const scenarios = [
 	},
 	{
 		title: 'Fan-out',
-		titleHref: '/docs/mqtt-broker/reference/3m-throughput-single-node-performance-test/',
+		titleHref: '/docs/mqtt-broker/pe/reference/3m-throughput-single-node-performance-test/',
 		subtitle: 'Broadcast MQTT topics.',
 		description:
 			'This scenario facilitates one-to-many messaging. It involves numerous devices subscribing to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high volume of outgoing data.',
@@ -28,7 +28,7 @@ const scenarios = [
 	},
 	{
 		title: 'Point-to-point',
-		titleHref: '/docs/mqtt-broker/reference/1m-throughput-p2p-performance-test/',
+		titleHref: '/docs/mqtt-broker/pe/reference/1m-throughput-p2p-performance-test/',
 		subtitle: 'Targeted MQTT topic communication.',
 		description:
 			'A targeted messaging pattern, primarily used for one-to-one communication. Achieved through uniquely defined topics, p2p is ideal for use cases such as private messaging or command-based interactions. Persistent clients with QoS levels set to 1 or 2 are often utilized to ensure reliable message delivery, even during temporary disconnections or client downtime.',
