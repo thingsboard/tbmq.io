@@ -68,7 +68,7 @@ export const tbmqPrivateCloudFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-pc-gdpr-compliant',
 				question: 'Is your Private Cloud service GDPR-compliant?',
-				answer: '<p>Yes. You remain the sole Data Controller; TBMQ acts as a Data Bridge under a standard DPA. Data never leaves the region you select, and you have the right to access, port or delete it at will.</p>',
+				answer: '<p>Yes. You remain the sole Data Controller; TBMQ acts as a Data Processor under a standard DPA. Data never leaves the region you select, and you have the right to access, port or delete it at will.</p>',
 			},
 			{
 				id: 'tbmq-cancel-return-data',
@@ -143,8 +143,8 @@ export const tbmqPrivateCloudFaq: FaqCategory[] = [
 			},
 			{
 				id: 'tbmq-annual-upgrade-higher-tier',
-				question: 'What happens if my plan is upgraded to higher tier during an annual subscription?',
-				answer: '<p>If you upgrade your Private Cloud plan during an active annual subscription, the price difference will be calculated on a monthly basis for the remainder of the subscription term. The 10% annual discount will still apply to the new plan. This ensures billing transparency and flexibility while preserving your discount, even if your needs change mid-term.</p>',
+				question: 'What happens if I increase my capacity during an annual subscription?',
+				answer: '<p>If you increase your Private Cloud capacity during an active annual subscription, the price difference will be calculated on a monthly basis for the remainder of the subscription term. The 10% annual discount will still apply to the added capacity. This ensures billing transparency and flexibility while preserving your discount, even if your needs change mid-term.</p>',
 			},
 			{
 				id: 'tbmq-dev-qa-price',
@@ -185,7 +185,7 @@ export const tbmqPrivateCloudFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-exceed-message-rate-limit',
 				question: 'What happens if I exceed my sustained message-rate limit?',
-				answer: '<p>The cluster tolerates brief spikes (see next answer). If sustained traffic stays above your tier\u2019s ceiling, our monitoring flags it and we\u2019ll ask you to upgrade. Plan upgrades are provisioned within three business days; remaining over-quota traffic may be throttled to protect platform stability.</p>',
+				answer: '<p>The cluster tolerates brief spikes (see next answer). If sustained traffic stays above your licensed capacity, our monitoring flags it and we\u2019ll ask you to increase capacity. Capacity upgrades are provisioned within three business days; remaining over-quota traffic may be throttled to protect platform stability.</p>',
 			},
 			{
 				id: 'tbmq-burst-message-limit',
@@ -215,7 +215,7 @@ export const tbmqPrivateCloudFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-outgrow-plan-upgrade',
 				question: 'If I outgrow my plan, how quickly can I upgrade and will there be downtime?',
-				answer: '<p>Notify us as soon as you foresee sustained traffic growth. We provision the larger tier within three business days. Upgrades are performed live on Kubernetes; no downtime is expected, though brief reconnections (&lt;1 min) may occur when scaling nodes.</p>',
+				answer: '<p>Notify us as soon as you foresee sustained traffic growth. We provision the added capacity within three business days. Upgrades are performed live on Kubernetes; no downtime is expected, though brief reconnections (&lt;1 min) may occur when scaling nodes.</p>',
 			},
 			{
 				id: 'tbmq-telemetry-storage-included',
@@ -230,7 +230,7 @@ export const tbmqPrivateCloudFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-geo-region-deployment',
 				question: 'What does geo-region deployment selection include?',
-				answer: '<p>Geo-region deployment selection allows you to choose the specific geographic region where your Private Cloud instance will be hosted. This ensures your data is stored and processed in a location that meets your compliance or data sovereignty requirements. During onboarding, you can select region, and our team will deploy your environment accordingly. This feature is particularly valuable for organizations subject to regional data protection regulations or those with distributed global operations.<br><br></p><p><b>For the Launch plan, region selection is limited to the following supported regions:</b><ul><li><b>North America:</b> US West, US East, Mexico;</li><li><b>Europe:</b> Ireland, Stockholm;</li><li><b>Asia:</b> Taipei, Thailand, Mumbai.</li></ul></p>',
+				answer: '<p>Geo-region deployment selection allows you to choose the specific geographic region where your Private Cloud instance will be hosted. This ensures your data is stored and processed in a location that meets your compliance or data sovereignty requirements. During onboarding, you can select region, and our team will deploy your environment accordingly. This feature is particularly valuable for organizations subject to regional data protection regulations or those with distributed global operations.<br><br></p><p><b>Region selection currently includes the following supported regions:</b><ul><li><b>North America:</b> US West, US East, Mexico;</li><li><b>Europe:</b> Ireland, Stockholm;</li><li><b>Asia:</b> Taipei, Thailand, Mumbai.</li></ul></p>',
 			},
 			{
 				id: 'tbmq-maintenance-window-selection',
@@ -261,7 +261,7 @@ export const tbmqPrivateCloudFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-upgrade-plan',
 				question: 'Can I upgrade my plan at any time?',
-				answer: '<p>Upgrades are possible at any time, but they are not initiated automatically. The ThingsBoard team continuously monitors your resource usage and message throughput. If your consumption exceeds the thresholds defined for your current tier, our team will notify you and guide the process of upgrading to a higher plan. This ensures uninterrupted service and compliance with SLA guarantees. You can also request an upgrade proactively if you anticipate growth or require additional capabilities.</p>',
+				answer: '<p>Upgrades are possible at any time, but they are not initiated automatically. The ThingsBoard team continuously monitors your resource usage and message throughput. If your consumption exceeds your current licensed capacity, our team will notify you and guide the process of adding capacity. This ensures uninterrupted service and compliance with SLA guarantees. You can also request an upgrade proactively if you anticipate growth or require additional capabilities.</p>',
 			},
 			{
 				id: 'tbmq-early-cancellation-fees',

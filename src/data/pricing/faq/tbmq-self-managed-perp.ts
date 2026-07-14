@@ -53,7 +53,7 @@ export const tbmqSelfManagedPerpFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-perp-exceed-limits',
 				question:
-					'What happens if I exceed the total messages per second or session limit in my subscription?',
+					'What happens if I exceed the total messages per second or session limit in my perpetual license?',
 				answer: `<p>If your TBMQ deployment exceeds the licensed limit for either Sessions or Throughput messages per second, the broker software will enforce the capacity defined in your license key. This typically means that new client connections or incoming messages will be rejected, or your deployment performance may be throttled until usage falls back below the purchased capacity. To maintain continuous service and prevent disruption, we recommend proactively monitoring your capacity usage and adjusting your licensed limits via the <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Portal</a> before reaching your peak operational thresholds.</p>`,
 			},
 		],
@@ -224,8 +224,8 @@ export const tbmqSelfManagedPerpFaq: FaqCategory[] = [
 			},
 			{
 				id: 'tbmq-perp-license-data',
-				question: 'What data does ThingsBoard collect for license verification?',
-				answer: `<p>During the first launch of ThingsBoard PE, built-in License Server Client generates an “Activate Instance Request” to the License Server. This request contains the license key and version info about the current platform installation. License Server looks up the subscription info based on the license key and replies with the instance id, subscription plan data, and some magic bytes. License Client stores this information locally and uses instance id and some magic bytes for the next license check requests. More details <a target="_blank" href="/docs/license-server/what-is-license-server/" rel="noopener noreferrer">in the License Server documentation</a>.</p>`,
+				question: 'What data does TBMQ collect for license verification?',
+				answer: `<p>During the first launch of TBMQ PE, built-in License Server Client generates an “Activate Instance Request” to the License Server. This request contains the license key and version info about the current platform installation. License Server looks up the subscription info based on the license key and replies with the instance id, subscription plan data, and some magic bytes. License Client stores this information locally and uses instance id and some magic bytes for the next license check requests. More details <a target="_blank" href="https://thingsboard.io/docs/license-server/what-is-license-server/" rel="noopener noreferrer">in the License Server documentation</a>.</p>`,
 			},
 		],
 	},

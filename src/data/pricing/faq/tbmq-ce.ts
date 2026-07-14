@@ -176,13 +176,13 @@ export const tbmqCeFaq: FaqCategory[] = [
 		],
 	},
 	{
-		id: 'upgradingToEnterpriseEdition',
-		label: 'Upgrading to Enterprise Edition',
+		id: 'upgradingToProfessionalEdition',
+		label: 'Upgrading to Professional Edition',
 		items: [
 			{
 				id: 'tbmq-ce-upgrade-pe',
 				question: 'Can I upgrade from Community Edition to the Professional Edition?',
-				answer: '<p>Yes, you can migrate your data and configuration to an Professional Edition at any time.</p>',
+				answer: '<p>Yes, you can migrate your data and configuration to the Professional Edition at any time.</p>',
 			},
 			{
 				id: 'tbmq-ce-upgrade-benefits',
@@ -191,12 +191,12 @@ export const tbmqCeFaq: FaqCategory[] = [
 			},
 			{
 				id: 'tbmq-ce-migration-strategy',
-				question: 'How do I migrate from Community Edition to Enterprise?',
+				question: 'How do I migrate from Community Edition to Professional Edition?',
 				answer: '<p>Migration depends on factors such as the version, source code changes, and more. Please <a target="_blank" href="/contact-us/" rel="noopener noreferrer">contact us</a> for personalized suggestions and a clear strategy on how to perform the migration.</p>',
 			},
 			{
 				id: 'tbmq-ce-pe-trial',
-				question: 'Can I get a trial of the Enterprise Edition before upgrading?',
+				question: 'Can I get a trial of the Professional Edition before upgrading?',
 				answer: '<p>Yes, we offer a one-month trial for default subscription plan in self-managed mode.</p>',
 			},
 		],
