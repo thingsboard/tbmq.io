@@ -40,12 +40,12 @@ export const tbCeFaq: FaqCategory[] = [
 				id: 'possible-migrate-ce-to-cloud',
 				question:
 					'Is it possible to migrate from the Community Edition to the ThingsBoard Cloud?',
-				answer: '<p>Yes, migration from the Community Edition to ThingsBoard Cloud is possible but is not 100% automatic. We recommend to use <a target="_blank" href="/docs/user-guide/version-control/#usage" rel="noopener noreferrer">version control</a> feature to migrate all entities. Then you may transfer telemetry data using the <a target="_blank" href="/docs/reference/rest-api/" rel="noopener noreferrer">REST API</a>. For more information about the migration procedure, please <a target="_blank" href="/contact-us/" rel="noopener noreferrer">contact us</a>.</p>',
+				answer: '<p>Yes, migration from the Community Edition to ThingsBoard Cloud is possible but is not 100% automatic. We recommend to use <a target="_blank" href="https://thingsboard.io/docs/user-guide/version-control/#usage" rel="noopener noreferrer">version control</a> feature to migrate all entities. Then you may transfer telemetry data using the <a target="_blank" href="https://thingsboard.io/docs/reference/rest-api/" rel="noopener noreferrer">REST API</a>. For more information about the migration procedure, please <a target="_blank" href="/contact-us/" rel="noopener noreferrer">contact us</a>.</p>',
 			},
 			{
 				id: 'ce-clustering',
 				question: 'Does the Community Edition support clustering?',
-				answer: '<p>Yes, clustering is fully supported in the Community Edition. You can find more details about deployment scenarios <a target="_blank" href="/docs/reference/architecture/deployment-scenarios/" rel="noopener noreferrer">in the deployment scenarios reference</a>.</p>',
+				answer: '<p>Yes, clustering is fully supported in the Community Edition. You can find more details about deployment scenarios <a target="_blank" href="https://thingsboard.io/docs/reference/architecture/deployment-scenarios/" rel="noopener noreferrer">in the deployment scenarios reference</a>.</p>',
 			},
 			{
 				id: 'ce-customize',
@@ -66,7 +66,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'how-to-install-ce',
 				question: 'How do I install ThingsBoard Community Edition?',
-				answer: '<p>Installation guides are available in the <a target="_blank" href="/docs/installation/?ceInstallType=onPremise" rel="noopener noreferrer">documentation</a>. The Community Edition can be installed in monolith or microservice cluster mode, and supports deployment on Docker, Kubernetes, or directly on Linux/Windows OS.</p>',
+				answer: '<p>Installation guides are available in the <a target="_blank" href="https://thingsboard.io/docs/installation/?ceInstallType=onPremise" rel="noopener noreferrer">documentation</a>. The Community Edition can be installed in monolith or microservice cluster mode, and supports deployment on Docker, Kubernetes, or directly on Linux/Windows OS.</p>',
 			},
 			{
 				id: 'where-to-install-ce',
@@ -76,7 +76,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-database-support',
 				question: 'What databases does the Community Edition support?',
-				answer: '<p>The Community Edition supports pure SQL or a hybrid SQL + NoSQL (for telemetry storage) . For more details on database options, you can check <a target="_blank" href="/docs/reference/architecture/database/" rel="noopener noreferrer">the database approach reference</a>.</p>',
+				answer: '<p>The Community Edition supports pure SQL or a hybrid SQL + NoSQL (for telemetry storage) . For more details on database options, you can check <a target="_blank" href="https://thingsboard.io/docs/reference/architecture/database/" rel="noopener noreferrer">the database approach reference</a>.</p>',
 			},
 			{
 				id: 'official-docker-ce',
@@ -86,17 +86,17 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-on-raspberry-edge',
 				question: 'Can I run the Community Edition on Raspberry Pi or other edge devices?',
-				answer: '<p>Yes, but performance may be limited due to hardware constraints. You can check details <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">in the installation options guide</a>.</p>',
+				answer: '<p>Yes, but performance may be limited due to hardware constraints. You can check details <a target="_blank" href="https://thingsboard.io/docs/installation/" rel="noopener noreferrer">in the installation options guide</a>.</p>',
 			},
 			{
 				id: 'ce-multi-tenancy',
 				question: 'Does the Community Edition support multi-tenancy?',
-				answer: '<p>Yes, the ThingsBoard Community Edition supports <a target="_blank" href="/docs/user-guide/multi-tenancy/" rel="noopener noreferrer">multi-tenancy</a> out of the box.</p>',
+				answer: '<p>Yes, the ThingsBoard Community Edition supports <a target="_blank" href="https://thingsboard.io/docs/user-guide/multi-tenancy/" rel="noopener noreferrer">multi-tenancy</a> out of the box.</p>',
 			},
 			{
 				id: 'ce-scale-deployment',
 				question: 'How can I scale a Community Edition deployment?',
-				answer: '<p>You can scale the Community Edition horizontally by using a <a target="_blank" href="/docs/reference/architecture/microservices/" rel="noopener noreferrer">microservice</a> deployment.</p>',
+				answer: '<p>You can scale the Community Edition horizontally by using a <a target="_blank" href="https://thingsboard.io/docs/reference/architecture/microservices/" rel="noopener noreferrer">microservice</a> deployment.</p>',
 			},
 		],
 	},
@@ -107,7 +107,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-features',
 				question: 'What features are included in ThingsBoard Community Edition?',
-				answer: '<p>The Community Edition includes device and asset management, data visualization, rule engine automation, and API integrations. You can find all features and descriptions <a target="_blank" href="/docs/" rel="noopener noreferrer">in the documentation</a>.</p>',
+				answer: '<p>The Community Edition includes device and asset management, data visualization, rule engine automation, and API integrations. You can find all features and descriptions <a target="_blank" href="https://thingsboard.io/docs/" rel="noopener noreferrer">in the documentation</a>.</p>',
 			},
 			{
 				id: 'pe-exclusive-features',
@@ -122,12 +122,12 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-other-build-in-security-features',
 				question: 'Are there any built-in security features?',
-				answer: '<p>Yes, the Community Edition supports secure <a target="_blank" href="/docs/user-guide/connectivity-guide/" rel="noopener noreferrer">device connectivity</a> options, <a target="_blank" href="/docs/user-guide/security/oauth-2-support/" rel="noopener noreferrer">OAuth</a> configuration, and <a target="_blank" href="/docs/user-guide/security/domains/" rel="noopener noreferrer">domain management</a>.</p>',
+				answer: '<p>Yes, the Community Edition supports secure <a target="_blank" href="https://thingsboard.io/docs/user-guide/connectivity-guide/" rel="noopener noreferrer">device connectivity</a> options, <a target="_blank" href="https://thingsboard.io/docs/user-guide/security/oauth-2-support/" rel="noopener noreferrer">OAuth</a> configuration, and <a target="_blank" href="https://thingsboard.io/docs/user-guide/security/domains/" rel="noopener noreferrer">domain management</a>.</p>',
 			},
 			{
 				id: 'ce-third-party-systems',
 				question: 'Can I integrate third-party systems with Community Edition?',
-				answer: '<p>Yes, you can integrate the ThingsBoard Community Edition with third-party systems through REST APIs or Rule Engine. Please note that the Professional Edition of the platform provides more integration option via <a target="_blank" href="/docs/user-guide/integrations/" rel="noopener noreferrer">platform integrations</a>.</p>',
+				answer: '<p>Yes, you can integrate the ThingsBoard Community Edition with third-party systems through REST APIs or Rule Engine. Please note that the Professional Edition of the platform provides more integration option via <a target="_blank" href="https://thingsboard.io/docs/user-guide/integrations/" rel="noopener noreferrer">platform integrations</a>.</p>',
 			},
 			{
 				id: 'ce-automate-device-management-telemetry-processing',
@@ -137,7 +137,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-ota-support',
 				question: 'Does Community Edition support OTA (Over-the-Air) firmware updates?',
-				answer: '<p>Yes, the Community Edition supports <a target="_blank" href="/docs/user-guide/ota-updates/" rel="noopener noreferrer">OTA</a> (Over-the-Air) firmware updates.</p>',
+				answer: '<p>Yes, the Community Edition supports <a target="_blank" href="https://thingsboard.io/docs/user-guide/ota-updates/" rel="noopener noreferrer">OTA</a> (Over-the-Air) firmware updates.</p>',
 			},
 			{
 				id: 'ce-mobile-app',
@@ -169,7 +169,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-help-issue',
 				question: 'Where can I get help if I run into issues?',
-				answer: '<p><a target="_blank" href="https://github.com/thingsboard/" rel="noopener noreferrer">GitHub</a> (report issues, contribute)</p><p><a target="_blank" href="https://stackoverflow.com/questions/tagged/thingsboard" rel="noopener noreferrer">Stack Overflow</a> (for developer-related questions)</p><p><a target="_blank" href="/docs/" rel="noopener noreferrer">Documentation & Tutorials</a></p>',
+				answer: '<p><a target="_blank" href="https://github.com/thingsboard/" rel="noopener noreferrer">GitHub</a> (report issues, contribute)</p><p><a target="_blank" href="https://stackoverflow.com/questions/tagged/thingsboard" rel="noopener noreferrer">Stack Overflow</a> (for developer-related questions)</p><p><a target="_blank" href="https://thingsboard.io/docs/" rel="noopener noreferrer">Documentation & Tutorials</a></p>',
 			},
 			{
 				id: 'ce-request-custom-feature',
@@ -184,7 +184,7 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'ce-soft-updates',
 				question: 'Are software updates available for Community Edition?',
-				answer: '<p>Yes, updates for all <a target="_blank" href="/docs/releases/releases-table/" rel="noopener noreferrer">versions</a> are available.</p>',
+				answer: '<p>Yes, updates for all <a target="_blank" href="https://thingsboard.io/docs/releases/releases-table/" rel="noopener noreferrer">versions</a> are available.</p>',
 			},
 			{
 				id: 'ce-tb-developers-paid-service',
@@ -206,7 +206,7 @@ export const tbCeFaq: FaqCategory[] = [
 				id: 'ce-development-services',
 				question:
 					'Can you provide an IoT development service tailored to my specific needs?',
-				answer: '<p>Yes, we offer custom <a target="_blank" href="/services/development-services/" rel="noopener noreferrer">IoT development services</a> designed to match your exact requirements. Whether you need a full-featured IoT platform, scalable architecture, or specific integrations, our IoT development team can help you accelerate time-to-market and reduce internal workload while ensuring long-term maintainability.</p>',
+				answer: '<p>Yes, we offer custom <a target="_blank" href="https://thingsboard.io/services/development-services/" rel="noopener noreferrer">IoT development services</a> designed to match your exact requirements. Whether you need a full-featured IoT platform, scalable architecture, or specific integrations, our IoT development team can help you accelerate time-to-market and reduce internal workload while ensuring long-term maintainability.</p>',
 			},
 		],
 	},
@@ -291,18 +291,18 @@ export const tbCeFaq: FaqCategory[] = [
 			{
 				id: 'edge-community-installation',
 				question: 'How can I install ThingsBoard Edge Community Edition?',
-				answer: '<p>You can install the Community Edition following the <a target="_blank" href="/docs/edge/installation/" rel="noopener noreferrer">installation guides</a> available in the official documentation.</p>',
+				answer: '<p>You can install the Community Edition following the <a target="_blank" href="https://thingsboard.io/docs/edge/installation/" rel="noopener noreferrer">installation guides</a> available in the official documentation.</p>',
 			},
 			{
 				id: 'edge-community-system-requirements',
 				question:
 					'What are the system requirements for deploying the Community Edition?',
-				answer: '<p>The Community Edition is compatible with various operating systems, including Linux, Windows, and macOS. Specific requirements depend on the deployment method and can be found in the <a target="_blank" href="/docs/edge/installation/" rel="noopener noreferrer">installation guide</a>.</p>',
+				answer: '<p>The Community Edition is compatible with various operating systems, including Linux, Windows, and macOS. Specific requirements depend on the deployment method and can be found in the <a target="_blank" href="https://thingsboard.io/docs/edge/installation/" rel="noopener noreferrer">installation guide</a>.</p>',
 			},
 			{
 				id: 'edge-community-docker-support',
 				question: 'Does the Community Edition support Docker deployment?',
-				answer: '<p>Yes, ThingsBoard Edge Community Edition supports Docker. Detailed instructions for Docker-based installation are provided in the <a target="_blank" href="/docs/edge/installation/docker/" rel="noopener noreferrer">Docker deployment</a> guide.</p>',
+				answer: '<p>Yes, ThingsBoard Edge Community Edition supports Docker. Detailed instructions for Docker-based installation are provided in the <a target="_blank" href="https://thingsboard.io/docs/edge/installation/docker/" rel="noopener noreferrer">Docker deployment</a> guide.</p>',
 			},
 			{
 				id: 'edge-community-core-features',

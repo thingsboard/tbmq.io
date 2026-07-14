@@ -8,7 +8,7 @@ export const TITLE_SEPARATOR = '|';
  * preview origins, so that canonical hrefs and absolute-URL detection stay
  * stable across staging and production builds.
  */
-export const PROD_ORIGIN = 'https://thingsboard.io';
+export const PROD_ORIGIN = 'https://tbmq.io';
 
 const SEP = ` ${TITLE_SEPARATOR} `;
 

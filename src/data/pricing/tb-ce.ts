@@ -11,5 +11,5 @@ export const tbCeData: CommunityEditionData = {
 		'Community support',
 	],
 	ctaText: 'Install',
-	ctaHref: '/docs/installation/',
+	ctaHref: 'https://thingsboard.io/docs/installation/',
 };

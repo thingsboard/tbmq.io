@@ -23,7 +23,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-diff-pe',
 				question: 'How does the Community Edition differ from Professional Edition?',
-				answer: '<p>Community Edition includes essential MQTT broker features with full support for MQTT 3.x and MQTT 5.0. The Professional Edition offers advanced features such as White Labeling, RBAC, Single sign-on, etc. You can find a more detailed comparison <a target="_blank" href="/products/mqtt-broker/" rel="noopener noreferrer">on the TBMQ product page</a>.</p>',
+				answer: '<p>Community Edition includes essential MQTT broker features with full support for MQTT 3.x and MQTT 5.0. The Professional Edition offers advanced features such as White Labeling, RBAC, Single sign-on, etc. You can find a more detailed comparison <a target="_blank" href="/#comparison-features" rel="noopener noreferrer">on the TBMQ product page</a>.</p>',
 			},
 			{
 				id: 'tbmq-ce-session-limits',
@@ -105,7 +105,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-pe-exclusive',
 				question: 'What features are exclusive to the Professional Edition?',
-				answer: '<p>The Professional Edition offers advanced features such as White Labeling, RBAC, Single sign-on, etc. You can find a more detailed comparison <a target="_blank" href="/products/mqtt-broker/" rel="noopener noreferrer">on the TBMQ product page</a>.</p>',
+				answer: '<p>The Professional Edition offers advanced features such as White Labeling, RBAC, Single sign-on, etc. You can find a more detailed comparison <a target="_blank" href="/#comparison-features" rel="noopener noreferrer">on the TBMQ product page</a>.</p>',
 			},
 			{
 				id: 'tbmq-ce-white-label',

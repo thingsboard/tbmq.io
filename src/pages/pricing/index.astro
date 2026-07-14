@@ -1077,7 +1077,7 @@ const tbmqSubTabs = enrichTabs([
 		// EU → /docs/paas/eu/). The default href in the HTML stays NA so
 		// crawlers and no-JS users still get a valid link.
 		function updatePaasLinks(isEu: boolean) {
-			const prefix = isEu ? '/docs/paas/eu' : '/docs/paas';
+			const prefix = isEu ? 'https://thingsboard.io/docs/paas/eu' : 'https://thingsboard.io/docs/paas';
 			$$('a.pricing-paas-link').forEach((a) => {
 				const path = (a as HTMLAnchorElement).dataset.paasPath ?? '/';
 				(a as HTMLAnchorElement).href = `${prefix}${path}`;

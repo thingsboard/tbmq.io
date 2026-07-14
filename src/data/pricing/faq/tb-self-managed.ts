@@ -185,7 +185,7 @@ export const tbSelfManagedFaq: FaqCategory[] = [
 			{
 				id: 'pe-pay-as-you-go-internet-requirement',
 				question: 'Do I need an internet connection to use the self-managed license?',
-				answer: '<p>Yes, an internet connection is required for periodic license verification. The system checks the license once per hour, and if the connection is not restored within 24 hours, the platform may shut down. This process ensures proper license management while allowing temporary connectivity issues. For more details, please refer to the license check <a target="_blank" href="/docs/license-server/what-is-license-server/" rel="noopener noreferrer">description</a>. Offline mode is also possible as an add-on to the Perpetual license. <a target="_blank" href="/contact-us/" rel="noopener noreferrer">Contact our sales team</a> to know more.</p>',
+				answer: '<p>Yes, an internet connection is required for periodic license verification. The system checks the license once per hour, and if the connection is not restored within 24 hours, the platform may shut down. This process ensures proper license management while allowing temporary connectivity issues. For more details, please refer to the license check <a target="_blank" href="https://thingsboard.io/docs/license-server/what-is-license-server/" rel="noopener noreferrer">description</a>. Offline mode is also possible as an add-on to the Perpetual license. <a target="_blank" href="/contact-us/" rel="noopener noreferrer">Contact our sales team</a> to know more.</p>',
 			},
 			{
 				id: 'pe-pay-as-you-go-offline-access',
@@ -210,7 +210,7 @@ export const tbSelfManagedFaq: FaqCategory[] = [
 			{
 				id: 'pe-pay-as-you-go-telemetry-storage',
 				question: 'How is telemetry data stored in self-managed ThingsBoard?',
-				answer: '<p>ThingsBoard supports PostgreSQL or PostgreSQL + Cassandra (Hybrid mode) for telemetry storage. For more details on database options, you can check the <a target="_blank" href="/docs/reference/architecture/database/" rel="noopener noreferrer">database approach reference</a>.</p>',
+				answer: '<p>ThingsBoard supports PostgreSQL or PostgreSQL + Cassandra (Hybrid mode) for telemetry storage. For more details on database options, you can check the <a target="_blank" href="https://thingsboard.io/docs/reference/architecture/database/" rel="noopener noreferrer">database approach reference</a>.</p>',
 			},
 			{
 				id: 'pe-pay-as-you-go-multi-tenancy',
@@ -256,7 +256,7 @@ export const tbSelfManagedFaq: FaqCategory[] = [
 			{
 				id: 'pe-pay-as-you-go-vulnerability-fixes',
 				question: 'Where can I find the logged vulnerability fixes matrix: version + list of fixes?',
-				answer: '<p>Please stay tuned with our <a target="_blank" href="/docs/pe/releases/releases-table/" rel="noopener noreferrer">Release notes</a>. Critical vulnerabilities or security issues are mentioned in separate line items. Less threatful vulnerabilities appear as a single record ("Vulnerability fixes") stating that, at the release date, the version is free of known HIGH and some MEDIUM CVEs.</p>',
+				answer: '<p>Please stay tuned with our <a target="_blank" href="https://thingsboard.io/docs/pe/releases/releases-table/" rel="noopener noreferrer">Release notes</a>. Critical vulnerabilities or security issues are mentioned in separate line items. Less threatful vulnerabilities appear as a single record ("Vulnerability fixes") stating that, at the release date, the version is free of known HIGH and some MEDIUM CVEs.</p>',
 			},
 		],
 	},
@@ -318,7 +318,7 @@ export const tbSelfManagedFaq: FaqCategory[] = [
 			{
 				id: 'pe-pay-as-you-go-development-services',
 				question: 'Can you provide an IoT development service tailored to my specific needs?',
-				answer: '<p>Yes, we offer custom <a target="_blank" href="/services/development-services/" rel="noopener noreferrer">IoT development services</a> designed to match your exact requirements. Whether you need a full-featured IoT platform, scalable architecture, or specific integrations, our IoT development team can help you accelerate time-to-market and reduce internal workload while ensuring long-term maintainability.</p>',
+				answer: '<p>Yes, we offer custom <a target="_blank" href="https://thingsboard.io/services/development-services/" rel="noopener noreferrer">IoT development services</a> designed to match your exact requirements. Whether you need a full-featured IoT platform, scalable architecture, or specific integrations, our IoT development team can help you accelerate time-to-market and reduce internal workload while ensuring long-term maintainability.</p>',
 			},
 		],
 	},
