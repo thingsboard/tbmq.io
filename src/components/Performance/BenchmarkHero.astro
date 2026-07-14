@@ -1,0 +1,166 @@
+---
+const stats = [
+	{ value: '100M+', label: 'Concurrent MQTT connections' },
+	{ value: '3M+', label: 'Messages/sec on a single node' },
+	{ value: '7.4 ms', label: 'Average end-to-end latency' },
+	{ value: '~$0.0003', label: 'Per device / month at 100M scale' },
+];
+---
+
+<section id="benchmark-hero">
+	<div class="inner">
+		<p class="eyebrow">Proven at scale</p>
+		<h1>TBMQ performance benchmarks</h1>
+		<p class="subtitle">
+			See how far TBMQ scales — 100 million connections, millions of messages per second, and
+			single-digit-millisecond latency. Every test is open and reproducible.
+		</p>
+		<div class="buttons">
+			<a class="btn btn-white" href="/installations/">Try it now</a>
+			<a class="btn btn-outline" href="/docs/mqtt-broker/pe/reference/">Read the reports</a>
+		</div>
+		<div class="stats">
+			{
+				stats.map((s) => (
+					<div class="stat">
+						<span class="stat-value">{s.value}</span>
+						<span class="stat-label">{s.label}</span>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#benchmark-hero {
+		background-color: #00240f;
+		// Clear the fixed header (the .tb-topbar sticky unit pulls content up
+		// by $header-height via a negative margin), then add breathing room.
+		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1400px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.eyebrow {
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		font-size: 14px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-hover;
+		margin: 0 0 20px;
+	}
+
+	h1 {
+		@include page-title;
+		color: $color-white;
+		margin: 0 0 24px;
+		text-wrap: balance;
+	}
+
+	.subtitle {
+		font-size: 18px;
+		line-height: 1.7;
+		color: rgba(255, 255, 255, 0.8);
+		margin: 0 0 40px;
+		max-width: 760px;
+
+		@include media-up(md) {
+			font-size: 20px;
+		}
+	}
+
+	.buttons {
+		display: flex;
+		gap: 20px;
+		flex-wrap: wrap;
+		justify-content: center;
+		margin-bottom: 72px;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 28px;
+		line-height: 44px;
+		border-radius: 8px;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		transition: 0.3s;
+
+		&.btn-white {
+			background-color: $color-white;
+			color: $color-pe-link;
+
+			&:hover {
+				background-color: #e8e8e8;
+			}
+		}
+
+		&.btn-outline {
+			border: 1px solid rgba(255, 255, 255, 0.6);
+			color: $color-white;
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+				border-color: $color-white;
+			}
+		}
+	}
+
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 40px 24px;
+		width: 100%;
+		max-width: 1000px;
+
+		@include media-up(lg) {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0 8px;
+
+		&:not(:last-child) {
+			@include media-up(lg) {
+				border-right: 1px solid rgba(255, 255, 255, 0.14);
+			}
+		}
+	}
+
+	.stat-value {
+		font-size: 44px;
+		font-weight: $font-weight-bold;
+		line-height: 1.1;
+		color: $color-pe-hover;
+		font-variant-numeric: tabular-nums;
+
+		@include media-up(md) {
+			font-size: 52px;
+		}
+	}
+
+	.stat-label {
+		font-size: 15px;
+		line-height: 1.4;
+		color: rgba(255, 255, 255, 0.72);
+		margin-top: 12px;
+		max-width: 20ch;
+	}
+</style>

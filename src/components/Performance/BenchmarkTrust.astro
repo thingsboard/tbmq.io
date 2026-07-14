@@ -1,0 +1,228 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const repoLinks = [
+	{
+		label: 'TBMQ on GitHub',
+		href: 'https://github.com/thingsboard/tbmq',
+		external: true,
+	},
+	{
+		label: 'Performance testing tool',
+		href: 'https://github.com/thingsboard/tb-mqtt-perf-tests',
+		external: true,
+	},
+	{
+		label: 'AWS cluster setup guide',
+		href: '/docs/mqtt-broker/pe/installation/cluster/aws-cluster-setup/',
+		external: false,
+	},
+];
+---
+
+<section id="benchmark-trust">
+	<div class="inner">
+		<div class="cost-panel">
+			<div class="cost-figure">
+				<span class="cost-eyebrow">Total cost of ownership</span>
+				<span class="cost-value">~$0.0003</span>
+				<span class="cost-unit">per device / month</span>
+			</div>
+			<div class="cost-body">
+				<h2>Internet scale, not internet-scale bills</h2>
+				<p>
+					The full 100-million-connection cluster runs on AWS for roughly <strong>$26,500 a month</strong>
+					— before Savings Plans and reserved-instance discounts. That is a cost efficiency few brokers
+					can match.
+				</p>
+				<p class="fine-print">
+					Illustrative AWS us-east-1 pricing. See the full breakdown in the
+					<a href="/docs/mqtt-broker/pe/reference/100m-connections-performance-test/">100M connections report</a>.
+				</p>
+			</div>
+		</div>
+
+		<div class="repro">
+			<div class="repro-text">
+				<h2>Every benchmark is open and reproducible</h2>
+				<p>
+					We publish the test scripts, load configurations, and exact hardware specs behind every
+					result. Run them against your own workload.
+				</p>
+			</div>
+			<div class="repro-links">
+				{
+					repoLinks.map((l) => (
+						<a
+							class="repro-link"
+							href={l.href}
+							target={l.external ? '_blank' : undefined}
+							rel={l.external ? 'noopener noreferrer' : undefined}
+						>
+							{l.label}
+							<Icon name={l.external ? 'tabler:arrow-up-right' : 'tabler:arrow-right'} class="link-icon" />
+						</a>
+					))
+				}
+			</div>
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#benchmark-trust {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-surface);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		gap: 72px;
+	}
+
+	.cost-panel {
+		display: flex;
+		flex-direction: column;
+		gap: 32px;
+		background-color: #00240f;
+		border-radius: 24px;
+		padding: 48px;
+
+		@include media-up(md) {
+			flex-direction: row;
+			align-items: center;
+			gap: 56px;
+			padding: 56px;
+		}
+	}
+
+	.cost-figure {
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 0;
+
+		.cost-eyebrow {
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			font-size: 13px;
+			font-weight: $font-weight-semibold;
+			color: $color-pe-hover;
+			margin-bottom: 14px;
+		}
+
+		.cost-value {
+			font-size: 64px;
+			font-weight: $font-weight-bold;
+			line-height: 1;
+			color: $color-white;
+			font-variant-numeric: tabular-nums;
+		}
+
+		.cost-unit {
+			font-size: 16px;
+			color: rgba(255, 255, 255, 0.7);
+			margin-top: 10px;
+		}
+	}
+
+	.cost-body {
+		h2 {
+			font-size: 30px;
+			font-weight: $font-weight-semibold;
+			line-height: 1.25;
+			color: $color-white;
+			margin: 0 0 16px;
+		}
+
+		p {
+			font-size: 17px;
+			line-height: 1.7;
+			color: rgba(255, 255, 255, 0.82);
+			margin: 0 0 12px;
+
+			strong {
+				color: $color-white;
+				font-weight: $font-weight-semibold;
+			}
+		}
+
+		.fine-print {
+			font-size: 14px;
+			color: rgba(255, 255, 255, 0.6);
+			margin: 0;
+
+			a {
+				color: $color-pe-hover;
+				text-decoration: none;
+
+				&:hover {
+					text-decoration: underline;
+				}
+			}
+		}
+	}
+
+	.repro {
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+
+		@include media-up(lg) {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+			gap: 48px;
+		}
+	}
+
+	.repro-text {
+		max-width: 620px;
+
+		h2 {
+			font-size: 28px;
+			font-weight: $font-weight-semibold;
+			line-height: 1.25;
+			color: $color-text-primary;
+			margin: 0 0 12px;
+		}
+
+		p {
+			font-size: 16px;
+			line-height: 1.7;
+			color: $color-text-secondary;
+			margin: 0;
+		}
+	}
+
+	.repro-links {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		flex-shrink: 0;
+	}
+
+	.repro-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.link-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>

@@ -1,0 +1,198 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+const benchmarks = [
+	{
+		kicker: 'Fan-in · Scale',
+		title: '100 million connections',
+		scenario:
+			'A 25-node cluster sustained 100M+ concurrent MQTT clients emulating smart trackers while processing 6M messages per second.',
+		metrics: [
+			['Throughput', '6M msg/sec'],
+			['QoS', '1 (at least once)'],
+			['Avg latency', '195 ms'],
+			['Connections', '100,000,500'],
+			['Delivery', '100%'],
+			['CPU', '45% utilization'],
+		],
+		href: '/docs/mqtt-broker/pe/reference/100m-connections-performance-test/',
+	},
+	{
+		kicker: 'Fan-out · Throughput',
+		title: '3M msg/sec, single node',
+		scenario:
+			'One 32-vCPU TBMQ node handled a 3M msg/sec fan-out — 100 publishers to 3,000 subscribers — with CPU headroom to spare.',
+		metrics: [
+			['Throughput', '3M msg/sec'],
+			['QoS', '0 (at most once)'],
+			['Avg latency', '7.4 ms'],
+			['Nodes', '1 (32 vCPU)'],
+			['CPU', '54% utilization'],
+			['Payload', '66 bytes'],
+		],
+		href: '/docs/mqtt-broker/pe/reference/3m-throughput-single-node-performance-test/',
+	},
+	{
+		kicker: 'Point-to-point · Delivery',
+		title: '1M msg/sec, guaranteed',
+		scenario:
+			'Persistent DEVICE clients scaled linearly from 200k to 1M msg/sec with QoS 1 guaranteed delivery, backed by Redis and Kafka.',
+		metrics: [
+			['Throughput', '1M msg/sec'],
+			['QoS', '1 (at least once)'],
+			['Avg latency', '75 ms'],
+			['Publish ACK', '8 ms'],
+			['Efficiency', '~8,900 msg/sec/core'],
+			['Scaling', 'Linear, phase by phase'],
+		],
+		href: '/docs/mqtt-broker/pe/reference/1m-throughput-p2p-performance-test/',
+	},
+];
+---
+
+<section id="benchmark-results">
+	<div class="inner">
+		<SectionHeader
+			title="Benchmarked at every scale"
+			subtitle="TBMQ is proven across the three core MQTT messaging patterns — fan-in, fan-out, and point-to-point."
+		/>
+		<div class="cards">
+			{
+				benchmarks.map((b) => (
+					<article class="card">
+						<p class="kicker">{b.kicker}</p>
+						<h3 class="title">{b.title}</h3>
+						<p class="scenario">{b.scenario}</p>
+						<dl class="metrics">
+							{b.metrics.map(([label, value]) => (
+								<div class="metric">
+									<dt>{label}</dt>
+									<dd>{value}</dd>
+								</div>
+							))}
+						</dl>
+						<a class="report-link" href={b.href}>
+							Read the full report
+							<Icon name="tabler:arrow-right" class="link-icon" />
+						</a>
+					</article>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#benchmark-results {
+		padding: $spacing-20 $spacing-6;
+		background-color: #f2f8f4;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1400px;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 28px;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		@include media-up(xl) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.card {
+		display: flex;
+		flex-direction: column;
+		background: $color-white;
+		border-radius: 24px;
+		padding: 36px;
+		box-shadow: 0 7px 32px 0 rgba(0, 0, 0, 0.08);
+	}
+
+	.kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		font-size: 13px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-link;
+		margin: 0 0 12px;
+	}
+
+	.title {
+		font-size: 24px;
+		font-weight: $font-weight-semibold;
+		line-height: 1.25;
+		color: $color-text-primary;
+		margin: 0 0 14px;
+	}
+
+	.scenario {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0 0 24px;
+		// Reserve 3 lines so the metric rows start at the same height across
+		// all three cards, keeping the columns aligned row-for-row.
+		min-height: 5.1em;
+	}
+
+	.metrics {
+		margin: 0 0 28px;
+		border-top: 1px solid $color-border;
+	}
+
+	.metric {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 16px;
+		padding: 11px 0;
+		border-bottom: 1px solid $color-border;
+
+		dt {
+			font-size: 14px;
+			color: $color-text-muted;
+			flex-shrink: 0;
+		}
+
+		dd {
+			margin: 0;
+			font-size: 15px;
+			font-weight: $font-weight-medium;
+			color: $color-text-primary;
+			text-align: right;
+			font-variant-numeric: tabular-nums;
+		}
+	}
+
+	.report-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: auto;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.link-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>

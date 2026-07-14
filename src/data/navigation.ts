@@ -29,6 +29,7 @@ export interface SubMenu {
 export const mainNavItems: NavItem[] = [
 	{ label: 'Live Demo', href: 'https://demo.tbmq.io/signup', target: '_blank' },
 	{ label: 'Docs', href: '/docs/mqtt-broker/pe/' },
+	{ label: 'Performance', href: '/performance/' },
 	{ label: 'Company', submenuId: 'nav-company' },
 	{ label: 'Blog', href: '/blog/' },
 ];

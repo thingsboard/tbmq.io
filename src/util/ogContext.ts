@@ -81,6 +81,7 @@ export const MARKETING_ALLOWLIST: ReadonlyArray<string> = [
 	'/community/*',
 	'/contact-us/',
 	'/installations/*',
+	'/performance/',
 	'/cookie-policy/',
 	'/company/*',
 ];

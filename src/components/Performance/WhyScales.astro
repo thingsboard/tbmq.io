@@ -1,0 +1,115 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+const points = [
+	{
+		title: 'Masterless cluster',
+		text: 'No node-to-node communication. Add nodes and throughput scales linearly — the 1M msg/sec P2P test proved it phase by phase.',
+	},
+	{
+		title: 'Kafka-backed durability',
+		text: 'Messages are persisted in Kafka, not just buffered in memory. The 100M test moved 11.4 billion messages with 100% delivery.',
+	},
+	{
+		title: 'Redis-powered delivery',
+		text: 'Persistent DEVICE clients get reliable, ordered delivery even after disconnects — without overloading the database.',
+	},
+	{
+		title: 'Non-blocking network core',
+		text: "A Netty-based, event-driven I/O layer holds millions of connections per node without a thread for each — the reason one cluster reaches 100M.",
+	},
+];
+---
+
+<section id="why-scales">
+	<div class="inner">
+		<SectionHeader
+			title="Why TBMQ scales"
+			subtitle="The numbers are a consequence of the architecture — not a lucky benchmark run."
+		/>
+		<div class="points">
+			{
+				points.map((p) => (
+					<div class="point">
+						<h3 class="point-title">{p.title}</h3>
+						<p class="point-text">{p.text}</p>
+					</div>
+				))
+			}
+		</div>
+		<a class="arch-link" href="/docs/mqtt-broker/pe/architecture/">
+			Explore the TBMQ architecture
+			<Icon name="tabler:arrow-right" class="link-icon" />
+		</a>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#why-scales {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-surface);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.points {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 40px 48px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.point {
+		border-left: 3px solid $color-pe-dark;
+		padding-left: 24px;
+	}
+
+	.point-title {
+		font-size: 22px;
+		font-weight: $font-weight-semibold;
+		line-height: 1.3;
+		color: $color-text-primary;
+		margin: 0 0 10px;
+	}
+
+	.point-text {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0;
+	}
+
+	.arch-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: 56px;
+		font-size: 18px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.link-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>

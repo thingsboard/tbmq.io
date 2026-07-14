@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BenchmarkHero from '@components/Performance/BenchmarkHero.astro';
+import BenchmarkResults from '@components/Performance/BenchmarkResults.astro';
+import WhyScales from '@components/Performance/WhyScales.astro';
+import BenchmarkTrust from '@components/Performance/BenchmarkTrust.astro';
+import BenchmarkCta from '@components/Performance/BenchmarkCta.astro';
+import { Products } from '@models/site.models';
+---
+
+<BaseLayout
+	forceLightTheme
+	title="TBMQ Performance Benchmarks - 100M MQTT Connections, 3M+ msg/sec"
+	description="See TBMQ benchmark results: 100M MQTT connections at 6M msg/sec, 3M+ messages/sec on a single node, and 1M msg/sec point-to-point — with single-digit-millisecond latency."
+	pageId="performance"
+	gitHubPlatform={Products.TBMQ}
+>
+	<main>
+		<BenchmarkHero />
+		<BenchmarkResults />
+		<WhyScales />
+		<BenchmarkTrust />
+		<BenchmarkCta />
+	</main>
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	:global(#performance) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+	}
+</style>
