@@ -1,0 +1,350 @@
+---
+const ports = [
+	{ label: 'MQTT (TCP)', value: '1883' },
+	{ label: 'MQTTS (TLS)', value: '8883' },
+	{ label: 'WS (WebSocket)', value: '8084' },
+	{ label: 'WSS (WebSocket TLS)', value: '443' },
+];
+
+const tabs = [
+	{
+		id: 'sub',
+		label: 'Subscribe',
+		code: 'mosquitto_sub -d -h demo.tbmq.io -p 1883 -q 1 \\\n  -t sensors/temperature -u demo',
+	},
+	{
+		id: 'pub',
+		label: 'Publish',
+		code: 'mosquitto_pub -d -h demo.tbmq.io -p 1883 -q 1 \\\n  -t sensors/temperature -m 25 -u demo',
+	},
+	{
+		id: 'tls',
+		label: 'Subscribe over TLS',
+		code: 'mosquitto_sub -d -h demo.tbmq.io -p 8883 -q 1 \\\n  -t sensors/temperature -u demo \\\n  --cafile tbmq-demo-root-ca.pem',
+	},
+];
+---
+
+<section id="ld-connect">
+	<div class="inner">
+		<p class="kicker">No signup required</p>
+		<h2>Connect a client in seconds</h2>
+		<p class="lead">
+			Point any MQTT client at the public demo broker. Use the connection details below — the
+			examples use <a href="https://mosquitto.org/download/" target="_blank" rel="noopener noreferrer">mosquitto</a>,
+			a widely used open-source CLI client.
+		</p>
+
+		<div class="grid">
+			<!-- Connection details card -->
+			<div class="conn-card">
+				<div class="conn-head">
+					<span class="conn-host">demo.tbmq.io</span>
+					<button class="copy" data-copy="demo.tbmq.io" aria-label="Copy host">Copy</button>
+				</div>
+				<div class="conn-rows">
+					{
+						ports.map((p) => (
+							<div class="conn-row">
+								<span class="conn-label">{p.label}</span>
+								<span class="conn-value">{p.value}</span>
+							</div>
+						))
+					}
+					<div class="conn-row">
+						<span class="conn-label">Username</span>
+						<span class="conn-value">demo</span>
+					</div>
+					<div class="conn-row">
+						<span class="conn-label">Password</span>
+						<span class="conn-value muted">None required</span>
+					</div>
+					<div class="conn-row">
+						<span class="conn-label">CA Certificate</span>
+						<a class="conn-value link" href="/resources/tbmq-demo-root-ca.pem" download="tbmq-demo-root-ca.pem">
+							tbmq-demo-root-ca.pem
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Tabbed CLI examples -->
+			<div class="tabs" data-ld-tabs>
+				<div class="tab-bar" role="tablist">
+					{
+						tabs.map((t, i) => (
+							<button
+								class:list={['tab', { active: i === 0 }]}
+								role="tab"
+								aria-selected={i === 0 ? 'true' : 'false'}
+								data-tab={t.id}
+							>
+								{t.label}
+							</button>
+						))
+					}
+				</div>
+				{
+					tabs.map((t, i) => (
+						<div class:list={['tab-panel', { active: i === 0 }]} data-panel={t.id}>
+							<pre><code>{t.code}</code></pre>
+							<button class="copy copy-code" data-copy={t.code} aria-label="Copy command">Copy</button>
+						</div>
+					))
+				}
+			</div>
+		</div>
+
+		<p class="safety">
+			<strong>Heads up:</strong> the demo is a shared public environment. All messages and topics
+			are visible to other users. Please do not transmit sensitive data.
+		</p>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#ld-connect {
+		background-color: $color-bg-light;
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1100px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		font-size: 14px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-dark;
+		margin: 0 0 16px;
+	}
+
+	h2 {
+		@include section-title;
+		margin: 0 0 20px;
+	}
+
+	.lead {
+		@include text-m;
+		color: $color-text-secondary;
+		max-width: 720px;
+		margin: 0 0 48px;
+
+		a {
+			color: $color-pe-dark;
+			text-decoration: underline;
+		}
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 24px;
+		width: 100%;
+		text-align: left;
+
+		@include media-up(lg) {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.conn-card,
+	.tabs {
+		background: $color-white;
+		border: 1px solid $color-border;
+		border-radius: 14px;
+		overflow: hidden;
+	}
+
+	.conn-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px 20px;
+		border-bottom: 1px solid $color-border;
+	}
+
+	.conn-host {
+		font-family: $font-family-mono;
+		font-weight: $font-weight-semibold;
+	}
+
+	.conn-rows {
+		padding: 8px 20px 16px;
+	}
+
+	.conn-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 8px 0;
+		border-bottom: 1px solid $color-border-light;
+
+		&:last-child {
+			border-bottom: none;
+		}
+	}
+
+	.conn-label {
+		@include text-s;
+		color: $color-text-muted;
+	}
+
+	.conn-value {
+		font-family: $font-family-mono;
+		font-size: 14px;
+		color: $color-text-primary;
+
+		&.muted {
+			font-family: inherit;
+			font-style: italic;
+			color: $color-text-muted;
+		}
+
+		&.link {
+			color: $color-pe-dark;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+
+	.tab-bar {
+		display: flex;
+		border-bottom: 1px solid $color-border;
+	}
+
+	.tab {
+		flex: 1;
+		padding: 12px 8px;
+		background: transparent;
+		border: none;
+		border-bottom: 2px solid transparent;
+		font-size: 14px;
+		font-weight: $font-weight-medium;
+		color: $color-text-muted;
+		cursor: pointer;
+		transition: 0.2s;
+
+		&.active {
+			color: $color-pe-dark;
+			border-bottom-color: $color-pe-dark;
+		}
+	}
+
+	.tab-panel {
+		display: none;
+		position: relative;
+
+		&.active {
+			display: block;
+		}
+
+		pre {
+			margin: 0;
+			padding: 20px;
+			overflow-x: auto;
+		}
+
+		code {
+			font-family: $font-family-mono;
+			font-size: 13px;
+			line-height: 1.6;
+			white-space: pre;
+			color: $color-text-primary;
+		}
+	}
+
+	.copy {
+		border: 1px solid $color-border;
+		background: $color-white;
+		border-radius: 6px;
+		padding: 4px 10px;
+		font-size: 12px;
+		color: $color-text-secondary;
+		cursor: pointer;
+		transition: 0.2s;
+
+		&:hover {
+			border-color: $color-pe-dark;
+			color: $color-pe-dark;
+		}
+
+		&.copied {
+			color: $color-pe-dark;
+			border-color: $color-pe-dark;
+		}
+	}
+
+	.copy-code {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+	}
+
+	.safety {
+		@include text-s;
+		color: $color-text-secondary;
+		background: rgba(255, 196, 0, 0.1);
+		border: 1px solid rgba(255, 196, 0, 0.35);
+		border-radius: 10px;
+		padding: 14px 18px;
+		margin: 32px 0 0;
+		max-width: 760px;
+		text-align: left;
+	}
+</style>
+
+<script>
+	// Tab switcher
+	document.querySelectorAll<HTMLElement>('[data-ld-tabs]').forEach((root) => {
+		const tabs = root.querySelectorAll<HTMLButtonElement>('.tab');
+		const panels = root.querySelectorAll<HTMLElement>('.tab-panel');
+		tabs.forEach((tab) => {
+			tab.addEventListener('click', () => {
+				const id = tab.dataset.tab;
+				tabs.forEach((t) => {
+					const on = t === tab;
+					t.classList.toggle('active', on);
+					t.setAttribute('aria-selected', on ? 'true' : 'false');
+				});
+				panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === id));
+			});
+		});
+	});
+
+	// Copy-to-clipboard
+	document.querySelectorAll<HTMLButtonElement>('.copy').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			navigator.clipboard.writeText(btn.dataset.copy ?? '').then(() => {
+				const original = btn.textContent;
+				btn.textContent = 'Copied ✓';
+				btn.classList.add('copied');
+				setTimeout(() => {
+					btn.textContent = original;
+					btn.classList.remove('copied');
+				}, 1500);
+			});
+		});
+	});
+
+	// Live status pinger — updates the hero pill created in LiveDemoHero
+	const statusEl = document.querySelector<HTMLElement>('[data-ld-status]');
+	if (statusEl) {
+		fetch('https://demo.tbmq.io', { mode: 'no-cors' })
+			.then(() => statusEl.classList.add('online'))
+			.catch(() => statusEl.classList.add('offline'));
+	}
+</script>
