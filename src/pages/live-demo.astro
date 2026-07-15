@@ -5,14 +5,27 @@ import DashboardTour from '@components/LiveDemo/DashboardTour.astro';
 import ConnectCard from '@components/LiveDemo/ConnectCard.astro';
 import ProductionCta from '@components/LiveDemo/ProductionCta.astro';
 import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+
+const title = 'Free Public MQTT Broker – Live Online Demo';
+const description =
+	'Try TBMQ, the open-source MQTT broker, online. Explore the dashboard or connect any MQTT client to our free public broker at demo.tbmq.io — no signup required.';
+const jsonLd = marketingJsonLd({
+	path: '/live-demo/',
+	name: title,
+	description,
+	breadcrumb: 'Live Demo',
+});
 ---
 
 <BaseLayout
 	forceLightTheme
-	title="TBMQ Live Demo - Try the Open-Source MQTT Broker Online"
-	description="Try TBMQ instantly: explore the management dashboard with a free demo account, or connect any MQTT client to our free public MQTT broker at demo.tbmq.io — no signup required."
+	title={title}
+	description={description}
 	pageId="live-demo"
 	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt="TBMQ live demo — try the open-source MQTT broker online"
 >
 	<main>
 		<LiveDemoHero />

@@ -1,4 +1,4 @@
-export const SITE_NAME = 'ThingsBoard';
+export const SITE_NAME = 'TBMQ';
 export const DOCS_SUFFIX = 'Docs';
 export const TITLE_SEPARATOR = '|';
 
