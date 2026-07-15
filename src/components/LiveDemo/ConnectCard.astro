@@ -117,7 +117,9 @@ const tabs = [
 		</div>
 
 		<div class="safety">
-			<Icon name="tabler:alert-triangle" class="safety-icon" />
+			<span class="safety-icon-wrap">
+				<Icon name="tabler:alert-triangle" class="safety-icon" />
+			</span>
 			<p>
 				<strong>Heads up:</strong> the demo is a shared public environment. All messages and topics are visible to other users.
 				Please do not transmit sensitive data.
@@ -342,14 +344,20 @@ const tabs = [
 		}
 	}
 
+	// The wrapper is exactly one text line tall (text-s line-height) and centers
+	// the icon, so with the container's flex-start alignment the icon sits level
+	// with the first line ("Heads up:") — no fragile pixel nudge needed.
+	.safety-icon-wrap {
+		display: flex;
+		align-items: center;
+		height: 24px;
+		flex-shrink: 0;
+	}
+
 	:global(.safety-icon) {
 		width: 20px;
 		height: 20px;
 		color: #f5a300;
-		flex-shrink: 0;
-		// Center the 20px icon within the first line's 24px line-height (text-s)
-		// so it sits level with the "Heads up:" text.
-		margin-top: 2px;
 	}
 </style>
 
