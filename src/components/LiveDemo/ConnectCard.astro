@@ -76,6 +76,8 @@ const tabs = [
 							<button
 								class:list={['tab', { active: i === 0 }]}
 								role="tab"
+								id={`ld-tab-${t.id}`}
+								aria-controls={`ld-panel-${t.id}`}
 								aria-selected={i === 0 ? 'true' : 'false'}
 								data-tab={t.id}
 							>
@@ -86,7 +88,14 @@ const tabs = [
 				</div>
 				{
 					tabs.map((t, i) => (
-						<div class:list={['tab-panel', { active: i === 0 }]} data-panel={t.id}>
+						<div
+							class:list={['tab-panel', { active: i === 0 }]}
+							role="tabpanel"
+							id={`ld-panel-${t.id}`}
+							aria-labelledby={`ld-tab-${t.id}`}
+							tabindex="0"
+							data-panel={t.id}
+						>
 							<pre><code>{t.code}</code></pre>
 							<button class="copy copy-code" data-copy={t.code} aria-label="Copy command">Copy</button>
 						</div>
@@ -336,7 +345,7 @@ const tabs = [
 					btn.textContent = original;
 					btn.classList.remove('copied');
 				}, 1500);
-			});
+			}).catch(() => {});
 		});
 	});
 
