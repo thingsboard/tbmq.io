@@ -1,0 +1,136 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const cards = [
+	{
+		icon: 'tabler:server',
+		title: 'TBMQ Professional',
+		text: 'Deploy on your own infrastructure with full enterprise controls — RBAC, OAuth 2.0, White Labeling, and advanced security at any scale.',
+		cta: 'Start free trial',
+		href: '/docs/mqtt-broker/pe/installation/',
+	},
+	{
+		icon: 'tabler:cloud',
+		title: 'TBMQ Private Cloud',
+		text: 'Fully managed by the ThingsBoard team, from deployment to scaling. No infrastructure to run, no upgrades to plan — just connect.',
+		cta: 'Learn more',
+		href: '/pricing/?section=tbmq-options&product=tbmq-private-cloud',
+	},
+];
+---
+
+<section id="ld-production">
+	<div class="inner">
+		<h2>Ready for production?</h2>
+		<p class="lead">When you've seen enough, take TBMQ to production your way.</p>
+		<div class="grid">
+			{
+				cards.map((c) => (
+					<div class="prod-card">
+						<Icon name={c.icon} class="prod-icon" />
+						<h3>{c.title}</h3>
+						<p>{c.text}</p>
+						<a class="btn" href={c.href}>
+							{c.cta}
+							<Icon name="tabler:arrow-right" class="btn-icon" />
+						</a>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#ld-production {
+		background-color: $color-white;
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	h2 {
+		@include section-title;
+		margin: 0 0 16px;
+	}
+
+	.lead {
+		@include text-m;
+		color: $color-text-secondary;
+		margin: 0 0 48px;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 24px;
+		width: 100%;
+		text-align: left;
+
+		@include media-up(md) {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.prod-card {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 32px;
+		border: 1px solid $color-border;
+		border-radius: 14px;
+		background: $color-white;
+
+		h3 {
+			@include card-title;
+			margin: 16px 0 12px;
+		}
+
+		p {
+			@include text-s;
+			color: $color-text-secondary;
+			margin: 0 0 24px;
+			flex-grow: 1;
+		}
+	}
+
+	:global(.prod-icon) {
+		width: 32px;
+		height: 32px;
+		color: $color-pe-dark;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 24px;
+		line-height: 42px;
+		border-radius: 8px;
+		font-size: 15px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		background-color: $color-pe-dark;
+		color: $color-white;
+		transition: 0.3s;
+
+		&:hover {
+			background-color: $color-pe-link;
+		}
+	}
+
+	:global(.btn-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+</style>
