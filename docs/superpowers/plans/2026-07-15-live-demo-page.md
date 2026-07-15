@@ -1016,6 +1016,12 @@ const cards = [
 			background-color: $color-pe-link;
 		}
 	}
+
+	:global(.btn-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
 </style>
 ```
 
