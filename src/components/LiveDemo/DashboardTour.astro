@@ -1,0 +1,152 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const highlights = [
+	{
+		icon: 'tabler:users',
+		title: 'Client sessions',
+		text: 'Inspect connected clients, their subscriptions, and session state in real time.',
+	},
+	{
+		icon: 'tabler:share',
+		title: 'Shared subscriptions',
+		text: 'See how TBMQ load-balances a topic across a group of consuming applications.',
+	},
+	{
+		icon: 'tabler:chart-line',
+		title: 'Monitoring',
+		text: 'Live throughput, connection, and latency metrics on the built-in dashboards.',
+	},
+];
+---
+
+<section id="ld-dashboard">
+	<div class="inner">
+		<p class="kicker">Explore the dashboard</p>
+		<h2>See the full management UI</h2>
+		<p class="lead">
+			Create a free demo account to log in to the TBMQ web interface and explore how the broker
+			is administered, monitored, and scaled — the same UI you get in production.
+		</p>
+		<div class="grid">
+			{
+				highlights.map((h) => (
+					<div class="feature">
+						<Icon name={h.icon} class="feature-icon" />
+						<h3>{h.title}</h3>
+						<p>{h.text}</p>
+					</div>
+				))
+			}
+		</div>
+		<a class="btn btn-primary" href="https://demo.tbmq.io/signup" target="_blank" rel="noopener noreferrer">
+			Create free demo account
+			<Icon name="tabler:arrow-up-right" class="btn-icon" />
+		</a>
+		<p class="note">A free account is required to access the web dashboard.</p>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#ld-dashboard {
+		background-color: $color-white;
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		font-size: 14px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-dark;
+		margin: 0 0 16px;
+	}
+
+	h2 {
+		@include section-title;
+		margin: 0 0 20px;
+		text-wrap: balance;
+	}
+
+	.lead {
+		@include text-m;
+		color: $color-text-secondary;
+		max-width: 680px;
+		margin: 0 0 56px;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 32px;
+		width: 100%;
+		margin-bottom: 56px;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.feature {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+
+		h3 {
+			@include card-title;
+			margin: 16px 0 8px;
+		}
+
+		p {
+			@include text-s;
+			color: $color-text-secondary;
+			max-width: 30ch;
+		}
+	}
+
+	:global(.feature-icon) {
+		width: 32px;
+		height: 32px;
+		color: $color-pe-dark;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 28px;
+		line-height: 44px;
+		border-radius: 8px;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		transition: 0.3s;
+
+		&.btn-primary {
+			background-color: $color-pe-dark;
+			color: $color-white;
+
+			&:hover {
+				background-color: $color-pe-link;
+			}
+		}
+	}
+
+	.note {
+		@include text-s;
+		color: $color-text-muted;
+		margin: 16px 0 0;
+	}
+</style>
