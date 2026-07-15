@@ -30,9 +30,11 @@ const tabs = [
 		<p class="kicker">No signup required</p>
 		<h2>Connect a client in seconds</h2>
 		<p class="lead">
-			Point any MQTT client at the public demo broker. Use the connection details below — the
-			examples use <a href="https://mosquitto.org/download/" target="_blank" rel="noopener noreferrer">mosquitto</a>,
-			a widely used open-source CLI client.
+			Point any MQTT client at the public demo broker. Use the connection details below — the examples use <a
+				href="https://mosquitto.org/download/"
+				target="_blank"
+				rel="noopener noreferrer">mosquitto</a
+			>, a widely used open-source CLI client.
 		</p>
 
 		<div class="grid">
@@ -96,8 +98,12 @@ const tabs = [
 							tabindex="0"
 							data-panel={t.id}
 						>
-							<pre><code>{t.code}</code></pre>
-							<button class="copy copy-code" data-copy={t.code} aria-label="Copy command">Copy</button>
+							<pre>
+								<code>{t.code}</code>
+							</pre>
+							<button class="copy copy-code" data-copy={t.code} aria-label="Copy command">
+								Copy
+							</button>
 						</div>
 					))
 				}
@@ -105,8 +111,8 @@ const tabs = [
 		</div>
 
 		<p class="safety">
-			<strong>Heads up:</strong> the demo is a shared public environment. All messages and topics
-			are visible to other users. Please do not transmit sensitive data.
+			<strong>Heads up:</strong> the demo is a shared public environment. All messages and topics are visible to other users.
+			Please do not transmit sensitive data.
 		</p>
 	</div>
 </section>
@@ -337,15 +343,18 @@ const tabs = [
 	// Copy-to-clipboard
 	document.querySelectorAll<HTMLButtonElement>('.copy').forEach((btn) => {
 		btn.addEventListener('click', () => {
-			navigator.clipboard.writeText(btn.dataset.copy ?? '').then(() => {
-				const original = btn.textContent;
-				btn.textContent = 'Copied ✓';
-				btn.classList.add('copied');
-				setTimeout(() => {
-					btn.textContent = original;
-					btn.classList.remove('copied');
-				}, 1500);
-			}).catch(() => {});
+			navigator.clipboard
+				.writeText(btn.dataset.copy ?? '')
+				.then(() => {
+					const original = btn.textContent;
+					btn.textContent = 'Copied ✓';
+					btn.classList.add('copied');
+					setTimeout(() => {
+						btn.textContent = original;
+						btn.classList.remove('copied');
+					}, 1500);
+				})
+				.catch(() => {});
 		});
 	});
 
