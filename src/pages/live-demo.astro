@@ -28,5 +28,16 @@ import { Products } from '@models/site.models';
 	:global(#live-demo) {
 		--tb-main-color: #{$color-pe};
 		--tb-main-color-hover: #{$color-pe-dark};
+
+		// Offset in-page anchor jumps (e.g. the hero's "Connect a client ↓")
+		// so the target section clears the fixed header instead of hiding under it.
+		scroll-padding-top: calc(#{$header-height} + 24px);
+	}
+
+	// Animate in-page anchor scrolls, but honor users who prefer reduced motion.
+	@media (prefers-reduced-motion: no-preference) {
+		:global(#live-demo) {
+			scroll-behavior: smooth;
+		}
 	}
 </style>
