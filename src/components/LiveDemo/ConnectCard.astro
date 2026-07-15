@@ -1,4 +1,6 @@
 ---
+import { Icon } from 'astro-icon/components';
+
 const ports = [
 	{ label: 'MQTT (TCP)', value: '1883' },
 	{ label: 'MQTTS (TLS)', value: '8883' },
@@ -19,8 +21,13 @@ const tabs = [
 	},
 	{
 		id: 'tls',
-		label: 'Subscribe over TLS',
+		label: 'Subscribe (TLS)',
 		code: 'mosquitto_sub -d -h demo.tbmq.io -p 8883 -q 1 \\\n  -t sensors/temperature -u demo \\\n  --cafile tbmq-demo-root-ca.pem',
+	},
+	{
+		id: 'pubtls',
+		label: 'Publish (TLS)',
+		code: 'mosquitto_pub -d -h demo.tbmq.io -p 8883 -q 1 \\\n  -t sensors/temperature -m 25 -u demo \\\n  --cafile tbmq-demo-root-ca.pem',
 	},
 ];
 ---
@@ -109,10 +116,13 @@ const tabs = [
 			</div>
 		</div>
 
-		<p class="safety">
-			<strong>Heads up:</strong> the demo is a shared public environment. All messages and topics are visible to other users.
-			Please do not transmit sensitive data.
-		</p>
+		<div class="safety">
+			<Icon name="tabler:alert-triangle" class="safety-icon" />
+			<p>
+				<strong>Heads up:</strong> the demo is a shared public environment. All messages and topics are visible to other users.
+				Please do not transmit sensitive data.
+			</p>
+		</div>
 	</div>
 </section>
 
@@ -309,15 +319,35 @@ const tabs = [
 	}
 
 	.safety {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
 		@include text-s;
-		color: $color-text-secondary;
-		background: rgba(255, 196, 0, 0.1);
-		border: 1px solid rgba(255, 196, 0, 0.35);
+		color: $color-text-primary;
+		background: rgba(255, 171, 0, 0.14);
+		border: 1px solid rgba(255, 171, 0, 0.5);
+		border-left: 4px solid #f5a300;
 		border-radius: 10px;
-		padding: 14px 18px;
+		padding: 16px 20px;
 		margin: 32px 0 0;
 		max-width: 760px;
 		text-align: left;
+
+		p {
+			margin: 0;
+		}
+
+		strong {
+			color: #b26a00;
+		}
+	}
+
+	:global(.safety-icon) {
+		width: 20px;
+		height: 20px;
+		color: #f5a300;
+		flex-shrink: 0;
+		margin-top: 1px;
 	}
 </style>
 
