@@ -147,23 +147,4 @@ import { Icon } from 'astro-icon/components';
 	.status.offline .dot {
 		background: #ff453a;
 	}
-
-	.status.online .status-text::after {
-		content: 'Online';
-	}
-
-	.status.offline .status-text::after {
-		content: 'Offline';
-	}
-
-	// When resolved, hide the "Checking…" text and show the ::after label
-	.status.online .status-text,
-	.status.offline .status-text {
-		font-size: 0;
-	}
-
-	.status.online .status-text::after,
-	.status.offline .status-text::after {
-		font-size: 14px;
-	}
 </style>
