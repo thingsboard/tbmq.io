@@ -1,0 +1,26 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import LiveDemoHero from '@components/LiveDemo/LiveDemoHero.astro';
+import { Products } from '@models/site.models';
+---
+
+<BaseLayout
+	forceLightTheme
+	title="TBMQ Live Demo - Try the Open-Source MQTT Broker Online"
+	description="Try TBMQ instantly: explore the management dashboard with a free demo account, or connect any MQTT client to our public broker at demo.tbmq.io — no signup required."
+	pageId="live-demo"
+	gitHubPlatform={Products.TBMQ}
+>
+	<main>
+		<LiveDemoHero />
+	</main>
+</BaseLayout>
+
+<style lang="scss">
+	@use '../styles/variables' as *;
+
+	:global(#live-demo) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+	}
+</style>

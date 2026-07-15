@@ -1,0 +1,169 @@
+---
+import { Icon } from 'astro-icon/components';
+---
+
+<section id="ld-hero">
+	<div class="inner">
+		<p class="eyebrow">Live demo</p>
+		<h1>Try TBMQ online</h1>
+		<p class="subtitle">
+			Explore the TBMQ management dashboard with a free demo account, or connect any MQTT
+			client to our public broker in seconds — no signup required.
+		</p>
+		<div class="buttons">
+			<a class="btn btn-white" href="https://demo.tbmq.io/signup" target="_blank" rel="noopener noreferrer">
+				Create free demo account
+				<Icon name="tabler:arrow-up-right" class="btn-icon" />
+			</a>
+			<a class="btn btn-outline" href="#ld-connect">Or connect a client ↓</a>
+		</div>
+		<div class="status" data-ld-status aria-live="polite">
+			<span class="dot" aria-hidden="true"></span>
+			<span class="status-text">Checking demo status…</span>
+			<span class="status-host">demo.tbmq.io</span>
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#ld-hero {
+		background-color: #00240f;
+		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.eyebrow {
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		font-size: 14px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-hover;
+		margin: 0 0 20px;
+	}
+
+	h1 {
+		@include page-title;
+		color: $color-white;
+		margin: 0 0 24px;
+		text-wrap: balance;
+	}
+
+	.subtitle {
+		font-size: 18px;
+		line-height: 1.7;
+		color: rgba(255, 255, 255, 0.8);
+		margin: 0 0 40px;
+		max-width: 680px;
+
+		@include media-up(md) {
+			font-size: 20px;
+		}
+	}
+
+	.buttons {
+		display: flex;
+		gap: 20px;
+		flex-wrap: wrap;
+		justify-content: center;
+		margin-bottom: 48px;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 28px;
+		line-height: 44px;
+		border-radius: 8px;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		transition: 0.3s;
+
+		&.btn-white {
+			background-color: $color-white;
+			color: $color-pe-link;
+
+			&:hover {
+				background-color: #e8e8e8;
+			}
+		}
+
+		&.btn-outline {
+			border: 1px solid rgba(255, 255, 255, 0.6);
+			color: $color-white;
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+				border-color: $color-white;
+			}
+		}
+	}
+
+	:global(.btn-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+
+	.status {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 16px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.06);
+		font-size: 14px;
+		color: rgba(255, 255, 255, 0.75);
+	}
+
+	.status-host {
+		font-family: $font-family-mono;
+		color: $color-white;
+	}
+
+	.dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: #9aa; // neutral until pinger resolves
+		flex-shrink: 0;
+	}
+
+	.status.online .dot {
+		background: #30d158;
+	}
+
+	.status.offline .dot {
+		background: #ff453a;
+	}
+
+	.status.online .status-text::after {
+		content: 'Online';
+	}
+
+	.status.offline .status-text::after {
+		content: 'Offline';
+	}
+
+	// When resolved, hide the "Checking…" text and show the ::after label
+	.status.online .status-text,
+	.status.offline .status-text {
+		font-size: 0;
+	}
+
+	.status.online .status-text::after,
+	.status.offline .status-text::after {
+		font-size: 14px;
+	}
+</style>
