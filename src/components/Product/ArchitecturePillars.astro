@@ -1,0 +1,132 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import SmartImage from '@components/SmartImage.astro';
+import { Icon } from 'astro-icon/components';
+
+const pillars = [
+	{
+		title: 'No message loss by design',
+		text: "TBMQ doesn't acknowledge a publish until Kafka has durably stored it. If a node fails mid-flight, another resumes from Kafka — nothing is lost between acknowledgment and delivery.",
+	},
+	{
+		title: 'Subscription matching at any scale',
+		text: 'Subscriptions live in an in-memory trie. Lookup time depends on topic length, not subscriber count — a million subscriptions match as fast as a thousand.',
+	},
+	{
+		title: 'Separate paths for publishers and subscribers',
+		text: 'DEVICE clients (Redis-backed) and APPLICATION clients (dedicated Kafka topic + consumer thread) are processed independently, so a device spike never delays application delivery.',
+	},
+	{
+		title: 'Symmetric cluster, no coordinator',
+		text: 'Every node is identical — no master, no leader election. State is shared through Kafka, so new nodes join and rebalance with zero downtime.',
+	},
+];
+---
+
+<section id="architecture-pillars">
+	<div class="inner">
+		<SectionHeader
+			title="Architecture that backs the numbers"
+			subtitle="TBMQ's throughput and resilience are consequences of its design — not a lucky benchmark run."
+		/>
+		<SmartImage
+			class="diagram"
+			src="/src/assets/images/docs/mqtt-broker/architecture/tbmq-architecture.png"
+			alt="TBMQ architecture: devices and applications connect through Netty to the Message Dispatcher Service, backed by Kafka, an actor system, and an in-memory subscription trie."
+			width={1504}
+			height={648}
+			loading="lazy"
+		/>
+		<div class="pillars">
+			{
+				pillars.map((p) => (
+					<div class="pillar">
+						<h3 class="pillar-title">{p.title}</h3>
+						<p class="pillar-text">{p.text}</p>
+					</div>
+				))
+			}
+		</div>
+		<a class="arch-link" href="/docs/mqtt-broker/architecture/">
+			See the full architecture
+			<Icon name="tabler:arrow-right" class="link-icon" />
+		</a>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#architecture-pillars {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-surface);
+		scroll-margin-top: calc(#{$header-height} + 24px);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	:global(.diagram) {
+		width: 100%;
+		max-width: 1000px;
+		height: auto;
+		margin-bottom: 56px;
+	}
+
+	.pillars {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 40px 48px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.pillar {
+		border-left: 3px solid $color-pe-dark;
+		padding-left: 24px;
+	}
+
+	.pillar-title {
+		font-size: 22px;
+		font-weight: $font-weight-semibold;
+		line-height: 1.3;
+		color: $color-text-primary;
+		margin: 0 0 10px;
+	}
+
+	.pillar-text {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0;
+	}
+
+	.arch-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: 56px;
+		font-size: 18px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.link-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>
