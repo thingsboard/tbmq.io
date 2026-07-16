@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import ProductHero from '@components/Product/ProductHero.astro';
+import TrafficPatterns from '@components/Product/TrafficPatterns.astro';
 import { Products } from '@models/site.models';
 import { marketingJsonLd } from '~/util/structuredData';
 
@@ -26,6 +27,7 @@ const jsonLd = marketingJsonLd({
 >
 	<main>
 		<ProductHero />
+		<TrafficPatterns />
 	</main>
 </BaseLayout>
 

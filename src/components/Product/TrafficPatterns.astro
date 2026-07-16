@@ -1,0 +1,109 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+const patterns = [
+	{
+		icon: 'tabler:arrow-merge',
+		title: 'Fan-in',
+		text: 'Millions of devices publish telemetry continuously. A few backend applications must consume every message in order — even during spikes or partial outages.',
+	},
+	{
+		icon: 'tabler:broadcast',
+		title: 'Fan-out',
+		text: 'A single update or command must reach many subscribed devices at once. One message in, many deliveries out — and every subscriber receives it.',
+	},
+	{
+		icon: 'tabler:arrows-right-left',
+		title: 'Point-to-point',
+		text: 'A publisher targets one subscriber through a unique topic. Command-response and remote-control flows need low-latency, targeted delivery.',
+	},
+];
+---
+
+<section id="traffic-patterns">
+	<div class="inner">
+		<SectionHeader
+			title="Purpose-built for IoT traffic"
+			subtitle="IoT traffic isn't uniform. Most brokers treat every message the same. TBMQ gives each pattern its own processing path."
+		/>
+		<div class="cards">
+			{
+				patterns.map((p) => (
+					<div class="card">
+						<span class="card-icon">
+							<Icon name={p.icon} />
+						</span>
+						<h3 class="card-title">{p.title}</h3>
+						<p class="card-text">{p.text}</p>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#traffic-patterns {
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 32px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.card {
+		background: var(--color-bg-surface);
+		border-radius: 16px;
+		padding: 32px;
+		box-shadow: 0 7px 32px 0 rgba(0, 0, 0, 0.08);
+	}
+
+	.card-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: 14px;
+		border: 1px solid $color-pe;
+		color: $color-pe;
+		margin-bottom: 20px;
+
+		:global(svg) {
+			width: 28px;
+			height: 28px;
+		}
+	}
+
+	.card-title {
+		font-size: 22px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 12px;
+	}
+
+	.card-text {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0;
+	}
+</style>
