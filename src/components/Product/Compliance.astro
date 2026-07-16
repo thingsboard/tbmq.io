@@ -1,0 +1,130 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+const versions = ['MQTT 3.1', 'MQTT 3.1.1', 'MQTT 5.0'];
+
+const capabilities = [
+	'Multi-node clustering',
+	'X.509, JWT, and HTTP authentication',
+	'Access control lists (ACL)',
+	'REST API for sessions & subscriptions',
+	'Rate limiting for message processing',
+	'Cluster and client metrics monitoring',
+	'MQTT over WebSocket client',
+	'HTTP, MQTT, and Kafka integrations',
+	'MQTT channel backpressure',
+	'Blocked & unauthorized client management',
+];
+---
+
+<section id="compliance">
+	<div class="inner">
+		<SectionHeader
+			title="Full MQTT compliance"
+			subtitle="Fully compliant with the MQTT protocol in both single-node and cluster deployments."
+		/>
+		<div class="versions">
+			{versions.map((v) => <span class="version-badge">{v}</span>)}
+		</div>
+		<ul class="capabilities">
+			{
+				capabilities.map((c) => (
+					<li>
+						<Icon name="tabler:check" class="check-icon" />
+						<span>{c}</span>
+					</li>
+				))
+			}
+		</ul>
+		<p class="pe-note">
+			TBMQ Professional Edition adds Single Sign-On (SSO), Role-Based Access Control (RBAC), and
+			white labeling. <a href="/#comparison-features">Compare editions</a>.
+		</p>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#compliance {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-surface);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.versions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+		justify-content: center;
+		margin-bottom: 48px;
+	}
+
+	.version-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 8px 18px;
+		border-radius: 999px;
+		border: 1px solid $color-pe;
+		color: $color-pe-link;
+		font-size: 15px;
+		font-weight: $font-weight-medium;
+	}
+
+	.capabilities {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 16px 40px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		li {
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+			font-size: 16px;
+			line-height: 1.5;
+			color: $color-text-secondary;
+		}
+	}
+
+	:global(.check-icon) {
+		width: 20px;
+		height: 20px;
+		color: $color-pe;
+		flex-shrink: 0;
+		margin-top: 2px;
+	}
+
+	.pe-note {
+		margin: 48px 0 0;
+		font-size: 15px;
+		line-height: 1.6;
+		color: $color-text-secondary;
+		text-align: center;
+
+		a {
+			color: $color-pe-link;
+			font-weight: $font-weight-medium;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+</style>

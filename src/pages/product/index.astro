@@ -4,6 +4,7 @@ import ProductHero from '@components/Product/ProductHero.astro';
 import TrafficPatterns from '@components/Product/TrafficPatterns.astro';
 import ArchitecturePillars from '@components/Product/ArchitecturePillars.astro';
 import BuiltOn from '@components/Product/BuiltOn.astro';
+import Compliance from '@components/Product/Compliance.astro';
 import { Products } from '@models/site.models';
 import { marketingJsonLd } from '~/util/structuredData';
 
@@ -32,6 +33,7 @@ const jsonLd = marketingJsonLd({
 		<TrafficPatterns />
 		<ArchitecturePillars />
 		<BuiltOn />
+		<Compliance />
 	</main>
 </BaseLayout>
 
