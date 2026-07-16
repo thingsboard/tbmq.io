@@ -27,6 +27,7 @@ export interface SubMenu {
 
 // Main navigation items
 export const mainNavItems: NavItem[] = [
+	{ label: 'Product', href: '/product/' },
 	{ label: 'Live Demo', href: '/live-demo/' },
 	{ label: 'Performance', href: '/performance/' },
 	{ label: 'Company', submenuId: 'nav-company' },
