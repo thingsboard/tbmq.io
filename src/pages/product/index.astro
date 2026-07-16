@@ -1,0 +1,39 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import ProductHero from '@components/Product/ProductHero.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+
+const title = 'Distributed MQTT Broker Architecture – Built to Scale';
+const description =
+	'TBMQ is a distributed open-source MQTT broker built to scale: Kafka-backed durability, in-memory subscription matching, and a masterless, zero-loss cluster.';
+const jsonLd = marketingJsonLd({
+	path: '/product/',
+	name: title,
+	description,
+	breadcrumb: 'Product',
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="product"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt="TBMQ distributed MQTT broker architecture — built to scale to 100M connections"
+>
+	<main>
+		<ProductHero />
+	</main>
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	:global(#product) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+	}
+</style>
