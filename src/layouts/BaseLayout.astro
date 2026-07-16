@@ -6,7 +6,8 @@ import UtmTracker from '../components/UtmTracker.astro';
 import GtmNoscript from '../components/GtmNoscript.astro';
 import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
 import SeoMeta from '../components/SeoMeta.astro';
-import ThemeProvider from '@astrojs/starlight/components/ThemeProvider.astro';
+import ThemeProvider from '../components/starlight/ThemeProvider.astro';
+import { Icon } from '@astrojs/starlight/components';
 import { formatMarketingTitle } from '~/consts';
 import { getSectionFromPath } from '~/util/path-utils';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
@@ -65,6 +66,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const section = getSectionFromPath(Astro.url.pathname);
 const pageTitle = customTitle ? title : formatMarketingTitle(title, section);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
+
+// Bridge for the Starlight `ThemeProvider` override (rendered in <head> below):
+// `bsl` marks a BaseLayout page, `bslForceLight` locks the light theme and skips
+// the theme switcher. Matches the upstream ThingsBoard site so the override file
+// stays mergeable.
+const locals = Astro.locals as unknown as Record<string, unknown>;
+locals.bsl = true;
+locals.bslForceLight = forceLightTheme;
 ---
 
 <!doctype html>
@@ -112,6 +121,21 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 
 	<body>
 		<GtmNoscript />
+
+		{/* Theme-switcher icon palette (light/dark/auto) that `StarlightThemeProvider.updatePickers()`
+		    clones into the theme-select label icon. Rendered here at the top of <body> instead of
+		    <head> because a warmed `astro dev` traps hoisted <style> blocks inside any <head>
+		    <template>, unstyling the page (https://github.com/withastro/astro/issues/16994).
+		    Only needed where the switcher exists (not on forceLightTheme pages). */}
+		{
+			!forceLightTheme && (
+				<template id="theme-icons">
+					<Icon name="sun" class="light" />
+					<Icon name="moon" class="dark" />
+					<Icon name="laptop" class="auto" />
+				</template>
+			)
+		}
 
 		{/* Sticky unit: header pins on scroll. See `.tb-topbar` in HeaderContent. */}
 		<div class="tb-topbar">
