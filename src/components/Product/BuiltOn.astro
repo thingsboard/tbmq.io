@@ -1,0 +1,81 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+
+const foundations = [
+	{ name: 'Apache Kafka', text: 'Durable message storage and distribution across the cluster.' },
+	{ name: 'Netty', text: 'Non-blocking, event-driven network transport for millions of connections per node.' },
+	{ name: 'Actor system', text: 'Isolated per-client concurrency, so one slow client never blocks another.' },
+	{ name: 'In-memory trie', text: 'Subscription matching in time proportional to topic length, not subscriber count.' },
+];
+---
+
+<section id="built-on">
+	<div class="inner">
+		<SectionHeader
+			title="Built on proven foundations"
+			subtitle="Each technology choice directly determines how the broker behaves under load, during failures, and as the cluster grows."
+		/>
+		<div class="grid">
+			{
+				foundations.map((f) => (
+					<div class="item">
+						<h3 class="item-name">{f.name}</h3>
+						<p class="item-text">{f.text}</p>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#built-on {
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 24px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		@include media-up(lg) {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	.item {
+		background: var(--color-bg-surface);
+		border-radius: 14px;
+		padding: 28px 24px;
+		box-shadow: 0 7px 32px 0 rgba(0, 0, 0, 0.06);
+	}
+
+	.item-name {
+		font-size: 19px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 10px;
+	}
+
+	.item-text {
+		font-size: 15px;
+		line-height: 1.6;
+		color: $color-text-secondary;
+		margin: 0;
+	}
+</style>
