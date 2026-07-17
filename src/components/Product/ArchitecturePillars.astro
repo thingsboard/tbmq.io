@@ -1,6 +1,6 @@
 ---
 import SectionHeader from '@components/Landing/SectionHeader.astro';
-import SmartImage from '@components/SmartImage.astro';
+import MessageFlowDiagram from '@components/Product/MessageFlowDiagram.astro';
 import { Icon } from 'astro-icon/components';
 
 const pillars = [
@@ -29,14 +29,7 @@ const pillars = [
 			title="Architecture that backs the numbers"
 			subtitle="TBMQ's throughput and resilience are consequences of its design — not a lucky benchmark run."
 		/>
-		<SmartImage
-			class="diagram"
-			src="/src/assets/images/docs/mqtt-broker/architecture/tbmq-architecture.png"
-			alt="TBMQ architecture: devices and applications connect through Netty to the Message Dispatcher Service, backed by Kafka, an actor system, and an in-memory subscription trie."
-			width={1504}
-			height={648}
-			loading="lazy"
-		/>
+		<MessageFlowDiagram />
 		<div class="pillars">
 			{
 				pillars.map((p) => (
@@ -69,13 +62,6 @@ const pillars = [
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-	}
-
-	:global(.diagram) {
-		width: 100%;
-		max-width: 1000px;
-		height: auto;
-		margin-bottom: 56px;
 	}
 
 	.pillars {
