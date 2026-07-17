@@ -1,0 +1,70 @@
+---
+import { mqttTopics, topicHref } from '~/data/mqttLearn';
+---
+
+<div class="topic-grid">
+	{
+		mqttTopics.map((t) => (
+			<a class="topic-card" href={topicHref(t.slug)}>
+				<h3 class="topic-card__title">{t.navLabel}</h3>
+				<p class="topic-card__text">{t.quickAnswer}</p>
+				<span class="topic-card__cta">Read the guide →</span>
+			</a>
+		))
+	}
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.topic-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 20px;
+		width: 100%;
+		@include media-up(sm) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		@include media-up(lg) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+	.topic-card {
+		display: flex;
+		flex-direction: column;
+		padding: 24px;
+		border: 1px solid $color-border;
+		border-radius: 10px;
+		background: $color-bg-white;
+		text-decoration: none;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
+		&:hover {
+			border-color: $color-pe-dark;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+		}
+	}
+	.topic-card__title {
+		font-size: 18px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 10px;
+	}
+	.topic-card__text {
+		font-size: 14px;
+		line-height: 1.6;
+		color: $color-text-secondary;
+		margin: 0 0 16px;
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.topic-card__cta {
+		margin-top: auto;
+		font-size: 14px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+	}
+</style>
