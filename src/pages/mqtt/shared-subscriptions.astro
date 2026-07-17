@@ -1,0 +1,65 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the $share prefix?',
+		a: 'The $share/<group>/<topic> prefix marks a subscription as shared. Every client that subscribes with the same group name and topic joins one consumer group, and the broker delivers each matching message to only one member of that group.',
+	},
+	{
+		q: 'Do all brokers support shared subscriptions?',
+		a: 'Shared subscriptions are standard in MQTT 5.0, and some brokers also supported them as an extension in MQTT 3.1.1. Support varies, so check your broker. TBMQ supports shared subscriptions.',
+	},
+	{
+		q: 'How is a message distributed within a group?',
+		a: 'The broker picks one member of the shared group per message (commonly round-robin). Different brokers may use slightly different selection strategies.',
+	},
+	{
+		q: 'Do shared subscriptions guarantee ordering?',
+		a: 'Because messages are spread across multiple consumers, strict global ordering is not guaranteed. Design consumers to tolerate out-of-order or parallel processing.',
+	},
+];
+---
+
+<MqttTopicLayout slug="shared-subscriptions" faq={faq}>
+	<h2>The problem shared subscriptions solve</h2>
+	<p>
+		A normal MQTT subscription is a broadcast: if ten clients subscribe to the same topic, every one of them receives
+		every message. That's perfect for fan-out, but it can't spread load. If a single high-traffic topic produces more
+		messages than one consumer can handle, a normal subscription gives you no way to share the work.
+	</p>
+
+	<h2>How shared subscriptions work</h2>
+	<p>
+		A shared subscription puts several clients into one <strong>consumer group</strong>. The broker then delivers each
+		message to <strong>only one</strong> member of the group, turning the topic into a load-balanced work queue. Clients join
+		a group by subscribing to a special topic form:
+	</p>
+	<p><code>$share/&lt;group-name&gt;/&lt;topic-filter&gt;</code></p>
+	<p>
+		For example, three worker services that all subscribe to
+		<code>$share/workers/sensors/+/data</code> form the <code>workers</code> group. Each reading published under <code
+			>sensors/+/data</code
+		> goes to just one of the three workers, so adding a fourth worker instantly increases throughput.
+	</p>
+
+	<h2>MQTT 5.0 vs 3.1.1</h2>
+	<p>
+		Shared subscriptions are a standard feature of <a href="/mqtt/mqtt-5/">MQTT 5.0</a>. Some brokers also offered them
+		as a non-standard extension under MQTT 3.1.1 using the same
+		<code>$share</code> convention, so behavior can vary by broker on 3.1.1.
+	</p>
+
+	<h2>Common use cases and pitfalls</h2>
+	<ul>
+		<li><strong>Scaling consumers:</strong> worker pools that process high-volume ingestion.</li>
+		<li><strong>High availability:</strong> if one consumer drops, others in the group keep working.</li>
+		<li>
+			<strong>Watch ordering:</strong> messages are spread across consumers, so don't rely on strict global order.
+		</li>
+		<li>
+			<strong>Mind QoS:</strong> combine with the right <a href="/mqtt/qos/">QoS level</a> for your delivery guarantees.
+		</li>
+	</ul>
+</MqttTopicLayout>
