@@ -63,7 +63,7 @@ export const mqttTopics: MqttTopic[] = [
 		quickAnswer:
 			'A shared subscription lets a group of MQTT clients share one subscription so each message is delivered to only one member of the group, instead of to all of them. That turns MQTT’s broadcast model into a load-balanced work queue for scaling consumers horizontally.',
 		tbmqTieIn:
-			'TBMQ implements shared subscriptions and pairs them with dedicated per-application Kafka topics, so you can add consumer instances to absorb load without losing ordering.',
+			'TBMQ implements shared subscriptions and pairs them with dedicated per-application Kafka topics, so you can add consumer instances to absorb high load and scale throughput horizontally.',
 		related: ['what-is-mqtt', 'mqtt-5', 'mqtt-vs-kafka'],
 		marquee: true,
 		status: 'full',
