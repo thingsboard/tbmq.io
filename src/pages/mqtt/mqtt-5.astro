@@ -1,0 +1,23 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="mqtt-5">
+	<h2>What MQTT 5.0 adds</h2>
+	<ul>
+		<li>
+			<strong>Reason codes &amp; user properties:</strong> acknowledgements now explain <em>why</em> something failed, and
+			you can attach custom key/value metadata to messages.
+		</li>
+		<li><strong>Topic aliases:</strong> replace long topic strings with a short integer to cut bandwidth.</li>
+		<li><strong>Session &amp; message expiry:</strong> set how long sessions and queued messages live.</li>
+		<li>
+			<strong>Shared subscriptions &amp; flow control:</strong> standardized load balancing and per-client receive limits.
+		</li>
+	</ul>
+	<h2>Should you upgrade from 3.1.1?</h2>
+	<p>
+		MQTT 5.0 is backward-compatible in spirit and keeps the lightweight pub/sub core, so new projects should prefer it
+		for the better error reporting and control. Many deployments run 3.1.1 and 5.0 side by side during migration.
+	</p>
+</MqttTopicLayout>

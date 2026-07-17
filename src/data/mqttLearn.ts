@@ -181,7 +181,7 @@ export const mqttTopics: MqttTopic[] = [
 		navLabel: 'MQTT over WebSocket',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
-			'MQTT over WebSocket carries the same MQTT protocol inside a WebSocket connection, so browsers and other HTTP-only clients can publish and subscribe directly. Brokers typically expose it on ports 8084/8085 (WSS).',
+			'MQTT over WebSocket carries the same MQTT protocol inside a WebSocket connection, so browsers and other HTTP-only clients can publish and subscribe directly. Brokers commonly expose it on port 8084 (WS) or 8085 (WSS).',
 		tbmqTieIn:
 			'TBMQ ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser — try it in the live demo.',
 		related: ['what-is-mqtt', 'security', 'topics'],

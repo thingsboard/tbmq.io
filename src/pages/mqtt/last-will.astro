@@ -1,0 +1,17 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="last-will">
+	<h2>How Last Will works</h2>
+	<p>
+		A client registers its Last Will and Testament (LWT) — a topic, payload, QoS, and retain flag — when it connects. If
+		the broker detects that the client disconnected ungracefully (for example, it stopped responding to keep-alive
+		pings), it publishes that will message on the client's behalf. A clean disconnect does not trigger the will.
+	</p>
+	<h2>Why it matters</h2>
+	<p>
+		LWT is MQTT's built-in presence mechanism. Combined with a <a href="/mqtt/retained-messages/">retained</a>
+		status topic, it lets the rest of your system react the instant a device drops off unexpectedly.
+	</p>
+</MqttTopicLayout>

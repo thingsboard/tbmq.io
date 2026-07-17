@@ -1,0 +1,18 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="persistent-session">
+	<h2>Clean start vs persistent session</h2>
+	<p>
+		When a client connects with a persistent session, the broker remembers its subscriptions and queues QoS 1/2 messages
+		while it is offline, delivering them on reconnect. With a clean session (MQTT 3.1.1) or Clean Start = true (MQTT
+		5.0), the broker discards any prior state and begins fresh.
+	</p>
+	<h2>Why it matters</h2>
+	<p>
+		Persistent sessions keep intermittently connected devices in sync without missing messages — but they cost broker
+		storage per client, so they must scale carefully. In MQTT 5.0, a session-expiry interval lets you bound how long an
+		offline session is retained.
+	</p>
+</MqttTopicLayout>

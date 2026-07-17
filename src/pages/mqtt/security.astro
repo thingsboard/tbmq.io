@@ -1,0 +1,23 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="security">
+	<h2>The three layers of MQTT security</h2>
+	<ul>
+		<li>
+			<strong>Transport (TLS):</strong> encrypt the connection, typically on port 8883, so credentials and payloads aren't
+			sent in the clear.
+		</li>
+		<li>
+			<strong>Authentication:</strong> verify who a client is — username/password, X.509 client certificates (mutual TLS),
+			or tokens such as JWT.
+		</li>
+		<li><strong>Authorization:</strong> control which topics each client may publish to or subscribe from.</li>
+	</ul>
+	<h2>Why it matters</h2>
+	<p>
+		Because MQTT brokers often sit at the boundary between the internet and your fleet, all three layers matter. Encrypt
+		in transit, authenticate every client, and scope topic access to the minimum each client needs.
+	</p>
+</MqttTopicLayout>

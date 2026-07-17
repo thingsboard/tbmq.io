@@ -1,0 +1,17 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="retained-messages">
+	<h2>How the retain flag works</h2>
+	<p>
+		When a message is published with the retain flag set, the broker stores it as the "last known good" value for that
+		topic. Any client that subscribes afterward immediately receives that retained message, instead of waiting for the
+		next publish. Publishing an empty payload with the retain flag clears it.
+	</p>
+	<h2>Why it matters</h2>
+	<p>
+		Retained messages are ideal for state that new subscribers need right away — a device's online status, the latest
+		configuration, or the current reading of a sensor — so clients don't start up blind.
+	</p>
+</MqttTopicLayout>
