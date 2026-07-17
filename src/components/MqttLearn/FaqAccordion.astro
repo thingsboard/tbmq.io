@@ -29,10 +29,7 @@ const faqJsonLd = {
 					<p class="faq__a">{it.a}</p>
 				</details>
 			))}
-			<script
-				type="application/ld+json"
-				set:html={JSON.stringify(faqJsonLd)}
-			/>
+			<script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
 		</section>
 	)
 }
