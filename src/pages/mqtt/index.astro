@@ -1,0 +1,55 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import TopicGrid from '@components/MqttLearn/TopicGrid.astro';
+import LearnCta from '@components/MqttLearn/LearnCta.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+
+const title = 'MQTT Guide — Learn the Protocol Behind Modern IoT';
+const description =
+	'Clear, practical guides to MQTT: what it is, QoS levels, MQTT 5.0, shared subscriptions, MQTT vs Kafka, and more — from the team behind the open-source TBMQ broker.';
+const jsonLd = marketingJsonLd({
+	path: '/mqtt/',
+	name: title,
+	description,
+	breadcrumb: 'Learn',
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="mqtt-learn"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt="MQTT Guide by TBMQ"
+>
+	<main class="mqtt-hub">
+		<div class="mqtt-hub__inner">
+			<SectionHeader
+				title="The MQTT Guide"
+				subtitle="Practical, plain-English explanations of the MQTT protocol — written by the team behind TBMQ, the open-source MQTT broker built to scale."
+			/>
+			<TopicGrid />
+			<LearnCta />
+		</div>
+	</main>
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.mqtt-hub {
+		padding: $spacing-20 $spacing-6;
+		background: var(--color-bg-surface);
+	}
+	.mqtt-hub__inner {
+		@include container;
+		max-width: 1100px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+</style>
