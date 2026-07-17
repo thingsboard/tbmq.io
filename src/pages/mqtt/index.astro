@@ -29,6 +29,7 @@ const jsonLd = marketingJsonLd({
 	<main class="mqtt-hub">
 		<div class="mqtt-hub__inner">
 			<SectionHeader
+				as="h1"
 				title="The MQTT Guide"
 				subtitle="Practical, plain-English explanations of the MQTT protocol — written by the team behind TBMQ, the open-source MQTT broker built to scale."
 			/>
@@ -42,7 +43,7 @@ const jsonLd = marketingJsonLd({
 	@use '../../styles/variables' as *;
 
 	.mqtt-hub {
-		padding: $spacing-20 $spacing-6;
+		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
 		background: var(--color-bg-surface);
 	}
 	.mqtt-hub__inner {

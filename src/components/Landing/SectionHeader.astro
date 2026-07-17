@@ -17,15 +17,24 @@ interface Props {
 	 */
 	theme?: 'light' | 'dark';
 	class?: string;
+	/**
+	 * Heading level for the title (default 'h2')
+	 */
+	as?: 'h1' | 'h2';
 }
 
-const { title, subtitle, align = 'center', theme = 'light', class: className = '' } = Astro.props;
+const {
+	title,
+	subtitle,
+	align = 'center',
+	theme = 'light',
+	class: className = '',
+	as: TitleTag = 'h2',
+}: Props = Astro.props;
 ---
 
-<div
-	class:list={['section-header', `section-header--${align}`, `section-header--${theme}`, className]}
->
-	<h2 class="section-header__title">{title}</h2>
+<div class:list={['section-header', `section-header--${align}`, `section-header--${theme}`, className]}>
+	<TitleTag class="section-header__title">{title}</TitleTag>
 	{subtitle && <p class="section-header__subtitle">{subtitle}</p>}
 	<slot />
 </div>
