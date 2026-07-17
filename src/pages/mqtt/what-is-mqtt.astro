@@ -13,11 +13,11 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'What port does MQTT use?',
-		a: 'MQTT uses TCP port 1883 by default, and 8883 for MQTT over TLS. Over WebSocket it commonly uses 8083/8084 (WS) and 8084/8085 (WSS).',
+		a: 'MQTT uses TCP port 1883 by default, and 8883 for MQTT over TLS. Over WebSocket the port varies by broker — TBMQ uses 8084 for WS and 8085 for WSS.',
 	},
 	{
 		q: 'Is MQTT secure?',
-		a: 'MQTT itself is a messaging protocol; security is added with TLS for encryption plus authentication and topic authorization at the broker. See our MQTT security guide.',
+		a: 'MQTT itself is a messaging protocol; security is added by running it over TLS for encryption, plus authentication and topic authorization enforced at the broker.',
 	},
 	{
 		q: 'What is an MQTT broker?',
@@ -47,7 +47,9 @@ const faq: FaqItem[] = [
 		live in. Its advantages:
 	</p>
 	<ul>
-		<li><strong>Lightweight:</strong> a tiny 2-byte fixed header keeps overhead and battery use low.</li>
+		<li>
+			<strong>Lightweight:</strong> a compact fixed header (just 2 bytes at minimum) keeps overhead and battery use low.
+		</li>
 		<li>
 			<strong>Resilient:</strong> persistent connections, <a href="/mqtt/qos/">Quality of Service</a>
 			levels, and <a href="/mqtt/last-will/">Last Will</a> messages handle flaky links gracefully.
