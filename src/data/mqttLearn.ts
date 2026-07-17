@@ -78,7 +78,7 @@ export const mqttTopics: MqttTopic[] = [
 		quickAnswer:
 			'MQTT Quality of Service (QoS) sets the delivery guarantee for each message: QoS 0 delivers at most once (fire-and-forget), QoS 1 at least once (may duplicate), and QoS 2 exactly once (handshaked). Higher QoS means stronger guarantees and more overhead.',
 		tbmqTieIn:
-			'TBMQ acknowledges a QoS 1/2 publish only after the message is durably stored in Kafka — so an accepted message is never lost, even if a node fails.',
+			'TBMQ acknowledges a QoS 1/2 publish only after the message is persisted to Kafka — so an accepted message survives a TBMQ node failure, and with a replicated Kafka cluster it is not lost even if a Kafka node fails.',
 		related: ['what-is-mqtt', 'persistent-session', 'mqtt-5'],
 		marquee: true,
 		status: 'short',
