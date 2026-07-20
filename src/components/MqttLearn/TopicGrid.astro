@@ -2,6 +2,16 @@
 import { mqttCategoryGroups, topicHref } from '~/data/mqttLearn';
 ---
 
+<nav class="topic-nav" aria-label="MQTT topic categories">
+	{
+		mqttCategoryGroups.map((group) => (
+			<a class="topic-nav__link" href={`#${group.id}`}>
+				{group.label}
+			</a>
+		))
+	}
+</nav>
+
 <div class="topic-groups">
 	{
 		mqttCategoryGroups.map((group) => (
@@ -24,12 +34,39 @@ import { mqttCategoryGroups, topicHref } from '~/data/mqttLearn';
 <style lang="scss">
 	@use '../../styles/variables' as *;
 
+	.topic-nav {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 10px;
+		width: 100%;
+		margin-top: 8px;
+	}
+	.topic-nav__link {
+		display: inline-flex;
+		align-items: center;
+		padding: 8px 16px;
+		border: 1px solid $color-border;
+		border-radius: 999px;
+		background: $color-bg-white;
+		font-size: 14px;
+		font-weight: $font-weight-medium;
+		color: $color-text-secondary;
+		text-decoration: none;
+		transition:
+			border-color 0.15s ease,
+			color 0.15s ease;
+		&:hover {
+			border-color: $color-pe-dark;
+			color: $color-pe-link;
+		}
+	}
 	.topic-groups {
 		display: flex;
 		flex-direction: column;
 		gap: 48px;
 		width: 100%;
-		margin-top: 16px;
+		margin-top: 32px;
 	}
 	.topic-group {
 		width: 100%;
