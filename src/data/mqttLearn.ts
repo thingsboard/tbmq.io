@@ -241,7 +241,7 @@ export const mqttTopics: MqttTopic[] = [
 		navLabel: 'MQTT vs HTTP',
 		eyebrow: 'MQTT COMPARISON',
 		quickAnswer:
-			'HTTP is a request/response protocol built for the web: a client asks and the server answers over a typically short-lived connection. MQTT is a publish/subscribe protocol built for devices: a long-lived connection lets the broker push messages the instant they are published, with far less per-message overhead. For frequent, small, bidirectional IoT messaging, MQTT usually wins.',
+			'HTTP is a request/response protocol built for the web: the client asks and the server answers, and it must ask again to get anything new. MQTT is a publish/subscribe protocol built for devices: a long-lived connection lets the broker push messages the instant they are published, with far less per-message overhead. For frequent, small, bidirectional IoT messaging, MQTT usually wins.',
 		tbmqTieIn:
 			'TBMQ speaks MQTT — including MQTT over WebSocket — so browsers and devices get real-time push instead of repeatedly polling an HTTP endpoint.',
 		related: ['what-is-mqtt', 'mqtt-vs-kafka', 'mqtt-client'],

@@ -9,9 +9,9 @@ const connectDiagram = `
      | -------- CONNECT (clientId, ...) -----> |   opens session
      | <------- CONNACK (accepted) ----------- |
      |                                        |
-     | -- SUBSCRIBE  sensors/+/temp --------> |   registers interest
-     | -- PUBLISH    sensors/1/temp -------->  |   sends data
-     | <------------ PUBLISH (matched) ------- |   receives data
+     | -- SUBSCRIBE  cmd/device-1 ----------> |   listen for commands
+     | -- PUBLISH    sensors/1/temp -------->  |   send telemetry
+     | <---------- PUBLISH  cmd/device-1 ----- |   receive a command
      |                                        |
 `;
 

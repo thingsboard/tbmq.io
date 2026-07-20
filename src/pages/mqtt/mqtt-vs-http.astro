@@ -41,8 +41,8 @@ const faq: FaqItem[] = [
 
 	<h2>Two different models</h2>
 	<p>
-		HTTP is <strong>request/response</strong>: a client asks, the server answers, and the connection is usually
-		short-lived. To learn about new data, the client has to ask again — polling. MQTT is
+		HTTP is <strong>request/response</strong>: a client asks and the server answers, and to get anything new it has to
+		ask again — polling. Even over a persistent HTTP connection, nothing arrives until the client requests it. MQTT is
 		<strong>publish/subscribe</strong>: a client opens one long-lived connection to a
 		<a href="/mqtt/mqtt-broker/">broker</a>, and the broker <strong>pushes</strong> messages the instant they're published.
 		No polling, no reconnection per message.
@@ -58,7 +58,7 @@ const faq: FaqItem[] = [
 			</thead>
 			<tbody>
 				<tr><td>Model</td><td>Publish/subscribe (push)</td><td>Request/response (pull)</td></tr>
-				<tr><td>Connection</td><td>One long-lived connection</td><td>Typically short-lived per request</td></tr>
+				<tr><td>Connection</td><td>One long-lived connection</td><td>Client-initiated per exchange</td></tr>
 				<tr><td>Header overhead</td><td>Tiny (from 2 bytes)</td><td>Larger text headers per request</td></tr>
 				<tr><td>Real-time updates</td><td>Server push, instant</td><td>Client must poll</td></tr>
 				<tr><td>Delivery guarantees</td><td><a href="/mqtt/qos/">QoS</a> 0 / 1 / 2</td><td>Application-defined</td></tr>
