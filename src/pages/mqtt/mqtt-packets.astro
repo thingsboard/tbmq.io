@@ -51,8 +51,13 @@ const faq: FaqItem[] = [
 			<rect class="d-chip d-chip--green" x="40" y="44" width="188" height="96" rx="8"></rect>
 			<text class="d-glabel d-mid" x="134" y="70">Fixed header</text>
 			<text class="d-feat d-mid" x="134" y="90">≥ 2 bytes · always present</text>
-			<rect x="58" y="100" width="152" height="26" rx="5" style="fill:#fff;stroke:#bfe3cd"></rect>
-			<text class="d-ctext d-mid" x="134" y="117" style="font-size:10.5px">type + flags · remaining length</text>
+			<rect x="58" y="99" width="152" height="34" rx="5" style="fill:#fff;stroke:#bfe3cd"></rect>
+			<text class="d-ctext d-mid" x="134" y="112" style="font-size:9.5px">packet type + flags</text><text
+				class="d-ctext d-mid"
+				x="134"
+				y="127"
+				style="font-size:9.5px">+ remaining length</text
+			>
 			<rect class="d-actor" x="244" y="44" width="180" height="96" rx="8"></rect>
 			<text class="d-glabel d-mid" x="334" y="70">Variable header</text>
 			<text class="d-feat d-mid" x="334" y="90" style="fill:#8a8d94">optional</text>

@@ -99,7 +99,8 @@ const faq: FaqItem[] = [
 	</ul>
 	<p>
 		If two of a client's subscriptions both match a message (say <code>sensors/#</code> and <code>sensors/+/temp</code
-		>), the broker delivers a single copy at the highest matching QoS — not one per subscription.
+		>), the broker usually delivers a single copy at the highest matching QoS rather than one per subscription — as TBMQ
+		does, though the MQTT spec technically permits either.
 	</p>
 
 	<h2>Topics in TBMQ</h2>

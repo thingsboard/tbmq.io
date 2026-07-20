@@ -35,7 +35,10 @@ const faq: FaqItem[] = [
 		a <a href="/mqtt/mqtt-broker/">broker</a>, publishes to topics, and subscribes to topics. That simplicity is the
 		point — it keeps the protocol tiny and easy to run on constrained hardware. <strong>AMQP</strong> (the Advanced Message
 		Queuing Protocol) is a broader protocol with explicit <strong>queues</strong>, <strong>exchanges</strong>, and
-		routing rules, plus transactions and fine-grained delivery control, aimed at enterprise integration.
+		routing rules, plus transactions and fine-grained delivery control, aimed at enterprise integration. Those queues
+		and exchanges describe <strong>AMQP 0-9-1</strong>, the model popularized by RabbitMQ and what most people mean by
+		“AMQP”; <strong>AMQP 1.0</strong> is a separate, later standard that defines the wire protocol without those broker-level
+		concepts.
 	</p>
 
 	<h2>MQTT vs AMQP at a glance</h2>
@@ -73,7 +76,7 @@ const faq: FaqItem[] = [
 
 	<h2>MQTT in TBMQ</h2>
 	<p>
-		TBMQ is a purpose-built MQTT broker focused on connecting massive device fleets — not a general-purpose AMQP message
-		broker. When you need MQTT at scale, that focus is the advantage.
+		TBMQ is a purpose-built <a href="/docs/mqtt-broker/">MQTT broker</a> focused on connecting massive device fleets — not
+		a general-purpose AMQP message broker. When you need MQTT at scale, that focus is the advantage.
 	</p>
 </MqttTopicLayout>

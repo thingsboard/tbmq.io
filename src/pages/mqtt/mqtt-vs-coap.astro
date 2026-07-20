@@ -25,7 +25,8 @@ const faq: FaqItem[] = [
 <MqttTopicLayout slug="mqtt-vs-coap" faq={faq}>
 	<p>
 		MQTT and CoAP are both designed for the constrained world of IoT, and they're often compared — but they take
-		opposite approaches. One keeps a connection open and pushes; the other is connectionless and pulls on demand.
+		opposite approaches. One keeps a connection open and pushes; the other is connectionless and mostly pulls on demand
+		— though CoAP’s Observe option can push too.
 	</p>
 
 	<h2>What each is for</h2>
@@ -34,7 +35,9 @@ const faq: FaqItem[] = [
 		connection to a <a href="/mqtt/mqtt-broker/">broker</a>, which routes each message to all matching subscribers. <strong
 			>CoAP</strong
 		> (the Constrained Application Protocol) is a RESTful <strong>request/response</strong> protocol over UDP — it looks like
-		a very compact HTTP for tiny devices, with methods like GET, POST, PUT, and DELETE against resources.
+		a very compact HTTP for tiny devices, with methods like GET, POST, PUT, and DELETE against resources. It secures traffic
+		with DTLS (TLS over UDP) and offers an Observe option (RFC 7641) so a server can push resource-change notifications to
+		a client.
 	</p>
 
 	<h2>MQTT vs CoAP at a glance</h2>
@@ -73,7 +76,8 @@ const faq: FaqItem[] = [
 
 	<h2>MQTT in TBMQ</h2>
 	<p>
-		TBMQ is an MQTT broker built for large-scale pub/sub messaging. CoAP's request/response model solves a different
-		problem; when your architecture is built on MQTT push at scale, a dedicated broker is what carries it.
+		TBMQ is an <a href="/docs/mqtt-broker/">MQTT broker</a> built for large-scale pub/sub messaging. CoAP's request/response
+		model solves a different problem; when your architecture is built on MQTT push at scale, a dedicated broker is what carries
+		it.
 	</p>
 </MqttTopicLayout>

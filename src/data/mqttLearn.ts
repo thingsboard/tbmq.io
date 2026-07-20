@@ -48,7 +48,7 @@ export const mqttTopics: MqttTopic[] = [
 		quickAnswer:
 			'MQTT is a lightweight pub/sub protocol for connecting devices over unreliable networks; Apache Kafka is a distributed event-streaming log for high-throughput backend data pipelines. They solve different problems and are frequently used together — MQTT at the edge, Kafka in the data center.',
 		tbmqTieIn:
-			'TBMQ uses Kafka as its internal backbone for durability and zero message loss, and can bridge MQTT traffic straight into your Kafka topics.',
+			'TBMQ uses Kafka as its internal backbone for message durability, and can bridge MQTT traffic straight into your own Kafka topics.',
 		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session'],
 		status: 'full',
 		seoDescription:
@@ -117,7 +117,7 @@ export const mqttTopics: MqttTopic[] = [
 		navLabel: 'Reason codes',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
-			'A reason code is a single-byte status value MQTT 5.0 attaches to acknowledgement packets (CONNACK, PUBACK, SUBACK, DISCONNECT and more). Values below 0x80 mean success or a normal outcome; 0x80 and above signal a failure and say why. It replaces MQTT 3.1.1’s near-silent failures with actionable feedback.',
+			'A reason code is a single-byte status value MQTT 5.0 attaches to control packets that report an outcome (CONNACK, PUBACK, SUBACK, DISCONNECT and more). Values below 0x80 mean success or a normal outcome; 0x80 and above signal a failure and say why. It replaces MQTT 3.1.1’s near-silent failures with actionable feedback.',
 		tbmqTieIn:
 			'TBMQ returns MQTT 5.0 reason codes across its acknowledgement packets, so a client learns exactly why a connect, publish, or subscribe was refused instead of just seeing the connection drop.',
 		related: ['mqtt-5', 'mqtt-connection', 'qos'],

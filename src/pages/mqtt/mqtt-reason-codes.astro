@@ -36,8 +36,9 @@ const faq: FaqItem[] = [
 
 	<h2>How reason codes work</h2>
 	<p>
-		Every MQTT 5.0 acknowledgement — CONNACK, PUBACK, SUBACK, DISCONNECT and the rest — carries a reason code. The value
-		range is split in two: anything <strong>below 0x80</strong> is a success or normal outcome, and anything
+		Most MQTT 5.0 control packets that report an outcome — CONNACK, PUBACK, SUBACK, DISCONNECT, AUTH and more — carry a
+		reason code. The value range is split in two: anything <strong>below 0x80</strong> is a success or normal outcome, and
+		anything
 		<strong>0x80 or above</strong> is a failure. The sender may also attach an optional <em>reason string</em> with human-readable
 		detail for logs.
 	</p>

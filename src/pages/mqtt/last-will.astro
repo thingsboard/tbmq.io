@@ -22,7 +22,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Does reconnecting with the same client ID trigger the will?',
-		a: 'No. If a new connection takes over the session before the will would fire, the broker removes the pending will rather than publishing it — a takeover is treated as continuity, not a disconnect.',
+		a: 'It depends on the will delay. Without a will-delay interval — the default, and always the case in MQTT 3.1.1 — a takeover closes the old connection ungracefully and the broker publishes its will. Only if the displaced MQTT 5.0 client set a will-delay interval and the new connection resumes the session before it elapses does the broker cancel the pending will instead.',
 	},
 ];
 ---
@@ -125,7 +125,8 @@ const faq: FaqItem[] = [
 	<p>
 		TBMQ supports Last Will messages, including the MQTT 5.0 will-delay interval and retained wills. When a connection
 		times out on keep-alive, TBMQ closes it and publishes the client's will if one was set; a session takeover by the
-		same client ID suppresses it instead. See the
+		same client ID also publishes the will, unless the displaced client set a will-delay interval and the new connection
+		resumes its session — in which case the pending will is cancelled. See the
 		<a href="/docs/mqtt-broker/user-guide/last-will/">Last Will guide</a> for the full behavior and configuration.
 	</p>
 </MqttTopicLayout>

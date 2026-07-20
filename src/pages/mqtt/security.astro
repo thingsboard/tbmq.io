@@ -126,7 +126,8 @@ const faq: FaqItem[] = [
 		<a href="/docs/mqtt-broker/security/authentication/jwt/">JWT</a>,
 		<a href="/docs/mqtt-broker/security/authentication/scram/">SCRAM</a>, and
 		<a href="/docs/mqtt-broker/security/authentication/http/">HTTP</a> — that you can enable, disable, and order from the
-		UI without restarting the broker.
+		UI without restarting the broker. SCRAM is the exception — the broker handles it automatically per the MQTT 5.0 spec,
+		so it isn’t part of that configurable order.
 	</p>
 	<p>
 		For authorization, TBMQ applies regular-expression topic patterns per client credentials, so you scope each client
