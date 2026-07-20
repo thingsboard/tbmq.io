@@ -1,0 +1,228 @@
+---
+// Polished HTML/SVG diagram for /mqtt learn guides — the upgrade of AsciiDiagram.
+// Pass the diagram as an inline <svg> in the default slot; it uses the shared `.d-*`
+// vocabulary defined below and the arrow markers (arGray / arGreen / arRed) rendered here.
+//
+// The /mqtt learn pages are forceLightTheme, so colours are intentionally light-locked.
+// AsciiDiagram.astro is kept as a lightweight fallback / quick-scaffold seam.
+interface Props {
+	/** Caption shown under the diagram. */
+	caption?: string;
+	/** Accessible label for the figure (defaults to the caption). */
+	label?: string;
+}
+const { caption, label } = Astro.props;
+---
+
+<figure class="mqtt-diagram" aria-label={label ?? caption}>
+	<svg width="0" height="0" class="mqtt-diagram__defs" aria-hidden="true">
+		<defs>
+			<marker
+				id="arGray"
+				viewBox="0 0 10 10"
+				refX="8.5"
+				refY="5"
+				markerWidth="7"
+				markerHeight="7"
+				orient="auto-start-reverse"
+			>
+				<path d="M0 0 L10 5 L0 10 z" fill="#9aa0a9"></path>
+			</marker>
+			<marker
+				id="arGreen"
+				viewBox="0 0 10 10"
+				refX="8.5"
+				refY="5"
+				markerWidth="7"
+				markerHeight="7"
+				orient="auto-start-reverse"
+			>
+				<path d="M0 0 L10 5 L0 10 z" fill="#17bb52"></path>
+			</marker>
+			<marker
+				id="arRed"
+				viewBox="0 0 10 10"
+				refX="8.5"
+				refY="5"
+				markerWidth="7"
+				markerHeight="7"
+				orient="auto-start-reverse"
+			>
+				<path d="M0 0 L10 5 L0 10 z" fill="#d64545"></path>
+			</marker>
+		</defs>
+	</svg>
+	<div class="mqtt-diagram__canvas">
+		<slot />
+	</div>
+	{caption && <figcaption class="mqtt-diagram__caption">{caption}</figcaption>}
+</figure>
+
+<style lang="scss" is:global>
+	@use '../../styles/variables' as *;
+
+	.mqtt-diagram {
+		margin: $spacing-6 0;
+	}
+	.mqtt-diagram__defs {
+		position: absolute;
+		width: 0;
+		height: 0;
+	}
+	.mqtt-diagram__canvas {
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: 12px;
+		padding: 22px 20px;
+		overflow-x: auto;
+	}
+	.mqtt-diagram svg:not(.mqtt-diagram__defs) {
+		display: block;
+		margin: 0 auto;
+		width: 100%;
+		max-width: 680px;
+		min-width: 520px;
+		height: auto;
+	}
+	.mqtt-diagram__caption {
+		margin-top: 10px;
+		font-size: 14px;
+		color: $color-text-muted;
+		text-align: center;
+	}
+
+	// Shared SVG vocabulary (light-locked). Scoped under .mqtt-diagram so the
+	// short `.d-*` class names can't leak into the rest of the site.
+	.mqtt-diagram {
+		.d-actor {
+			fill: #fff;
+			stroke: #dfe3ea;
+			stroke-width: 1.5;
+		}
+		.d-actor--hero {
+			fill: #e6f7ed;
+			stroke: #17bb52;
+		}
+		.d-alabel {
+			font:
+				600 13px system-ui,
+				sans-serif;
+			fill: #17181c;
+		}
+		.d-alabel--hero {
+			fill: #166c37;
+		}
+		.d-life {
+			stroke: #d7dbe2;
+			stroke-width: 1.5;
+			stroke-dasharray: 2 5;
+		}
+		.d-line {
+			stroke: #9aa0a9;
+			stroke-width: 2;
+			fill: none;
+		}
+		.d-line--green {
+			stroke: #17bb52;
+		}
+		.d-line--red {
+			stroke: #d64545;
+		}
+		.d-chip {
+			fill: #fff;
+			stroke: #dfe3ea;
+			stroke-width: 1.5;
+		}
+		.d-chip--green {
+			fill: #e6f7ed;
+			stroke: #17bb52;
+		}
+		.d-ctext {
+			font:
+				600 12px ui-monospace,
+				'SF Mono',
+				Menlo,
+				monospace;
+			fill: #17181c;
+		}
+		.d-ctext--green {
+			fill: #166c37;
+		}
+		.d-note {
+			font:
+				500 12px system-ui,
+				sans-serif;
+			fill: #707275;
+		}
+		.d-mid {
+			text-anchor: middle;
+		}
+		.d-end {
+			text-anchor: end;
+		}
+		.d-brk {
+			stroke: #cfd4dc;
+			stroke-width: 1.5;
+			stroke-dasharray: 5 4;
+		}
+		.d-brklabel {
+			font:
+				500 11.5px system-ui,
+				sans-serif;
+			fill: #8a8d94;
+		}
+		.d-danger {
+			font:
+				600 12px system-ui,
+				sans-serif;
+			fill: #c23b3b;
+		}
+		.d-head {
+			font:
+				500 13px system-ui,
+				sans-serif;
+			fill: #63656c;
+		}
+		.d-em {
+			fill: #166c37;
+			font-weight: 700;
+		}
+		.d-feat {
+			font:
+				500 11.5px system-ui,
+				sans-serif;
+			fill: #4f7d63;
+		}
+		.d-tiny {
+			font:
+				500 10.5px system-ui,
+				sans-serif;
+			fill: #9aa0a9;
+			letter-spacing: 0.04em;
+		}
+		.d-glabel {
+			font:
+				700 12px system-ui,
+				sans-serif;
+			fill: #17181c;
+		}
+		.d-yes {
+			font:
+				700 13px system-ui,
+				sans-serif;
+			fill: #166c37;
+		}
+		.d-no {
+			font:
+				700 13px system-ui,
+				sans-serif;
+			fill: #c23b3b;
+		}
+		.d-panelttl {
+			font:
+				600 12.5px system-ui,
+				sans-serif;
+			fill: #17181c;
+		}
+	}
+</style>

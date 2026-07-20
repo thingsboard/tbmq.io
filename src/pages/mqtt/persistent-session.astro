@@ -1,19 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const sessionDiagram = `
- device (persistent session)             broker
-   │  ── SUBSCRIBE  sensors/# ───────────▶ │   subscription stored
-   │                                       │
-   │  ✗ goes offline (network drop)        │
-   │                               msg 1 ──┤   queued
-   │                               msg 2 ──┤   queued
-   │                                       │
-   │  ── CONNECT (resume session) ───────▶ │
-   │  ◀─────────── msg 1, msg 2 (in order) │   delivered on reconnect
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -59,10 +47,82 @@ const faq: FaqItem[] = [
 		are delivered in order.
 	</p>
 
-	<AsciiDiagram
-		content={sessionDiagram}
-		caption="A persistent session preserves subscriptions and queues offline messages, delivering them on reconnect"
-	/>
+	<MqttDiagram caption="Subscriptions preserved and offline messages replayed on reconnect">
+		<svg viewBox="0 0 680 320" role="img" aria-label="Persistent session queues offline messages">
+			<rect class="d-actor" x="92" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="150"
+				y="36">Device</text
+			>
+			<rect class="d-actor d-actor--hero" x="472" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="530"
+				y="36">Broker</text
+			>
+			<line class="d-life" x1="150" y1="50" x2="150" y2="300"></line><line
+				class="d-life"
+				x1="530"
+				y1="50"
+				x2="530"
+				y2="300"></line>
+			<line class="d-line" x1="150" y1="80" x2="527" y2="80" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="248"
+				y="69"
+				width="184"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="84">SUBSCRIBE sensors/#</text><text
+				class="d-note"
+				x="540"
+				y="84">stored</text
+			>
+			<line class="d-brk" x1="60" y1="112" x2="620" y2="112"></line><rect
+				x="222"
+				y="102"
+				width="236"
+				height="20"
+				rx="10"
+				fill="#fbeeee"></rect><text class="d-brklabel d-mid" x="340" y="115" style="fill:#c23b3b"
+				>device goes offline (network drop)</text
+			>
+			<rect class="d-chip d-chip--green" x="404" y="136" width="122" height="20" rx="10"></rect><text
+				class="d-ctext d-ctext--green d-mid"
+				x="465"
+				y="150"
+				style="font-size:11px">msg 1 → queued</text
+			>
+			<rect class="d-chip d-chip--green" x="404" y="162" width="122" height="20" rx="10"></rect><text
+				class="d-ctext d-ctext--green d-mid"
+				x="465"
+				y="176"
+				style="font-size:11px">msg 2 → queued</text
+			>
+			<text class="d-note" x="150" y="152" style="text-anchor:middle">held for the</text><text
+				class="d-note"
+				x="150"
+				y="168"
+				style="text-anchor:middle">offline session</text
+			>
+			<line class="d-line" x1="150" y1="204" x2="527" y2="204" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="235"
+				y="193"
+				width="210"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="208">CONNECT (resume session)</text>
+			<line class="d-line d-line--green" x1="530" y1="244" x2="153" y2="244" marker-end="url(#arGreen)"></line><rect
+				class="d-chip d-chip--green"
+				x="243"
+				y="233"
+				width="194"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-ctext--green d-mid" x="340" y="248">msg 1, msg 2 (in order)</text><text
+				class="d-note"
+				x="540"
+				y="248">delivered</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>Clean vs persistent at a glance</h2>
 	<div class="overflow-x">

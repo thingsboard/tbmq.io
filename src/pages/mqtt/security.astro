@@ -1,19 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const layersDiagram = `
- client                                                       broker
-   │                                                            │
-   ├─▶ 1. TLS handshake      encrypt the channel   (8883 / WSS 8085)
-   │                                                            │
-   ├─▶ 2. Authentication     who are you?     basic · X.509 · JWT · SCRAM · HTTP
-   │                                                            │
-   ├─▶ 3. Authorization      which topics?    per-topic publish / subscribe rules
-   │                                                            │
-   └─▶ connected — allowed only on the topics the rules permit
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -62,10 +50,45 @@ const faq: FaqItem[] = [
 		</li>
 	</ul>
 
-	<AsciiDiagram
-		content={layersDiagram}
-		caption="Every connection passes through encryption, authentication, then per-topic authorization"
-	/>
+	<MqttDiagram caption="Every connection passes through encryption, authentication, then authorization">
+		<svg viewBox="0 0 680 268" role="img" aria-label="Three layers of MQTT security">
+			<circle cx="60" cy="42" r="15" fill="#e6f7ed" stroke="#17bb52" stroke-width="1.5"></circle><text
+				class="d-ctext--green d-mid"
+				x="60"
+				y="47"
+				style="font:700 14px system-ui">1</text
+			>
+			<rect class="d-actor" x="92" y="20" width="560" height="44" rx="10"></rect><text class="d-alabel" x="112" y="39"
+				>TLS handshake</text
+			><text class="d-note" x="112" y="55">encrypt the channel — MQTTS 8883 / WSS 8085</text>
+			<line class="d-line d-line--green" x1="60" y1="57" x2="60" y2="83" marker-end="url(#arGreen)"></line>
+			<circle cx="60" cy="112" r="15" fill="#e6f7ed" stroke="#17bb52" stroke-width="1.5"></circle><text
+				class="d-ctext--green d-mid"
+				x="60"
+				y="117"
+				style="font:700 14px system-ui">2</text
+			>
+			<rect class="d-actor" x="92" y="90" width="560" height="44" rx="10"></rect><text class="d-alabel" x="112" y="109"
+				>Authentication</text
+			><text class="d-note" x="112" y="125">who are you? — basic · X.509 · JWT · SCRAM · HTTP</text>
+			<line class="d-line d-line--green" x1="60" y1="127" x2="60" y2="153" marker-end="url(#arGreen)"></line>
+			<circle cx="60" cy="182" r="15" fill="#e6f7ed" stroke="#17bb52" stroke-width="1.5"></circle><text
+				class="d-ctext--green d-mid"
+				x="60"
+				y="187"
+				style="font:700 14px system-ui">3</text
+			>
+			<rect class="d-actor" x="92" y="160" width="560" height="44" rx="10"></rect><text class="d-alabel" x="112" y="179"
+				>Authorization</text
+			><text class="d-note" x="112" y="195">which topics? — per-topic publish / subscribe rules</text>
+			<rect x="92" y="224" width="560" height="30" rx="15" fill="#e6f7ed"></rect><text
+				class="d-ctext--green d-mid"
+				x="372"
+				y="243"
+				style="font-family:system-ui;font-weight:600">✓ connected — allowed only on permitted topics</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>Authentication methods at a glance</h2>
 	<div class="overflow-x">

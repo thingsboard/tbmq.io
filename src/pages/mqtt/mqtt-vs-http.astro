@@ -1,16 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const modelDiagram = `
-   HTTP  (request / response, pull)        MQTT  (publish / subscribe, push)
-
-   client  --- GET /data --->  server       device --publish--> [ broker ] --push--> app
-   client  <-- 200 OK -------  server       device --publish--> [ broker ] --push--> app
-   client  --- GET /data --->  server                 subscribers get updates as they happen
-        (poll again and again)                  (one long-lived connection, no polling)
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -48,7 +39,76 @@ const faq: FaqItem[] = [
 		No polling, no reconnection per message.
 	</p>
 
-	<AsciiDiagram content={modelDiagram} caption="HTTP pulls on request; MQTT pushes over a persistent connection" />
+	<MqttDiagram caption="Pull on request versus push over one persistent connection">
+		<svg viewBox="0 0 680 230" role="img" aria-label="HTTP request-response versus MQTT publish-subscribe">
+			<line x1="340" y1="16" x2="340" y2="214" stroke="#eef0f3" stroke-width="1"></line>
+			<!-- HTTP -->
+			<text class="d-panelttl d-mid" x="170" y="26">HTTP — request / response (pull)</text>
+			<rect class="d-actor" x="40" y="42" width="96" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="88"
+				y="61"
+				style="font-size:12px">Client</text
+			>
+			<rect class="d-actor" x="244" y="42" width="96" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="292"
+				y="61"
+				style="font-size:12px">Server</text
+			>
+			<line class="d-life" x1="88" y1="72" x2="88" y2="200"></line><line
+				class="d-life"
+				x1="292"
+				y1="72"
+				x2="292"
+				y2="200"></line>
+			<line class="d-line" x1="88" y1="98" x2="289" y2="98" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="190"
+				y="92"
+				style="font-size:11px">GET /data</text
+			>
+			<line class="d-line" x1="292" y1="128" x2="91" y2="128" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="190"
+				y="122"
+				style="font-size:11px">200 OK</text
+			>
+			<line class="d-line" x1="88" y1="158" x2="289" y2="158" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="190"
+				y="152"
+				style="font-size:11px">GET /data</text
+			>
+			<text class="d-note d-mid" x="190" y="190">client must poll for anything new</text>
+			<!-- MQTT -->
+			<text class="d-panelttl d-mid" x="510" y="26" style="fill:#166c37">MQTT — publish / subscribe (push)</text>
+			<rect class="d-actor" x="368" y="96" width="80" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="408"
+				y="115"
+				style="font-size:12px">Device</text
+			>
+			<rect class="d-actor d-actor--hero" x="470" y="96" width="82" height="30" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="511"
+				y="115"
+				style="font-size:12px">Broker</text
+			>
+			<rect class="d-actor" x="574" y="96" width="72" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="610"
+				y="115"
+				style="font-size:12px">App</text
+			>
+			<line class="d-line d-line--green" x1="448" y1="111" x2="467" y2="111" marker-end="url(#arGreen)"></line>
+			<line class="d-line d-line--green" x1="552" y1="111" x2="571" y2="111" marker-end="url(#arGreen)"></line>
+			<text class="d-ctext--green d-mid" x="459" y="88" style="font:600 10.5px ui-monospace,monospace">publish</text>
+			<text class="d-ctext--green d-mid" x="562" y="88" style="font:600 10.5px ui-monospace,monospace">push</text>
+			<text class="d-note d-mid" x="510" y="158">broker pushes the instant a message arrives</text>
+			<text class="d-note d-mid" x="510" y="176">— no polling</text>
+		</svg>
+	</MqttDiagram>
 
 	<h2>MQTT vs HTTP at a glance</h2>
 	<div class="overflow-x">

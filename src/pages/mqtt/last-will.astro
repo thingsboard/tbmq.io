@@ -1,20 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const willDiagram = `
- client ── CONNECT (will: state/device-1 = "offline", retain) ──▶ broker
-                                                     will stored with the session
- client ── PUBLISH state/device-1 "online" (retain) ───────────▶ broker
-
-        ✗ connection lost — no DISCONNECT (crash / dead network)
-
-           broker ── PUBLISH state/device-1 "offline" ──▶ subscribers
-                                                     the will fires on the client's behalf
-
- (a graceful DISCONNECT would remove the will instead of publishing it)
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -55,10 +42,69 @@ const faq: FaqItem[] = [
 		<code>DISCONNECT</code> suppresses the will and removes it from the session.
 	</p>
 
-	<AsciiDiagram
-		content={willDiagram}
-		caption="The will is registered at connect and published only on an ungraceful disconnect"
-	/>
+	<MqttDiagram caption="The broker speaks for a client that vanishes without a clean disconnect">
+		<svg viewBox="0 0 680 292" role="img" aria-label="Last Will fires on ungraceful disconnect">
+			<rect class="d-actor" x="92" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="150"
+				y="36">Client</text
+			>
+			<rect class="d-actor d-actor--hero" x="472" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="530"
+				y="36">Broker</text
+			>
+			<line class="d-life" x1="150" y1="50" x2="150" y2="272"></line><line
+				class="d-life"
+				x1="530"
+				y1="50"
+				x2="530"
+				y2="272"></line>
+			<line class="d-line" x1="150" y1="80" x2="527" y2="80" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="238"
+				y="69"
+				width="204"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="84">CONNECT (will registered)</text><text
+				class="d-note"
+				x="540"
+				y="84">will stored</text
+			>
+			<line class="d-line" x1="150" y1="116" x2="527" y2="116" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="250"
+				y="105"
+				width="180"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="120">PUBLISH state "online"</text><text
+				class="d-note"
+				x="540"
+				y="120">retained</text
+			>
+			<line class="d-brk" x1="60" y1="150" x2="620" y2="150"></line><rect
+				x="210"
+				y="140"
+				width="260"
+				height="20"
+				rx="10"
+				fill="#fbeeee"></rect><text class="d-brklabel d-mid" x="340" y="153" style="fill:#c23b3b"
+				>connection lost — no DISCONNECT</text
+			>
+			<line class="d-line d-line--red" x1="530" y1="188" x2="647" y2="188" marker-end="url(#arRed)"></line><rect
+				class="d-chip"
+				x="338"
+				y="177"
+				width="188"
+				height="22"
+				rx="11"
+				style="stroke:#e6b3b3"></rect><text class="d-ctext d-mid" x="432" y="192" style="fill:#c23b3b"
+				>PUBLISH state "offline"</text
+			><text class="d-danger" x="556" y="192" style="font-size:11px">to subs</text>
+			<text class="d-note d-mid" x="340" y="192" style="text-anchor:end">the will fires:</text>
+			<text class="d-note d-mid" x="340" y="234">a graceful DISCONNECT would remove the will instead</text>
+		</svg>
+	</MqttDiagram>
 
 	<h2>Will delay (MQTT 5.0)</h2>
 	<p>

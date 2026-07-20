@@ -1,19 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const connectDiagram = `
-   client                                   broker
-     |                                        |
-     | -------- CONNECT (clientId, ...) -----> |   opens session
-     | <------- CONNACK (accepted) ----------- |
-     |                                        |
-     | -- SUBSCRIBE  cmd/device-1 ----------> |   listen for commands
-     | -- PUBLISH    sensors/1/temp -------->  |   send telemetry
-     | <---------- PUBLISH  cmd/device-1 ----- |   receive a command
-     |                                        |
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -56,10 +44,36 @@ const faq: FaqItem[] = [
 		After that, the client can subscribe and publish freely.
 	</p>
 
-	<AsciiDiagram
-		content={connectDiagram}
-		caption="A client connects once, then publishes and subscribes over the same long-lived connection"
-	/>
+	<MqttDiagram caption="One connection carries both directions — publish and subscribe">
+		<svg viewBox="0 0 680 296" role="img" aria-label="MQTT client connect and exchange sequence">
+			<rect class="d-actor" x="92" y="14" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-mid" x="150" y="36">Client</text>
+			<rect class="d-actor d-actor--hero" x="472" y="14" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="530" y="36">Broker</text>
+			<line class="d-life" x1="150" y1="50" x2="150" y2="278"></line>
+			<line class="d-life" x1="530" y1="50" x2="530" y2="278"></line>
+			<line class="d-line" x1="150" y1="80" x2="527" y2="80" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="238" y="69" width="204" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="84">CONNECT (clientId, …)</text>
+			<text class="d-note" x="540" y="84">opens session</text>
+			<line class="d-line d-line--green" x1="530" y1="116" x2="153" y2="116" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="296" y="105" width="88" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="120">CONNACK</text>
+			<text class="d-note" x="540" y="120">accepted</text>
+			<line class="d-line" x1="150" y1="158" x2="527" y2="158" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="233" y="147" width="214" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="162">SUBSCRIBE cmd/device-1</text>
+			<text class="d-note" x="540" y="162">listen</text>
+			<line class="d-line" x1="150" y1="196" x2="527" y2="196" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="233" y="185" width="214" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="200">PUBLISH sensors/1/temp</text>
+			<text class="d-note" x="540" y="200">telemetry</text>
+			<line class="d-line d-line--green" x1="530" y1="238" x2="153" y2="238" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="243" y="227" width="194" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="242">PUBLISH cmd/device-1</text>
+			<text class="d-note" x="540" y="242">command</text>
+		</svg>
+	</MqttDiagram>
 
 	<h2>What a client can do</h2>
 	<ul>

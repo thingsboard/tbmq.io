@@ -1,19 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const brokerDiagram = `
-   Publishers                    Broker                   Subscribers
-
-   [ sensor A ] --publish-->  +--------------+  --route-->  [ dashboard ]
-   [ sensor B ] --publish-->  |  match topic |  --route-->  [ service   ]
-   [ app X    ] --publish-->  |  apply QoS   |  --route-->  [ logger    ]
-                              |  auth + acls |
-                              |  sessions    |
-                              +--------------+
-                        one publish in  ->  many deliveries out
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -54,10 +42,69 @@ const faq: FaqItem[] = [
 		the others.
 	</p>
 
-	<AsciiDiagram
-		content={brokerDiagram}
-		caption="The broker receives each publish once and routes it to every matching subscriber"
-	/>
+	<MqttDiagram caption="The broker decouples publishers from subscribers and fans each message out">
+		<svg viewBox="0 0 680 264" role="img" aria-label="Broker routing one publish to many subscribers">
+			<text class="d-tiny d-mid" x="95" y="20">PUBLISHERS</text><text class="d-tiny d-mid" x="590" y="20"
+				>SUBSCRIBERS</text
+			>
+			<rect class="d-actor" x="30" y="40" width="130" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="95"
+				y="63">Sensor A</text
+			>
+			<rect class="d-actor" x="30" y="103" width="130" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="95"
+				y="126">Sensor B</text
+			>
+			<rect class="d-actor" x="30" y="166" width="130" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="95"
+				y="189">App X</text
+			>
+			<rect class="d-actor d-actor--hero" x="255" y="58" width="170" height="126" rx="12"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="340"
+				y="84"
+				style="font-size:14px;letter-spacing:.04em">BROKER</text
+			>
+			<text class="d-feat d-mid" x="340" y="110">match topic</text><text class="d-feat d-mid" x="340" y="129"
+				>apply QoS</text
+			><text class="d-feat d-mid" x="340" y="148">auth + ACLs</text><text class="d-feat d-mid" x="340" y="167"
+				>sessions</text
+			>
+			<rect class="d-actor" x="520" y="40" width="140" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="590"
+				y="63">Dashboard</text
+			>
+			<rect class="d-actor" x="520" y="103" width="140" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="590"
+				y="126">Service</text
+			>
+			<rect class="d-actor" x="520" y="166" width="140" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="590"
+				y="189">Logger</text
+			>
+			<path class="d-line" d="M160 58 C210 58 205 104 252 112" marker-end="url(#arGray)"></path><path
+				class="d-line"
+				d="M160 121 L252 121"
+				marker-end="url(#arGray)"></path><path
+				class="d-line"
+				d="M160 184 C210 184 205 138 252 130"
+				marker-end="url(#arGray)"></path><text class="d-tiny" x="180" y="100">publish</text>
+			<path class="d-line d-line--green" d="M425 112 C472 104 470 58 517 58" marker-end="url(#arGreen)"></path><path
+				class="d-line d-line--green"
+				d="M425 121 L517 121"
+				marker-end="url(#arGreen)"></path><path
+				class="d-line d-line--green"
+				d="M425 130 C472 138 470 184 517 184"
+				marker-end="url(#arGreen)"></path><text class="d-tiny" x="452" y="100" style="fill:#4f7d63">route</text>
+			<text class="d-note d-mid" x="340" y="222">one publish in → many deliveries out</text>
+		</svg>
+	</MqttDiagram>
 
 	<h2>What the broker manages</h2>
 	<p>Beyond routing, the broker owns the state and rules of the whole system:</p>

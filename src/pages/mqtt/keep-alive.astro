@@ -1,20 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const keepAliveDiagram = `
-   keep-alive = 60s   ->   client must send something every 90s (60 x 1.5)
-
-   client                                   broker
-     | -- PUBLISH / SUBSCRIBE / any packet -->  |   timer resets
-     |            (quiet period)                |
-     | -------------- PINGREQ ---------------->  |   nothing else to send
-     | <------------- PINGRESP ---------------- |   still alive, timer resets
-     |                                          |
-     |         silence for > 90s (1.5x)         |
-     |   X  broker closes conn (KEEP_ALIVE_TIMEOUT) + fires Last Will
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -60,10 +47,41 @@ const faq: FaqItem[] = [
 		With a 60-second keep-alive, the client must be heard from at least every 90 seconds.
 	</p>
 
-	<AsciiDiagram
-		content={keepAliveDiagram}
-		caption="Any packet keeps the connection alive; silence past the 1.5x window ends it"
-	/>
+	<MqttDiagram caption="Keep-alive heartbeat and dead-client detection">
+		<svg viewBox="0 0 680 348" role="img" aria-label="Keep-alive ping sequence and timeout">
+			<text class="d-head" x="40" y="22"
+				>Keep-alive <tspan class="d-em">60s</tspan> → the client must send a packet at least every <tspan class="d-em"
+					>90s</tspan
+				> (60 × 1.5)</text
+			>
+			<rect class="d-actor" x="92" y="40" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-mid" x="150" y="62">Client</text>
+			<rect class="d-actor d-actor--hero" x="472" y="40" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="530" y="62">Broker</text>
+			<line class="d-life" x1="150" y1="76" x2="150" y2="324"></line>
+			<line class="d-life" x1="530" y1="76" x2="530" y2="324"></line>
+			<line class="d-line" x1="150" y1="106" x2="527" y2="106" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="222" y="95" width="236" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="110">PUBLISH / SUBSCRIBE / any packet</text>
+			<text class="d-note" x="540" y="110">timer resets</text>
+			<text class="d-note d-mid" x="340" y="146">quiet period — nothing else to send</text>
+			<line class="d-line d-line--green" x1="150" y1="182" x2="527" y2="182" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="301" y="171" width="78" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="186">PINGREQ</text>
+			<text class="d-note" x="540" y="186">heartbeat</text>
+			<line class="d-line d-line--green" x1="530" y1="216" x2="153" y2="216" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="299" y="205" width="82" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="220">PINGRESP</text>
+			<text class="d-note" x="540" y="220">still alive</text>
+			<line class="d-brk" x1="60" y1="252" x2="620" y2="252"></line>
+			<rect x="252" y="242" width="176" height="20" rx="10" fill="#f0f1f4"></rect>
+			<text class="d-brklabel d-mid" x="340" y="255">silence for more than 90s</text>
+			<text class="d-danger d-mid" x="340" y="298">✗ Broker closes the connection (KEEP_ALIVE_TIMEOUT)</text>
+			<text class="d-mid" x="340" y="316" style="font: 500 12px system-ui; fill: #8a8d94"
+				>and publishes the client&apos;s Last Will, if one was set</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>Why it matters: half-open connections</h2>
 	<p>

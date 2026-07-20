@@ -1,19 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-const qosDiagram = `
- QoS 0  at most once     PUBLISH ──────────────▶     (no acknowledgement)
-
- QoS 1  at least once    PUBLISH ──────────────▶
-                              ◀────────────── PUBACK     (retry until acked)
-
- QoS 2  exactly once     PUBLISH ──────────────▶
-                              ◀────────────── PUBREC
-                         PUBREL ──────────────▶
-                              ◀────────────── PUBCOMP
-`;
 
 const faq: FaqItem[] = [
 	{
@@ -70,10 +58,93 @@ const faq: FaqItem[] = [
 		</li>
 	</ul>
 
-	<AsciiDiagram
-		content={qosDiagram}
-		caption="Packet flow for each QoS level: fire-and-forget, acknowledged, and the exactly-once handshake"
-	/>
+	<MqttDiagram caption="More packets buy a stronger delivery guarantee">
+		<svg viewBox="0 0 680 250" role="img" aria-label="The three QoS delivery handshakes">
+			<!-- column dividers -->
+			<line x1="235" y1="20" x2="235" y2="230" stroke="#eef0f3" stroke-width="1"></line><line
+				x1="455"
+				y1="20"
+				x2="455"
+				y2="230"
+				stroke="#eef0f3"
+				stroke-width="1"></line>
+			<!-- QoS 0 -->
+			<text class="d-glabel d-mid" x="117" y="34">QoS 0</text><text class="d-tiny d-mid" x="117" y="50"
+				>at most once</text
+			>
+			<line class="d-life" x1="72" y1="62" x2="72" y2="120"></line><line
+				class="d-life"
+				x1="162"
+				y1="62"
+				x2="162"
+				y2="120"></line>
+			<line class="d-line" x1="72" y1="86" x2="159" y2="86" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="117"
+				y="80"
+				style="font-size:10.5px">PUBLISH</text
+			>
+			<text class="d-note d-mid" x="117" y="112" style="font-size:10.5px">no ack</text>
+			<!-- QoS 1 -->
+			<text class="d-glabel d-mid" x="345" y="34">QoS 1</text><text class="d-tiny d-mid" x="345" y="50"
+				>at least once</text
+			>
+			<line class="d-life" x1="300" y1="62" x2="300" y2="150"></line><line
+				class="d-life"
+				x1="390"
+				y1="62"
+				x2="390"
+				y2="150"></line>
+			<line class="d-line" x1="300" y1="86" x2="387" y2="86" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="345"
+				y="80"
+				style="font-size:10.5px">PUBLISH</text
+			>
+			<line class="d-line d-line--green" x1="390" y1="118" x2="303" y2="118" marker-end="url(#arGreen)"></line><text
+				class="d-ctext--green d-mid"
+				x="345"
+				y="112"
+				style="font:600 10.5px ui-monospace,monospace">PUBACK</text
+			>
+			<text class="d-note d-mid" x="345" y="142" style="font-size:10.5px">may duplicate</text>
+			<!-- QoS 2 -->
+			<text class="d-glabel d-mid" x="567" y="34">QoS 2</text><text class="d-tiny d-mid" x="567" y="50"
+				>exactly once</text
+			>
+			<line class="d-life" x1="522" y1="62" x2="522" y2="222"></line><line
+				class="d-life"
+				x1="612"
+				y1="62"
+				x2="612"
+				y2="222"></line>
+			<line class="d-line" x1="522" y1="86" x2="609" y2="86" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="567"
+				y="80"
+				style="font-size:10.5px">PUBLISH</text
+			>
+			<line class="d-line d-line--green" x1="612" y1="120" x2="525" y2="120" marker-end="url(#arGreen)"></line><text
+				class="d-ctext--green d-mid"
+				x="567"
+				y="114"
+				style="font:600 10.5px ui-monospace,monospace">PUBREC</text
+			>
+			<line class="d-line" x1="522" y1="154" x2="609" y2="154" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="567"
+				y="148"
+				style="font-size:10.5px">PUBREL</text
+			>
+			<line class="d-line d-line--green" x1="612" y1="188" x2="525" y2="188" marker-end="url(#arGreen)"></line><text
+				class="d-ctext--green d-mid"
+				x="567"
+				y="182"
+				style="font:600 10.5px ui-monospace,monospace">PUBCOMP</text
+			>
+			<text class="d-note d-mid" x="567" y="214" style="font-size:10.5px">no loss, no dupes</text>
+		</svg>
+	</MqttDiagram>
 
 	<h2>QoS at a glance</h2>
 	<div class="overflow-x">
