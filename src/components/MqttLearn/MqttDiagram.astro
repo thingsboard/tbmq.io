@@ -150,7 +150,9 @@ const { caption, label } = Astro.props;
 		overflow-x: auto;
 		cursor: zoom-in;
 	}
-	.mqtt-diagram svg:not(.mqtt-diagram__defs) {
+	// Only the diagram SVG itself (the slotted direct child of the canvas) is sized —
+	// NOT the expand-button icon (a descendant) or the defs svg (a child of the figure).
+	.mqtt-diagram__canvas > svg {
 		display: block;
 		margin: 0 auto;
 		width: 100%;
@@ -225,7 +227,7 @@ const { caption, label } = Astro.props;
 	.mqtt-diagram-modal__body {
 		overflow: auto;
 	}
-	dialog.mqtt-diagram-modal .mqtt-diagram-modal__body svg:not(.mqtt-diagram__defs) {
+	dialog.mqtt-diagram-modal .mqtt-diagram-modal__body > svg {
 		width: min(1080px, 90vw);
 		max-width: none;
 		min-width: 0;
