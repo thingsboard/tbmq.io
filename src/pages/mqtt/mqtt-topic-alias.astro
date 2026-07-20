@@ -1,0 +1,92 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is a topic alias in MQTT 5.0?',
+		a: 'A small integer that stands in for a topic name for the duration of a connection. The first PUBLISH sends the full topic plus the alias to establish the mapping; later PUBLISHes to the same topic send just the alias with an empty topic string, saving bandwidth.',
+	},
+	{
+		q: 'What is the Topic Alias Maximum?',
+		a: 'A limit each side advertises for how many distinct aliases the other may use. It is negotiated per direction at connect time: a value of 0 means topic aliases are not allowed in that direction.',
+	},
+	{
+		q: 'Do topic aliases persist across connections?',
+		a: 'No. Aliases are scoped to a single connection and reset when the client reconnects. The mapping must be re-established with a full-topic PUBLISH on each new connection.',
+	},
+	{
+		q: 'When are topic aliases worth using?',
+		a: 'When a client repeatedly publishes to the same long topic names on a bandwidth-constrained link. Replacing a long hierarchical topic with a one- or two-byte integer on every subsequent message adds up over high message rates.',
+	},
+	{
+		q: 'Are topic aliases available in MQTT 3.1.1?',
+		a: 'No. Topic aliases are an MQTT 5.0 feature. In 3.1.1 every PUBLISH must carry the full topic string.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-topic-alias" faq={faq}>
+	<p>
+		Long, deeply nested <a href="/mqtt/topics/">topic names</a> are great for organization but wasteful to repeat on every
+		message. <a href="/mqtt/mqtt-5/">MQTT 5.0</a> adds <strong>topic aliases</strong> so a client can send a long topic once
+		and then refer to it by a small number.
+	</p>
+
+	<h2>How topic aliases work</h2>
+	<p>
+		The first time a client publishes to a topic, it includes both the full topic string and an alias — a small integer.
+		The broker records the mapping for that connection. On every later PUBLISH to the same topic, the client leaves the
+		topic string empty and sends only the alias; the broker looks up the alias and treats it as the full topic. How many
+		aliases are allowed is negotiated at connect through the <strong>Topic Alias Maximum</strong>.
+	</p>
+
+	<MqttDiagram caption="Topic Alias: send the long topic once, then just a small integer">
+		<svg
+			viewBox="0 0 680 236"
+			role="img"
+			aria-label="MQTT topic alias: the first publish sends the full topic plus an alias to set the mapping, and later publishes send only the alias with an empty topic"
+		>
+			<rect class="d-actor" x="110" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="170" y="46">Client</text>
+			<rect class="d-actor d-actor--hero" x="450" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="510" y="46">Broker</text>
+			<line class="d-life" x1="170" y1="58" x2="170" y2="224"></line>
+			<line class="d-life" x1="510" y1="58" x2="510" y2="224"></line>
+			<line class="d-line" x1="170" y1="92" x2="507" y2="92" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="210" y="81" width="260" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="96" style="font-size:11px"
+				>PUBLISH sensors/floor1/room3/temp · alias 1</text
+			>
+			<text class="d-note d-mid" x="340" y="118" style="font-size:11px"
+				>first message: full topic + alias — mapping set</text
+			>
+			<line class="d-line d-line--green" x1="170" y1="160" x2="507" y2="160" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="238" y="149" width="204" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="164" style="font-size:11px"
+				>PUBLISH (topic empty) · alias 1</text
+			>
+			<text class="d-note d-mid" x="340" y="186" style="font-size:11px"
+				>later messages: broker resolves alias 1 → the full topic</text
+			>
+			<text class="d-note d-mid" x="340" y="220">Only the first publish pays for the long topic string</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Things to keep in mind</h2>
+	<ul>
+		<li><strong>Per connection:</strong> aliases reset on reconnect — re-send the full topic to re-establish them.</li>
+		<li><strong>Per direction:</strong> client-to-broker and broker-to-client aliases are negotiated separately.</li>
+		<li>
+			<strong>Bounded:</strong> you can only use as many aliases as the other side’s Topic Alias Maximum allows.
+		</li>
+	</ul>
+
+	<h2>Topic aliases in TBMQ</h2>
+	<p>
+		TBMQ supports topic aliases and advertises a Topic Alias Maximum of <strong>10</strong> by default (configurable, and
+		0 disables the feature), so a client can map its busiest topics to short integers. See the
+		<a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> for supported 5.0 features.
+	</p>
+</MqttTopicLayout>

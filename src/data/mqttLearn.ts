@@ -92,10 +92,80 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT 5.0 is the latest version of the protocol. It keeps the lightweight pub/sub core of 3.1.1 and adds reason codes, user properties, topic aliases, shared subscriptions, message and session expiry, and flow control — giving you far better error reporting and control.',
 		tbmqTieIn:
 			'TBMQ fully supports MQTT 5.0 alongside 3.1 and 3.1.1, including reason codes, topic aliases, session/message expiry and flow control.',
-		related: ['what-is-mqtt', 'mqtt-request-response', 'shared-subscriptions', 'topics'],
+		related: ['mqtt-reason-codes', 'mqtt-user-properties', 'mqtt-message-expiry', 'shared-subscriptions'],
 		status: 'full',
 		seoDescription:
 			'MQTT 5.0 vs 3.1.1: the key new features — reason codes, user properties, topic aliases, expiry, shared subscriptions and flow control.',
+	},
+	{
+		slug: 'mqtt-message-expiry',
+		title: 'MQTT Session and Message Expiry',
+		navLabel: 'Session & message expiry',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT 5.0 adds two expiry controls. The Session Expiry Interval sets how long the broker keeps a disconnected client’s session — its subscriptions and queued messages — before discarding it. The Message Expiry Interval sets how long an individual message stays valid while queued; if it expires before it can be delivered, the broker drops it.',
+		tbmqTieIn:
+			'TBMQ honors both: it caps the session expiry interval at one week, and when it finally delivers a queued message it reduces the message’s remaining expiry by the time it waited in the broker.',
+		related: ['mqtt-5', 'persistent-session', 'retained-messages'],
+		status: 'full',
+		seoDescription:
+			'MQTT session expiry and message expiry intervals explained — how MQTT 5.0 controls how long a disconnected session is kept and how long a queued message stays valid.',
+	},
+	{
+		slug: 'mqtt-reason-codes',
+		title: 'MQTT Reason Codes',
+		navLabel: 'Reason codes',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'A reason code is a single-byte status value MQTT 5.0 attaches to acknowledgement packets (CONNACK, PUBACK, SUBACK, DISCONNECT and more). Values below 0x80 mean success or a normal outcome; 0x80 and above signal a failure and say why. It replaces MQTT 3.1.1’s near-silent failures with actionable feedback.',
+		tbmqTieIn:
+			'TBMQ returns MQTT 5.0 reason codes across its acknowledgement packets, so a client learns exactly why a connect, publish, or subscribe was refused instead of just seeing the connection drop.',
+		related: ['mqtt-5', 'mqtt-connection', 'qos'],
+		status: 'full',
+		seoDescription:
+			'MQTT reason codes explained — the single-byte MQTT 5.0 result codes on CONNACK, PUBACK, SUBACK and DISCONNECT, the success vs failure ranges, and common codes.',
+	},
+	{
+		slug: 'mqtt-user-properties',
+		title: 'MQTT User Properties',
+		navLabel: 'User properties',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'User Properties are arbitrary UTF-8 key–value pairs you can attach to MQTT 5.0 packets — the MQTT equivalent of custom HTTP headers. They travel with the message and let you carry metadata such as a content type, tenant ID, or tracing token without encoding it into the topic or payload.',
+		tbmqTieIn:
+			'TBMQ passes User Properties through end to end, from the publishing client to every subscriber, untouched — so you can rely on them for routing hints and metadata.',
+		related: ['mqtt-5', 'publish-subscribe', 'mqtt-request-response'],
+		status: 'full',
+		seoDescription:
+			'MQTT user properties explained — the MQTT 5.0 key–value metadata you attach to messages like HTTP headers, how they are carried end to end, and what to use them for.',
+	},
+	{
+		slug: 'mqtt-topic-alias',
+		title: 'MQTT Topic Alias',
+		navLabel: 'Topic alias',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'A Topic Alias lets a client or broker replace a long topic name with a small integer for the life of a connection. The first PUBLISH sends the full topic plus an alias number; later PUBLISHes to the same topic send only the number, cutting bandwidth on repetitive, long topic names.',
+		tbmqTieIn:
+			'TBMQ supports topic aliases and advertises a Topic Alias Maximum of 10 by default (configurable, and 0 disables it), so a client can map its busiest topics to short integers.',
+		related: ['mqtt-5', 'topics', 'mqtt-packets'],
+		status: 'full',
+		seoDescription:
+			'MQTT topic alias explained — how MQTT 5.0 replaces a long topic string with a short integer per connection to save bandwidth, and how Topic Alias Maximum is negotiated.',
+	},
+	{
+		slug: 'mqtt-flow-control',
+		title: 'MQTT Flow Control',
+		navLabel: 'Flow control',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT 5.0 flow control uses the Receive Maximum property: each side tells the other how many QoS 1 and QoS 2 messages it will accept without acknowledgement at once. The sender stops when that many are in flight and resumes as acknowledgements arrive, so a fast sender can’t overwhelm a slower receiver.',
+		tbmqTieIn:
+			'TBMQ enables flow control and advertises a Receive Maximum of 1000, so a client may have up to 1000 unacknowledged QoS 1/2 publishes in flight to the broker before it must wait for acknowledgements.',
+		related: ['mqtt-5', 'qos', 'persistent-session'],
+		status: 'full',
+		seoDescription:
+			'MQTT flow control explained — how the MQTT 5.0 Receive Maximum limits unacknowledged QoS 1 and 2 messages in flight so a fast sender cannot overwhelm a receiver.',
 	},
 	{
 		slug: 'persistent-session',

@@ -37,30 +37,32 @@ const faq: FaqItem[] = [
 	<h2>What MQTT 5.0 adds</h2>
 	<ul>
 		<li>
-			<strong>Reason codes and reason strings:</strong> acknowledgements now explain <em>why</em> something failed, instead
-			of a bare success/fail.
+			<strong><a href="/mqtt/mqtt-reason-codes/">Reason codes and reason strings</a>:</strong> acknowledgements now explain
+			<em>why</em> something failed, instead of a bare success/fail.
 		</li>
 		<li>
-			<strong>User properties:</strong> attach custom key/value metadata to messages and packets, like application-level headers.
+			<strong><a href="/mqtt/mqtt-user-properties/">User properties</a>:</strong> attach custom key/value metadata to messages
+			and packets, like application-level headers.
 		</li>
 		<li>
-			<strong>Session and message expiry:</strong> bound how long a session survives after disconnect and how long a queued
-			message stays valid.
+			<strong><a href="/mqtt/mqtt-message-expiry/">Session and message expiry</a>:</strong> bound how long a session survives
+			after disconnect and how long a queued message stays valid.
 		</li>
 		<li>
-			<strong>Topic aliases:</strong> replace a long topic string with a short integer for the rest of a connection, cutting
-			bandwidth on repetitive topics.
+			<strong><a href="/mqtt/mqtt-topic-alias/">Topic aliases</a>:</strong> replace a long topic string with a short integer
+			for the rest of a connection, cutting bandwidth on repetitive topics.
 		</li>
 		<li>
-			<strong>Flow control:</strong> a client advertises how many unacknowledged messages it will accept (receive maximum),
-			so the broker can't overwhelm it.
+			<strong><a href="/mqtt/mqtt-flow-control/">Flow control</a>:</strong> a client advertises how many unacknowledged messages
+			it will accept (receive maximum), so the broker can't overwhelm it.
 		</li>
 		<li>
-			<strong>Shared subscriptions:</strong> standardized load balancing across a group of consumers (see
-			<a href="/mqtt/shared-subscriptions/">shared subscriptions</a>).
+			<strong><a href="/mqtt/shared-subscriptions/">Shared subscriptions</a>:</strong> standardized load balancing across
+			a group of consumers.
 		</li>
 		<li>
-			<strong>Request/response:</strong> a response-topic and correlation-data convention for RPC-style exchanges over pub/sub.
+			<strong><a href="/mqtt/mqtt-request-response/">Request/response</a>:</strong> a response-topic and correlation-data
+			convention for RPC-style exchanges over pub/sub.
 		</li>
 	</ul>
 

@@ -1,0 +1,114 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is a reason code in MQTT?',
+		a: 'A single-byte value in an MQTT 5.0 acknowledgement packet that reports the outcome of an operation. Codes below 0x80 are success or normal outcomes; codes 0x80 and above indicate a failure and identify what went wrong.',
+	},
+	{
+		q: 'Which packets carry reason codes?',
+		a: 'CONNACK, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBACK, UNSUBACK, DISCONNECT and AUTH. SUBACK carries one reason code per topic filter in the request.',
+	},
+	{
+		q: 'What is a reason string?',
+		a: 'An optional human-readable text field the sender can add next to the reason code to give more detail, meant for logging and diagnostics rather than for programmatic decisions.',
+	},
+	{
+		q: 'Do reason codes exist in MQTT 3.1.1?',
+		a: 'Not in the same way. MQTT 3.1.1 has a few CONNACK return codes and per-subscription SUBACK results, but a failed publish or an unexpected disconnect gave almost no feedback — often the broker just closed the connection. MQTT 5.0 adds reason codes across the board.',
+	},
+	{
+		q: 'What does reason code 0x87 mean?',
+		a: '0x87 is “Not authorized”. For example, a broker returns it on PUBACK or SUBACK when a client tries to publish or subscribe to a topic its permissions don’t allow.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-reason-codes" faq={faq}>
+	<p>
+		In MQTT 3.1.1, when something went wrong the broker often just closed the connection and left you guessing.
+		<a href="/mqtt/mqtt-5/">MQTT 5.0</a> fixes that with <strong>reason codes</strong>: a single byte on every
+		acknowledgement that says whether an operation succeeded and, if not, why.
+	</p>
+
+	<h2>How reason codes work</h2>
+	<p>
+		Every MQTT 5.0 acknowledgement — CONNACK, PUBACK, SUBACK, DISCONNECT and the rest — carries a reason code. The value
+		range is split in two: anything <strong>below 0x80</strong> is a success or normal outcome, and anything
+		<strong>0x80 or above</strong> is a failure. The sender may also attach an optional <em>reason string</em> with human-readable
+		detail for logs.
+	</p>
+
+	<MqttDiagram caption="MQTT 5.0 turns each acknowledgement into a clear yes / no — with a reason on failure">
+		<svg
+			viewBox="0 0 680 226"
+			role="img"
+			aria-label="MQTT reason codes: an allowed publish is acknowledged with PUBACK reason 0x00 success, while a refused publish is acknowledged with PUBACK reason 0x87 not authorized"
+		>
+			<text class="d-glabel" x="40" y="24" style="fill:#166c37">Allowed</text>
+			<rect class="d-actor" x="150" y="12" width="96" height="28" rx="8"></rect>
+			<text class="d-alabel d-mid" x="198" y="30" style="font-size:12px">Client</text>
+			<rect class="d-actor d-actor--hero" x="470" y="12" width="96" height="28" rx="8"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="518" y="30" style="font-size:12px">Broker</text>
+			<line class="d-life" x1="198" y1="40" x2="198" y2="96"></line>
+			<line class="d-life" x1="518" y1="40" x2="518" y2="96"></line>
+			<line class="d-line" x1="198" y1="62" x2="515" y2="62" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="286" y="51" width="144" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="358" y="66">PUBLISH sensors/temp</text>
+			<line class="d-line d-line--green" x1="518" y1="88" x2="201" y2="88" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="282" y="77" width="152" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="358" y="92">PUBACK 0x00 Success</text>
+			<line x1="40" y1="118" x2="640" y2="118" stroke="#eef0f3" stroke-width="1"></line>
+			<text class="d-glabel" x="40" y="146" style="fill:#c23b3b">Refused</text>
+			<rect class="d-actor" x="150" y="134" width="96" height="28" rx="8"></rect>
+			<text class="d-alabel d-mid" x="198" y="152" style="font-size:12px">Client</text>
+			<rect class="d-actor d-actor--hero" x="470" y="134" width="96" height="28" rx="8"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="518" y="152" style="font-size:12px">Broker</text>
+			<line class="d-life" x1="198" y1="162" x2="198" y2="216"></line>
+			<line class="d-life" x1="518" y1="162" x2="518" y2="216"></line>
+			<line class="d-line" x1="198" y1="184" x2="515" y2="184" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="286" y="173" width="144" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="358" y="188">PUBLISH admin/config</text>
+			<line class="d-line d-line--red" x1="518" y1="210" x2="201" y2="210" marker-end="url(#arRed)"></line>
+			<rect class="d-chip" x="266" y="199" width="184" height="22" rx="11" style="stroke:#e3b3b3"></rect>
+			<text class="d-ctext d-mid" x="358" y="214" style="fill:#c23b3b">PUBACK 0x87 Not authorized</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Common reason codes</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>Code</th><th>Name</th><th>Typical meaning</th></tr>
+			</thead>
+			<tbody>
+				<tr><td><code>0x00</code></td><td>Success / Normal</td><td>The operation succeeded</td></tr>
+				<tr
+					><td><code>0x10</code></td><td>No matching subscribers</td><td>PUBLISH accepted, but no one was subscribed</td
+					></tr
+				>
+				<tr
+					><td><code>0x80</code></td><td>Unspecified error</td><td>Something failed without a more specific code</td
+					></tr
+				>
+				<tr><td><code>0x87</code></td><td>Not authorized</td><td>The client isn’t permitted to do this</td></tr>
+				<tr
+					><td><code>0x8E</code></td><td>Session taken over</td><td
+						>Another connection used the same <a href="/mqtt/mqtt-client-id/">client ID</a></td
+					></tr
+				>
+				<tr><td><code>0x97</code></td><td>Quota exceeded</td><td>A broker limit was hit</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Reason codes in TBMQ</h2>
+	<p>
+		TBMQ returns MQTT 5.0 reason codes across its acknowledgement packets — CONNACK, PUBACK, SUBACK, DISCONNECT and more
+		— so a client learns exactly why a connect, publish, or subscribe was refused rather than just seeing the connection
+		drop. See the <a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> for supported 5.0 behavior.
+	</p>
+</MqttTopicLayout>
