@@ -1,0 +1,112 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Can two clients use the same client ID?',
+		a: 'Not at the same time. The client ID must be unique among currently connected clients. If a second client connects with an ID already in use, the broker disconnects the first one — a behavior called client take-over.',
+	},
+	{
+		q: 'What happens on a client ID collision?',
+		a: 'The broker keeps the newest connection and closes the older one. In MQTT 5.0 the displaced client receives a DISCONNECT with reason code Session taken over (0x8E). This is defined by the protocol, so it is not a bug — usually it is a sign that two devices were accidentally given the same ID.',
+	},
+	{
+		q: 'Can the client ID be empty?',
+		a: 'Yes, in MQTT 3.1.1 and 5.0 a client may send an empty client ID and let the broker assign one. This only makes sense for a clean (non-persistent) session, because there is no stable ID to map stored state back to on reconnect.',
+	},
+	{
+		q: 'Does the client ID have to be unique forever?',
+		a: 'It must be unique among concurrent connections. Reusing the same ID later is normal and intended — that is exactly how a client reconnects to its persistent session and picks up queued messages.',
+	},
+	{
+		q: 'Is the client ID the same as a username?',
+		a: 'No. The client ID identifies the connection and its session; the username (with a password) is for authentication. A broker can authorize based on either, but they are separate fields in CONNECT.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-client-id" faq={faq}>
+	<p>
+		The <strong>client ID</strong> is the string an <a href="/mqtt/mqtt-client/">MQTT client</a> puts in its
+		<a href="/mqtt/mqtt-connection/">CONNECT</a> packet to identify itself to the broker. It is small but important: it is
+		how the broker tells one client from another and how it links a reconnecting client back to its session state.
+	</p>
+
+	<h2>What the client ID is for</h2>
+	<p>
+		The broker uses the client ID as the key for a client’s <a href="/mqtt/persistent-session/">session</a> — its subscriptions
+		and any queued messages. When a client reconnects with the same ID and asks to resume, the broker finds that state and
+		restores it. The client ID is therefore the anchor of a client’s identity across reconnects, not just for a single connection.
+	</p>
+
+	<h2>Uniqueness and client take-over</h2>
+	<p>
+		Only one connection per client ID may be active at a time. If a second client connects with an ID that is already
+		connected, the broker performs a <strong>take-over</strong>: it keeps the new connection and disconnects the old
+		one. In MQTT 5.0, the displaced client is told why with the reason code <code>Session taken over</code>.
+	</p>
+
+	<MqttDiagram caption="Client take-over: a second connection with the same client ID displaces the first">
+		<svg
+			viewBox="0 0 680 300"
+			role="img"
+			aria-label="MQTT client take-over: Client A is connected, then Client B connects with the same client ID, so the broker disconnects Client A and keeps Client B"
+		>
+			<rect class="d-actor" x="40" y="28" width="130" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="105" y="50">Client A</text>
+			<rect class="d-actor d-actor--hero" x="275" y="28" width="130" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="50">Broker</text>
+			<rect class="d-actor" x="510" y="28" width="130" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="575" y="50">Client B</text>
+			<line class="d-life" x1="105" y1="62" x2="105" y2="288"></line>
+			<line class="d-life" x1="340" y1="62" x2="340" y2="288"></line>
+			<line class="d-life" x1="575" y1="62" x2="575" y2="288"></line>
+			<line class="d-line" x1="105" y1="90" x2="337" y2="90" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="140" y="79" width="164" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="222" y="94">CONNECT id=sensor-1</text>
+			<line class="d-line d-line--green" x1="340" y1="116" x2="108" y2="116" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="180" y="105" width="84" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="222" y="120">CONNACK</text>
+			<line class="d-brk" x1="60" y1="146" x2="620" y2="146"></line>
+			<text class="d-brklabel d-mid" x="340" y="141">later — Client B connects with the same client ID</text>
+			<line class="d-line" x1="575" y1="178" x2="343" y2="178" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="376" y="167" width="164" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="458" y="182">CONNECT id=sensor-1</text>
+			<line class="d-line d-line--red" x1="340" y1="218" x2="108" y2="218" marker-end="url(#arRed)"></line>
+			<rect class="d-chip" x="150" y="207" width="144" height="22" rx="11" style="stroke:#e3b3b3"></rect>
+			<text class="d-ctext d-mid" x="222" y="222" style="fill:#c23b3b">DISCONNECT</text>
+			<text class="d-danger" x="300" y="240">reason: SESSION_TAKEN_OVER</text>
+			<line class="d-line d-line--green" x1="340" y1="266" x2="573" y2="266" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="416" y="255" width="84" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="458" y="270">CONNACK</text>
+			<text class="d-note" x="356" y="288" style="fill:#166c37">Client B is now the live connection</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Choosing a client ID</h2>
+	<ul>
+		<li>
+			<strong>Use a stable, unique ID</strong> per device or app instance if you rely on
+			<a href="/mqtt/persistent-session/">persistent sessions</a> — that is what lets a client resume its state.
+		</li>
+		<li>
+			<strong>Avoid accidental sharing:</strong> two devices flashed with the same ID will keep kicking each other off in
+			a reconnect loop. Derive IDs from something unique (serial number, MAC).
+		</li>
+		<li>
+			<strong>Empty client ID</strong> is allowed (the broker assigns one) but only suits throwaway, clean-session connections,
+			since there is no stable key to map stored state to.
+		</li>
+	</ul>
+
+	<h2>Client IDs in TBMQ</h2>
+	<p>
+		TBMQ enforces one live connection per client ID across the whole cluster: a conflicting CONNECT takes over the
+		session and disconnects the previous connection with reason <code>SESSION_TAKEN_OVER</code>, even when the two
+		clients are connected to different nodes. See the <a href="/docs/mqtt-broker/concepts/sessions/">sessions concept</a
+		>
+		for how client IDs map to session state.
+	</p>
+</MqttTopicLayout>

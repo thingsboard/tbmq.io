@@ -1,0 +1,107 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Can you do request-response in MQTT 3.1.1?',
+		a: 'Yes, but by convention rather than protocol. The requester includes a reply topic and a correlation ID somewhere in the payload or topic, and the responder publishes there. MQTT 5.0 makes this first-class with the Response Topic and Correlation Data properties, so it no longer has to be baked into the payload.',
+	},
+	{
+		q: 'What is Correlation Data?',
+		a: 'An opaque value the requester attaches to a request so it can match the reply back to the original request. The responder copies it verbatim into the response. It matters when a client has several requests in flight on the same response topic.',
+	},
+	{
+		q: 'What is the Response Topic?',
+		a: 'The topic the requester wants the reply published to. The responder reads it from the request and publishes its answer there — so the requester controls where the response lands, and typically subscribes to that topic beforehand.',
+	},
+	{
+		q: 'Is MQTT request-response synchronous?',
+		a: 'No. It runs over pub/sub, so it is asynchronous: the requester publishes, then receives the reply as a separate incoming message on the response topic. There is no blocking call and no guarantee of a reply — design for timeouts.',
+	},
+	{
+		q: 'How is this different from HTTP request/response?',
+		a: 'HTTP ties the response to the same connection and blocks until it arrives. MQTT decouples the two through the broker: requester and responder never connect to each other, either can be offline at different moments, and one responder can serve many requesters over a long-lived connection.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-request-response" faq={faq}>
+	<p>
+		MQTT is built around one-way <a href="/mqtt/publish-subscribe/">publish/subscribe</a>, but plenty of real
+		interactions need a reply — “read this value”, “run this command, tell me the result”. MQTT 5.0 adds a first-class
+		<strong>request-response</strong> pattern for exactly this, without leaving pub/sub behind.
+	</p>
+
+	<h2>How request-response works in MQTT 5.0</h2>
+	<p>
+		The requester publishes its request and attaches two properties: a <strong>Response Topic</strong> (where it wants the
+		reply) and <strong>Correlation Data</strong> (an ID to match the reply to this request). The responder — a client subscribed
+		to the request topic — does its work and publishes the answer to that Response Topic, echoing the same Correlation Data.
+		The requester, subscribed to the Response Topic, receives it and matches it up.
+	</p>
+
+	<MqttDiagram caption="Request-response over pub/sub: reply on the Response Topic, matched by Correlation Data">
+		<svg
+			viewBox="0 0 680 292"
+			role="img"
+			aria-label="MQTT request-response: the requester publishes with a response topic and correlation data, the broker routes it to the responder, which replies on the response topic echoing the same correlation data"
+		>
+			<rect class="d-actor" x="30" y="28" width="150" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="105" y="50">Requester</text>
+			<rect class="d-actor d-actor--hero" x="275" y="28" width="130" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="50">Broker</text>
+			<rect class="d-actor" x="500" y="28" width="150" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="575" y="50">Responder</text>
+			<line class="d-life" x1="105" y1="62" x2="105" y2="280"></line>
+			<line class="d-life" x1="340" y1="62" x2="340" y2="280"></line>
+			<line class="d-life" x1="575" y1="62" x2="575" y2="280"></line>
+			<line class="d-line" x1="105" y1="92" x2="337" y2="92" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="140" y="81" width="164" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="222" y="96">PUBLISH req/getTemp</text>
+			<text class="d-note d-mid" x="222" y="118" style="font-size:11px"
+				>response-topic: resp/123 · correlation-data: abc</text
+			>
+			<line class="d-line d-line--green" x1="340" y1="150" x2="573" y2="150" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="376" y="139" width="164" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="458" y="154">PUBLISH req/getTemp</text>
+			<line class="d-line" x1="575" y1="196" x2="343" y2="196" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="382" y="185" width="152" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="458" y="200">PUBLISH resp/123</text>
+			<text class="d-note d-mid" x="458" y="222" style="font-size:11px">correlation-data: abc (echoed)</text>
+			<line class="d-line d-line--green" x1="340" y1="254" x2="108" y2="254" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="146" y="243" width="152" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="222" y="258">PUBLISH resp/123</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Response Topic and Correlation Data</h2>
+	<ul>
+		<li>
+			<strong>Response Topic:</strong> the <a href="/mqtt/topics/">topic</a> the reply should be published to. The requester
+			usually subscribes to it before sending the request.
+		</li>
+		<li>
+			<strong>Correlation Data:</strong> an opaque identifier the responder copies back verbatim, so the requester can line
+			up each reply with the right request when several are in flight.
+		</li>
+	</ul>
+
+	<h2>Before MQTT 5.0</h2>
+	<p>
+		The pattern was possible in MQTT 3.1.1, but you had to build it yourself — encode a reply topic and a correlation ID
+		into the payload or the topic string by convention, and hope every client agreed on the format. MQTT 5.0 moves both
+		into standard message properties, so libraries and brokers can support the pattern directly. It is one of the
+		reasons to consider <a href="/mqtt/mqtt-5/">MQTT 5.0</a>.
+	</p>
+
+	<h2>Request-response in TBMQ</h2>
+	<p>
+		TBMQ fully supports MQTT 5.0 and carries Response Topic, Correlation Data and <a href="/mqtt/mqtt-5/"
+			>User Properties</a
+		> through end to end, so request/response flows run over the same broker as the rest of your traffic. See the <a
+			href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a
+		> for supported features.
+	</p>
+</MqttTopicLayout>

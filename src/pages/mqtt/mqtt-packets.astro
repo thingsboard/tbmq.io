@@ -1,0 +1,127 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'How many MQTT packet types are there?',
+		a: 'MQTT 3.1.1 defines 14 control packet types. MQTT 5.0 adds one more, AUTH, for enhanced authentication — for 15 in total.',
+	},
+	{
+		q: 'What is the smallest MQTT packet?',
+		a: 'Two bytes. PINGREQ and PINGRESP are just a fixed header with no variable header or payload, so they are the minimal 2-byte packets — which is part of why MQTT is so lightweight.',
+	},
+	{
+		q: 'What is in the fixed header?',
+		a: 'The control packet type and a set of type-specific flags in the first byte, followed by the Remaining Length — a variable-length integer giving the number of bytes left in the packet (variable header plus payload).',
+	},
+	{
+		q: 'What is the AUTH packet?',
+		a: 'AUTH is an MQTT 5.0 packet used for enhanced authentication — a challenge/response exchange (for example SCRAM) that can happen during connection or be re-issued later. It does not exist in MQTT 3.1.1.',
+	},
+	{
+		q: 'Is there a limit on MQTT packet size?',
+		a: 'The Remaining Length field caps a packet at about 256 MB (268,435,455 bytes). MQTT 5.0 also lets each side advertise a smaller Maximum Packet Size, and brokers typically enforce their own limit well below the protocol maximum.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-packets" faq={faq}>
+	<p>
+		Everything two MQTT peers say to each other is an <strong>MQTT control packet</strong>. There are only about a dozen
+		types, and they all share the same compact structure — which is what keeps the protocol light enough for constrained
+		devices.
+	</p>
+
+	<h2>Anatomy of a packet</h2>
+	<p>
+		Every packet starts with a <strong>fixed header</strong> of at least two bytes. Some packets add a
+		<strong>variable header</strong>, and some carry a <strong>payload</strong>; both are optional depending on the
+		packet type.
+	</p>
+
+	<MqttDiagram caption="An MQTT packet: a tiny fixed header, plus an optional variable header and payload">
+		<svg
+			viewBox="0 0 680 210"
+			role="img"
+			aria-label="Anatomy of an MQTT control packet: a fixed header of at least two bytes, an optional variable header, and an optional payload"
+		>
+			<text class="d-head d-mid" x="340" y="24">Every MQTT control packet</text>
+			<rect class="d-chip d-chip--green" x="40" y="44" width="188" height="96" rx="8"></rect>
+			<text class="d-glabel d-mid" x="134" y="70">Fixed header</text>
+			<text class="d-feat d-mid" x="134" y="90">≥ 2 bytes · always present</text>
+			<rect x="58" y="100" width="152" height="26" rx="5" style="fill:#fff;stroke:#bfe3cd"></rect>
+			<text class="d-ctext d-mid" x="134" y="117" style="font-size:10.5px">type + flags · remaining length</text>
+			<rect class="d-actor" x="244" y="44" width="180" height="96" rx="8"></rect>
+			<text class="d-glabel d-mid" x="334" y="70">Variable header</text>
+			<text class="d-feat d-mid" x="334" y="90" style="fill:#8a8d94">optional</text>
+			<text class="d-note d-mid" x="334" y="116" style="font-size:11px">packet ID, properties (MQTT 5)…</text>
+			<rect class="d-actor" x="440" y="44" width="200" height="96" rx="8"></rect>
+			<text class="d-glabel d-mid" x="540" y="70">Payload</text>
+			<text class="d-feat d-mid" x="540" y="90" style="fill:#8a8d94">optional</text>
+			<text class="d-note d-mid" x="540" y="116" style="font-size:11px">your message bytes (opaque)</text>
+			<text class="d-note d-mid" x="340" y="178"
+				>Smallest packets are just the 2-byte fixed header — e.g. PINGREQ, PINGRESP</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>The control packet types</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>Packet</th><th>Direction</th><th>Purpose</th></tr>
+			</thead>
+			<tbody>
+				<tr
+					><td><code>CONNECT</code> / <code>CONNACK</code></td><td>C→B / B→C</td><td
+						>Open a session and acknowledge it</td
+					></tr
+				>
+				<tr><td><code>PUBLISH</code></td><td>either way</td><td>Deliver an application message on a topic</td></tr>
+				<tr
+					><td><code>PUBACK</code> / <code>PUBREC</code> / <code>PUBREL</code> / <code>PUBCOMP</code></td><td
+						>either way</td
+					><td>Acknowledge a PUBLISH per its <a href="/mqtt/qos/">QoS</a> level</td></tr
+				>
+				<tr
+					><td><code>SUBSCRIBE</code> / <code>SUBACK</code></td><td>C→B / B→C</td><td
+						>Subscribe to topic filters and confirm</td
+					></tr
+				>
+				<tr
+					><td><code>UNSUBSCRIBE</code> / <code>UNSUBACK</code></td><td>C→B / B→C</td><td
+						>Cancel subscriptions and confirm</td
+					></tr
+				>
+				<tr
+					><td><code>PINGREQ</code> / <code>PINGRESP</code></td><td>C→B / B→C</td><td
+						><a href="/mqtt/keep-alive/">Keep-alive</a> heartbeat</td
+					></tr
+				>
+				<tr
+					><td><code>DISCONNECT</code></td><td>either way</td><td
+						>Close the session gracefully (MQTT 5 adds a reason)</td
+					></tr
+				>
+				<tr><td><code>AUTH</code></td><td>either way</td><td>Enhanced authentication (MQTT 5.0 only)</td></tr>
+			</tbody>
+		</table>
+	</div>
+	<p><em>C→B = client to broker · B→C = broker to client</em></p>
+
+	<h2>Why MQTT is lightweight</h2>
+	<p>
+		Because the fixed header is as small as two bytes and control packets carry only what they need, MQTT’s per-message
+		overhead is tiny compared to text protocols like HTTP. That is a big part of why it suits low-bandwidth,
+		battery-powered devices — see <a href="/mqtt/mqtt-vs-http/">MQTT vs HTTP</a>.
+	</p>
+
+	<h2>MQTT packets in TBMQ</h2>
+	<p>
+		TBMQ implements the full MQTT 3.1 / 3.1.1 / 5.0 control-packet set, including the MQTT 5.0 <code>AUTH</code> packet used
+		for enhanced (SCRAM) authentication. For the exact protocol support, see the
+		<a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a>.
+	</p>
+</MqttTopicLayout>

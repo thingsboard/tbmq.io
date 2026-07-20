@@ -35,7 +35,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT (Message Queuing Telemetry Transport) is a lightweight publish/subscribe messaging protocol built for constrained devices and low-bandwidth, unreliable networks. Clients publish messages to named topics on a central broker, which forwards each message to every client subscribed to that topic — decoupling senders from receivers.',
 		tbmqTieIn:
 			'TBMQ is an open-source MQTT broker (3.1, 3.1.1 and 5.0) engineered to scale to 100M+ concurrent connections.',
-		related: ['mqtt-broker', 'mqtt-client', 'mqtt-vs-kafka'],
+		related: ['mqtt-broker', 'mqtt-client', 'publish-subscribe', 'mqtt-vs-kafka'],
 		status: 'full',
 		seoDescription:
 			"What is MQTT? A plain-English guide to the lightweight publish/subscribe protocol behind modern IoT — how it works, why it's used, and how it compares to HTTP.",
@@ -92,7 +92,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT 5.0 is the latest version of the protocol. It keeps the lightweight pub/sub core of 3.1.1 and adds reason codes, user properties, topic aliases, shared subscriptions, message and session expiry, and flow control — giving you far better error reporting and control.',
 		tbmqTieIn:
 			'TBMQ fully supports MQTT 5.0 alongside 3.1 and 3.1.1, including reason codes, topic aliases, session/message expiry and flow control.',
-		related: ['what-is-mqtt', 'shared-subscriptions', 'topics'],
+		related: ['what-is-mqtt', 'mqtt-request-response', 'shared-subscriptions', 'topics'],
 		status: 'full',
 		seoDescription:
 			'MQTT 5.0 vs 3.1.1: the key new features — reason codes, user properties, topic aliases, expiry, shared subscriptions and flow control.',
@@ -207,10 +207,80 @@ export const mqttTopics: MqttTopic[] = [
 			'An MQTT client is any device or application that connects to an MQTT broker to publish messages, subscribe to topics, or both. Anything from an 8-bit microcontroller to a backend service or a browser tab can be a client, as long as it speaks the MQTT protocol over a supported transport.',
 		tbmqTieIn:
 			'TBMQ works with any standard MQTT client library and ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser.',
-		related: ['mqtt-broker', 'what-is-mqtt', 'websocket'],
+		related: ['mqtt-broker', 'what-is-mqtt', 'mqtt-client-id', 'websocket'],
 		status: 'full',
 		seoDescription:
 			'What is an MQTT client? How devices and apps connect to a broker to publish and subscribe, the connect handshake, client IDs, and MQTT client libraries.',
+	},
+	{
+		slug: 'publish-subscribe',
+		title: 'MQTT Publish/Subscribe Explained',
+		navLabel: 'Publish/subscribe',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT uses a publish/subscribe model: clients publish messages to named topics on a broker, and the broker delivers each message to every client subscribed to a matching topic. Publishers and subscribers are decoupled — they interact only through topics, never directly. The three core operations are PUBLISH, SUBSCRIBE, and UNSUBSCRIBE.',
+		tbmqTieIn:
+			'TBMQ matches every PUBLISH against subscriptions held in an in-memory topic trie and fans it out to all matching subscribers, so match cost scales with a topic’s depth rather than its total subscription count.',
+		related: ['what-is-mqtt', 'topics', 'shared-subscriptions'],
+		status: 'full',
+		seoDescription:
+			'MQTT publish/subscribe explained — how the pub/sub model decouples publishers and subscribers through topics, and how the PUBLISH, SUBSCRIBE and UNSUBSCRIBE operations work.',
+	},
+	{
+		slug: 'mqtt-connection',
+		title: 'MQTT Connection: CONNECT and CONNACK',
+		navLabel: 'Connection (CONNECT)',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'An MQTT session begins with the client sending a CONNECT packet and the broker replying with CONNACK. CONNECT carries the client ID, the clean-start flag, the keep-alive interval, optional credentials and a Last Will; CONNACK returns a reason code and a session-present flag that tells the client whether the broker resumed an existing session.',
+		tbmqTieIn:
+			'TBMQ accepts MQTT 3.1, 3.1.1 and 5.0 CONNECTs, honors Clean Start and the session-present flag, and enforces one live connection per client ID — a second CONNECT with the same ID takes over, disconnecting the old session.',
+		related: ['mqtt-client-id', 'keep-alive', 'persistent-session'],
+		status: 'full',
+		seoDescription:
+			'MQTT CONNECT and CONNACK explained — the connection handshake, clean start vs session present, keep-alive negotiation, credentials, and CONNACK reason codes.',
+	},
+	{
+		slug: 'mqtt-client-id',
+		title: 'MQTT Client ID and Client Take-Over',
+		navLabel: 'Client ID',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'The MQTT client ID is a string that uniquely identifies a client to the broker and links it to its session state. Only one connection per client ID may be active at a time: if a second client connects with an ID already in use, the broker performs a take-over — disconnecting the existing connection and keeping the new one.',
+		tbmqTieIn:
+			'TBMQ enforces one live connection per client ID across the whole cluster: a conflicting CONNECT takes over the session and disconnects the previous connection with reason SESSION_TAKEN_OVER, even when the two clients land on different nodes.',
+		related: ['mqtt-connection', 'mqtt-client', 'persistent-session'],
+		status: 'full',
+		seoDescription:
+			'MQTT client ID explained — what it is, uniqueness rules, how it maps to session state, and what happens on a client ID collision (client take-over).',
+	},
+	{
+		slug: 'mqtt-packets',
+		title: 'MQTT Packets: Control Packet Types',
+		navLabel: 'MQTT packets',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT control packets are the messages exchanged between client and broker. Each has a fixed header of at least 2 bytes (packet type, flags and remaining length), an optional variable header, and an optional payload. The types include CONNECT/CONNACK, PUBLISH with its acknowledgements, SUBSCRIBE/SUBACK, UNSUBSCRIBE/UNSUBACK, PINGREQ/PINGRESP, DISCONNECT and — in MQTT 5.0 — AUTH.',
+		tbmqTieIn:
+			'TBMQ implements the full MQTT 3.1 / 3.1.1 / 5.0 control-packet set, including the MQTT 5.0 AUTH packet used for enhanced (SCRAM) authentication.',
+		related: ['mqtt-connection', 'qos', 'publish-subscribe'],
+		status: 'full',
+		seoDescription:
+			'MQTT packets explained — the control packet types (CONNECT, PUBLISH, SUBSCRIBE, PINGREQ, DISCONNECT, AUTH), the fixed and variable header structure, and the 2-byte minimum overhead.',
+	},
+	{
+		slug: 'mqtt-request-response',
+		title: 'MQTT Request-Response Pattern',
+		navLabel: 'Request-response',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'The request-response pattern lets a requester get a reply over MQTT’s publish/subscribe transport. Made first-class in MQTT 5.0, the requester publishes with a Response Topic (where the reply should go) and Correlation Data (an ID to match the reply to the request); the responder publishes its answer to that topic, echoing the same Correlation Data.',
+		tbmqTieIn:
+			'TBMQ fully supports MQTT 5.0, carrying Response Topic, Correlation Data and User Properties through end to end, so request/response flows run over the same broker as the rest of your traffic.',
+		related: ['mqtt-5', 'topics', 'publish-subscribe'],
+		status: 'full',
+		seoDescription:
+			'MQTT request-response pattern explained — how MQTT 5.0 Response Topic and Correlation Data let a client send a request and correlate the reply over pub/sub.',
 	},
 	{
 		slug: 'keep-alive',
@@ -221,7 +291,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT keep-alive is a heartbeat between client and broker. The client promises to send at least one packet within each keep-alive interval; if it has nothing else to send, it sends a PINGREQ and the broker replies with PINGRESP. If the broker receives nothing for 1.5× the interval, it assumes the client is gone and closes the connection.',
 		tbmqTieIn:
 			'TBMQ monitors keep-alive per connection and, on timeout, closes it with reason KEEP_ALIVE_TIMEOUT and publishes the client’s Last Will if one was configured.',
-		related: ['persistent-session', 'last-will', 'mqtt-client'],
+		related: ['persistent-session', 'last-will', 'mqtt-connection', 'mqtt-client'],
 		status: 'full',
 		seoDescription:
 			'MQTT keep-alive and ping explained — the PINGREQ/PINGRESP heartbeat, the 1.5× keep-alive timeout, half-open connections, and how brokers detect dead clients.',
