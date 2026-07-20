@@ -501,3 +501,98 @@ export function relatedTopics(slug: string): MqttTopic[] {
 // change which topics appear in the dropdown and in what order.
 export const learnNavSlugs = ['what-is-mqtt', 'mqtt-broker', 'qos', 'persistent-session', 'topics'];
 export const learnNavTopics: MqttTopic[] = learnNavSlugs.map((slug) => getTopic(slug));
+
+// Grouping for the /mqtt hub grid. The order of categories here is the section
+// order on the page, and the slug order within each category is the card order.
+// This is the single place the hub taxonomy lives; the completeness guard below
+// fails the build if it ever drifts from the topic registry.
+export interface MqttCategory {
+	id: string;
+	label: string;
+	slugs: string[];
+}
+
+export const mqttCategories: MqttCategory[] = [
+	{
+		id: 'fundamentals',
+		label: 'MQTT fundamentals',
+		slugs: [
+			'what-is-mqtt',
+			'mqtt-broker',
+			'mqtt-client',
+			'publish-subscribe',
+			'topics',
+			'retained-messages',
+			'qos',
+			'mqtt-packets',
+		],
+	},
+	{
+		id: 'connections',
+		label: 'Connections & sessions',
+		slugs: ['mqtt-connection', 'mqtt-client-id', 'keep-alive', 'persistent-session', 'last-will'],
+	},
+	{
+		id: 'mqtt-5',
+		label: 'MQTT 5.0 features',
+		slugs: [
+			'mqtt-5',
+			'shared-subscriptions',
+			'mqtt-request-response',
+			'mqtt-reason-codes',
+			'mqtt-user-properties',
+			'mqtt-topic-alias',
+			'mqtt-flow-control',
+			'mqtt-message-expiry',
+		],
+	},
+	{
+		id: 'security',
+		label: 'Security',
+		slugs: [
+			'security',
+			'mqtt-tls',
+			'mqtt-authentication',
+			'mqtt-client-certificates',
+			'mqtt-authorization',
+			'mqtt-payload-encryption',
+		],
+	},
+	{
+		id: 'comparisons',
+		label: 'Transports & comparisons',
+		slugs: ['websocket', 'mqtt-vs-http', 'mqtt-vs-kafka', 'mqtt-vs-amqp', 'mqtt-vs-coap'],
+	},
+];
+
+// Guard: every topic must appear in exactly one category. This fails the build
+// loudly if a newly added topic is left out of the grid, or a slug is duplicated
+// or misspelled — the same fail-fast contract getTopic() gives related[].
+{
+	const seen = new Set<string>();
+	for (const category of mqttCategories) {
+		for (const slug of category.slugs) {
+			if (seen.has(slug)) throw new Error(`MQTT category slug listed twice: ${slug}`);
+			seen.add(slug);
+			getTopic(slug); // throws on an unknown slug
+		}
+	}
+	for (const topic of mqttTopics) {
+		if (!seen.has(topic.slug)) {
+			throw new Error(`MQTT topic missing from mqttCategories: ${topic.slug}`);
+		}
+	}
+}
+
+export interface MqttCategoryGroup {
+	id: string;
+	label: string;
+	topics: MqttTopic[];
+}
+
+// Topics resolved and grouped for the hub grid, in category → slug order.
+export const mqttCategoryGroups: MqttCategoryGroup[] = mqttCategories.map((category) => ({
+	id: category.id,
+	label: category.label,
+	topics: category.slugs.map((slug) => getTopic(slug)),
+}));

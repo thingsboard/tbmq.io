@@ -1,15 +1,22 @@
 ---
-import { mqttTopics, topicHref } from '~/data/mqttLearn';
+import { mqttCategoryGroups, topicHref } from '~/data/mqttLearn';
 ---
 
-<div class="topic-grid">
+<div class="topic-groups">
 	{
-		mqttTopics.map((t) => (
-			<a class="topic-card" href={topicHref(t.slug)}>
-				<h3 class="topic-card__title">{t.navLabel}</h3>
-				<p class="topic-card__text">{t.quickAnswer}</p>
-				<span class="topic-card__cta">Read the guide →</span>
-			</a>
+		mqttCategoryGroups.map((group) => (
+			<section class="topic-group" id={group.id}>
+				<h2 class="topic-group__label">{group.label}</h2>
+				<div class="topic-grid">
+					{group.topics.map((t) => (
+						<a class="topic-card" href={topicHref(t.slug)}>
+							<h3 class="topic-card__title">{t.navLabel}</h3>
+							<p class="topic-card__text">{t.quickAnswer}</p>
+							<span class="topic-card__cta">Read the guide →</span>
+						</a>
+					))}
+				</div>
+			</section>
 		))
 	}
 </div>
@@ -17,6 +24,28 @@ import { mqttTopics, topicHref } from '~/data/mqttLearn';
 <style lang="scss">
 	@use '../../styles/variables' as *;
 
+	.topic-groups {
+		display: flex;
+		flex-direction: column;
+		gap: 48px;
+		width: 100%;
+		margin-top: 16px;
+	}
+	.topic-group {
+		width: 100%;
+		scroll-margin-top: calc(#{$header-height} + 24px);
+	}
+	// Descendant selector (higher specificity than the single scoped class) is
+	// required: a global rule sizes bare `h2` above a one-class scoped rule, so
+	// `.topic-group__label` alone was silently losing to the default h2 size.
+	.topic-groups .topic-group__label {
+		font-size: 24px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 20px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid $color-border;
+	}
 	.topic-grid {
 		display: grid;
 		grid-template-columns: 1fr;
