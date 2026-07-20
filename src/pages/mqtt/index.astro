@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import SectionHeader from '@components/Landing/SectionHeader.astro';
 import TopicGrid from '@components/MqttLearn/TopicGrid.astro';
 import LearnCta from '@components/MqttLearn/LearnCta.astro';
 import { Products } from '@models/site.models';
@@ -27,12 +26,16 @@ const jsonLd = marketingJsonLd({
 	ogImageAlt="MQTT Guide by TBMQ"
 >
 	<main class="mqtt-hub">
+		<header class="mqtt-hero">
+			<div class="mqtt-hero__inner">
+				<h1 class="mqtt-hero__title">The MQTT Guide</h1>
+				<p class="mqtt-hero__subtitle">
+					Practical, plain-English explanations of the MQTT protocol — written by the team behind TBMQ, the open-source
+					MQTT broker built to scale.
+				</p>
+			</div>
+		</header>
 		<div class="mqtt-hub__inner">
-			<SectionHeader
-				as="h1"
-				title="The MQTT Guide"
-				subtitle="Practical, plain-English explanations of the MQTT protocol — written by the team behind TBMQ, the open-source MQTT broker built to scale."
-			/>
 			<TopicGrid />
 			<LearnCta />
 		</div>
@@ -43,12 +46,66 @@ const jsonLd = marketingJsonLd({
 	@use '../../styles/variables' as *;
 
 	.mqtt-hub {
-		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
+		padding: calc(#{$header-height} + 56px) $spacing-6 $spacing-20;
 		background: var(--color-bg-surface);
 	}
+
+	// ── Hero ────────────────────────────────────────────────────────
+	// A faint green schematic dot-grid fades in behind the title, giving
+	// the protocol hub a technical "reference" identity without any panel.
+	.mqtt-hero {
+		position: relative;
+		isolation: isolate;
+		text-align: center;
+		padding: $spacing-2 0 $spacing-1;
+		margin: 0 auto $spacing-12;
+		max-width: 820px;
+
+		&::before {
+			content: '';
+			position: absolute;
+			z-index: 0;
+			top: -32px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: min(760px, 108%);
+			height: calc(100% + 48px);
+			background-image: radial-gradient(circle, rgba(31, 139, 77, 0.16) 1px, transparent 1.5px);
+			background-size: 24px 24px;
+			-webkit-mask-image: radial-gradient(ellipse 62% 72% at 50% 40%, #000, transparent 70%);
+			mask-image: radial-gradient(ellipse 62% 72% at 50% 40%, #000, transparent 70%);
+			pointer-events: none;
+		}
+	}
+	.mqtt-hero__inner {
+		position: relative;
+		z-index: 1;
+	}
+	.mqtt-hero__title {
+		font-size: 54px;
+		line-height: 1.06;
+		font-weight: $font-weight-semibold;
+		letter-spacing: -0.02em;
+		color: $color-text-primary;
+		margin: 0;
+		@include media-down(md) {
+			font-size: 36px;
+		}
+	}
+	.mqtt-hero__subtitle {
+		font-size: 19px;
+		line-height: 1.6;
+		color: $color-text-secondary;
+		max-width: 620px;
+		margin: $spacing-5 auto 0;
+		@include media-down(md) {
+			font-size: 17px;
+		}
+	}
+
 	.mqtt-hub__inner {
 		@include container;
-		max-width: 1100px;
+		max-width: 1120px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
