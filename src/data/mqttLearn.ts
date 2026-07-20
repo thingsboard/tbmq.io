@@ -8,6 +8,8 @@ export interface MqttTopic {
 	title: string;
 	/** Short label for the nav dropdown + hub card */
 	navLabel: string;
+	/** Optional nav-dropdown icon: path under /src/assets/images/landings/nav/ (inlined + tinted). */
+	icon?: string;
 	/** Hero eyebrow */
 	eyebrow: string;
 	/** 2–3 sentence boxed definition (featured-snippet target) */
@@ -16,8 +18,6 @@ export interface MqttTopic {
 	tbmqTieIn: string;
 	/** Slugs shown in the related-topics grid */
 	related: string[];
-	/** Show in the Learn nav dropdown */
-	marquee: boolean;
 	/** 'full' = flagship article, 'short' = short-form scaffold */
 	status: 'full' | 'short';
 	/** Meta description */
@@ -29,13 +29,13 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'what-is-mqtt',
 		title: "What Is MQTT? A Beginner's Guide to the Protocol",
 		navLabel: 'What is MQTT?',
+		icon: '/src/assets/images/landings/nav/learn-what-is-mqtt.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT (Message Queuing Telemetry Transport) is a lightweight publish/subscribe messaging protocol built for constrained devices and low-bandwidth, unreliable networks. Clients publish messages to named topics on a central broker, which forwards each message to every client subscribed to that topic — decoupling senders from receivers.',
 		tbmqTieIn:
 			'TBMQ is an open-source MQTT broker (3.1, 3.1.1 and 5.0) engineered to scale to 100M+ concurrent connections.',
 		related: ['mqtt-broker', 'mqtt-client', 'mqtt-vs-kafka'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			"What is MQTT? A plain-English guide to the lightweight publish/subscribe protocol behind modern IoT — how it works, why it's used, and how it compares to HTTP.",
@@ -50,7 +50,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ uses Kafka as its internal backbone for durability and zero message loss, and can bridge MQTT traffic straight into your Kafka topics.',
 		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			'MQTT vs Kafka compared: pub/sub protocol vs event-streaming log, delivery guarantees, scale, and when to use each — or both together.',
@@ -65,7 +64,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ implements shared subscriptions and pairs them with dedicated per-application Kafka topics, so you can add consumer instances to absorb high load and scale throughput horizontally.',
 		related: ['what-is-mqtt', 'mqtt-5', 'mqtt-vs-kafka'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			'How MQTT shared subscriptions work: the $share syntax, load balancing across a consumer group, MQTT 5.0 vs 3.1.1, and common pitfalls.',
@@ -74,13 +72,13 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'qos',
 		title: 'MQTT QoS 0, 1 and 2 Explained',
 		navLabel: 'QoS levels',
+		icon: '/src/assets/images/landings/nav/learn-qos.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT Quality of Service (QoS) sets the delivery guarantee for each message: QoS 0 delivers at most once (fire-and-forget), QoS 1 at least once (may duplicate), and QoS 2 exactly once (handshaked). Higher QoS means stronger guarantees and more overhead.',
 		tbmqTieIn:
 			'TBMQ acknowledges a QoS 1/2 publish only after the message is persisted to Kafka — so an accepted message survives a TBMQ node failure, and with a replicated Kafka cluster it is not lost even if a Kafka node fails.',
 		related: ['what-is-mqtt', 'persistent-session', 'mqtt-5'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			'MQTT QoS levels 0, 1 and 2 explained simply — at-most-once, at-least-once and exactly-once delivery, with trade-offs and when to use each.',
@@ -95,7 +93,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ fully supports MQTT 5.0 alongside 3.1 and 3.1.1, including reason codes, topic aliases, session/message expiry and flow control.',
 		related: ['what-is-mqtt', 'shared-subscriptions', 'topics'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			'MQTT 5.0 vs 3.1.1: the key new features — reason codes, user properties, topic aliases, expiry, shared subscriptions and flow control.',
@@ -104,13 +101,13 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'persistent-session',
 		title: 'MQTT Persistent Sessions and Clean Start',
 		navLabel: 'Persistent sessions',
+		icon: '/src/assets/images/landings/nav/learn-session.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'A persistent MQTT session lets the broker remember a client’s subscriptions and queue its messages while it is offline, so nothing is missed across reconnects. The Clean Start flag (MQTT 5.0) and Clean Session flag (3.1.1) control whether a fresh session is created or an existing one resumed.',
 		tbmqTieIn:
 			'TBMQ persists sessions differently per client type — DEVICE clients use Redis-backed queues, APPLICATION clients get a dedicated Kafka topic — so offline delivery scales to millions of devices.',
 		related: ['qos', 'what-is-mqtt', 'shared-subscriptions'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			'MQTT persistent sessions and clean start / clean session explained — how brokers queue messages for offline clients and resume state on reconnect.',
@@ -119,13 +116,13 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'topics',
 		title: 'MQTT Topics and Wildcards',
 		navLabel: 'Topics & wildcards',
+		icon: '/src/assets/images/landings/nav/learn-topics.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT topics are hierarchical, slash-separated strings (e.g. sensors/floor1/temp) that messages are published to and clients subscribe to. Subscriptions can use wildcards: + matches a single level and # matches all remaining levels.',
 		tbmqTieIn:
 			'TBMQ matches subscriptions with an in-memory topic trie, so match cost scales with a topic’s depth rather than its total subscription count.',
 		related: ['what-is-mqtt', 'shared-subscriptions', 'retained-messages'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT topics and wildcards explained — topic hierarchy, single-level (+) and multi-level (#) wildcards, and topic naming best practices.',
@@ -140,7 +137,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ keeps retained messages in an in-memory trie backed by a compacted Kafka topic, so new subscribers get the latest value instantly and it survives restarts.',
 		related: ['topics', 'what-is-mqtt', 'last-will'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT retained messages explained — how the retain flag stores the last value on a topic so new subscribers get current state immediately.',
@@ -155,7 +151,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ supports Last Will messages, so your applications can react the moment a device disconnects unexpectedly.',
 		related: ['what-is-mqtt', 'retained-messages', 'persistent-session'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT Last Will and Testament (LWT) explained — how the broker publishes a client’s will message on unexpected disconnect to signal presence.',
@@ -170,7 +165,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ supports TLS, mutual TLS (X.509), basic username/password, JWT and SCRAM authentication, with per-client topic authorization.',
 		related: ['what-is-mqtt', 'websocket', 'persistent-session'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT security explained — TLS encryption, authentication (passwords, client certificates, tokens) and topic authorization for a hardened broker.',
@@ -185,7 +179,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser — try it in the live demo.',
 		related: ['mqtt-client', 'what-is-mqtt', 'security'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT over WebSocket explained — how the MQTT protocol runs inside a WebSocket so browser clients can publish and subscribe in real time.',
@@ -194,13 +187,13 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-broker',
 		title: 'What Is an MQTT Broker?',
 		navLabel: 'MQTT broker',
+		icon: '/src/assets/images/landings/nav/learn-broker.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'An MQTT broker is the central server that sits between MQTT clients: it receives every published message and routes it to the clients subscribed to the matching topic. The broker manages connections, subscriptions, per-QoS delivery, session state, and authentication — so publishers and subscribers never talk to each other directly.',
 		tbmqTieIn:
 			'TBMQ is an open-source MQTT broker (3.1, 3.1.1 and 5.0) engineered to scale to 100M+ concurrent connections on a single cluster.',
 		related: ['what-is-mqtt', 'mqtt-client', 'mqtt-vs-kafka'],
-		marquee: true,
 		status: 'full',
 		seoDescription:
 			'What is an MQTT broker? How the central MQTT server routes messages between clients, manages sessions and QoS, and what to look for when choosing one.',
@@ -215,7 +208,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ works with any standard MQTT client library and ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser.',
 		related: ['mqtt-broker', 'what-is-mqtt', 'websocket'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'What is an MQTT client? How devices and apps connect to a broker to publish and subscribe, the connect handshake, client IDs, and MQTT client libraries.',
@@ -230,7 +222,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ monitors keep-alive per connection and, on timeout, closes it with reason KEEP_ALIVE_TIMEOUT and publishes the client’s Last Will if one was configured.',
 		related: ['persistent-session', 'last-will', 'mqtt-client'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT keep-alive and ping explained — the PINGREQ/PINGRESP heartbeat, the 1.5× keep-alive timeout, half-open connections, and how brokers detect dead clients.',
@@ -245,7 +236,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ speaks MQTT — including MQTT over WebSocket — so browsers and devices get real-time push instead of repeatedly polling an HTTP endpoint.',
 		related: ['what-is-mqtt', 'mqtt-vs-kafka', 'mqtt-client'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT vs HTTP compared for IoT — pub/sub vs request/response, per-message overhead, push vs polling, and when each protocol is the right choice.',
@@ -260,7 +250,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ is a purpose-built MQTT broker focused on connecting massive device fleets, rather than a general-purpose AMQP message broker.',
 		related: ['mqtt-vs-kafka', 'mqtt-vs-http', 'what-is-mqtt'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT vs AMQP compared — lightweight device pub/sub vs enterprise queues and exchanges, overhead, feature set, and when to use each protocol.',
@@ -275,7 +264,6 @@ export const mqttTopics: MqttTopic[] = [
 		tbmqTieIn:
 			'TBMQ is an MQTT broker built for large-scale pub/sub messaging; CoAP’s request/response model targets a different pattern for a different job.',
 		related: ['mqtt-vs-http', 'what-is-mqtt', 'qos'],
-		marquee: false,
 		status: 'full',
 		seoDescription:
 			'MQTT vs CoAP compared — broker-based pub/sub over TCP vs RESTful request/response over UDP, and when to choose each for constrained IoT devices.',
@@ -298,4 +286,8 @@ export function relatedTopics(slug: string): MqttTopic[] {
 	return getTopic(slug).related.map((s) => getTopic(s));
 }
 
-export const marqueeTopics: MqttTopic[] = mqttTopics.filter((t) => t.marquee);
+// Curated, ordered set shown in the "Learn" nav dropdown. This is independent of
+// the hub grid order (which follows the mqttTopics array) — edit this list to
+// change which topics appear in the dropdown and in what order.
+export const learnNavSlugs = ['what-is-mqtt', 'mqtt-broker', 'qos', 'persistent-session', 'topics'];
+export const learnNavTopics: MqttTopic[] = learnNavSlugs.map((slug) => getTopic(slug));

@@ -1,4 +1,4 @@
-import { marqueeTopics, topicHref } from './mqttLearn';
+import { learnNavTopics, topicHref } from './mqttLearn';
 
 export interface NavItem {
 	label: string;
@@ -69,13 +69,15 @@ export const learnSubmenu: SubMenu = {
 	groups: [
 		{
 			items: [
-				...marqueeTopics.map((t) => ({
+				...learnNavTopics.map((t) => ({
 					href: topicHref(t.slug),
+					icon: t.icon,
 					heading: t.navLabel,
 					linkClass: 'small-link',
 				})),
 				{
 					href: '/mqtt/',
+					icon: '/src/assets/images/landings/nav/learn-all.svg',
 					heading: 'Browse all guides →',
 					linkClass: 'small-link',
 				},

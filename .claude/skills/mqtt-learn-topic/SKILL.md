@@ -16,8 +16,8 @@ The `/mqtt` learn hub is TBMQ's top-of-funnel SEO engine: educational MQTT guide
 ## File map
 
 ```
-src/data/mqttLearn.ts                  ← topic registry + helpers (getTopic, topicHref, relatedTopics, marqueeTopics)
-src/data/navigation.ts                 ← learnSubmenu is DERIVED from marqueeTopics — you do NOT hand-edit nav
+src/data/mqttLearn.ts                  ← topic registry + helpers (getTopic, topicHref, relatedTopics, learnNavSlugs, learnNavTopics)
+src/data/navigation.ts                 ← learnSubmenu maps learnNavTopics (from mqttLearn.ts) — don't hand-edit the nav markup
 src/components/MqttLearn/
   MqttTopicLayout.astro                ← the page template (breadcrumb, hero, quick-answer, <slot/>, How-TBMQ, FAQ, related, CTA)
   QuickAnswer.astro                    ← boxed definition (auto, from registry.quickAnswer)
@@ -36,7 +36,7 @@ Existing pages are the best reference. Flagships (full guides): `what-is-mqtt.as
 
 ## Adding a topic — the two steps
 
-Nav needs **no** edit: `learnSubmenu` in `navigation.ts` maps over `marqueeTopics`, which is derived from the registry. The only nav lever is the `marquee` flag on the entry.
+The Learn nav dropdown is a **curated, ordered** subset — not every topic. `learnSubmenu` in `navigation.ts` maps `learnNavTopics`, which is `learnNavSlugs.map(getTopic)` in `mqttLearn.ts`. To feature a topic in the dropdown, add its slug to `learnNavSlugs` (list position = display order, independent of the hub-grid order) and give the topic an `icon`. You never hand-edit the nav markup — only that list + the icon field.
 
 ### Step 1 — Registry entry (`src/data/mqttLearn.ts`)
 
@@ -53,7 +53,7 @@ Add one `MqttTopic` object to the `mqttTopics` array. Tabs for indentation (it's
 	tbmqTieIn:                             // ONE sentence: how TBMQ relates. Renders in the How-TBMQ block + hub card.
 		'A verified, specific TBMQ capability — not marketing fluff.',
 	related: ['persistent-session', 'last-will', 'mqtt-client'], // 3–4 slugs; every one MUST exist (getTopic throws otherwise)
-	marquee: false,                        // true = show in the Learn dropdown. Keep it curated (~6–7 headline topics).
+	// icon: '/src/assets/images/landings/nav/learn-<slug>.svg', // ONLY if the topic is in learnNavSlugs (nav dropdown); see below
 	status: 'full',                        // 'full' = comprehensive guide; 'short' = scaffold
 	seoDescription:                        // meta description (~150–160 chars), benefit-framed, includes the key term
 		'MQTT keep-alive explained — the PINGREQ/PINGRESP mechanism, the keep-alive interval and 1.5× timeout, and how brokers detect dead clients.',
@@ -63,7 +63,7 @@ Add one `MqttTopic` object to the `mqttTopics` array. Tabs for indentation (it's
 Rules that keep the build green:
 - **`slug` === page filename.** `/mqtt/keep-alive/` ⇒ `src/pages/mqtt/keep-alive.astro`.
 - **Every `related[]` slug must resolve.** `getTopic` throws at build on an unknown slug, so a typo fails loudly (good) — but check it. Keep arrays at 3–4 entries so the related grid stays tidy.
-- **`marquee` is the nav.** Setting it `true` adds the topic to the Learn dropdown automatically. Reserve it for headline funnel topics; the dropdown is deliberately short.
+- **The nav dropdown is curated + ordered.** To feature a topic, add its slug to `learnNavSlugs` (position = display order, independent of the hub grid) and add an `icon` — a duotone `currentColor` SVG in `src/assets/images/landings/nav/` matching the Company-menu icons (24×24, primary fill + a `fill-opacity="0.3"` accent, inlined and theme-tinted by `NavIcon`). Keep the dropdown short: a handful of headline topics plus "Browse all guides".
 - **Wire the hub-and-spoke both ways.** Add the new slug into the `related[]` of the closest existing topics, and where natural add an in-body link from a high-traffic page (e.g. `what-is-mqtt.astro`). Isolated pages don't rank.
 
 ### Step 2 — Guide page (`src/pages/mqtt/<slug>.astro`)
@@ -179,5 +179,5 @@ Ask the user before running `pnpm build:fast` (repo build policy). For anything 
 - **Entities in JSX bodies:** `&lt;` `&gt;` `&amp;`. In FAQ *string* values (plain JS strings), raw `<`/`>` are fine.
 - **Trailing-slash links:** `/mqtt/<slug>/`, `/docs/mqtt-broker/…/` — the site uses `trailingSlash: 'always'`.
 - **`HowTbmqBlock` links are fixed** to `/product/` and `/docs/mqtt-broker/`; put topic-specific doc links in your body instead.
-- **`marquee: true`** grows the nav dropdown — confirm that's intended before flipping it.
+- **Adding a slug to `learnNavSlugs`** grows the nav dropdown and needs a matching `icon` — confirm the topic is headline-worthy first; the dropdown is deliberately short.
 - **`/mqtt/<slug>/` must not collide** with a docs path; the learn hub lives under `/mqtt/`, docs under `/docs/mqtt-broker/`, so `/mqtt/mqtt-broker/` is fine.
