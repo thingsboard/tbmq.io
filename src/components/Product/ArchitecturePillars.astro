@@ -10,7 +10,7 @@ const pillars = [
 	},
 	{
 		title: 'Subscription matching at any scale',
-		text: 'Subscriptions live in an in-memory trie. Lookup time depends on topic length, not subscriber count — a million subscriptions match as fast as a thousand.',
+		text: "Subscriptions live in an in-memory trie, so matching a topic to its subscribers costs the same whether the broker holds a thousand subscriptions or a million — lookup scales with the topic's depth, not the total subscriber count.",
 	},
 	{
 		title: 'Separate paths for publishers and subscribers',
