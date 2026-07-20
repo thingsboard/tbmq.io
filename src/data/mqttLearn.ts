@@ -81,7 +81,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ acknowledges a QoS 1/2 publish only after the message is persisted to Kafka — so an accepted message survives a TBMQ node failure, and with a replicated Kafka cluster it is not lost even if a Kafka node fails.',
 		related: ['what-is-mqtt', 'persistent-session', 'mqtt-5'],
 		marquee: true,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT QoS levels 0, 1 and 2 explained simply — at-most-once, at-least-once and exactly-once delivery, with trade-offs and when to use each.',
 	},
@@ -96,7 +96,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ fully supports MQTT 5.0 alongside 3.1 and 3.1.1, including reason codes, topic aliases, session/message expiry and flow control.',
 		related: ['what-is-mqtt', 'shared-subscriptions', 'topics'],
 		marquee: true,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT 5.0 vs 3.1.1: the key new features — reason codes, user properties, topic aliases, expiry, shared subscriptions and flow control.',
 	},
@@ -111,7 +111,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ persists sessions differently per client type — DEVICE clients use Redis-backed queues, APPLICATION clients get a dedicated Kafka topic — so offline delivery scales to millions of devices.',
 		related: ['qos', 'what-is-mqtt', 'shared-subscriptions'],
 		marquee: true,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT persistent sessions and clean start / clean session explained — how brokers queue messages for offline clients and resume state on reconnect.',
 	},
@@ -123,10 +123,10 @@ export const mqttTopics: MqttTopic[] = [
 		quickAnswer:
 			'MQTT topics are hierarchical, slash-separated strings (e.g. sensors/floor1/temp) that messages are published to and clients subscribe to. Subscriptions can use wildcards: + matches a single level and # matches all remaining levels.',
 		tbmqTieIn:
-			'TBMQ matches topics with an in-memory subscription trie, so lookup cost depends on topic depth — not on how many subscriptions exist. A million subscriptions match as fast as a thousand.',
+			'TBMQ matches subscriptions with an in-memory topic trie, so match cost scales with a topic’s depth rather than its total subscription count.',
 		related: ['what-is-mqtt', 'shared-subscriptions', 'retained-messages'],
 		marquee: false,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT topics and wildcards explained — topic hierarchy, single-level (+) and multi-level (#) wildcards, and topic naming best practices.',
 	},
@@ -138,10 +138,10 @@ export const mqttTopics: MqttTopic[] = [
 		quickAnswer:
 			'A retained message is the last message the broker stored for a topic with the retain flag set. Any client that subscribes later immediately receives that last known value instead of waiting for the next publish — ideal for state like a device’s current status.',
 		tbmqTieIn:
-			'TBMQ keeps retained messages in a dedicated store, so new subscribers get the latest value instantly even at high topic counts.',
+			'TBMQ keeps retained messages in an in-memory trie backed by a compacted Kafka topic, so new subscribers get the latest value instantly and it survives restarts.',
 		related: ['topics', 'what-is-mqtt', 'last-will'],
 		marquee: false,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT retained messages explained — how the retain flag stores the last value on a topic so new subscribers get current state immediately.',
 	},
@@ -156,7 +156,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ supports Last Will messages, so your applications can react the moment a device disconnects unexpectedly.',
 		related: ['what-is-mqtt', 'retained-messages', 'persistent-session'],
 		marquee: false,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT Last Will and Testament (LWT) explained — how the broker publishes a client’s will message on unexpected disconnect to signal presence.',
 	},
@@ -171,7 +171,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ supports TLS, mutual TLS (X.509), basic username/password, JWT and SCRAM authentication, with per-client topic authorization.',
 		related: ['what-is-mqtt', 'websocket', 'persistent-session'],
 		marquee: false,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT security explained — TLS encryption, authentication (passwords, client certificates, tokens) and topic authorization for a hardened broker.',
 	},
@@ -186,7 +186,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser — try it in the live demo.',
 		related: ['mqtt-client', 'what-is-mqtt', 'security'],
 		marquee: false,
-		status: 'short',
+		status: 'full',
 		seoDescription:
 			'MQTT over WebSocket explained — how the MQTT protocol runs inside a WebSocket so browser clients can publish and subscribe in real time.',
 	},

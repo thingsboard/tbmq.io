@@ -1,18 +1,86 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const wsDiagram = `
+ browser ── HTTP GET /mqtt  (Upgrade: websocket) ──▶ broker  :8084
+         ◀─────────── 101 Switching Protocols ─────── broker
+         ═══ MQTT packets (CONNECT · SUBSCRIBE · PUBLISH) over the WebSocket ═══▶
+         ◀════════════ messages pushed back to the browser ═════════════════════
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is MQTT over WebSocket?',
+		a: 'It is the standard MQTT protocol carried inside a WebSocket connection instead of a raw TCP socket. The MQTT packets are identical — WebSocket is just the transport — so a browser can be a full MQTT client, publishing and subscribing in real time.',
+	},
+	{
+		q: 'Why do browsers need MQTT over WebSocket?',
+		a: 'Browsers cannot open raw TCP sockets for security reasons, so they cannot speak plain MQTT on port 1883. WebSocket is the browser-native, firewall-friendly transport that lets web apps talk to an MQTT broker directly.',
+	},
+	{
+		q: 'What ports does MQTT over WebSocket use?',
+		a: 'It varies by broker. TBMQ uses port 8084 for WebSocket (WS) and 8085 for secure WebSocket (WSS). Note that 8083 is TBMQ’s HTTP UI and REST port, not the WebSocket port.',
+	},
+	{
+		q: 'Is MQTT over WebSocket slower than plain MQTT?',
+		a: 'There is a small amount of WebSocket framing overhead per message, but it is minor. The connection is still long-lived and the broker still pushes messages instantly, so for browser clients the practical performance is excellent.',
+	},
+	{
+		q: 'Can I secure MQTT over WebSocket?',
+		a: 'Yes, with WSS — WebSocket over TLS — which encrypts the connection the same way MQTTS does. Note that browsers can’t present client certificates for mutual TLS over WSS; non-browser clients (Node, Python, Java) can.',
+	},
+];
 ---
 
-<MqttTopicLayout slug="websocket">
-	<h2>Why MQTT over WebSocket</h2>
+<MqttTopicLayout slug="websocket" faq={faq}>
 	<p>
-		Browsers can't open raw TCP sockets, so they can't speak plain MQTT. MQTT over WebSocket wraps the exact same MQTT
-		packets inside a WebSocket connection, letting web apps publish and subscribe directly. Brokers commonly expose it
-		on port 8084 (WS) or 8085 (WSS for TLS).
+		MQTT was built for raw TCP sockets, which browsers can't open. MQTT over WebSocket bridges that gap: it wraps the
+		exact same MQTT packets in a WebSocket connection, so a web page becomes a first-class MQTT client with no gateway
+		or polling in between.
 	</p>
-	<h2>Why it matters</h2>
+
+	<h2>How it works</h2>
 	<p>
-		WebSocket support lets you build live dashboards and controls that talk to the broker straight from the browser — no
-		gateway in between. You can try this hands-on in the
-		<a href="/live-demo/">TBMQ live demo</a>.
+		A WebSocket connection starts life as an ordinary HTTP request with an <code>Upgrade: websocket</code> header. Once the
+		broker responds with <code>101 Switching Protocols</code>, the connection flips to a persistent, bidirectional
+		channel. From that point the client sends the identical MQTT packets — <code>CONNECT</code>, <code>SUBSCRIBE</code>,
+		<code>PUBLISH</code> — as WebSocket binary frames, and the broker pushes messages back the same way. The MQTT layer doesn't
+		change; only the transport underneath it does.
+	</p>
+
+	<AsciiDiagram
+		content={wsDiagram}
+		caption="A WebSocket upgrade turns an HTTP request into a persistent channel that carries native MQTT packets"
+	/>
+
+	<h2>MQTT transports at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>Transport</th><th>Typical port</th><th>Who uses it</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>MQTT over TCP</td><td>1883</td><td>Devices, backend services</td></tr>
+				<tr><td>MQTT over TLS (MQTTS)</td><td>8883</td><td>Devices needing encryption</td></tr>
+				<tr><td>MQTT over WebSocket (WS)</td><td>8084</td><td>Browsers, HTTP-only clients</td></tr>
+				<tr><td>MQTT over WebSocket Secure (WSS)</td><td>8085</td><td>Browsers needing encryption</td></tr>
+			</tbody>
+		</table>
+	</div>
+	<p>
+		WebSocket support is what makes live browser dashboards and controls possible — the page subscribes to a topic and
+		updates the instant a message arrives, with no server-side relay.
+	</p>
+
+	<h2>MQTT over WebSocket in TBMQ</h2>
+	<p>
+		TBMQ exposes WebSocket on port <code>8084</code> and secure WSS on <code>8085</code> (the WS listener is enabled by default;
+		enable WSS to add TLS). It also ships a built-in
+		<a href="/docs/mqtt-broker/user-guide/ui/websocket-client/">WebSocket MQTT client</a> right in its UI, so you can publish
+		and subscribe from the browser without writing any code — a fast way to test topics and see live traffic. For setup and
+		connection details, see the
+		<a href="/docs/mqtt-broker/user-guide/mqtt-over-ws/">MQTT over WebSocket guide</a>.
 	</p>
 </MqttTopicLayout>

@@ -1,18 +1,104 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const sessionDiagram = `
+ device (persistent session)             broker
+   │  ── SUBSCRIBE  sensors/# ───────────▶ │   subscription stored
+   │                                       │
+   │  ✗ goes offline (network drop)        │
+   │                               msg 1 ──┤   queued
+   │                               msg 2 ──┤   queued
+   │                                       │
+   │  ── CONNECT (resume session) ───────▶ │
+   │  ◀─────────── msg 1, msg 2 (in order) │   delivered on reconnect
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is a persistent session in MQTT?',
+		a: 'A session where the broker keeps a client’s subscriptions and queues its QoS 1 and QoS 2 messages while it is offline, then restores everything on reconnect. The client does not need to resubscribe and does not miss messages sent during the outage.',
+	},
+	{
+		q: 'What is the difference between clean session and clean start?',
+		a: 'Clean Session is the MQTT 3.1.1 flag: set to 1 for a fresh, non-persistent session; 0 to resume a persistent one. MQTT 5.0 splits that into Clean Start (whether to start fresh on this connect) and a separate Session Expiry Interval (how long the session survives after disconnect).',
+	},
+	{
+		q: 'Do QoS 0 messages get queued in a persistent session?',
+		a: 'No. Only QoS 1 and QoS 2 messages are queued for an offline client. QoS 0 messages are never stored — they are discarded if the subscriber is not connected, even in a persistent session.',
+	},
+	{
+		q: 'How long does a persistent session last?',
+		a: 'In MQTT 5.0 the Session Expiry Interval controls it: 0 clears the session immediately on disconnect, a number of seconds sets a timed expiry, and the maximum value keeps it indefinitely. In MQTT 3.1.1 a persistent session lives until the client reconnects with Clean Session = 1.',
+	},
+	{
+		q: 'Do persistent sessions use broker storage?',
+		a: 'Yes. Retaining subscriptions and queued messages costs storage per client, so at large scale the broker must persist them efficiently. This is exactly what session expiry and per-client-type storage strategies are for.',
+	},
+];
 ---
 
-<MqttTopicLayout slug="persistent-session">
-	<h2>Clean start vs persistent session</h2>
+<MqttTopicLayout slug="persistent-session" faq={faq}>
 	<p>
-		When a client connects with a persistent session, the broker remembers its subscriptions and queues QoS 1/2 messages
-		while it is offline, delivering them on reconnect. With a clean session (MQTT 3.1.1) or Clean Start = true (MQTT
-		5.0), the broker discards any prior state and begins fresh.
+		Devices drop off networks constantly — a truck enters a tunnel, a sensor's battery dips, a gateway reboots. A
+		persistent session is how MQTT makes those gaps invisible: the broker holds the client's state and its missed
+		messages until it comes back.
 	</p>
-	<h2>Why it matters</h2>
+
+	<h2>How sessions work</h2>
 	<p>
-		Persistent sessions keep intermittently connected devices in sync without missing messages — but they cost broker
-		storage per client, so they must scale carefully. In MQTT 5.0, a session-expiry interval lets you bound how long an
-		offline session is retained.
+		A session is the server-side state the broker keeps for a client: its active subscriptions, in-flight QoS 1/2
+		acknowledgements, and — for persistent sessions — messages queued while it was offline. Whether that state survives
+		a disconnect is what separates a <strong>persistent</strong> session from a <strong>non-persistent</strong> (clean) one.
+	</p>
+	<p>
+		A clean session exists only for the life of the connection: the broker creates it on connect and discards it on
+		disconnect, so the next connect starts from scratch. A persistent session is retained across the disconnect — on
+		reconnect the broker resumes it, the client does not resubscribe, and any messages that arrived while it was offline
+		are delivered in order.
+	</p>
+
+	<AsciiDiagram
+		content={sessionDiagram}
+		caption="A persistent session preserves subscriptions and queues offline messages, delivering them on reconnect"
+	/>
+
+	<h2>Clean vs persistent at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>Non-persistent (clean)</th><th>Persistent</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>MQTT 3.1.1 flag</td><td>Clean Session = 1</td><td>Clean Session = 0</td></tr>
+				<tr><td>MQTT 5.0</td><td>Clean Start = 1 and Session Expiry = 0</td><td>Session Expiry &gt; 0</td></tr>
+				<tr><td>Subscriptions after disconnect</td><td>Discarded</td><td>Preserved</td></tr>
+				<tr><td>Offline QoS 1/2 messages</td><td>Discarded</td><td>Queued, delivered on reconnect</td></tr>
+				<tr><td>Best for</td><td>Dashboards, stateless tools</td><td>Devices on flaky links, backend consumers</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Persistent sessions in TBMQ</h2>
+	<p>
+		TBMQ stores persistent-session state differently depending on the
+		<a href="/docs/mqtt-broker/concepts/client-types/">client type</a>, because devices and backend consumers have very
+		different scaling profiles:
+	</p>
+	<ul>
+		<li>
+			<strong>DEVICE clients</strong> keep their offline message queue in <strong>Redis</strong> — fast, low-latency reads
+			suited to millions of devices with moderate per-client volume.
+		</li>
+		<li>
+			<strong>APPLICATION clients</strong> get a <strong>dedicated Kafka topic</strong>, a durable log that scales to
+			high throughput and long retention without broker memory pressure.
+		</li>
+	</ul>
+	<p>
+		In MQTT 5.0 the session-expiry interval bounds how long an offline session is kept, so stale sessions don't
+		accumulate. For the full model, see <a href="/docs/mqtt-broker/concepts/sessions/">Sessions</a> and the
+		<a href="/docs/mqtt-broker/user-guide/clean-persistent-sessions/">clean vs persistent sessions</a> guide.
 	</p>
 </MqttTopicLayout>

@@ -1,27 +1,124 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const qosDiagram = `
+ QoS 0  at most once     PUBLISH ──────────────▶     (no acknowledgement)
+
+ QoS 1  at least once    PUBLISH ──────────────▶
+                              ◀────────────── PUBACK     (retry until acked)
+
+ QoS 2  exactly once     PUBLISH ──────────────▶
+                              ◀────────────── PUBREC
+                         PUBREL ──────────────▶
+                              ◀────────────── PUBCOMP
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'What are the three MQTT QoS levels?',
+		a: 'QoS 0 (at most once) sends a message a single time with no acknowledgement. QoS 1 (at least once) retransmits until the receiver confirms it, so the message always arrives but may duplicate. QoS 2 (exactly once) uses a four-packet handshake so the message is delivered once and only once.',
+	},
+	{
+		q: 'Which QoS level should I use?',
+		a: 'Use QoS 0 for frequent, disposable readings where an occasional gap is harmless. Use QoS 1 for data that must arrive and whose consumers can tolerate or de-duplicate repeats — it is the common default. Reserve QoS 2 for messages where duplicate processing would cause real harm, such as billing events or actuation commands.',
+	},
+	{
+		q: 'Does higher QoS mean the message is more secure?',
+		a: 'No. QoS controls delivery reliability, not security. Encryption and access control come from TLS, authentication, and topic authorization — a separate layer from QoS.',
+	},
+	{
+		q: 'What happens if the publisher and subscriber use different QoS levels?',
+		a: 'The broker delivers each message at the lower of the two levels. A subscriber that subscribes at QoS 2 still only receives QoS 1 if the publisher published at QoS 1, so design for the level actually delivered rather than the level requested.',
+	},
+	{
+		q: 'Is QoS 2 exactly-once guaranteed end to end?',
+		a: 'QoS 2 guarantees exactly-once between each pair of hops — publisher to broker, and broker to subscriber. True end-to-end exactly-once requires both the publisher and the subscriber to use QoS 2.',
+	},
+];
 ---
 
-<MqttTopicLayout slug="qos">
+<MqttTopicLayout slug="qos" faq={faq}>
+	<p>
+		Not every message needs the same delivery promise. A temperature reading that arrives every second can afford to be
+		dropped occasionally; a command that switches off a pump cannot. MQTT lets the sender pick that promise per message
+		through its Quality of Service (QoS) level.
+	</p>
+
 	<h2>The three QoS levels</h2>
+	<p>
+		Each level trades reliability against the number of network round-trips it costs. The higher the guarantee, the more
+		packets and broker state involved.
+	</p>
 	<ul>
 		<li>
-			<strong>QoS 0 — at most once:</strong> the message is sent once with no acknowledgement. Fastest and lightest, but a
-			message can be lost if the connection drops.
+			<strong>QoS 0 — at most once:</strong> the message is sent once with no acknowledgement. The sender forgets it immediately.
+			Fastest and lightest, but a message is lost if the connection drops.
 		</li>
 		<li>
-			<strong>QoS 1 — at least once:</strong> the message is retried until acknowledged, so it always arrives — but it may
-			arrive more than once, so consumers should be idempotent.
+			<strong>QoS 1 — at least once:</strong> the sender retransmits until it receives a <code>PUBACK</code>. The
+			message always arrives, but a lost acknowledgement causes a re-send (flagged <code>DUP</code>), so consumers must
+			be
+			<strong>idempotent</strong> — safe to handle the same message twice.
 		</li>
 		<li>
-			<strong>QoS 2 — exactly once:</strong> a four-step handshake guarantees the message is delivered a single time. Strongest
-			guarantee, highest overhead.
+			<strong>QoS 2 — exactly once:</strong> a four-packet handshake (<code>PUBLISH</code> → <code>PUBREC</code> → <code
+				>PUBREL</code
+			> → <code>PUBCOMP</code>) guarantees the message is delivered a single time. Strongest guarantee, highest
+			overhead.
 		</li>
 	</ul>
+
+	<AsciiDiagram
+		content={qosDiagram}
+		caption="Packet flow for each QoS level: fire-and-forget, acknowledged, and the exactly-once handshake"
+	/>
+
+	<h2>QoS at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>QoS 0</th><th>QoS 1</th><th>QoS 2</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Guarantee</td><td>At most once</td><td>At least once</td><td>Exactly once</td></tr>
+				<tr><td>Duplicates possible</td><td>No</td><td>Yes</td><td>No</td></tr>
+				<tr><td>Packets per message</td><td>1</td><td>2</td><td>4</td></tr>
+				<tr><td>Relative overhead</td><td>Lowest</td><td>Medium</td><td>Highest</td></tr>
+				<tr
+					><td>Queued for offline clients</td><td>No</td><td>Yes (persistent session)</td><td
+						>Yes (persistent session)</td
+					></tr
+				>
+			</tbody>
+		</table>
+	</div>
+
 	<h2>Choosing a level</h2>
 	<p>
-		Use QoS 0 for frequent, disposable readings where an occasional gap doesn't matter; QoS 1 for data you can't lose
-		but can de-duplicate; and QoS 2 for commands that must apply exactly once. Higher QoS costs more round-trips and
-		broker state, so match the level to the message's value.
+		Match the level to the message's value. Use <strong>QoS 0</strong> for high-frequency sensor data where the next value
+		is seconds away; <strong>QoS 1</strong> for telemetry and state changes that must reach the backend but can be de-duplicated;
+		and <strong>QoS 2</strong> for the small subset — financial events, actuation, billing — where duplicate processing causes
+		real harm. Most fleets run QoS 1 as the default and reserve QoS 2 for the few messages that need it.
+	</p>
+	<p>
+		One subtlety: QoS 1 and QoS 2 messages are only queued for an offline client when that client uses a
+		<a href="/mqtt/persistent-session/">persistent session</a>. With a clean session, undelivered messages are discarded
+		on disconnect regardless of QoS.
+	</p>
+
+	<h2>QoS in TBMQ</h2>
+	<p>
+		TBMQ supports all three QoS levels. When a publisher and subscriber request different levels, TBMQ delivers at the
+		<strong>lower of the two</strong> — so a QoS 2 subscription does not guarantee exactly-once if the publisher sent at QoS
+		0 or 1.
+	</p>
+	<p>
+		For durability, TBMQ acknowledges a QoS 1 or QoS 2 publish only after the message is persisted to its internal Kafka
+		backbone — so an accepted message survives a broker-node failure. TBMQ's shipped Kafka defaults use
+		<code>acks=1</code> and a replication factor of 1, so to also survive the loss of a Kafka node you run a replicated Kafka
+		cluster. See the <a href="/docs/mqtt-broker/concepts/qos/">QoS reference</a> for the full delivery model and
+		<a href="/docs/mqtt-broker/concepts/sessions/">Sessions</a> for how queued messages are stored per client type.
 	</p>
 </MqttTopicLayout>

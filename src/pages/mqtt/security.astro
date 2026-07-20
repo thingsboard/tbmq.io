@@ -1,23 +1,106 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const layersDiagram = `
+ client                                                       broker
+   │                                                            │
+   ├─▶ 1. TLS handshake      encrypt the channel   (8883 / WSS 8085)
+   │                                                            │
+   ├─▶ 2. Authentication     who are you?     basic · X.509 · JWT · SCRAM · HTTP
+   │                                                            │
+   ├─▶ 3. Authorization      which topics?    per-topic publish / subscribe rules
+   │                                                            │
+   └─▶ connected — allowed only on the topics the rules permit
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'Is MQTT secure by default?',
+		a: 'The MQTT protocol itself carries no encryption or access control — plain MQTT on port 1883 is unencrypted. Security is added around it: TLS for transport encryption, an authentication method to verify each client, and topic authorization to limit what each client can do.',
+	},
+	{
+		q: 'What port does secure MQTT use?',
+		a: 'MQTT over TLS (MQTTS) uses port 8883 by default, versus 1883 for plaintext MQTT. Over WebSocket, TBMQ uses 8084 for WS and 8085 for secure WSS.',
+	},
+	{
+		q: 'How do you authenticate MQTT clients?',
+		a: 'Common methods are username/password, X.509 client certificates (mutual TLS), and signed tokens such as JWT. The broker validates the chosen credential on CONNECT and rejects the connection if it fails.',
+	},
+	{
+		q: 'What is the difference between authentication and authorization in MQTT?',
+		a: 'Authentication proves who a client is when it connects. Authorization decides what an authenticated client may do — specifically which topics it can publish to or subscribe from. A client can be authenticated yet still denied a topic.',
+	},
+	{
+		q: 'Does TLS slow down MQTT?',
+		a: 'TLS adds a one-time handshake cost when the connection opens, but MQTT reuses one long-lived connection, so that cost is amortized across every message that follows. The per-message overhead of encryption is small.',
+	},
+];
 ---
 
-<MqttTopicLayout slug="security">
+<MqttTopicLayout slug="security" faq={faq}>
+	<p>
+		An MQTT broker usually sits right at the boundary between the public internet and a fleet of devices, which makes it
+		a high-value target. Securing it is not one setting but three layers working together: encrypt the connection,
+		verify who is connecting, and control what they are allowed to do.
+	</p>
+
 	<h2>The three layers of MQTT security</h2>
 	<ul>
 		<li>
-			<strong>Transport (TLS):</strong> encrypt the connection, typically on port 8883, so credentials and payloads aren't
-			sent in the clear.
+			<strong>Transport (TLS):</strong> encrypt the connection so credentials and payloads are never sent in the clear. Secure
+			MQTT (MQTTS) runs on port <code>8883</code>; plaintext MQTT on <code>1883</code> should not face the internet.
 		</li>
 		<li>
-			<strong>Authentication:</strong> verify who a client is — username/password, X.509 client certificates (mutual TLS),
-			or tokens such as JWT.
+			<strong>Authentication:</strong> verify a client's identity on connect — via username/password, an X.509 client certificate,
+			or a signed token — and reject anything that fails.
 		</li>
-		<li><strong>Authorization:</strong> control which topics each client may publish to or subscribe from.</li>
+		<li>
+			<strong>Authorization:</strong> once authenticated, restrict which topics each client may publish to or subscribe from,
+			so a compromised device can't read or write topics it has no business touching.
+		</li>
 	</ul>
-	<h2>Why it matters</h2>
+
+	<AsciiDiagram
+		content={layersDiagram}
+		caption="Every connection passes through encryption, authentication, then per-topic authorization"
+	/>
+
+	<h2>Authentication methods at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>Method</th><th>How it identifies a client</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Basic</td><td>Client ID, username and password in the <code>CONNECT</code> packet</td></tr>
+				<tr
+					><td>X.509 certificate chain</td><td
+						>The client's certificate presented during the TLS handshake (mutual TLS)</td
+					></tr
+				>
+				<tr><td>JWT</td><td>A signed JSON Web Token carried in the password field</td></tr>
+				<tr><td>SCRAM</td><td>A salted challenge-response — the password never crosses the wire (MQTT 5.0)</td></tr>
+				<tr><td>HTTP</td><td>Credentials validated by an external HTTP service you control</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Security in TBMQ</h2>
 	<p>
-		Because MQTT brokers often sit at the boundary between the internet and your fleet, all three layers matter. Encrypt
-		in transit, authenticate every client, and scope topic access to the minimum each client needs.
+		TBMQ implements all three layers. Its listeners support TCP, TLS, and WebSocket (including secure WSS), and it ships
+		five pluggable authentication providers —
+		<a href="/docs/mqtt-broker/security/authentication/basic/">Basic</a>,
+		<a href="/docs/mqtt-broker/security/authentication/x509/">X.509</a>,
+		<a href="/docs/mqtt-broker/security/authentication/jwt/">JWT</a>,
+		<a href="/docs/mqtt-broker/security/authentication/scram/">SCRAM</a>, and
+		<a href="/docs/mqtt-broker/security/authentication/http/">HTTP</a> — that you can enable, disable, and order from the
+		UI without restarting the broker.
+	</p>
+	<p>
+		For authorization, TBMQ applies regular-expression topic patterns per client credentials, so you scope each client
+		to exactly the topics it needs. Start with the <a href="/docs/mqtt-broker/security/overview/">security overview</a> and
+		the <a href="/docs/mqtt-broker/security/mqtts/">MQTTS setup guide</a> for configuration details.
 	</p>
 </MqttTopicLayout>

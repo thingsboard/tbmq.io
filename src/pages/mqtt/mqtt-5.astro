@@ -1,23 +1,96 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const reasonCodeDiagram = `
+ MQTT 3.1.1   client ── CONNECT ──▶ broker
+                     ◀── CONNACK (return code 5)      "refused" — a number, no detail
+
+ MQTT 5.0     client ── CONNECT ──▶ broker
+                     ◀── CONNACK (reason 0x87 "Not authorized"
+                                  + reason string + user properties)
+                                                      machine- and human-readable
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the difference between MQTT 5.0 and MQTT 3.1.1?',
+		a: 'MQTT 5.0 keeps the same lightweight publish/subscribe core as 3.1.1 but adds richer control and diagnostics: reason codes and reason strings on every acknowledgement, user properties (custom metadata), topic aliases, session and message expiry, flow control, and standardized shared subscriptions.',
+	},
+	{
+		q: 'Is MQTT 5.0 backward compatible with 3.1.1?',
+		a: 'Not on the wire — the packet formats differ, so a client and broker must agree on the version at connect. But the model is the same, and brokers like TBMQ speak both, so 3.1.1 and 5.0 clients can run against the same broker side by side during a migration.',
+	},
+	{
+		q: 'What are user properties in MQTT 5.0?',
+		a: 'Arbitrary key/value pairs you can attach to messages and control packets, similar to HTTP headers. They let you carry application metadata — a message type, a tenant ID, a trace token — without encoding it into the topic or payload.',
+	},
+	{
+		q: 'What are reason codes in MQTT 5.0?',
+		a: 'Numeric result codes returned on acknowledgements (CONNACK, PUBACK, SUBACK, DISCONNECT, and more), often with a human-readable reason string. In 3.1.1 a failure was largely opaque; in 5.0 the broker can say exactly why something was refused.',
+	},
+	{
+		q: 'Should new projects use MQTT 5.0?',
+		a: 'Generally yes. New deployments benefit from the better error reporting, expiry controls, and flow control, and all current major brokers support it. Choose 3.1.1 only when a constrained device or library you must use does not implement 5.0.',
+	},
+];
 ---
 
-<MqttTopicLayout slug="mqtt-5">
+<MqttTopicLayout slug="mqtt-5" faq={faq}>
+	<p>
+		MQTT 5.0 is the current version of the protocol, released in 2019. It doesn't reinvent MQTT — the lightweight
+		pub/sub core is unchanged — but it fills in the gaps that large, production IoT deployments kept running into:
+		opaque errors, no per-message metadata, and no built-in flow control.
+	</p>
+
 	<h2>What MQTT 5.0 adds</h2>
 	<ul>
 		<li>
-			<strong>Reason codes &amp; user properties:</strong> acknowledgements now explain <em>why</em> something failed, and
-			you can attach custom key/value metadata to messages.
+			<strong>Reason codes and reason strings:</strong> acknowledgements now explain <em>why</em> something failed, instead
+			of a bare success/fail.
 		</li>
-		<li><strong>Topic aliases:</strong> replace long topic strings with a short integer to cut bandwidth.</li>
-		<li><strong>Session &amp; message expiry:</strong> set how long sessions and queued messages live.</li>
 		<li>
-			<strong>Shared subscriptions &amp; flow control:</strong> standardized load balancing and per-client receive limits.
+			<strong>User properties:</strong> attach custom key/value metadata to messages and packets, like application-level headers.
+		</li>
+		<li>
+			<strong>Session and message expiry:</strong> bound how long a session survives after disconnect and how long a queued
+			message stays valid.
+		</li>
+		<li>
+			<strong>Topic aliases:</strong> replace a long topic string with a short integer for the rest of a connection, cutting
+			bandwidth on repetitive topics.
+		</li>
+		<li>
+			<strong>Flow control:</strong> a client advertises how many unacknowledged messages it will accept (receive maximum),
+			so the broker can't overwhelm it.
+		</li>
+		<li>
+			<strong>Shared subscriptions:</strong> standardized load balancing across a group of consumers (see
+			<a href="/mqtt/shared-subscriptions/">shared subscriptions</a>).
+		</li>
+		<li>
+			<strong>Request/response:</strong> a response-topic and correlation-data convention for RPC-style exchanges over pub/sub.
 		</li>
 	</ul>
+
+	<AsciiDiagram
+		content={reasonCodeDiagram}
+		caption="Reason codes turn an opaque 3.1.1 failure into a precise, explainable 5.0 result"
+	/>
+
 	<h2>Should you upgrade from 3.1.1?</h2>
 	<p>
-		MQTT 5.0 is backward-compatible in spirit and keeps the lightweight pub/sub core, so new projects should prefer it
-		for the better error reporting and control. Many deployments run 3.1.1 and 5.0 side by side during migration.
+		For new projects, prefer 5.0 — the diagnostics and control alone are worth it, and libraries and brokers broadly
+		support it. Because the two versions share the same model, most deployments migrate gradually, running 3.1.1 and 5.0
+		clients against the same broker until everything is moved over.
+	</p>
+
+	<h2>MQTT 5.0 in TBMQ</h2>
+	<p>
+		TBMQ supports the full range of MQTT 3.1, 3.1.1, and 5.0 on the same broker. Its 5.0 implementation includes reason
+		codes, user properties, topic aliases, session and message expiry, flow control, enhanced authentication, and the
+		subscription options and identifiers from the spec. See the
+		<a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> for the complete list of supported 5.0 features.
 	</p>
 </MqttTopicLayout>
