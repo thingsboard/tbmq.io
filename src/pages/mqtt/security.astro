@@ -37,18 +37,25 @@ const faq: FaqItem[] = [
 	<h2>The three layers of MQTT security</h2>
 	<ul>
 		<li>
-			<strong>Transport (TLS):</strong> encrypt the connection so credentials and payloads are never sent in the clear. Secure
-			MQTT (MQTTS) runs on port <code>8883</code>; plaintext MQTT on <code>1883</code> should not face the internet.
+			<strong><a href="/mqtt/mqtt-tls/">Transport (TLS)</a>:</strong> encrypt the connection so credentials and payloads are
+			never sent in the clear. Secure MQTT (MQTTS) runs on port <code>8883</code>; plaintext MQTT on <code>1883</code> should
+			not face the internet.
 		</li>
 		<li>
-			<strong>Authentication:</strong> verify a client's identity on connect — via username/password, an X.509 client certificate,
-			or a signed token — and reject anything that fails.
+			<strong><a href="/mqtt/mqtt-authentication/">Authentication</a>:</strong> verify a client's identity on connect — via
+			username/password, an <a href="/mqtt/mqtt-client-certificates/">X.509 client certificate</a>, or a signed token —
+			and reject anything that fails.
 		</li>
 		<li>
-			<strong>Authorization:</strong> once authenticated, restrict which topics each client may publish to or subscribe from,
-			so a compromised device can't read or write topics it has no business touching.
+			<strong><a href="/mqtt/mqtt-authorization/">Authorization</a>:</strong> once authenticated, restrict which topics each
+			client may publish to or subscribe from, so a compromised device can't read or write topics it has no business touching.
 		</li>
 	</ul>
+	<p>
+		Those three cover most deployments. For especially sensitive data you can add a fourth, independent layer —
+		<a href="/mqtt/mqtt-payload-encryption/">payload encryption</a> — encrypting the message body in your clients so it stays
+		private even from the broker.
+	</p>
 
 	<MqttDiagram caption="Every connection passes through encryption, authentication, then authorization">
 		<svg viewBox="0 0 680 268" role="img" aria-label="Three layers of MQTT security">

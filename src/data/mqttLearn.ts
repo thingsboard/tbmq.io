@@ -234,10 +234,80 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT security has three layers: transport encryption with TLS (port 8883), client authentication (username/password, client certificates, or tokens), and authorization that controls which topics a client may publish to or subscribe from.',
 		tbmqTieIn:
 			'TBMQ supports TLS, mutual TLS (X.509), basic username/password, JWT and SCRAM authentication, with per-client topic authorization.',
-		related: ['what-is-mqtt', 'websocket', 'persistent-session'],
+		related: ['mqtt-tls', 'mqtt-authentication', 'mqtt-authorization', 'mqtt-client-certificates'],
 		status: 'full',
 		seoDescription:
 			'MQTT security explained — TLS encryption, authentication (passwords, client certificates, tokens) and topic authorization for a hardened broker.',
+	},
+	{
+		slug: 'mqtt-tls',
+		title: 'MQTT over TLS/SSL',
+		navLabel: 'TLS / SSL',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT over TLS (often written MQTTS) wraps the MQTT connection in a TLS-encrypted channel, so credentials and payloads can’t be read or tampered with on the wire. It runs on port 8883 by default, versus 1883 for plaintext MQTT. TLS can also authenticate the client with a certificate (mutual TLS).',
+		tbmqTieIn:
+			'TBMQ exposes TLS listeners for MQTT on port 8883 and secure WebSocket (WSS) on 8085; both are provided but ship disabled until you configure a server certificate.',
+		related: ['security', 'mqtt-client-certificates', 'mqtt-connection'],
+		status: 'full',
+		seoDescription:
+			'MQTT over TLS/SSL explained — how MQTTS encrypts the connection on port 8883, the TLS handshake, one-way vs mutual TLS, and why plaintext 1883 should not face the internet.',
+	},
+	{
+		slug: 'mqtt-authentication',
+		title: 'MQTT Authentication',
+		navLabel: 'Authentication',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT authentication is how the broker verifies a client’s identity when it connects. Common methods are username/password, signed tokens such as JWT, and challenge-response schemes like SCRAM; client certificates (mutual TLS) are a separate option. The broker checks the credential on CONNECT and refuses the connection if it fails.',
+		tbmqTieIn:
+			'TBMQ ships pluggable authentication providers — Basic (username/password), JWT, SCRAM over the MQTT 5.0 AUTH packet, X.509 client certificates, and an HTTP provider that defers to your own service. OAuth 2.0 identity providers are used indirectly, by issuing a JWT the client presents.',
+		related: ['security', 'mqtt-client-certificates', 'mqtt-authorization'],
+		status: 'full',
+		seoDescription:
+			'MQTT authentication explained — verifying clients with username/password, JWT tokens and SCRAM challenge-response, how the broker checks credentials on CONNECT, and how OAuth fits in.',
+	},
+	{
+		slug: 'mqtt-client-certificates',
+		title: 'MQTT Client Certificate Authentication (X.509)',
+		navLabel: 'Client certificates',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'Client certificate authentication uses mutual TLS (mTLS): as well as the broker proving its identity, the client presents an X.509 certificate during the TLS handshake. The broker trusts it if it chains to a trusted CA and identifies the client from the certificate — so no password is ever sent.',
+		tbmqTieIn:
+			'TBMQ supports X.509 client certificate authentication over a mutual-TLS listener, matching the certificate’s common name (CN) against stored credentials by exact value or a regular expression.',
+		related: ['security', 'mqtt-tls', 'mqtt-authentication'],
+		status: 'full',
+		seoDescription:
+			'MQTT client certificate authentication explained — how mutual TLS (mTLS) uses an X.509 client certificate to identify a client during the handshake, with no password sent.',
+	},
+	{
+		slug: 'mqtt-authorization',
+		title: 'MQTT Authorization and ACLs',
+		navLabel: 'Authorization',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'Authorization decides what an authenticated MQTT client is allowed to do — which topics it may publish to and which it may subscribe to. Brokers enforce this with access-control rules (ACLs) attached to each client’s credentials, so being connected doesn’t mean a client can touch every topic.',
+		tbmqTieIn:
+			'TBMQ authorizes publish and subscribe separately, per client credentials, using regular-expression topic patterns; the default rule allows all topics, so you tighten it to scope each client to exactly what it needs.',
+		related: ['security', 'mqtt-authentication', 'topics'],
+		status: 'full',
+		seoDescription:
+			'MQTT authorization and ACLs explained — how brokers restrict which topics an authenticated client may publish to or subscribe from, and why authentication alone is not enough.',
+	},
+	{
+		slug: 'mqtt-payload-encryption',
+		title: 'MQTT Payload Encryption',
+		navLabel: 'Payload encryption',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'Payload encryption means encrypting the message payload itself, inside the MQTT packet, so only the intended recipients can read it — end to end, independent of the transport. It complements TLS: TLS protects data in transit to and from the broker, while payload encryption keeps it unreadable even to the broker.',
+		tbmqTieIn:
+			'TBMQ treats every payload as opaque bytes — it never inspects or modifies message content — so client-side payload encryption passes through the broker unchanged, end to end.',
+		related: ['security', 'mqtt-tls', 'mqtt-user-properties'],
+		status: 'full',
+		seoDescription:
+			'MQTT payload encryption explained — encrypting the message payload end to end so it stays private even from the broker, how it differs from TLS, and where it fits.',
 	},
 	{
 		slug: 'websocket',

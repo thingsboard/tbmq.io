@@ -1,0 +1,97 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is MQTT payload encryption?',
+		a: 'Encrypting the message payload itself — the application data inside the MQTT packet — so only the intended recipients can decrypt it. It is done in the clients, above the MQTT layer, and is independent of whether the transport uses TLS.',
+	},
+	{
+		q: 'How is payload encryption different from TLS?',
+		a: 'TLS encrypts the connection between a client and the broker, so the broker decrypts and can see the payload. Payload encryption keeps the payload encrypted through the broker and at rest, so even the broker can’t read it. They are complementary: TLS for the link, payload encryption for the message.',
+	},
+	{
+		q: 'Does the broker need to support payload encryption?',
+		a: 'No. Because encryption and decryption happen in the clients and the broker just forwards the bytes, any broker that treats payloads as opaque works. You don’t configure it on the broker.',
+	},
+	{
+		q: 'What about message integrity?',
+		a: 'Encryption keeps a payload secret but doesn’t by itself prove it wasn’t altered. To detect tampering, add a signature or message authentication code (MAC) — many authenticated-encryption schemes (e.g. AES-GCM) provide confidentiality and integrity together.',
+	},
+	{
+		q: 'When is payload encryption worth the effort?',
+		a: 'When the data is sensitive enough that you don’t want to trust the broker or its operators with it, or when it must stay protected at rest and across intermediaries. For most deployments TLS plus authentication and authorization is enough; payload encryption is defense in depth on top.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-payload-encryption" faq={faq}>
+	<p>
+		<a href="/mqtt/mqtt-tls/">TLS</a> encrypts the link to the broker — but the broker terminates TLS, so it can read every
+		payload. When the data is sensitive enough that even the broker shouldn’t see it,
+		<strong>payload encryption</strong> adds an independent layer: encrypt the message body in the clients, and it stays unreadable
+		end to end.
+	</p>
+
+	<h2>Encrypting the message, not just the link</h2>
+	<p>
+		With payload encryption, the publisher encrypts the payload before it calls publish, and only clients holding the
+		key can decrypt it. The broker still routes the message normally — it just never sees the plaintext. Because this
+		happens above MQTT, it works with any broker that forwards payloads untouched, and it protects the data through the
+		broker and at rest.
+	</p>
+
+	<MqttDiagram caption="Payload encryption keeps the message unreadable even to the broker">
+		<svg
+			viewBox="0 0 680 224"
+			role="img"
+			aria-label="MQTT payload encryption: the publisher encrypts the payload, the broker relays only ciphertext and cannot read it, and the subscriber decrypts it"
+		>
+			<text class="d-note d-mid" x="340" y="24"
+				>TLS protects the link to the broker; payload encryption protects the message itself</text
+			>
+			<rect class="d-actor" x="24" y="86" width="150" height="52" rx="10"></rect>
+			<text class="d-alabel d-mid" x="99" y="108">Publisher</text>
+			<text class="d-feat d-mid" x="99" y="126">encrypts payload</text>
+			<rect class="d-actor d-actor--hero" x="265" y="86" width="150" height="52" rx="10"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="108">Broker</text>
+			<text class="d-feat d-mid" x="340" y="126" style="fill:#8a8d94">sees only ciphertext</text>
+			<rect class="d-actor" x="506" y="86" width="150" height="52" rx="10"></rect>
+			<text class="d-alabel d-mid" x="581" y="108">Subscriber</text>
+			<text class="d-feat d-mid" x="581" y="126">decrypts payload</text>
+			<text class="d-ctext d-mid" x="219" y="102" style="font-size:10px">enc(23.5°C)</text>
+			<line class="d-line" x1="174" y1="112" x2="262" y2="112" marker-end="url(#arGray)"></line>
+			<text class="d-ctext d-mid" x="460" y="102" style="font-size:10px">enc(23.5°C)</text>
+			<line class="d-line d-line--green" x1="415" y1="112" x2="503" y2="112" marker-end="url(#arGreen)"></line>
+			<text class="d-note d-mid" x="340" y="176"
+				>The broker relays the encrypted bytes but cannot read the contents</text
+			>
+			<text class="d-note d-mid" x="340" y="198" style="font-size:11px"
+				>Integrity: sign or MAC the payload so tampering is detectable</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Confidentiality and integrity</h2>
+	<ul>
+		<li>
+			<strong>Confidentiality:</strong> encrypt the payload so only key holders can read it — the broker and any intermediary
+			see only ciphertext.
+		</li>
+		<li>
+			<strong>Integrity:</strong> add a signature or MAC so a recipient can detect tampering. Authenticated-encryption modes
+			such as AES-GCM give you both at once.
+		</li>
+	</ul>
+
+	<h2>Payload encryption in TBMQ</h2>
+	<p>
+		TBMQ treats every payload as opaque bytes — it never inspects or modifies message content — so client-side payload
+		encryption passes through the broker unchanged, end to end. Combine it with <a href="/mqtt/mqtt-tls/">TLS</a> for the
+		transport and <a href="/mqtt/mqtt-authorization/">authorization</a> to limit topic access. You can also carry metadata
+		like the cipher or key ID in <a href="/mqtt/mqtt-user-properties/">user properties</a>. See the
+		<a href="/docs/mqtt-broker/security/overview/">security overview</a> for the layers TBMQ enforces.
+	</p>
+</MqttTopicLayout>
