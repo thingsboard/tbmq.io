@@ -1,0 +1,92 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const connectDiagram = `
+   client                                   broker
+     |                                        |
+     | -------- CONNECT (clientId, ...) -----> |   opens session
+     | <------- CONNACK (accepted) ----------- |
+     |                                        |
+     | -- SUBSCRIBE  sensors/+/temp --------> |   registers interest
+     | -- PUBLISH    sensors/1/temp -------->  |   sends data
+     | <------------ PUBLISH (matched) ------- |   receives data
+     |                                        |
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is an MQTT client?',
+		a: 'Any device or program that connects to an MQTT broker to publish messages, subscribe to topics, or both. A temperature sensor, a mobile app, a backend service, and a browser tab can all be MQTT clients.',
+	},
+	{
+		q: 'Can a client both publish and subscribe?',
+		a: 'Yes. A single client can publish to some topics and subscribe to others over the same connection. Roles are per message, not per client.',
+	},
+	{
+		q: 'What is a client ID in MQTT?',
+		a: 'A client identifier is a string that uniquely identifies a client to the broker. It ties a connection to its session, so the broker can resume a persistent session or take over a stale one when the same ID reconnects.',
+	},
+	{
+		q: 'Do I need a special library to build an MQTT client?',
+		a: 'You use an MQTT client library for your language or platform (for example Eclipse Paho, MQTT.js, or a device SDK). Any library that implements the MQTT protocol works with any compliant broker.',
+	},
+	{
+		q: 'Can a web browser be an MQTT client?',
+		a: 'Yes, over MQTT on WebSocket. Browsers cannot open raw TCP sockets, so they connect using MQTT over WebSocket — TBMQ even ships a browser-based MQTT client in its UI.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-client" faq={faq}>
+	<p>
+		An MQTT client is any endpoint that connects to an <a href="/mqtt/mqtt-broker/">MQTT broker</a>. The protocol makes
+		no distinction between a tiny sensor and a large backend service — if it speaks MQTT, it's a client, and the broker
+		treats them all the same way.
+	</p>
+
+	<h2>How a client connects</h2>
+	<p>
+		Every client starts by sending a <code>CONNECT</code> packet carrying a <strong>client ID</strong>, an optional
+		username/password, a <a href="/mqtt/keep-alive/">keep-alive</a> interval, the clean-start flag for its <a
+			href="/mqtt/persistent-session/">session</a
+		>, and an optional
+		<a href="/mqtt/last-will/">last will</a>. The broker replies with a <code>CONNACK</code> that accepts or rejects the connection.
+		After that, the client can subscribe and publish freely.
+	</p>
+
+	<AsciiDiagram
+		content={connectDiagram}
+		caption="A client connects once, then publishes and subscribes over the same long-lived connection"
+	/>
+
+	<h2>What a client can do</h2>
+	<ul>
+		<li><strong>Publish:</strong> send a message to a topic (e.g. a sensor reporting a reading).</li>
+		<li>
+			<strong>Subscribe:</strong> register interest in one or more <a href="/mqtt/topics/">topics</a> and receive matching
+			messages as they arrive.
+		</li>
+		<li>
+			<strong>Both:</strong> a client often does both — a device publishes telemetry and subscribes to commands on the same
+			connection.
+		</li>
+	</ul>
+
+	<h2>MQTT client libraries</h2>
+	<p>
+		You rarely implement MQTT by hand. Mature client libraries exist for virtually every language and platform — Eclipse
+		Paho (C, Java, Python, and more), MQTT.js for Node and browsers, and vendor SDKs for microcontrollers. Because MQTT
+		is a standard, any compliant library works with any compliant broker.
+	</p>
+
+	<h2>Clients in TBMQ</h2>
+	<p>
+		TBMQ works with any standard MQTT client library, and it ships a built-in
+		<a href="/docs/mqtt-broker/user-guide/ui/websocket-client/">WebSocket MQTT client</a> in its UI so you can publish and
+		subscribe straight from the browser. TBMQ also categorizes clients as
+		<a href="/docs/mqtt-broker/concepts/client-types/">DEVICE or APPLICATION types</a>, which determines how their
+		sessions and message queues are persisted at scale.
+	</p>
+</MqttTopicLayout>

@@ -1,0 +1,83 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const modelDiagram = `
+   HTTP  (request / response, pull)        MQTT  (publish / subscribe, push)
+
+   client  --- GET /data --->  server       device --publish--> [ broker ] --push--> app
+   client  <-- 200 OK -------  server       device --publish--> [ broker ] --push--> app
+   client  --- GET /data --->  server                 subscribers get updates as they happen
+        (poll again and again)                  (one long-lived connection, no polling)
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'Is MQTT better than HTTP for IoT?',
+		a: 'For frequent, small, bidirectional device messaging, usually yes — MQTT’s persistent connection and pub/sub model push updates instantly with far less overhead than repeated HTTP requests. HTTP remains a fine choice for occasional request/response calls and REST APIs.',
+	},
+	{
+		q: 'Does MQTT use HTTP?',
+		a: 'No. MQTT is its own protocol that runs directly over TCP (and can be tunneled over WebSocket). It does not sit on top of HTTP, though MQTT over WebSocket does start with an HTTP upgrade handshake.',
+	},
+	{
+		q: 'Why is MQTT more efficient than HTTP?',
+		a: 'MQTT has a tiny fixed header (as little as 2 bytes) and reuses one long-lived connection, so it avoids HTTP’s larger headers and the cost of opening a connection per request. Over many small messages that overhead adds up.',
+	},
+	{
+		q: 'Can MQTT and HTTP be used together?',
+		a: 'Yes, and they often are: devices talk to the broker over MQTT for real-time messaging, while dashboards and integrations use HTTP/REST APIs to read state or configure the system.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-vs-http" faq={faq}>
+	<p>
+		HTTP powers the web; MQTT powers device fleets. Both move data between machines, but they were designed for opposite
+		situations — one for occasional page and API requests, the other for a constant stream of small messages to and from
+		many devices.
+	</p>
+
+	<h2>Two different models</h2>
+	<p>
+		HTTP is <strong>request/response</strong>: a client asks, the server answers, and the connection is usually
+		short-lived. To learn about new data, the client has to ask again — polling. MQTT is
+		<strong>publish/subscribe</strong>: a client opens one long-lived connection to a
+		<a href="/mqtt/mqtt-broker/">broker</a>, and the broker <strong>pushes</strong> messages the instant they're published.
+		No polling, no reconnection per message.
+	</p>
+
+	<AsciiDiagram content={modelDiagram} caption="HTTP pulls on request; MQTT pushes over a persistent connection" />
+
+	<h2>MQTT vs HTTP at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>MQTT</th><th>HTTP</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Model</td><td>Publish/subscribe (push)</td><td>Request/response (pull)</td></tr>
+				<tr><td>Connection</td><td>One long-lived connection</td><td>Typically short-lived per request</td></tr>
+				<tr><td>Header overhead</td><td>Tiny (from 2 bytes)</td><td>Larger text headers per request</td></tr>
+				<tr><td>Real-time updates</td><td>Server push, instant</td><td>Client must poll</td></tr>
+				<tr><td>Delivery guarantees</td><td><a href="/mqtt/qos/">QoS</a> 0 / 1 / 2</td><td>Application-defined</td></tr>
+				<tr><td>Best for</td><td>Frequent small device messages</td><td>APIs, documents, occasional calls</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>When to use which</h2>
+	<p>
+		Use <strong>MQTT</strong> when many devices exchange frequent, small messages and need low-latency push — telemetry, presence,
+		commands. Use <strong>HTTP</strong> for request/response interactions: REST APIs, file downloads, and occasional calls
+		where a persistent connection isn't worth it. They coexist happily — devices on MQTT, dashboards and integrations on HTTP.
+		For moving that device stream into a backend pipeline, see <a href="/mqtt/mqtt-vs-kafka/">MQTT vs Kafka</a>.
+	</p>
+
+	<h2>MQTT in TBMQ</h2>
+	<p>
+		TBMQ speaks MQTT, including <a href="/docs/mqtt-broker/user-guide/mqtt-over-ws/">MQTT over WebSocket</a>, so even
+		browser apps get real-time push instead of polling an HTTP endpoint.
+	</p>
+</MqttTopicLayout>

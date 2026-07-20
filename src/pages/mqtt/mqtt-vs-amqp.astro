@@ -1,0 +1,79 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the main difference between MQTT and AMQP?',
+		a: 'MQTT is a lightweight publish/subscribe protocol for connecting large numbers of constrained devices. AMQP is a heavier, feature-rich protocol built around queues and exchanges for enterprise application-to-application messaging with strong routing and transactional guarantees.',
+	},
+	{
+		q: 'Is MQTT or AMQP better for IoT?',
+		a: 'MQTT is usually the better fit for device connectivity: it has minimal overhead, tolerates unreliable networks, and scales to huge fleets. AMQP shines in the backend, integrating enterprise systems that need rich routing and transactions.',
+	},
+	{
+		q: 'Do MQTT and AMQP interoperate?',
+		a: 'Not directly — they are different wire protocols. Some brokers speak both, and you can bridge them (for example MQTT at the edge, AMQP between backend services), but a plain MQTT client cannot talk to a plain AMQP broker.',
+	},
+	{
+		q: 'Which has more overhead, MQTT or AMQP?',
+		a: 'AMQP. Its richer feature set and framing make it heavier on the wire and on constrained devices, whereas MQTT’s fixed header starts at just 2 bytes.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-vs-amqp" faq={faq}>
+	<p>
+		MQTT and AMQP are both open messaging standards, and both use a broker — but they were designed for different ends
+		of the system. MQTT optimizes for reaching enormous numbers of devices over flaky networks; AMQP optimizes for rich,
+		reliable messaging between backend applications.
+	</p>
+
+	<h2>What each is for</h2>
+	<p>
+		<strong>MQTT</strong> is a minimal <a href="/mqtt/what-is-mqtt/">publish/subscribe</a> protocol: a client connects to
+		a <a href="/mqtt/mqtt-broker/">broker</a>, publishes to topics, and subscribes to topics. That simplicity is the
+		point — it keeps the protocol tiny and easy to run on constrained hardware. <strong>AMQP</strong> (the Advanced Message
+		Queuing Protocol) is a broader protocol with explicit <strong>queues</strong>, <strong>exchanges</strong>, and
+		routing rules, plus transactions and fine-grained delivery control, aimed at enterprise integration.
+	</p>
+
+	<h2>MQTT vs AMQP at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>MQTT</th><th>AMQP</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Primary use</td><td>Device connectivity at the edge</td><td>Enterprise app-to-app messaging</td></tr>
+				<tr><td>Model</td><td>Publish/subscribe on topics</td><td>Queues &amp; exchanges with routing</td></tr>
+				<tr><td>Weight</td><td>Very lightweight (2-byte header)</td><td>Heavier, richer framing</td></tr>
+				<tr><td>Typical clients</td><td>Millions of constrained devices</td><td>Fewer backend services</td></tr>
+				<tr
+					><td>Delivery control</td><td><a href="/mqtt/qos/">QoS</a> 0 / 1 / 2</td><td
+						>Acks, transactions, flow control</td
+					></tr
+				>
+				<tr
+					><td>Strength</td><td>Scale &amp; simplicity over poor networks</td><td>Rich routing &amp; reliability</td
+					></tr
+				>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>When to use which</h2>
+	<p>
+		Reach for <strong>MQTT</strong> when the job is connecting devices — telemetry, commands, presence — especially at large
+		scale or over unreliable links. Reach for <strong>AMQP</strong> when the job is integrating enterprise applications that
+		need sophisticated routing, queuing, and transactional guarantees. Many architectures use both: MQTT from the devices
+		in, AMQP between services in the back. For the edge-to-backend streaming pattern specifically, see
+		<a href="/mqtt/mqtt-vs-kafka/">MQTT vs Kafka</a> and <a href="/mqtt/mqtt-vs-http/">MQTT vs HTTP</a>.
+	</p>
+
+	<h2>MQTT in TBMQ</h2>
+	<p>
+		TBMQ is a purpose-built MQTT broker focused on connecting massive device fleets — not a general-purpose AMQP message
+		broker. When you need MQTT at scale, that focus is the advantage.
+	</p>
+</MqttTopicLayout>

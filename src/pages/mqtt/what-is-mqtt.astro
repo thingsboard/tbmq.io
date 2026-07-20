@@ -68,15 +68,17 @@ const faq: FaqItem[] = [
 	<p>
 		HTTP is request/response: a client asks, the server answers, and the connection is typically short-lived. That's a
 		poor fit for pushing frequent, small updates to many devices. MQTT keeps a long-lived connection open and pushes
-		messages the instant they're published, with far less per-message overhead. For moving that device data into backend
-		analytics pipelines, MQTT is often paired with a streaming platform — see <a href="/mqtt/mqtt-vs-kafka/"
-			>MQTT vs Kafka</a
-		>.
+		messages the instant they're published, with far less per-message overhead. See <a href="/mqtt/mqtt-vs-http/"
+			>MQTT vs HTTP</a
+		> for a fuller comparison. For moving that device data into backend analytics pipelines, MQTT is often paired with a streaming
+		platform — see <a href="/mqtt/mqtt-vs-kafka/">MQTT vs Kafka</a>.
 	</p>
 
 	<h2>Core MQTT concepts</h2>
 	<p>Once the pub/sub basics click, these are the concepts worth knowing next:</p>
 	<ul>
+		<li><a href="/mqtt/mqtt-broker/">MQTT broker</a> — the central server that routes every message.</li>
+		<li><a href="/mqtt/mqtt-client/">MQTT clients</a> — the devices and apps that publish and subscribe.</li>
 		<li><a href="/mqtt/topics/">Topics &amp; wildcards</a> — how messages are addressed and matched.</li>
 		<li>
 			<a href="/mqtt/qos/">Quality of Service (QoS)</a> — at-most-once, at-least-once, exactly-once delivery.

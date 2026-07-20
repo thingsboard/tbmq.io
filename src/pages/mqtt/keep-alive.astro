@@ -1,0 +1,93 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const keepAliveDiagram = `
+   keep-alive = 60s   ->   client must send something every 90s (60 x 1.5)
+
+   client                                   broker
+     | -- PUBLISH / SUBSCRIBE / any packet -->  |   timer resets
+     |            (quiet period)                |
+     | -------------- PINGREQ ---------------->  |   nothing else to send
+     | <------------- PINGRESP ---------------- |   still alive, timer resets
+     |                                          |
+     |         silence for > 90s (1.5x)         |
+     |   X  broker closes conn (KEEP_ALIVE_TIMEOUT) + fires Last Will
+`;
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the MQTT keep-alive interval?',
+		a: 'A value in seconds (0 to 65,535) that the client sets in the CONNECT packet. It is the maximum time the client may stay silent; if it has no data to send, it must send a PINGREQ within that window.',
+	},
+	{
+		q: 'What is the 1.5x rule in MQTT keep-alive?',
+		a: 'If the broker receives no packet from a client within 1.5 times the keep-alive interval, it considers the client disconnected and closes the connection. For a 60-second keep-alive, that window is 90 seconds.',
+	},
+	{
+		q: 'What are PINGREQ and PINGRESP?',
+		a: 'They are the MQTT heartbeat packets. When a client has no application message to send, it sends a PINGREQ and the broker replies with PINGRESP to confirm the connection is still alive.',
+	},
+	{
+		q: 'What happens when keep-alive times out?',
+		a: 'The broker closes the connection and publishes the client’s Last Will message if one was configured, so the rest of the system learns the client dropped off. In TBMQ the connection closes with reason KEEP_ALIVE_TIMEOUT.',
+	},
+	{
+		q: 'Can I disable MQTT keep-alive?',
+		a: 'Yes — set keep-alive to 0. The client then sends no periodic pings and the broker does not monitor the connection for inactivity. This is generally discouraged because unexpected disconnects go undetected until the next send.',
+	},
+];
+---
+
+<MqttTopicLayout slug="keep-alive" faq={faq}>
+	<p>
+		TCP can lie. A connection can look open to one side while the other has silently vanished — a crashed device, a
+		dropped Wi-Fi link, a firewall that quietly killed an idle session. MQTT keep-alive is the mechanism that lets the
+		broker tell a live client from a dead one.
+	</p>
+
+	<h2>How keep-alive works</h2>
+	<p>
+		The client declares a <strong>keep-alive interval</strong> (0–65,535 seconds) in its
+		<code>CONNECT</code> packet. It then promises to send <em>some</em> packet — a publish, a subscribe, or, if it has nothing
+		else to say, a <code>PINGREQ</code> — within every interval. The broker answers each <code>PINGREQ</code> with a <code
+			>PINGRESP</code
+		>. Any packet resets the timer.
+	</p>
+	<p>
+		If the broker hears nothing for <strong>1.5×</strong> the interval, it assumes the client is gone and closes the connection.
+		With a 60-second keep-alive, the client must be heard from at least every 90 seconds.
+	</p>
+
+	<AsciiDiagram
+		content={keepAliveDiagram}
+		caption="Any packet keeps the connection alive; silence past the 1.5x window ends it"
+	/>
+
+	<h2>Why it matters: half-open connections</h2>
+	<p>
+		Without keep-alive, a broker can accumulate <strong>half-open connections</strong> — sessions it believes are active but
+		whose clients are long gone. These waste resources and leave stale
+		<a href="/mqtt/persistent-session/">sessions</a> around. Keep-alive forces clients to prove they're alive, so the broker
+		can reclaim dead connections promptly.
+	</p>
+
+	<h2>Choosing a keep-alive value</h2>
+	<p>
+		Shorter intervals detect failures faster but add ping traffic and wake battery-powered devices more often; longer
+		intervals are lighter but slower to notice a dropped client. Match the interval to how quickly you need to detect a
+		disconnect. Devices that already send data at a steady rate may not need a short keep-alive at all, since their
+		normal traffic keeps the connection active.
+	</p>
+
+	<h2>Keep-alive in TBMQ</h2>
+	<p>
+		TBMQ monitors keep-alive per connection (checking on an interval set by
+		<code>MQTT_KEEP_ALIVE_MONITORING_DELAY_MS</code>, every second by default). On timeout it closes the connection with
+		reason <code>KEEP_ALIVE_TIMEOUT</code> and publishes the client's
+		<a href="/mqtt/last-will/">Last Will</a> if one was set. See the
+		<a href="/docs/mqtt-broker/user-guide/keep-alive/">keep-alive docs</a> for the full behavior, including client take-over
+		when the same client ID reconnects.
+	</p>
+</MqttTopicLayout>

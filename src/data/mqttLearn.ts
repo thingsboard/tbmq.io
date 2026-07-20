@@ -34,7 +34,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT (Message Queuing Telemetry Transport) is a lightweight publish/subscribe messaging protocol built for constrained devices and low-bandwidth, unreliable networks. Clients publish messages to named topics on a central broker, which forwards each message to every client subscribed to that topic — decoupling senders from receivers.',
 		tbmqTieIn:
 			'TBMQ is an open-source MQTT broker (3.1, 3.1.1 and 5.0) engineered to scale to 100M+ concurrent connections.',
-		related: ['qos', 'topics', 'mqtt-5', 'mqtt-vs-kafka'],
+		related: ['mqtt-broker', 'mqtt-client', 'mqtt-vs-kafka'],
 		marquee: true,
 		status: 'full',
 		seoDescription:
@@ -49,7 +49,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT is a lightweight pub/sub protocol for connecting devices over unreliable networks; Apache Kafka is a distributed event-streaming log for high-throughput backend data pipelines. They solve different problems and are frequently used together — MQTT at the edge, Kafka in the data center.',
 		tbmqTieIn:
 			'TBMQ uses Kafka as its internal backbone for durability and zero message loss, and can bridge MQTT traffic straight into your Kafka topics.',
-		related: ['what-is-mqtt', 'qos', 'persistent-session'],
+		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session'],
 		marquee: true,
 		status: 'full',
 		seoDescription:
@@ -184,11 +184,101 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT over WebSocket carries the same MQTT protocol inside a WebSocket connection, so browsers and other HTTP-only clients can publish and subscribe directly. Brokers commonly expose it on port 8084 (WS) or 8085 (WSS).',
 		tbmqTieIn:
 			'TBMQ ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser — try it in the live demo.',
-		related: ['what-is-mqtt', 'security', 'topics'],
+		related: ['mqtt-client', 'what-is-mqtt', 'security'],
 		marquee: false,
 		status: 'short',
 		seoDescription:
 			'MQTT over WebSocket explained — how the MQTT protocol runs inside a WebSocket so browser clients can publish and subscribe in real time.',
+	},
+	{
+		slug: 'mqtt-broker',
+		title: 'What Is an MQTT Broker?',
+		navLabel: 'MQTT broker',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'An MQTT broker is the central server that sits between MQTT clients: it receives every published message and routes it to the clients subscribed to the matching topic. The broker manages connections, subscriptions, per-QoS delivery, session state, and authentication — so publishers and subscribers never talk to each other directly.',
+		tbmqTieIn:
+			'TBMQ is an open-source MQTT broker (3.1, 3.1.1 and 5.0) engineered to scale to 100M+ concurrent connections on a single cluster.',
+		related: ['what-is-mqtt', 'mqtt-client', 'mqtt-vs-kafka'],
+		marquee: true,
+		status: 'full',
+		seoDescription:
+			'What is an MQTT broker? How the central MQTT server routes messages between clients, manages sessions and QoS, and what to look for when choosing one.',
+	},
+	{
+		slug: 'mqtt-client',
+		title: 'What Is an MQTT Client?',
+		navLabel: 'MQTT client',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'An MQTT client is any device or application that connects to an MQTT broker to publish messages, subscribe to topics, or both. Anything from an 8-bit microcontroller to a backend service or a browser tab can be a client, as long as it speaks the MQTT protocol over a supported transport.',
+		tbmqTieIn:
+			'TBMQ works with any standard MQTT client library and ships a built-in WebSocket MQTT client in its UI, so you can publish and subscribe straight from the browser.',
+		related: ['mqtt-broker', 'what-is-mqtt', 'websocket'],
+		marquee: false,
+		status: 'full',
+		seoDescription:
+			'What is an MQTT client? How devices and apps connect to a broker to publish and subscribe, the connect handshake, client IDs, and MQTT client libraries.',
+	},
+	{
+		slug: 'keep-alive',
+		title: 'MQTT Keep-Alive and Ping Explained',
+		navLabel: 'Keep-alive',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'MQTT keep-alive is a heartbeat between client and broker. The client promises to send at least one packet within each keep-alive interval; if it has nothing else to send, it sends a PINGREQ and the broker replies with PINGRESP. If the broker receives nothing for 1.5× the interval, it assumes the client is gone and closes the connection.',
+		tbmqTieIn:
+			'TBMQ monitors keep-alive per connection and, on timeout, closes it with reason KEEP_ALIVE_TIMEOUT and publishes the client’s Last Will if one was configured.',
+		related: ['persistent-session', 'last-will', 'mqtt-client'],
+		marquee: false,
+		status: 'full',
+		seoDescription:
+			'MQTT keep-alive and ping explained — the PINGREQ/PINGRESP heartbeat, the 1.5× keep-alive timeout, half-open connections, and how brokers detect dead clients.',
+	},
+	{
+		slug: 'mqtt-vs-http',
+		title: 'MQTT vs HTTP: Which to Use for IoT',
+		navLabel: 'MQTT vs HTTP',
+		eyebrow: 'MQTT COMPARISON',
+		quickAnswer:
+			'HTTP is a request/response protocol built for the web: a client asks and the server answers over a typically short-lived connection. MQTT is a publish/subscribe protocol built for devices: a long-lived connection lets the broker push messages the instant they are published, with far less per-message overhead. For frequent, small, bidirectional IoT messaging, MQTT usually wins.',
+		tbmqTieIn:
+			'TBMQ speaks MQTT — including MQTT over WebSocket — so browsers and devices get real-time push instead of repeatedly polling an HTTP endpoint.',
+		related: ['what-is-mqtt', 'mqtt-vs-kafka', 'mqtt-client'],
+		marquee: false,
+		status: 'full',
+		seoDescription:
+			'MQTT vs HTTP compared for IoT — pub/sub vs request/response, per-message overhead, push vs polling, and when each protocol is the right choice.',
+	},
+	{
+		slug: 'mqtt-vs-amqp',
+		title: 'MQTT vs AMQP: Differences and When to Use Each',
+		navLabel: 'MQTT vs AMQP',
+		eyebrow: 'MQTT COMPARISON',
+		quickAnswer:
+			'MQTT and AMQP are both messaging protocols aimed at different problems. MQTT is a lightweight publish/subscribe protocol optimized for large fleets of constrained devices over unreliable networks. AMQP is a richer, heavier protocol with queues, exchanges, and transactions, aimed at enterprise application-to-application messaging and interoperability.',
+		tbmqTieIn:
+			'TBMQ is a purpose-built MQTT broker focused on connecting massive device fleets, rather than a general-purpose AMQP message broker.',
+		related: ['mqtt-vs-kafka', 'mqtt-vs-http', 'what-is-mqtt'],
+		marquee: false,
+		status: 'full',
+		seoDescription:
+			'MQTT vs AMQP compared — lightweight device pub/sub vs enterprise queues and exchanges, overhead, feature set, and when to use each protocol.',
+	},
+	{
+		slug: 'mqtt-vs-coap',
+		title: 'MQTT vs CoAP: Differences and When to Use Each',
+		navLabel: 'MQTT vs CoAP',
+		eyebrow: 'MQTT COMPARISON',
+		quickAnswer:
+			'MQTT and CoAP are both lightweight IoT protocols with different models. MQTT is a broker-based publish/subscribe protocol over long-lived TCP connections, ideal for pushing events to many subscribers. CoAP is a RESTful request/response protocol over UDP, ideal for occasional, one-to-one interactions with very constrained devices.',
+		tbmqTieIn:
+			'TBMQ is an MQTT broker built for large-scale pub/sub messaging; CoAP’s request/response model targets a different pattern for a different job.',
+		related: ['mqtt-vs-http', 'what-is-mqtt', 'qos'],
+		marquee: false,
+		status: 'full',
+		seoDescription:
+			'MQTT vs CoAP compared — broker-based pub/sub over TCP vs RESTful request/response over UDP, and when to choose each for constrained IoT devices.',
 	},
 ];
 

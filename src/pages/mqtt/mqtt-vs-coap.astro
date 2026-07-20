@@ -1,0 +1,79 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the difference between MQTT and CoAP?',
+		a: 'MQTT is a broker-based publish/subscribe protocol over long-lived TCP connections, built to push events to many subscribers. CoAP is a RESTful request/response protocol over UDP, built for lightweight, one-to-one interactions with very constrained devices.',
+	},
+	{
+		q: 'Is MQTT or CoAP better for constrained devices?',
+		a: 'Both are lightweight. CoAP’s UDP request/response suits devices that wake, send or fetch one value, and sleep. MQTT suits devices that stay connected and need push updates or one-to-many delivery. The right choice depends on the traffic pattern, not just device size.',
+	},
+	{
+		q: 'Does CoAP use a broker like MQTT?',
+		a: 'Not inherently. CoAP follows a client/server (RESTful) model where a client talks directly to a resource server, though CoAP does define an optional publish/subscribe extension. MQTT is broker-centric by design.',
+	},
+	{
+		q: 'Can MQTT and CoAP be used together?',
+		a: 'Yes. A gateway can bridge CoAP devices to an MQTT broker, letting request/response sensors coexist with a pub/sub backbone. Many IoT platforms accept both.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-vs-coap" faq={faq}>
+	<p>
+		MQTT and CoAP are both designed for the constrained world of IoT, and they're often compared — but they take
+		opposite approaches. One keeps a connection open and pushes; the other is connectionless and pulls on demand.
+	</p>
+
+	<h2>What each is for</h2>
+	<p>
+		<strong>MQTT</strong> is a <a href="/mqtt/what-is-mqtt/">publish/subscribe</a> protocol: clients hold a long-lived TCP
+		connection to a <a href="/mqtt/mqtt-broker/">broker</a>, which routes each message to all matching subscribers. <strong
+			>CoAP</strong
+		> (the Constrained Application Protocol) is a RESTful <strong>request/response</strong> protocol over UDP — it looks like
+		a very compact HTTP for tiny devices, with methods like GET, POST, PUT, and DELETE against resources.
+	</p>
+
+	<h2>MQTT vs CoAP at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>MQTT</th><th>CoAP</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Model</td><td>Publish/subscribe via a broker</td><td>RESTful request/response</td></tr>
+				<tr><td>Transport</td><td>TCP (long-lived connection)</td><td>UDP (connectionless)</td></tr>
+				<tr><td>Communication</td><td>One-to-many push</td><td>Mostly one-to-one, on demand</td></tr>
+				<tr
+					><td>Delivery</td><td><a href="/mqtt/qos/">QoS</a> 0 / 1 / 2</td><td
+						>Confirmable / non-confirmable messages</td
+					></tr
+				>
+				<tr
+					><td>Best for</td><td>Streaming events to many consumers</td><td>Occasional reads/writes on sleepy devices</td
+					></tr
+				>
+				<tr><td>Power profile</td><td>Kept-alive connection</td><td>Very low — send and sleep</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>When to use which</h2>
+	<p>
+		Choose <strong>MQTT</strong> when devices stay connected and you need real-time push or one-to-many distribution — the
+		broker fans each message out to every subscriber. Choose <strong>CoAP</strong>
+		when ultra-low-power devices wake briefly to read or write a single resource and then sleep, and a persistent connection
+		would be wasteful. They aren't mutually exclusive: a gateway can bridge CoAP devices onto an MQTT backbone. See also <a
+			href="/mqtt/mqtt-vs-http/">MQTT vs HTTP</a
+		>.
+	</p>
+
+	<h2>MQTT in TBMQ</h2>
+	<p>
+		TBMQ is an MQTT broker built for large-scale pub/sub messaging. CoAP's request/response model solves a different
+		problem; when your architecture is built on MQTT push at scale, a dedicated broker is what carries it.
+	</p>
+</MqttTopicLayout>
