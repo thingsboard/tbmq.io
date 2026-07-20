@@ -1,5 +1,6 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -40,6 +41,41 @@ const faq: FaqItem[] = [
 		<strong>subscribers</strong> (for example, a dashboard or backend service), and the
 		<strong>broker</strong> that connects them. A single client can both publish and subscribe.
 	</p>
+
+	<MqttDiagram caption="A publisher sends one message to a topic; the broker delivers a copy to every subscriber">
+		<svg
+			viewBox="0 0 680 300"
+			role="img"
+			aria-label="MQTT publish/subscribe: a publisher sends one message to a topic on the broker, which delivers a copy to every subscriber"
+		>
+			<text class="d-tiny d-mid" x="92" y="20">PUBLISHER</text>
+			<text class="d-tiny d-mid" x="588" y="20">SUBSCRIBERS</text>
+			<rect class="d-actor" x="28" y="124" width="128" height="46" rx="10"></rect>
+			<text class="d-alabel d-mid" x="92" y="152">Thermostat</text>
+			<rect class="d-actor d-actor--hero" x="256" y="96" width="168" height="104" rx="12"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="128" style="font-size:14px;letter-spacing:.04em"
+				>BROKER</text
+			>
+			<rect class="d-chip d-chip--green" x="278" y="146" width="124" height="26" rx="13"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="164">home/temp</text>
+			<rect class="d-actor" x="524" y="40" width="138" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="593" y="67">Dashboard</text>
+			<rect class="d-actor" x="524" y="120" width="138" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="593" y="147">Data logger</text>
+			<rect class="d-actor" x="524" y="200" width="138" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="593" y="227">Phone app</text>
+			<path class="d-line" d="M156 148 L253 148" marker-end="url(#arGray)"></path>
+			<text class="d-tiny" x="176" y="140">publish</text>
+			<path class="d-line d-line--green" d="M424 148 C474 148 472 62 521 62" marker-end="url(#arGreen)"></path>
+			<path class="d-line d-line--green" d="M424 148 L521 142" marker-end="url(#arGreen)"></path>
+			<path class="d-line d-line--green" d="M424 148 C474 148 472 222 521 222" marker-end="url(#arGreen)"></path>
+			<text class="d-tiny" x="452" y="140" style="fill:#4f7d63">copy</text>
+			<text class="d-note d-mid" x="340" y="270">One message in → a copy to every subscriber</text>
+			<text class="d-note d-mid" x="340" y="290" style="fill:#8a8d94"
+				>Publisher and subscribers share only the topic — never each other</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>Why MQTT is used for IoT</h2>
 	<p>

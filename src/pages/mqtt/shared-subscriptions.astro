@@ -1,5 +1,6 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -43,6 +44,51 @@ const faq: FaqItem[] = [
 			>sensors/+/data</code
 		> goes to just one of the three workers, so adding a fourth worker instantly increases throughput.
 	</p>
+
+	<MqttDiagram caption="A shared subscription spreads each message across the group — one message, one worker">
+		<svg
+			viewBox="0 0 680 332"
+			role="img"
+			aria-label="Shared subscription: messages published to a topic are distributed one each across a group of worker clients, commonly round-robin"
+		>
+			<text class="d-note d-mid" x="346" y="22">Messages on sensors/+/data</text>
+			<rect class="d-chip" x="250" y="34" width="42" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="271" y="52">M1</text>
+			<rect class="d-chip" x="300" y="34" width="42" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="321" y="52">M2</text>
+			<rect class="d-chip" x="350" y="34" width="42" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="371" y="52">M3</text>
+			<rect class="d-chip" x="400" y="34" width="42" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="421" y="52">M4</text>
+			<path class="d-line" d="M346 62 L346 92" marker-end="url(#arGray)"></path>
+			<rect class="d-actor d-actor--hero" x="246" y="96" width="200" height="58" rx="12"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="346" y="120" style="font-size:14px;letter-spacing:.04em"
+				>BROKER</text
+			>
+			<text class="d-ctext d-mid" x="346" y="141" style="font-size:11px">$share/workers/sensors/+/data</text>
+			<rect
+				x="150"
+				y="206"
+				width="392"
+				height="98"
+				rx="12"
+				style="fill:none;stroke:#d7dbe2;stroke-width:1.5;stroke-dasharray:4 4"></rect>
+			<rect class="d-actor" x="172" y="234" width="104" height="52" rx="10"></rect>
+			<text class="d-alabel d-mid" x="224" y="264">Worker 1</text>
+			<rect class="d-actor" x="294" y="234" width="104" height="52" rx="10"></rect>
+			<text class="d-alabel d-mid" x="346" y="264">Worker 2</text>
+			<rect class="d-actor" x="416" y="234" width="104" height="52" rx="10"></rect>
+			<text class="d-alabel d-mid" x="468" y="264">Worker 3</text>
+			<path class="d-line d-line--green" d="M330 154 C300 178 244 190 224 231" marker-end="url(#arGreen)"></path>
+			<path class="d-line d-line--green" d="M346 154 L346 231" marker-end="url(#arGreen)"></path>
+			<path class="d-line d-line--green" d="M362 154 C392 178 448 190 468 231" marker-end="url(#arGreen)"></path>
+			<text class="d-ctext d-ctext--green d-mid" x="238" y="200" style="font-size:11px">M1 · M4</text>
+			<text class="d-ctext d-ctext--green d-mid" x="366" y="196" style="font-size:11px">M2</text>
+			<text class="d-ctext d-ctext--green d-mid" x="452" y="200" style="font-size:11px">M3</text>
+			<text class="d-note d-mid" x="346" y="324">Each message goes to just one group member — commonly round-robin</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>MQTT 5.0 vs 3.1.1</h2>
 	<p>
