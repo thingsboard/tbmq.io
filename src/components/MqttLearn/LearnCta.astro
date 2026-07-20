@@ -1,0 +1,68 @@
+---
+// Bottom conversion band, reused on every learn page.
+---
+
+<section class="learn-cta">
+	<h2 class="learn-cta__title">Run it yourself</h2>
+	<p class="learn-cta__text">
+		TBMQ is a free, open-source MQTT broker built to scale. Spin it up in minutes or try the live demo — no install
+		required.
+	</p>
+	<div class="learn-cta__actions">
+		<a class="learn-cta__btn learn-cta__btn--primary" href="/installations/">Try it now</a>
+		<a class="learn-cta__btn" href="/live-demo/">Live demo</a>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.learn-cta {
+		text-align: center;
+		background: $color-text-primary;
+		border-radius: 12px;
+		padding: $spacing-12 $spacing-6;
+		margin-top: $spacing-16;
+	}
+	.learn-cta__title {
+		font-size: 28px;
+		font-weight: $font-weight-semibold;
+		color: #fff;
+		margin: 0 0 12px;
+	}
+	.learn-cta__text {
+		font-size: 16px;
+		line-height: 1.7;
+		color: rgba(255, 255, 255, 0.8);
+		max-width: 560px;
+		margin: 0 auto 24px;
+	}
+	.learn-cta__actions {
+		display: flex;
+		justify-content: center;
+		gap: 16px;
+		flex-wrap: wrap;
+	}
+	.learn-cta__btn {
+		display: inline-flex;
+		align-items: center;
+		padding: 12px 24px;
+		border-radius: 8px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		color: #fff;
+		&:hover {
+			border-color: #fff;
+		}
+	}
+	.learn-cta__btn--primary {
+		background: $color-pe;
+		border-color: $color-pe;
+		color: #fff;
+		&:hover {
+			background: $color-pe-hover;
+			border-color: $color-pe-hover;
+		}
+	}
+</style>

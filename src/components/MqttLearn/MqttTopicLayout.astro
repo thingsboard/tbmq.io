@@ -1,0 +1,181 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+import { getTopic, topicHref } from '~/data/mqttLearn';
+import QuickAnswer from './QuickAnswer.astro';
+import HowTbmqBlock from './HowTbmqBlock.astro';
+import RelatedTopics from './RelatedTopics.astro';
+import LearnCta from './LearnCta.astro';
+import FaqAccordion, { type FaqItem } from './FaqAccordion.astro';
+
+interface Props {
+	slug: string;
+	faq?: FaqItem[];
+}
+const { slug, faq = [] } = Astro.props;
+const topic = getTopic(slug);
+
+const title = topic.title;
+const description = topic.seoDescription;
+const jsonLd = marketingJsonLd({
+	path: topicHref(slug),
+	name: title,
+	description,
+	breadcrumb: topic.navLabel,
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="mqtt-learn"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt={title}
+>
+	<main class="learn-page">
+		<div class="learn-page__inner">
+			<nav class="breadcrumb" aria-label="Breadcrumb">
+				<a href="/">Home</a>
+				<span aria-hidden="true">/</span>
+				<a href="/mqtt/">Learn</a>
+				<span aria-hidden="true">/</span>
+				<span aria-current="page">{topic.navLabel}</span>
+			</nav>
+
+			<header class="learn-hero">
+				<p class="learn-hero__eyebrow">{topic.eyebrow}</p>
+				<h1 class="learn-hero__title">{topic.title}</h1>
+			</header>
+
+			<QuickAnswer text={topic.quickAnswer} />
+
+			<div class="learn-body">
+				<slot />
+			</div>
+
+			<HowTbmqBlock text={topic.tbmqTieIn} />
+			<FaqAccordion items={faq} />
+			<RelatedTopics slug={slug} />
+			<LearnCta />
+		</div>
+	</main>
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.learn-page {
+		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
+		background: var(--color-bg-surface);
+	}
+	.learn-page__inner {
+		max-width: 760px;
+		margin: 0 auto;
+	}
+	.breadcrumb {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		font-size: 14px;
+		color: $color-text-muted;
+		margin-bottom: $spacing-8;
+		a {
+			color: $color-text-secondary;
+			text-decoration: none;
+			&:hover {
+				color: $color-pe-link;
+			}
+		}
+	}
+	.learn-hero {
+		margin-bottom: $spacing-8;
+	}
+	.learn-hero__eyebrow {
+		font-size: 13px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-pe-link;
+		margin: 0 0 12px;
+	}
+	.learn-hero__title {
+		font-size: 40px;
+		line-height: 1.15;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0;
+		@include media-up(md) {
+			font-size: 46px;
+		}
+	}
+
+	// Shared prose styling for the <slot /> body of every learn page.
+	.learn-body {
+		:global(h2) {
+			font-size: 28px;
+			font-weight: $font-weight-semibold;
+			color: $color-text-primary;
+			margin: $spacing-10 0 $spacing-4;
+		}
+		:global(h3) {
+			font-size: 20px;
+			font-weight: $font-weight-semibold;
+			color: $color-text-primary;
+			margin: $spacing-6 0 $spacing-3;
+		}
+		:global(p) {
+			font-size: 17px;
+			line-height: 1.75;
+			color: $color-text-secondary;
+			margin: 0 0 $spacing-4;
+		}
+		:global(ul),
+		:global(ol) {
+			font-size: 17px;
+			line-height: 1.75;
+			color: $color-text-secondary;
+			margin: 0 0 $spacing-4;
+			padding-left: 24px;
+		}
+		:global(li) {
+			margin-bottom: 8px;
+		}
+		:global(a) {
+			color: $color-pe-link;
+			text-decoration: underline;
+		}
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 0.9em;
+			background: $color-bg-light;
+			padding: 2px 6px;
+			border-radius: 3px;
+			color: $color-text-primary;
+		}
+		:global(table) {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 0 0 $spacing-6;
+			font-size: 15px;
+		}
+		:global(th),
+		:global(td) {
+			border: 1px solid $color-border;
+			padding: 10px 14px;
+			text-align: left;
+			vertical-align: top;
+			color: $color-text-secondary;
+		}
+		:global(th) {
+			background: $color-bg-light;
+			color: $color-text-primary;
+			font-weight: $font-weight-semibold;
+		}
+		:global(.overflow-x) {
+			overflow-x: auto;
+		}
+	}
+</style>

@@ -1,0 +1,24 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="topics">
+	<h2>Topic hierarchy and wildcards</h2>
+	<p>
+		Topics are UTF-8 strings split into levels by a forward slash, such as
+		<code>sensors/floor1/temp</code>. Publishers use a full topic; subscribers can use wildcards:
+	</p>
+	<ul>
+		<li><code>+</code> — single-level wildcard, e.g. <code>sensors/+/temp</code> matches every floor.</li>
+		<li>
+			<code>#</code> — multi-level wildcard, e.g. <code>sensors/#</code> matches everything under <code>sensors</code>.
+			It must be the last character.
+		</li>
+	</ul>
+	<h2>Naming best practices</h2>
+	<p>
+		Keep topics hierarchical and specific, avoid leading slashes and spaces, and don't publish to wildcard topics. A
+		consistent scheme (for example <code>site/area/device/metric</code>) makes subscriptions and access control far
+		easier to reason about.
+	</p>
+</MqttTopicLayout>

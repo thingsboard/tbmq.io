@@ -1,0 +1,27 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="qos">
+	<h2>The three QoS levels</h2>
+	<ul>
+		<li>
+			<strong>QoS 0 — at most once:</strong> the message is sent once with no acknowledgement. Fastest and lightest, but a
+			message can be lost if the connection drops.
+		</li>
+		<li>
+			<strong>QoS 1 — at least once:</strong> the message is retried until acknowledged, so it always arrives — but it may
+			arrive more than once, so consumers should be idempotent.
+		</li>
+		<li>
+			<strong>QoS 2 — exactly once:</strong> a four-step handshake guarantees the message is delivered a single time. Strongest
+			guarantee, highest overhead.
+		</li>
+	</ul>
+	<h2>Choosing a level</h2>
+	<p>
+		Use QoS 0 for frequent, disposable readings where an occasional gap doesn't matter; QoS 1 for data you can't lose
+		but can de-duplicate; and QoS 2 for commands that must apply exactly once. Higher QoS costs more round-trips and
+		broker state, so match the level to the message's value.
+	</p>
+</MqttTopicLayout>

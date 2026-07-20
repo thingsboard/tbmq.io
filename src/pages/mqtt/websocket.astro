@@ -1,0 +1,18 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+---
+
+<MqttTopicLayout slug="websocket">
+	<h2>Why MQTT over WebSocket</h2>
+	<p>
+		Browsers can't open raw TCP sockets, so they can't speak plain MQTT. MQTT over WebSocket wraps the exact same MQTT
+		packets inside a WebSocket connection, letting web apps publish and subscribe directly. Brokers commonly expose it
+		on port 8084 (WS) or 8085 (WSS for TLS).
+	</p>
+	<h2>Why it matters</h2>
+	<p>
+		WebSocket support lets you build live dashboards and controls that talk to the broker straight from the browser — no
+		gateway in between. You can try this hands-on in the
+		<a href="/live-demo/">TBMQ live demo</a>.
+	</p>
+</MqttTopicLayout>

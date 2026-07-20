@@ -1,0 +1,68 @@
+---
+import { relatedTopics, topicHref } from '~/data/mqttLearn';
+interface Props {
+	slug: string;
+}
+const { slug } = Astro.props;
+const items = relatedTopics(slug);
+---
+
+{
+	items.length > 0 && (
+		<section class="related">
+			<h2 class="related__title">Related topics</h2>
+			<div class="related__grid">
+				{items.map((t) => (
+					<a class="related__card" href={topicHref(t.slug)}>
+						<span class="related__label">{t.navLabel}</span>
+						<span class="related__arrow">→</span>
+					</a>
+				))}
+			</div>
+		</section>
+	)
+}
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.related {
+		margin-top: $spacing-12;
+	}
+	.related__title {
+		font-size: 20px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 $spacing-5;
+	}
+	.related__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 12px;
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+	.related__card {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 16px 18px;
+		border: 1px solid $color-border;
+		border-radius: 8px;
+		text-decoration: none;
+		background: $color-bg-white;
+		transition: border-color 0.15s ease;
+		&:hover {
+			border-color: $color-pe-dark;
+		}
+	}
+	.related__label {
+		font-weight: $font-weight-medium;
+		color: $color-text-primary;
+	}
+	.related__arrow {
+		color: $color-pe-dark;
+	}
+</style>

@@ -1,0 +1,91 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What does MQTT stand for?',
+		a: 'MQTT originally stood for Message Queuing Telemetry Transport. Today it is simply the protocol name — it is not tied to any specific message-queue product.',
+	},
+	{
+		q: 'Is MQTT open source?',
+		a: 'MQTT is an open OASIS and ISO standard, not a product, so anyone can implement it. There are many open-source brokers and clients, including the open-source TBMQ broker.',
+	},
+	{
+		q: 'What port does MQTT use?',
+		a: 'MQTT uses TCP port 1883 by default, and 8883 for MQTT over TLS. Over WebSocket the port varies by broker — TBMQ uses 8084 for WS and 8085 for WSS.',
+	},
+	{
+		q: 'Is MQTT secure?',
+		a: 'MQTT itself is a messaging protocol; security is added by running it over TLS for encryption, plus authentication and topic authorization enforced at the broker.',
+	},
+	{
+		q: 'What is an MQTT broker?',
+		a: 'The broker is the central server that receives every published message and routes it to the clients subscribed to the matching topic. TBMQ is one example of an MQTT broker.',
+	},
+];
+---
+
+<MqttTopicLayout slug="what-is-mqtt" faq={faq}>
+	<h2>How MQTT works</h2>
+	<p>
+		MQTT follows a <strong>publish/subscribe</strong> model instead of the request/response model of HTTP. Clients never talk
+		to each other directly. Instead, a publisher sends a message to a
+		<a href="/mqtt/topics/">topic</a> on a central <strong>broker</strong>, and the broker forwards that message to
+		every client that has subscribed to the topic. Publishers and subscribers are fully decoupled — they don't need to
+		know about each other, run at the same time, or even know how many receivers exist.
+	</p>
+	<p>
+		A typical setup has three roles: <strong>publishers</strong> (for example, sensors sending readings),
+		<strong>subscribers</strong> (for example, a dashboard or backend service), and the
+		<strong>broker</strong> that connects them. A single client can both publish and subscribe.
+	</p>
+
+	<h2>Why MQTT is used for IoT</h2>
+	<p>
+		MQTT was designed for constrained devices and unreliable networks, which is exactly the environment most IoT fleets
+		live in. Its advantages:
+	</p>
+	<ul>
+		<li>
+			<strong>Lightweight:</strong> a compact fixed header (just 2 bytes at minimum) keeps overhead and battery use low.
+		</li>
+		<li>
+			<strong>Resilient:</strong> persistent connections, <a href="/mqtt/qos/">Quality of Service</a>
+			levels, and <a href="/mqtt/last-will/">Last Will</a> messages handle flaky links gracefully.
+		</li>
+		<li>
+			<strong>Scalable:</strong> the decoupled pub/sub model lets one broker fan a message out to many subscribers efficiently.
+		</li>
+		<li>
+			<strong>Stateful when needed:</strong>
+			<a href="/mqtt/persistent-session/">persistent sessions</a> and
+			<a href="/mqtt/retained-messages/">retained messages</a> keep clients in sync across reconnects.
+		</li>
+	</ul>
+
+	<h2>MQTT vs HTTP</h2>
+	<p>
+		HTTP is request/response: a client asks, the server answers, and the connection is typically short-lived. That's a
+		poor fit for pushing frequent, small updates to many devices. MQTT keeps a long-lived connection open and pushes
+		messages the instant they're published, with far less per-message overhead. For moving that device data into backend
+		analytics pipelines, MQTT is often paired with a streaming platform — see <a href="/mqtt/mqtt-vs-kafka/"
+			>MQTT vs Kafka</a
+		>.
+	</p>
+
+	<h2>Core MQTT concepts</h2>
+	<p>Once the pub/sub basics click, these are the concepts worth knowing next:</p>
+	<ul>
+		<li><a href="/mqtt/topics/">Topics &amp; wildcards</a> — how messages are addressed and matched.</li>
+		<li>
+			<a href="/mqtt/qos/">Quality of Service (QoS)</a> — at-most-once, at-least-once, exactly-once delivery.
+		</li>
+		<li><a href="/mqtt/retained-messages/">Retained messages</a> — the last known value on a topic.</li>
+		<li><a href="/mqtt/last-will/">Last Will &amp; Testament</a> — signalling ungraceful disconnects.</li>
+		<li><a href="/mqtt/persistent-session/">Persistent sessions</a> — queuing messages for offline clients.</li>
+		<li><a href="/mqtt/mqtt-5/">MQTT 5.0</a> — the latest version and what it adds.</li>
+		<li><a href="/mqtt/shared-subscriptions/">Shared subscriptions</a> — load-balancing consumers.</li>
+		<li><a href="/mqtt/security/">Security</a> — TLS, authentication, and authorization.</li>
+	</ul>
+</MqttTopicLayout>

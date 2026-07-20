@@ -1,0 +1,73 @@
+---
+import { Icon } from 'astro-icon/components';
+interface Props {
+	/** One-line tie-in (usually topic.tbmqTieIn). */
+	text: string;
+	/** Optional extra sentence of context. */
+	detail?: string;
+}
+const { text, detail } = Astro.props;
+---
+
+<aside class="how-tbmq">
+	<div class="how-tbmq__head">
+		<Icon name="tabler:bolt" class="how-tbmq__icon" />
+		<h2 class="how-tbmq__title">How TBMQ handles this</h2>
+	</div>
+	<p class="how-tbmq__text">{text}</p>
+	{detail && <p class="how-tbmq__text">{detail}</p>}
+	<div class="how-tbmq__links">
+		<a href="/product/">Explore the architecture</a>
+		<a href="/docs/mqtt-broker/">Read the docs</a>
+	</div>
+</aside>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.how-tbmq {
+		background: #eaf7ef;
+		border: 1px solid rgba(31, 139, 77, 0.28);
+		border-radius: 8px;
+		padding: 24px 28px;
+		margin: $spacing-10 0;
+	}
+	.how-tbmq__head {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 10px;
+	}
+	.how-tbmq__title {
+		font-size: 20px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-link;
+		margin: 0;
+	}
+	.how-tbmq__text {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0 0 8px;
+	}
+	.how-tbmq__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 20px;
+		margin-top: 12px;
+		a {
+			font-weight: $font-weight-medium;
+			color: $color-pe-link;
+			text-decoration: none;
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+	:global(.how-tbmq__icon) {
+		width: 22px;
+		height: 22px;
+		color: $color-pe-dark;
+		flex-shrink: 0;
+	}
+</style>

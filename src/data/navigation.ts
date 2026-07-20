@@ -1,3 +1,5 @@
+import { marqueeTopics, topicHref } from './mqttLearn';
+
 export interface NavItem {
 	label: string;
 	href?: string;
@@ -31,6 +33,7 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Live Demo', href: '/live-demo/' },
 	{ label: 'Performance', href: '/performance/' },
 	{ label: 'Company', submenuId: 'nav-company' },
+	{ label: 'Learn', submenuId: 'nav-learn' },
 	{ label: 'Docs', href: '/docs/mqtt-broker/pe/' },
 	{ label: 'Blog', href: '/blog/' },
 ];
@@ -59,5 +62,27 @@ export const companySubmenu: SubMenu = {
 	],
 };
 
+// Learn submenu
+export const learnSubmenu: SubMenu = {
+	id: 'nav-learn',
+	className: 'learn',
+	groups: [
+		{
+			items: [
+				...marqueeTopics.map((t) => ({
+					href: topicHref(t.slug),
+					heading: t.navLabel,
+					linkClass: 'small-link',
+				})),
+				{
+					href: '/mqtt/',
+					heading: 'Browse all guides →',
+					linkClass: 'small-link',
+				},
+			],
+		},
+	],
+};
+
 // All submenus
-export const allSubmenus: SubMenu[] = [companySubmenu];
+export const allSubmenus: SubMenu[] = [companySubmenu, learnSubmenu];
