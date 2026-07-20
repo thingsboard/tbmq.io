@@ -1,6 +1,6 @@
 ---
 name: mqtt-learn-topic
-description: Add or edit a topic on the /mqtt learn hub — the marketing MQTT guides at /mqtt/<slug>/. Covers the content registry entry, the auto-derived Learn nav, a comprehensive spec-based guide page, an ASCII diagram, TBMQ practical notes with /docs links, and the verification gates. Use this whenever someone wants to add an MQTT concept/glossary/learn page, a "what is X" or "X vs Y" MQTT guide, deepen an existing scaffold, or extend the MQTT learn hub — even if they don't name the hub explicitly.
+description: Add or edit a topic on the /mqtt learn hub — the marketing MQTT guides at /mqtt/<slug>/. Covers the content registry entry, the hub-grid category, the curated Learn nav, a comprehensive spec-based guide page, a designed inline-SVG diagram, TBMQ practical notes with /docs links, and the verification gates. Use this whenever someone wants to add an MQTT concept/glossary/learn page, a "what is X" or "X vs Y" MQTT guide, deepen an existing scaffold, or extend the MQTT learn hub — even if they don't name the hub explicitly.
 ---
 
 # MQTT Learn Topic
@@ -16,7 +16,7 @@ The `/mqtt` learn hub is TBMQ's top-of-funnel SEO engine: educational MQTT guide
 ## File map
 
 ```
-src/data/mqttLearn.ts                  ← topic registry + helpers (getTopic, topicHref, relatedTopics, learnNavSlugs, learnNavTopics)
+src/data/mqttLearn.ts                  ← topic registry + helpers (getTopic, topicHref, relatedTopics, learnNavSlugs) + hub-grid taxonomy (mqttCategories, mqttCategoryGroups)
 src/data/navigation.ts                 ← learnSubmenu maps learnNavTopics (from mqttLearn.ts) — don't hand-edit the nav markup
 src/components/MqttLearn/
   MqttTopicLayout.astro                ← the page template (breadcrumb, hero, quick-answer, <slot/>, How-TBMQ, FAQ, related, CTA)
@@ -25,8 +25,9 @@ src/components/MqttLearn/
   FaqAccordion.astro                   ← accordion + FAQPage JSON-LD; exports `interface FaqItem { q; a }`
   RelatedTopics.astro                  ← grid from registry.related[]
   LearnCta.astro                       ← bottom CTA band
-  TopicGrid.astro                      ← hub grid over all topics
-  AsciiDiagram.astro                   ← monospaced diagram block (see Diagrams)
+  TopicGrid.astro                      ← hub grid: topics grouped by mqttCategories + a category jump-nav
+  MqttDiagram.astro                    ← designed inline-SVG diagram (framed canvas + click-to-enlarge) — the standard (see Diagrams)
+  AsciiDiagram.astro                   ← monospaced ASCII fallback for quick scaffolds
 src/pages/mqtt/
   index.astro                          ← the hub
   <slug>.astro                         ← one thin page per topic
@@ -62,6 +63,7 @@ Add one `MqttTopic` object to the `mqttTopics` array. Tabs for indentation (it's
 
 Rules that keep the build green:
 - **`slug` === page filename.** `/mqtt/keep-alive/` ⇒ `src/pages/mqtt/keep-alive.astro`.
+- **Categorize it — same file.** Add the slug to exactly one category in the `mqttCategories` array (order within a category = its card order on the hub). This array drives the hub-grid grouping and the category jump-nav. A build-time guard in `mqttLearn.ts` throws if any topic is missing from `mqttCategories` (or a slug is duplicated/misspelled), so a forgotten topic fails the build instead of silently vanishing from the grid.
 - **Every `related[]` slug must resolve.** `getTopic` throws at build on an unknown slug, so a typo fails loudly (good) — but check it. Keep arrays at 3–4 entries so the related grid stays tidy.
 - **The nav dropdown is curated + ordered.** To feature a topic, add its slug to `learnNavSlugs` (position = display order, independent of the hub grid) and add an `icon` — a duotone `currentColor` SVG in `src/assets/images/landings/nav/` matching the Company-menu icons (24×24, primary fill + a `fill-opacity="0.3"` accent, inlined and theme-tinted by `NavIcon`). Keep the dropdown short: a handful of headline topics plus "Browse all guides".
 - **Wire the hub-and-spoke both ways.** Add the new slug into the `related[]` of the closest existing topics, and where natural add an in-body link from a high-traffic page (e.g. `what-is-mqtt.astro`). Isolated pages don't rank.
@@ -73,20 +75,8 @@ A thin page that fills the layout's body slot and passes a FAQ array. Tabs for i
 ```astro
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
-import AsciiDiagram from '@components/MqttLearn/AsciiDiagram.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
-
-// ASCII diagram as a template literal → passed as a string, so JSX never parses the < > | characters.
-// Avoid backticks and ${ inside the art. This is the SWAP SEAM: replace <AsciiDiagram/> with a
-// Claude Design HTML diagram later without touching the prose.
-const keepAliveDiagram = `
- client                          broker
-   │   ── PINGREQ ──────────────▶  │
-   │   ◀────────────── PINGRESP ──  │   within keep-alive interval
-   │                               │
-   │        (silence > 1.5×)       │
-   │   ✗ broker declares client dead, publishes Last Will
-`;
 
 const faq: FaqItem[] = [
 	{ q: 'What is the MQTT keep-alive interval?', a: 'Plain-text answer. No HTML or links here — FaqAccordion renders answers as text and emits FAQPage JSON-LD from them.' },
@@ -100,7 +90,30 @@ const faq: FaqItem[] = [
 	<h2>How it works</h2>
 	<p>Spec-accurate explanation of the mechanism — packets, roles, sequence, timers.</p>
 
-	<AsciiDiagram content={keepAliveDiagram} caption="Keep-alive ping cycle and dead-client detection" />
+	{/* Diagram: an inline <svg> in MqttDiagram's slot, styled with the .d-* vocabulary. See Diagrams. */}
+	<MqttDiagram caption="Keep-alive ping cycle and dead-client detection">
+		<svg
+			viewBox="0 0 680 196"
+			role="img"
+			aria-label="MQTT keep-alive: the client sends PINGREQ within the interval, the broker replies PINGRESP; after 1.5x the interval with no packet the broker drops the client"
+		>
+			<rect class="d-actor" x="90" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="150" y="46">Client</text>
+			<rect class="d-actor d-actor--hero" x="470" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="530" y="46">Broker</text>
+			<line class="d-life" x1="150" y1="58" x2="150" y2="176"></line>
+			<line class="d-life" x1="530" y1="58" x2="530" y2="176"></line>
+			<line class="d-line" x1="150" y1="92" x2="527" y2="92" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="292" y="81" width="96" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="96">PINGREQ</text>
+			<line class="d-line d-line--green" x1="530" y1="122" x2="153" y2="122" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="290" y="111" width="100" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="126">PINGRESP</text>
+			<text class="d-note d-mid" x="340" y="164"
+				>no packet for 1.5× keep-alive → broker drops the client &amp; fires the Last Will</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>Keep-alive at a glance</h2>
 	<div class="overflow-x">
@@ -128,7 +141,7 @@ A `status: 'full'` guide should be genuinely self-explaining. Body skeleton (all
 
 1. **Intro** — one short paragraph of context.
 2. **How it works** — the spec-accurate mechanism. This is the core; get it right.
-3. **Diagram** — an `<AsciiDiagram>` where a picture beats prose (fan-out, a connection/ping sequence, request/response-vs-pub/sub). Optional but encouraged.
+3. **Diagram** — a `<MqttDiagram>` where a picture beats prose (fan-out, a connection/ping sequence, request/response-vs-pub/sub, an auth gate). Optional but encouraged.
 4. **At-a-glance** — a table or tight list. **Required for "X vs Y" comparison pages** (feature-by-feature table, wrapped in `<div class="overflow-x">`).
 5. **<Topic> in TBMQ** — practical notes + explicit `/docs/mqtt-broker/…` link(s). The `HowTbmqBlock` also renders `tbmqTieIn` automatically; this section is where you go deeper and point to docs.
 6. **FAQ** — 3–5 real questions people search. Plain-text answers (they become FAQPage JSON-LD).
@@ -137,13 +150,26 @@ Keep it benefit-first and readable. If you find yourself writing configuration s
 
 ## Diagrams
 
-Use `AsciiDiagram` for now; it's the seam for upgrading to Claude Design HTML diagrams later.
+`MqttDiagram` is the standard — every shipped page uses it. You pass an inline `<svg>` in its default slot; the component wraps it in a framed, centered canvas and wires up click-to-enlarge (a single shared `<dialog>`), so you only author the SVG. `AsciiDiagram` remains as a quick monospaced fallback, but prefer `MqttDiagram` for anything user-facing.
 
-- Define the art as a `const name = ` template literal in the frontmatter and pass `content={name}`. This keeps `<`, `>`, `|`, `+` out of the JSX parser.
-- Avoid backticks and `${` inside the art (they break the template literal).
-- Add a `caption` for context; `AsciiDiagram` renders `<figure><pre>…</pre><figcaption>…</figcaption></figure>`, monospaced with horizontal scroll on narrow screens.
-- Keep diagrams under ~80 columns so they don't force scrolling on desktop.
-- To upgrade later: replace the single `<AsciiDiagram content={…} caption={…}/>` line with the HTML-diagram component — the surrounding prose is untouched.
+**Author the SVG (`/mqtt` pages are `forceLightTheme`, so colours are light-locked):**
+
+- Give the `<svg>` a `viewBox="0 0 680 H"`, `role="img"`, and a descriptive `aria-label`. The canvas sizes the SVG to `max-width: 680px` (min 520px), so **design on a ~680-wide grid** and choose `H` to fit the content snugly.
+- Style with the shared **`.d-*` vocabulary** (defined once in `MqttDiagram.astro`, scoped under `.mqtt-diagram` so the short names can't leak). The common ones:
+  - actors: `.d-actor`, `.d-actor--hero` (green — use for the broker)
+  - labels: `.d-alabel`, `.d-alabel--hero`
+  - packet/monospace text: `.d-ctext`, `.d-ctext--green`
+  - chips (rounded rects behind packet labels): `.d-chip`, `.d-chip--green`
+  - connectors: `.d-line`, `.d-line--green`, `.d-line--red`; lifelines `.d-life`
+  - annotations: `.d-note`, `.d-feat`, `.d-tiny`, `.d-head`; verdicts `.d-yes` / `.d-no`
+  - text anchoring: `.d-mid` (middle), `.d-end`
+  Read the component for the full list before inventing a class — add to the component, don't inline one-off styles.
+- Arrowheads: put `marker-end="url(#arGray)"` (neutral), `url(#arGreen)` (success/accept), or `url(#arRed)` (failure/deny) on a `<line>` or `<path>`. Those three markers are defined in the component.
+- **Astro/JSX SVG rules — these bite:**
+  - Every element needs an **explicit closing tag** (`</rect>`, `</line>`, `</text>`, `</path>`). No self-closing `/>` on SVG children in the slot.
+  - Inside `<text>`, escape `&` as `&amp;` and `'` as `&apos;`. Use **literal unicode glyphs** (`→ × · ✓ ✗ —`), not HTML entities like `&rarr;`.
+- One diagram per page, near "How it works". Keep collision-free: give arrows/labels room so a connector never crosses its own text.
+- **Verify it visually the right way:** the inline canvas and the enlarge-modal are *separate* DOM. Screenshot the **inline page** (not just the opened modal) with headless Chrome — a past regression slipped because QA only shot the modal.
 
 ## Content accuracy (mandatory)
 
@@ -181,3 +207,5 @@ Ask the user before running `pnpm build:fast` (repo build policy). For anything 
 - **`HowTbmqBlock` links are fixed** to `/product/` and `/docs/mqtt-broker/`; put topic-specific doc links in your body instead.
 - **Adding a slug to `learnNavSlugs`** grows the nav dropdown and needs a matching `icon` — confirm the topic is headline-worthy first; the dropdown is deliberately short.
 - **`/mqtt/<slug>/` must not collide** with a docs path; the learn hub lives under `/mqtt/`, docs under `/docs/mqtt-broker/`, so `/mqtt/mqtt-broker/` is fine.
+- **SVG in a `MqttDiagram` slot** needs explicit closing tags and `&amp;`/`&apos;` inside `<text>` (see Diagrams). A self-closing `<rect/>` or a raw `&` breaks the Astro parse — the build error points at the diagram.
+- **Scoped `h2` loses to a global rule.** A one-class scoped selector on an `h2` in these light-theme components (e.g. `.foo` where `<h2 class="foo">`) is beaten by a global `(0,1,1)` `h2` rule, so the heading silently renders at the default size. Use a **descendant selector** (`.parent .foo`) to win — that's why `TopicGrid.astro`'s category label is `.topic-groups .topic-group__label`. (`h3` and below aren't affected.)
