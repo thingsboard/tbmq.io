@@ -1,8 +1,7 @@
 ---
-import SocialNetworks from './SocialNetworks.astro';
-import NButton from './NButton.astro';
+import SocialNetworks from '@components/Landing/SocialNetworks.astro';
+import NButton from '@components/Landing/NButton.astro';
 import SmartImage from '@components/SmartImage.astro';
-
 const currentYear = new Date().getFullYear();
 ---
 
@@ -260,6 +259,7 @@ const currentYear = new Date().getFullYear();
 						font-size: 1rem;
 						color: white;
 						transition: 300ms;
+						text-decoration: none;
 
 						&:hover {
 							color: white;
@@ -360,15 +360,14 @@ const currentYear = new Date().getFullYear();
 				margin: 0;
 				height: fit-content;
 				padding: 0.8125rem 1.25rem;
-				background-color: $color-primary;
-				color: $color-white;
+				background-color: var(--color-brand);
+				color: var(--color-brand-contrast);
 				transition-duration: unset;
 
 				&:hover {
 					transition-duration: unset;
 					box-shadow: unset;
-					background-color: $color-primary-hover;
-					color: $color-white;
+					color: var(--color-brand-contrast);
 				}
 
 				&:focus {
@@ -516,22 +515,6 @@ const currentYear = new Date().getFullYear();
 			.copyright {
 				color: #8e8292;
 				font-size: 0.875rem;
-			}
-		}
-	}
-
-	// Pages that opt into the docs-accent primary token for the subscribe
-	// button (in both light and dark mode). Other marketing pages keep the
-	// brand-blue button.
-	:global(html:is(#contact-us, #pricing)) {
-		.subscribe,
-		:global(#mlb2-7341216 .primary.subscribe) {
-			background-color: var(--color-primary);
-			color: var(--sl-color-text-invert);
-
-			&:hover {
-				background-color: var(--color-primary-hover);
-				color: var(--sl-color-text-invert);
 			}
 		}
 	}
