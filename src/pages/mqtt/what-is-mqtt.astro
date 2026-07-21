@@ -41,6 +41,10 @@ const faq: FaqItem[] = [
 		<strong>subscribers</strong> (for example, a dashboard or backend service), and the
 		<strong>broker</strong> that connects them. A single client can both publish and subscribe.
 	</p>
+	<p>
+		For the protocol-level details — the MQTT control packet types, their structure, and how messages flow through the
+		broker — see the <a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol reference</a> in the TBMQ docs.
+	</p>
 
 	<MqttDiagram caption="A publisher sends one message to a topic; the broker delivers a copy to every subscriber">
 		<svg
@@ -69,7 +73,7 @@ const faq: FaqItem[] = [
 			<path class="d-line d-line--green" d="M424 148 C474 148 472 62 521 62" marker-end="url(#arGreen)"></path>
 			<path class="d-line d-line--green" d="M424 148 L521 142" marker-end="url(#arGreen)"></path>
 			<path class="d-line d-line--green" d="M424 148 C474 148 472 222 521 222" marker-end="url(#arGreen)"></path>
-			<text class="d-tiny" x="452" y="140" style="fill:#4f7d63">copy</text>
+			<text class="d-tiny" x="464" y="140" style="fill:#4f7d63">copy</text>
 			<text class="d-note d-mid" x="340" y="270">One message in → a copy to every subscriber</text>
 			<text class="d-note d-mid" x="340" y="290" style="fill:#8a8d94"
 				>Publisher and subscribers share only the topic — never each other</text
