@@ -7,10 +7,13 @@ description: Add or edit a topic on the /mqtt learn hub — the marketing MQTT g
 
 The `/mqtt` learn hub is TBMQ's top-of-funnel SEO engine: educational MQTT guides that each tie a concept to a concrete TBMQ strength and link *into* the reference docs for depth. This skill is how you add or edit one topic without breaking the system or shipping inaccurate copy.
 
+**Companion skill — `tbmq-docs-page`.** Every learn guide has a technical counterpart under `/docs/mqtt-broker/`. That reference doc is authored/reviewed with the sibling **`tbmq-docs-page`** skill. The two are deliberately **complementary, never duplicative**: the *learn* page teaches the general MQTT concept and *why it matters* (spec-level, vendor-neutral); the *doc* page covers TBMQ-specific parameters, defaults, behaviors, and step-by-step instructions. When you add or deepen a learn topic, check whether its paired doc exists and link to it (see below); when the doc is missing or thin, that's a `tbmq-docs-page` job.
+
 ## Principles (why the hub is shaped this way)
 
 - **Marketing-framed, not reference.** Guides are benefit-first and conversational ("what it is, why it matters"), so they target *informational* search intent and do **not** cannibalize `/docs/mqtt-broker/` (which targets *how-to/reference* intent). Depth is delegated: link into `/docs` rather than duplicating it.
-- **One registry drives everything.** The hub grid, the Learn nav dropdown, related-topics, breadcrumbs, and per-page SEO all read from `src/data/mqttLearn.ts`. Adding a topic is mostly a registry entry + a thin page.
+- **Every guide links its companion doc.** The `<Topic> in TBMQ` body section must carry an in-body link to the guide's single most-relevant `/docs/mqtt-broker/` page — a **specific** page where one exists (both `concepts/*` and `user-guide/*` targets are valid; pick the closest), or the generic `/docs/mqtt-broker/` root *only* as a placeholder when no dedicated doc exists yet (upgrade it when the doc lands). `HowTbmqBlock`'s auto-rendered docs link is generic by design, so the specific link lives in your body. (All 32 shipped guides already follow this; `what-is-mqtt` was the lone gap, since fixed.)
+- **One registry drives everything.** The hub grid, the Learn nav dropdown, related-topics, breadcrumbs, and per-page SEO all read from `src/data/mqttLearn.ts`. Adding a topic is mostly a registry entry + a thin page. Note `quickAnswer` is **dual-purpose**: it renders in full inside the `QuickAnswer` box *and* as the hub-grid card blurb (CSS-clamped to 4 lines) — so its opening must read well both as a standalone definition and as a ~4-line card preview.
 - **Accuracy is the product.** These are public technical pages under TBMQ's name. A wrong protocol detail or an overstated product claim erodes the trust the whole funnel depends on. See [Content accuracy](#content-accuracy-mandatory) — it's the part most likely to bite you.
 
 ## File map
@@ -49,8 +52,8 @@ Add one `MqttTopic` object to the `mqttTopics` array. Tabs for indentation (it's
 	title: 'MQTT Keep-Alive and Ping',     // H1 + <title> (BaseLayout appends ' | TBMQ')
 	navLabel: 'Keep-alive',                // short label for the dropdown + hub/related cards
 	eyebrow: 'MQTT GUIDE',                 // hero eyebrow; use 'MQTT COMPARISON' for "X vs Y" pages
-	quickAnswer:                           // 2–3 sentence boxed definition — the featured-snippet target
-		'A concise, self-contained answer to "what is <topic>". First sentence should stand alone as a definition.',
+	quickAnswer:                           // 2–3 sentences — featured-snippet target. Renders in the QuickAnswer box (full) AND the hub card (clamped to 4 lines).
+		'A concise, self-contained answer to "what is <topic>". First sentence must stand alone as a definition; keep the opening ~4 lines readable as a card preview.',
 	tbmqTieIn:                             // ONE sentence: how TBMQ relates. Renders in the How-TBMQ block + hub card.
 		'A verified, specific TBMQ capability — not marketing fluff.',
 	related: ['persistent-session', 'last-will', 'mqtt-client'], // 3–4 slugs; every one MUST exist (getTopic throws otherwise)
@@ -143,7 +146,7 @@ A `status: 'full'` guide should be genuinely self-explaining. Body skeleton (all
 2. **How it works** — the spec-accurate mechanism. This is the core; get it right.
 3. **Diagram** — a `<MqttDiagram>` where a picture beats prose (fan-out, a connection/ping sequence, request/response-vs-pub/sub, an auth gate). Optional but encouraged.
 4. **At-a-glance** — a table or tight list. **Required for "X vs Y" comparison pages** (feature-by-feature table, wrapped in `<div class="overflow-x">`).
-5. **<Topic> in TBMQ** — practical notes + explicit `/docs/mqtt-broker/…` link(s). The `HowTbmqBlock` also renders `tbmqTieIn` automatically; this section is where you go deeper and point to docs.
+5. **<Topic> in TBMQ** — practical notes + a **required** explicit link to the companion `/docs/mqtt-broker/…` page (see the "Every guide links its companion doc" principle). Stay high-level here — name the TBMQ behavior and hand off to the doc for the parameters/steps; do **not** reproduce the doc's config tables or reason-code lists (that's the duplication the two-surface split exists to avoid). The `HowTbmqBlock` also renders `tbmqTieIn` automatically; this section is where you go deeper and point to the doc.
 6. **FAQ** — 3–5 real questions people search. Plain-text answers (they become FAQPage JSON-LD).
 
 Keep it benefit-first and readable. If you find yourself writing configuration steps or a full reference table, stop — that belongs in `/docs`; link to it instead.
@@ -168,7 +171,7 @@ Keep it benefit-first and readable. If you find yourself writing configuration s
 - **Astro/JSX SVG rules — these bite:**
   - Every element needs an **explicit closing tag** (`</rect>`, `</line>`, `</text>`, `</path>`). No self-closing `/>` on SVG children in the slot.
   - Inside `<text>`, escape `&` as `&amp;` and `'` as `&apos;`. Use **literal unicode glyphs** (`→ × · ✓ ✗ —`), not HTML entities like `&rarr;`.
-- One diagram per page, near "How it works". Keep collision-free: give arrows/labels room so a connector never crosses its own text.
+- One diagram per page, near "How it works". Keep collision-free: give arrows/labels room so a connector never crosses its own text. **Curved and fanned paths bite specifically** — a label that clears the straight connectors can still be clipped by a curve rising/falling through it near a fan-out point, and `.d-*` label text has **no background/halo** to mask an overlap, so position each label clear of *every* nearby path (straight and curved), not just the obvious one. (Real regression: on `what-is-mqtt` the `copy` label sat at `x=452`, exactly where the upper delivery curve rose through `y≈134`; moving it to `x=464` into the open wedge between arrows fixed it.)
 - **Verify it visually the right way:** the inline canvas and the enlarge-modal are *separate* DOM. Screenshot the **inline page** (not just the opened modal) with headless Chrome — a past regression slipped because QA only shot the modal.
 
 ## Content accuracy (mandatory)
