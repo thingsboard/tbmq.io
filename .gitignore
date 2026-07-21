@@ -47,5 +47,8 @@ reports/
 # Claude Code runtime lock (not source)
 .claude/*.lock
 
+# Claude Code local (personal) settings
+.claude/settings.local.json
+
 # Superpowers brainstorm visual-companion artifacts
 .superpowers/
