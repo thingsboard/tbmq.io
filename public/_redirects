@@ -25,7 +25,6 @@
 /docs/pe/mqtt-broker/user-guide/ui/mail-server/ /docs/mqtt-broker/pe/user-guide/ui/settings/ 301
 
 # Single page redirects
-/docs/paas/guides/cloud-setup/ /installations/ 301
 /docs/mqtt-broker/api/ /docs/mqtt-broker/rest-api/ 301
 /docs/mqtt-broker/faq/ /docs/mqtt-broker/why-tbmq/ 301
 /docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/ /docs/mqtt-broker/why-tbmq/ 301
@@ -34,19 +33,10 @@
 /docs/mqtt-broker/troubleshooting/ /docs/mqtt-broker/help/ 301
 /docs/mqtt-broker/user-guide/ui/mail-server/ /docs/mqtt-broker/user-guide/ui/settings/ 301
 /docs/mqtt-broker/white-labeling/ /docs/mqtt-broker/pe/white-labeling/ 301
-/docs/contact-us/ /contact-us/ 301
-/docs/contact-us-thanks/ /contact-us-thanks/ 301
 /docs/mqtt-broker/security/ /docs/mqtt-broker/security/overview/ 301
 
 # Non-docs redirects (from NON_DOCS_REDIRECTS)
 /products/mqtt-broker/ / 301
-/services/ / 301
-/services/development-services/ / 301
-/services/trainings/ / 301
-/use-cases/ / 301
-/case-studies/ / 301
-/clients-feedback/ / 301
-/device-library/ / 301
 /docs/ /docs/mqtt-broker/ 301
 /support-ukraine/ https://u24.gov.ua/ 301
 
@@ -58,13 +48,6 @@
 # silently ignored. Keeping dynamics here leaves the static zone uncapped.
 # Refs: https://developers.cloudflare.com/pages/configuration/redirects/
 
-/blog/category/:category/page/* /blog/?category=:category 301
-/blog/category/:category/ /blog/?category=:category 301
-/blog/page/:num/ /blog/?page=:num 301
-/blog/2023/* /blog/ 301
-/blog/2024/* /blog/ 301
-/blog/2025/* /blog/ 301
-/blog/2026/* /blog/ 301
 /docs/mqtt-broker/install/* /docs/mqtt-broker/installation/:splat 301
 /docs/mqtt-broker/pe/install/* /docs/mqtt-broker/pe/installation/:splat 301
 /docs/pe/mqtt-broker/install/* /docs/mqtt-broker/pe/installation/:splat 301

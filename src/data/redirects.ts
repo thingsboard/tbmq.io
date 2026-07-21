@@ -86,7 +86,6 @@ export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [
 ];
 
 export const SINGLE_REDIRECTS: SingleRedirect[] = [
-	{ oldPath: 'paas/guides/cloud-setup', target: '/installations/' },
 	{ oldPath: 'mqtt-broker/api', target: '/docs/mqtt-broker/rest-api/' },
 	{ oldPath: 'mqtt-broker/faq', target: '/docs/mqtt-broker/why-tbmq/' },
 	{
@@ -147,43 +146,16 @@ export const SINGLE_REDIRECTS: SingleRedirect[] = [
 	},
 	{ oldPath: 'pe/mqtt-broker/troubleshooting', target: '/docs/mqtt-broker/pe/help/' },
 	{ oldPath: 'pe/mqtt-broker/user-guide/ui/mail-server', target: '/docs/mqtt-broker/pe/user-guide/ui/settings/' },
-	{ oldPath: 'contact-us', target: '/contact-us/' },
-	{ oldPath: 'contact-us-thanks', target: '/contact-us-thanks/' },
 	{ oldPath: 'mqtt-broker/security', target: '/docs/mqtt-broker/security/overview/' },
 ];
 
 export const NON_DOCS_REDIRECTS: Record<string, string> = {
 	'/products/mqtt-broker/': '/',
-	'/services/': '/',
-	'/services/development-services/': '/',
-	'/services/trainings/': '/',
-	'/use-cases/': '/',
-	'/case-studies/': '/',
-	'/clients-feedback/': '/',
-	'/device-library/': '/',
 	'/docs/': '/docs/mqtt-broker/',
 	'/support-ukraine/': 'https://u24.gov.ua/',
 };
 
-export const DYNAMIC_REDIRECTS: DynamicRedirectGroup[] = [
-	{
-		comment: 'Blog — category pages & pagination → index with filter',
-		entries: [
-			{ source: '/blog/category/:category/page/*', target: '/blog/?category=:category' },
-			{ source: '/blog/category/:category/', target: '/blog/?category=:category' },
-			{ source: '/blog/page/:num/', target: '/blog/?page=:num' },
-		],
-	},
-	{
-		comment: 'Blog — WordPress year archives → blog index',
-		entries: [
-			{ source: '/blog/2023/*', target: '/blog/' },
-			{ source: '/blog/2024/*', target: '/blog/' },
-			{ source: '/blog/2025/*', target: '/blog/' },
-			{ source: '/blog/2026/*', target: '/blog/' },
-		],
-	},
-];
+export const DYNAMIC_REDIRECTS: DynamicRedirectGroup[] = [];
 
 // ---------------------------------------------------------------------------
 // Helpers
