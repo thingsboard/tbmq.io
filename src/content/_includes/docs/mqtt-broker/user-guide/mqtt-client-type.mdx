@@ -20,9 +20,8 @@ service subscribing to data from thousands of sensors is an APPLICATION client.
 
 TBMQ resolves the client type during MQTT CONNECT packet processing, based on the credentials used:
 
-- When authentication is **disabled**, every client is assigned the DEVICE type.
-- When <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink> or <DocLink product={props.product} path="security/authentication/x509">X.509 Certificate Chain</DocLink> authentication is **enabled**,
-  TBMQ reads the client type from the `clientType` field of the matched MQTT credential.
+- When **all** authentication providers are disabled, every client is assigned the DEVICE type.
+- When any provider is **enabled**, TBMQ reads the client type from the matched credential's `clientType` field — for <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink> and <DocLink product={props.product} path="security/authentication/x509">X.509 Certificate Chain</DocLink> authentication — or from the authentication result: a JWT claim, or the HTTP authentication provider's response.
 
 For details on client authentication, see the <DocLink product={props.product} path="security/overview">Security overview</DocLink>.
 For instructions on creating credentials with a specific client type, see the

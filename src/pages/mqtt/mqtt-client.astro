@@ -38,10 +38,10 @@ const faq: FaqItem[] = [
 
 	<h2>How a client connects</h2>
 	<p>
-		Every client starts by sending a <code>CONNECT</code> packet carrying a <strong>client ID</strong>, an optional
-		username/password, a <a href="/mqtt/keep-alive/">keep-alive</a> interval, the clean-start flag for its <a
-			href="/mqtt/persistent-session/">session</a
-		>, and an optional
+		Every client starts by sending a <code>CONNECT</code> packet carrying a <a href="/mqtt/mqtt-client-id/"
+			><strong>client ID</strong></a
+		>, an optional username/password, a <a href="/mqtt/keep-alive/">keep-alive</a> interval, the clean-start flag for its
+		<a href="/mqtt/persistent-session/">session</a>, and an optional
 		<a href="/mqtt/last-will/">last will</a>. The broker replies with a <code>CONNACK</code> that accepts or rejects the connection.
 		After that, the client can subscribe and publish freely.
 	</p>

@@ -20,7 +20,7 @@ separately rather than applying a one-size-fits-all approach.
 | **Typical clients** | Sensors, controllers, IoT gateways | Analytics engines, rule processors, backend services |
 | **Session persistence** | Persistent or non-persistent | Persistent (non-persistent sessions are supported but not recommended) |
 | **Offline message storage** | Redis | Dedicated Kafka topic per client |
-| **Assigned by default** | Yes — unauthenticated clients always get DEVICE type | No — requires authentication with credentials that set `clientType = APPLICATION` |
+| **Assigned by default** | Yes — when all authentication providers are disabled, every client is DEVICE | No — set by an enabled auth provider: the credential's `clientType` (Basic / X.509) or the auth result (JWT / HTTP) |
 | **Per-client Kafka topic** | No | Yes — `tbmq.msg.app.$CLIENT_ID` |
 | **Horizontal scale path** | Add broker nodes; add Redis nodes | Add broker nodes; add Kafka nodes |
 
@@ -85,7 +85,7 @@ this is the right storage primitive. Redis would not sustain the write rate or t
 
 The type is resolved during the CONNECT packet handshake:
 
-1. If both Basic and TLS authentication are disabled, all clients are assigned **DEVICE**.
-2. If authentication is enabled, the `clientType` field on the matching <DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials">MQTT client credential</DocLink> determines the type.
+1. If **all** MQTT authentication providers are disabled, every client is assigned **DEVICE**.
+2. If any provider is enabled, the client type comes from the matched credential's `clientType` field — for <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink> and <DocLink product={props.product} path="security/authentication/x509">X.509</DocLink> authentication — or from the authentication result: a JWT claim, or the response from the HTTP authentication provider.
 
 For details on configuring authentication, see the <DocLink product={props.product} path="security/overview">security overview</DocLink>.
