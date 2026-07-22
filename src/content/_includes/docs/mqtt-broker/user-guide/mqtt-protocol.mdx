@@ -50,16 +50,20 @@ The full list of tunables lives in <DocLink product={props.product} path="instal
 
 ## MQTT 5.0 features in TBMQ
 
-TBMQ implements the MQTT 5.0 feature set:
+TBMQ implements the MQTT 5.0 feature set, including:
 
 | Feature | Behavior in TBMQ |
 |---|---|
 | Reason codes | Returned on `CONNACK`, `PUBACK`, `SUBACK`, `DISCONNECT`, and the other acknowledgement packets |
 | User properties | Preserved on the message and delivered to subscribers |
+| Assigned client identifier | The broker assigns a client identifier and returns it in `CONNACK` when a client connects without one |
 | Session expiry interval | Honored; capped at the max above (1 week by default) |
+| Server keep alive | The broker caps an MQTT 5 client's requested keep-alive at the server maximum (600 s by default) and returns the enforced value in `CONNACK` |
 | Message expiry interval | Honored — messages still undelivered past the interval are discarded |
+| Will delay interval | Honored — a delayed Last Will is published after the interval, and cancelled if the session resumes first |
 | Topic alias | Enabled by default, up to 10 aliases per connection |
 | Flow control (Receive Maximum) | Enabled by default; also applied to MQTT 3.x clients |
+| Maximum packet size | The broker advertises the largest packet it accepts — the listener payload limit, 64 KB by default |
 | Enhanced authentication (`AUTH`) | SCRAM challenge/response — see <DocLink product={props.product} path="security/authentication/scram">SCRAM authentication</DocLink> |
 | Shared subscriptions | `ROUND_ROBIN` distribution — see <DocLink product={props.product} path="user-guide/shared-subscriptions">Shared subscriptions</DocLink> |
 | Request/response | The broker advertises response information to clients that ask for it when `MQTT_RESPONSE_INFO` is set |
