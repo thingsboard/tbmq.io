@@ -109,6 +109,8 @@ Both repos share the Maven layout and package root `org.thingsboard.mqtt.broker`
 - CE: `/home/dlandiak/projects/tbmq`
 - PE: `/home/dlandiak/projects/tbmq-pe`
 
+**Audit for omissions, not only errors.** When reviewing or improving a page, read the relevant source (the yml defaults, the handler/service classes in the package map below) and check for important params, defaults, or behaviors the page *doesn't mention yet* — the completeness counterpart to verifying the claims it does make. (This is per-page; the tree-level "which page is missing" audit stays in the "Finding gaps" section.)
+
 ### Config defaults — the single source of truth
 
 **`application/src/main/resources/thingsboard-mqtt-broker.yml`** (in each repo) defines every default. Values use Spring's `${ENV_VAR:default}` syntax, one per line with a comment — **the `:default` portion is the source of truth for any "the default is X" claim.** Examples (CE):

@@ -206,6 +206,7 @@ Body lists read better as designed blocks than as raw `<ul>`s. **Default to thes
 
 This is the step batch 1 got wrong three times before review caught it. Do not skip it.
 
+- **Completeness, not just correctness.** When reviewing or deepening a topic, audit the explanation against the MQTT spec for *missing* critical points — a core mechanism, a version difference, or an edge case a reader needs — not only for wrong claims. A guide that omits a load-bearing spec detail is incomplete even if everything it says is accurate.
 - **Protocol claims must match the MQTT spec** (3.1.1 / 5.0). Ports, QoS semantics, packet names, wildcard rules, version differences — state them precisely.
 - **Every TBMQ product claim must be verified** against the broker source at `~/projects/tbmq` (config defaults, feature support) or the shipped docs under `src/content/.../mqtt-broker/`. If you can't verify it, don't claim it. Prefer "TBMQ supports X" only when you've seen X in source/docs.
 - **Cautionary examples from batch 1** (all were plausible-sounding and wrong):
