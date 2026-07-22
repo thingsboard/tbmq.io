@@ -1,6 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnFeatureGrid from '@components/MqttLearn/LearnFeatureGrid.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -23,6 +24,29 @@ const faq: FaqItem[] = [
 	{
 		q: 'What is an MQTT broker?',
 		a: 'The broker is the central server that receives every published message and routes it to the clients subscribed to the matching topic. TBMQ is one example of an MQTT broker.',
+	},
+];
+
+const whyFeatures = [
+	{
+		icon: 'tabler:feather',
+		title: 'Lightweight',
+		text: 'A compact fixed header — just 2 bytes at minimum — keeps overhead and battery use low.',
+	},
+	{
+		icon: 'tabler:refresh-alert',
+		title: 'Resilient',
+		text: 'Persistent connections, QoS levels, and Last Will messages handle flaky links gracefully.',
+	},
+	{
+		icon: 'tabler:topology-star-3',
+		title: 'Scalable',
+		text: 'The decoupled pub/sub model lets one broker fan a message out to many subscribers efficiently.',
+	},
+	{
+		icon: 'tabler:database',
+		title: 'Stateful when needed',
+		text: 'Persistent sessions and retained messages keep clients in sync across reconnects.',
 	},
 ];
 ---
@@ -86,23 +110,7 @@ const faq: FaqItem[] = [
 		MQTT was designed for constrained devices and unreliable networks, which is exactly the environment most IoT fleets
 		live in. Its advantages:
 	</p>
-	<ul>
-		<li>
-			<strong>Lightweight:</strong> a compact fixed header (just 2 bytes at minimum) keeps overhead and battery use low.
-		</li>
-		<li>
-			<strong>Resilient:</strong> persistent connections, <a href="/mqtt/qos/">Quality of Service</a>
-			levels, and <a href="/mqtt/last-will/">Last Will</a> messages handle flaky links gracefully.
-		</li>
-		<li>
-			<strong>Scalable:</strong> the decoupled pub/sub model lets one broker fan a message out to many subscribers efficiently.
-		</li>
-		<li>
-			<strong>Stateful when needed:</strong>
-			<a href="/mqtt/persistent-session/">persistent sessions</a> and
-			<a href="/mqtt/retained-messages/">retained messages</a> keep clients in sync across reconnects.
-		</li>
-	</ul>
+	<LearnFeatureGrid features={whyFeatures} />
 
 	<h2>MQTT vs HTTP</h2>
 	<p>

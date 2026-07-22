@@ -1,0 +1,76 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Feature {
+	/** astro-icon tabler name, e.g. 'tabler:feather' */
+	icon: string;
+	title: string;
+	/** plain text — no inline markup */
+	text: string;
+}
+interface Props {
+	features: Feature[];
+}
+const { features } = Astro.props;
+---
+
+<div class="learn-feature-grid">
+	{
+		features.map((f) => (
+			<div class="learn-feature">
+				<span class="learn-feature__ic">
+					<Icon name={f.icon} />
+				</span>
+				<h3 class="learn-feature__title">{f.title}</h3>
+				<p class="learn-feature__text">{f.text}</p>
+			</div>
+		))
+	}
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.learn-feature-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-4;
+		margin: $spacing-4 0 $spacing-6;
+		@include media-up(sm) {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+	.learn-feature {
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: $radius-xl;
+		padding: 20px 22px;
+	}
+	.learn-feature__ic {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: $radius-lg;
+		background: rgba($color-pe, 0.1);
+		color: $color-pe-link;
+		margin-bottom: 12px;
+	}
+	:global(.learn-feature__ic svg) {
+		width: 20px;
+		height: 20px;
+	}
+	.learn-feature__title {
+		font-size: 16px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 6px;
+	}
+	.learn-feature__text {
+		font-size: 14.5px;
+		line-height: 1.55;
+		color: $color-text-secondary;
+		margin: 0;
+	}
+</style>
