@@ -1,87 +1,247 @@
 ---
 import { mqttCategoryGroups, topicHref } from '~/data/mqttLearn';
 
-// Two-digit index for the mono category markers. The category order is a
-// deliberate learning progression (fundamentals → … → comparisons), so the
-// numbering encodes real reading order rather than decoration.
-const pad = (n: number) => String(n).padStart(2, '0');
+const totalGuides = mqttCategoryGroups.reduce((n, group) => n + group.topics.length, 0);
+
+// Inline 24×24 line icons, one per category, keyed by category id. Each encodes
+// the section's meaning: stacked panels (fundamentals), a link (connections), a
+// burst (MQTT 5.0 additions), a shield (security), transfer arrows (transports).
+const categoryIcon: Record<string, string> = {
+	fundamentals: '<path d="M4 5h10v14H4zM14 5h6v14h-6z"></path>',
+	connections: '<path d="M9 15 15 9M8 12l-2 2a3 3 0 0 0 4 4l2-2M16 12l2-2a3 3 0 0 0-4-4l-2 2"></path>',
+	'mqtt-5': '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"></path>',
+	security: '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"></path>',
+	comparisons: '<path d="M4 8h13l-3-3M20 16H7l3 3"></path>',
+};
 ---
 
-<nav class="topic-nav" aria-label="MQTT topic categories">
-	{
-		mqttCategoryGroups.map((group) => (
-			<a class="topic-nav__link" href={`#${group.id}`}>
-				{group.label}
-			</a>
-		))
-	}
-</nav>
-
-<div class="topic-groups">
-	{
-		mqttCategoryGroups.map((group, i) => (
-			<section class="topic-group" id={group.id}>
-				<header class="topic-group__head">
-					<span class="topic-group__idx" aria-hidden="true">
-						{pad(i + 1)}
-					</span>
-					<h2 class="topic-group__label">{group.label}</h2>
-					<span class="topic-group__rule" aria-hidden="true" />
-					<span class="topic-group__count">{group.topics.length} guides</span>
-				</header>
-				<div class="topic-grid">
-					{group.topics.map((t) => (
-						<a class="topic-card" href={topicHref(t.slug)}>
-							<h3 class="topic-card__title">{t.navLabel}</h3>
-							<p class="topic-card__text">{t.quickAnswer}</p>
-							<span class="topic-card__cta">
-								Read the guide{' '}
-								<span class="topic-card__arrow" aria-hidden="true">
-									→
-								</span>
-							</span>
-						</a>
-					))}
-				</div>
-			</section>
-		))
-	}
+{/* Sticky category filter — a real filter bar, colour-coded per category. */}
+<div class="mqtt-filters">
+	<div class="mqtt-filters__inner" role="group" aria-label="Filter guides by category">
+		<button class="mqtt-pill is-active" type="button" data-cat="all">All topics</button>
+		{
+			mqttCategoryGroups.map((group) => (
+				<button class={`mqtt-pill c-${group.accent}`} type="button" data-cat={group.id}>
+					<span class="mqtt-pill__dot" aria-hidden="true" />
+					{group.label}
+				</button>
+			))
+		}
+	</div>
 </div>
+
+<div class="mqtt-grid-wrap">
+	<div class="topic-groups">
+		{
+			mqttCategoryGroups.map((group) => (
+				<section class={`topic-group c-${group.accent}`} id={group.id} data-cat={group.id}>
+					<header class="topic-group__head">
+						<span class="topic-group__rule" aria-hidden="true" />
+						<span class="topic-group__chip" aria-hidden="true">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								set:html={categoryIcon[group.id]}
+							/>
+						</span>
+						<h2 class="topic-group__label">{group.label}</h2>
+						<span class="topic-group__count" data-count>
+							{group.topics.length} guides
+						</span>
+					</header>
+					<div class="topic-grid">
+						{group.topics.map((t) => (
+							<a
+								class="topic-card"
+								href={topicHref(t.slug)}
+								data-search={`${t.navLabel} ${t.cardSummary} ${group.tag}`.toLowerCase()}
+							>
+								{t.startHere && <span class="topic-card__badge">Start here</span>}
+								<span class="topic-card__tag">{group.tag}</span>
+								<h3 class="topic-card__title">{t.navLabel}</h3>
+								<p class="topic-card__text">{t.cardSummary}</p>
+								<span class="topic-card__cta">
+									Read the guide{' '}
+									<span class="topic-card__arrow" aria-hidden="true">
+										→
+									</span>
+								</span>
+							</a>
+						))}
+					</div>
+				</section>
+			))
+		}
+	</div>
+
+	<div class="topic-empty" id="mqtt-empty" hidden>
+		<h3>No guides match that search</h3>
+		<p>Try a different term, or clear the filter to see all {totalGuides} guides.</p>
+	</div>
+</div>
+
+<script>
+	const input = document.getElementById('mqtt-search') as HTMLInputElement | null;
+	const pills = Array.from(document.querySelectorAll<HTMLButtonElement>('.mqtt-pill'));
+	const sections = Array.from(document.querySelectorAll<HTMLElement>('.topic-group'));
+	const empty = document.getElementById('mqtt-empty');
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	let activeCat = 'all';
+
+	function apply() {
+		const term = (input?.value ?? '').trim().toLowerCase();
+		let total = 0;
+		for (const section of sections) {
+			const catOk = activeCat === 'all' || section.dataset.cat === activeCat;
+			let shown = 0;
+			for (const card of section.querySelectorAll<HTMLElement>('.topic-card')) {
+				const haystack = card.dataset.search ?? '';
+				const textOk = term === '' || haystack.includes(term);
+				const visible = catOk && textOk;
+				card.style.display = visible ? '' : 'none';
+				if (visible) shown++;
+			}
+			section.style.display = shown === 0 ? 'none' : '';
+			const badge = section.querySelector('[data-count]');
+			if (badge) badge.textContent = `${shown} guide${shown === 1 ? '' : 's'}`;
+			total += shown;
+		}
+		if (empty) empty.hidden = total !== 0;
+	}
+
+	input?.addEventListener('input', apply);
+
+	for (const pill of pills) {
+		pill.setAttribute('aria-pressed', String(pill.classList.contains('is-active')));
+		pill.addEventListener('click', () => {
+			activeCat = pill.dataset.cat ?? 'all';
+			for (const p of pills) {
+				const on = p === pill;
+				p.classList.toggle('is-active', on);
+				p.setAttribute('aria-pressed', String(on));
+			}
+			apply();
+			if (activeCat !== 'all') {
+				document
+					.getElementById(activeCat)
+					?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+			}
+		});
+	}
+</script>
 
 <style lang="scss">
 	@use '../../styles/variables' as *;
 
-	// ── Jump nav ────────────────────────────────────────────────────
-	// Monospace label chips — the technical accessory face used throughout
-	// the hub — act as a quick index to each category section.
-	.topic-nav {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 10px;
-		width: 100%;
+	// ── Category accents ────────────────────────────────────────────
+	// Each category owns one accent, exposed as CSS custom properties so the
+	// pill dot, section chip/rule, and card tag/hover all read from one place.
+	// Green is TBMQ's brand green (on-brand); the other four are page-scoped,
+	// light-locked hues chosen to sit together (the hub is forceLightTheme).
+	.c-green {
+		--acc: #{$color-pe};
+		--acc-ink: #{$color-pe-link};
+		--acc-tint: #eaf7ef;
 	}
-	.topic-nav__link {
+	.c-blue {
+		--acc: #2f74d0;
+		--acc-ink: #12447c;
+		--acc-tint: #eaf1fb;
+	}
+	.c-purple {
+		--acc: #7a5af0;
+		--acc-ink: #3f2e8a;
+		--acc-tint: #f0edfd;
+	}
+	.c-amber {
+		--acc: #d98a25;
+		--acc-ink: #7a4d0b;
+		--acc-tint: #fbf1de;
+	}
+	.c-teal {
+		--acc: #159e8a;
+		--acc-ink: #0b5c50;
+		--acc-tint: #e3f5f1;
+	}
+
+	// ── Sticky filter bar ───────────────────────────────────────────
+	.mqtt-filters {
+		position: sticky;
+		top: $header-height;
+		z-index: 40;
+		background: rgba(255, 255, 255, 0.9);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		border-bottom: 1px solid $color-border;
+	}
+	.mqtt-filters__inner {
+		display: flex;
+		gap: 8px;
+		max-width: 1160px;
+		margin: 0 auto;
+		padding: 12px $spacing-6;
+		overflow-x: auto;
+		scrollbar-width: none;
+		&::-webkit-scrollbar {
+			display: none;
+		}
+	}
+	.mqtt-pill {
+		flex: none;
 		display: inline-flex;
 		align-items: center;
-		padding: 8px 15px;
-		border: 1px solid $color-border;
-		border-radius: $radius-full;
-		background: $color-bg-white;
-		font-family: $font-family-mono;
-		font-size: 13px;
-		font-weight: $font-weight-medium;
+		gap: 8px;
+		padding: 7px 15px;
+		font-family: inherit;
+		font-size: 13.5px;
+		font-weight: $font-weight-semibold;
 		color: $color-text-secondary;
-		text-decoration: none;
+		background: $color-bg-white;
+		border: 1px solid $color-border-light;
+		border-radius: $radius-full;
+		white-space: nowrap;
+		cursor: pointer;
 		transition:
-			border-color $transition-fast,
 			color $transition-fast,
-			background-color $transition-fast;
+			background-color $transition-fast,
+			border-color $transition-fast;
+
 		&:hover {
-			border-color: rgba(31, 139, 77, 0.5);
-			background: #eaf7ef;
-			color: $color-pe-link;
+			color: $color-text-primary;
+			background: #f4f7f5;
 		}
+		&:focus-visible {
+			outline: 2px solid var(--acc, #{$color-pe});
+			outline-offset: 2px;
+		}
+		&.is-active {
+			color: #fff;
+			background: $color-text-primary;
+			border-color: $color-text-primary;
+		}
+	}
+	.mqtt-pill__dot {
+		flex: none;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--acc, #{$color-pe});
+	}
+	.mqtt-pill.is-active .mqtt-pill__dot {
+		outline: 2px solid rgba(255, 255, 255, 0.35);
+	}
+
+	// ── Grid wrapper ────────────────────────────────────────────────
+	.mqtt-grid-wrap {
+		position: relative;
+		z-index: 1;
+		max-width: 1120px;
+		margin: 0 auto;
+		padding: $spacing-12 $spacing-6 0;
 	}
 
 	// ── Category sections ───────────────────────────────────────────
@@ -89,70 +249,65 @@ const pad = (n: number) => String(n).padStart(2, '0');
 		display: flex;
 		flex-direction: column;
 		gap: $spacing-16;
-		width: 100%;
-		margin-top: $spacing-12;
 	}
 	.topic-group {
-		width: 100%;
-		scroll-margin-top: calc(#{$header-height} + 24px);
+		scroll-margin-top: calc(#{$header-height} + 84px);
 	}
-	// Descendant selectors (specificity 0,2,0) are required throughout this
-	// header row: single-class scoped rules resolve to `:where(...)`-zeroed
-	// specificity (0,1,0) and lose to base/user-agent element rules — notably
-	// the UA `header { display: block }`, which otherwise defeats `display:flex`
-	// and stacks the row. Same trap the `.topic-group__label` size hit before.
+	// Descendant selectors (specificity 0,2,0) throughout this header row: a
+	// single-class scoped rule resolves to :where()-zeroed (0,1,0) and loses to
+	// base/UA element rules — notably `header { display: block }`, which would
+	// defeat display:flex, and the global h2 size rule on the label.
 	.topic-groups .topic-group__head {
 		display: flex;
 		align-items: center;
 		gap: 14px;
 		margin-bottom: $spacing-6;
 	}
-	.topic-groups .topic-group__idx {
-		font-family: $font-family-mono;
-		font-size: 14px;
-		font-weight: $font-weight-semibold;
-		letter-spacing: 0.04em;
-		color: $color-pe-link;
-		flex-shrink: 0;
+	.topic-groups .topic-group__rule {
+		flex: none;
+		width: 28px;
+		height: 3px;
+		border-radius: 3px;
+		background: var(--acc);
+	}
+	.topic-groups .topic-group__chip {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 38px;
+		height: 38px;
+		border-radius: 10px;
+		background: var(--acc-tint);
+		color: var(--acc-ink);
 	}
 	.topic-groups .topic-group__label {
-		font-size: 25px;
+		font-size: 24px;
 		font-weight: $font-weight-semibold;
 		letter-spacing: -0.01em;
 		color: $color-text-primary;
 		margin: 0;
-		flex-shrink: 0;
-	}
-	.topic-groups .topic-group__rule {
-		flex: 1;
-		height: 1px;
-		min-width: 20px;
-		background: linear-gradient(90deg, $color-border, rgba(235, 235, 235, 0));
 	}
 	.topic-groups .topic-group__count {
-		flex-shrink: 0;
+		flex: none;
+		margin-left: auto;
 		font-family: $font-family-mono;
 		font-size: 12.5px;
-		letter-spacing: 0.02em;
+		font-weight: $font-weight-medium;
 		color: $color-text-muted;
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: $radius-full;
+		padding: 5px 12px;
 		white-space: nowrap;
 	}
-	// On narrow screens the fixed-width label + count overflow the row and clip
-	// the count. Drop the connecting rule, let the row wrap, and keep the count
-	// right-aligned so it falls neatly under long labels instead of off-screen.
 	@include media-down(sm) {
 		.topic-groups .topic-group__head {
 			flex-wrap: wrap;
-			gap: 6px 10px;
+			gap: 6px 12px;
 		}
 		.topic-groups .topic-group__label {
-			font-size: 22px;
-		}
-		.topic-groups .topic-group__rule {
-			display: none;
-		}
-		.topic-groups .topic-group__count {
-			margin-left: auto;
+			font-size: 21px;
 		}
 	}
 
@@ -160,8 +315,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 	.topic-grid {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 18px;
-		width: 100%;
+		gap: 16px;
 		@include media-up(sm) {
 			grid-template-columns: repeat(2, 1fr);
 		}
@@ -173,11 +327,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		padding: 24px 24px 22px;
-		border: 1px solid $color-border;
-		border-radius: $radius-lg;
+		min-height: 150px;
+		padding: 20px 20px 18px;
 		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: 14px;
 		text-decoration: none;
+		overflow: hidden;
 		box-shadow:
 			0 1px 2px rgba(23, 24, 28, 0.04),
 			0 10px 24px -18px rgba(23, 24, 28, 0.14);
@@ -185,32 +341,75 @@ const pad = (n: number) => String(n).padStart(2, '0');
 			transform $transition-fast,
 			border-color $transition-fast,
 			box-shadow $transition-fast;
+
+		&::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			width: 3px;
+			background: var(--acc);
+			opacity: 0;
+			transition: opacity $transition-fast;
+		}
 		&:hover {
-			transform: translateY(-3px);
-			border-color: rgba(31, 139, 77, 0.45);
+			transform: translateY(-2px);
+			border-color: var(--acc);
 			box-shadow:
-				0 14px 30px -12px rgba(31, 139, 77, 0.28),
+				0 14px 30px -14px rgba(23, 24, 28, 0.2),
 				0 3px 10px rgba(23, 24, 28, 0.05);
 		}
+		&:hover::before {
+			opacity: 1;
+		}
+		&:focus-visible {
+			outline: 2px solid var(--acc);
+			outline-offset: 2px;
+		}
+	}
+	.topic-card__badge {
+		position: absolute;
+		top: 16px;
+		right: 16px;
+		font-size: 10.5px;
+		font-weight: $font-weight-bold;
+		letter-spacing: 0.01em;
+		color: var(--acc-ink);
+		background: var(--acc-tint);
+		border-radius: 6px;
+		padding: 3px 8px;
+	}
+	.topic-card__tag {
+		align-self: flex-start;
+		font-size: 11px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.01em;
+		padding: 3px 9px;
+		border-radius: 6px;
+		margin-bottom: 10px;
+		background: var(--acc-tint);
+		color: var(--acc-ink);
 	}
 	.topic-card__title {
-		font-size: 18px;
+		font-size: 16.5px;
 		font-weight: $font-weight-semibold;
 		line-height: 1.3;
+		letter-spacing: -0.01em;
 		color: $color-text-primary;
-		margin: 0 0 10px;
+		margin: 0 0 7px;
 		transition: color $transition-fast;
 	}
 	.topic-card:hover .topic-card__title {
-		color: $color-pe-link;
+		color: var(--acc-ink);
 	}
 	.topic-card__text {
-		font-size: 14px;
-		line-height: 1.62;
+		font-size: 13.5px;
+		line-height: 1.5;
 		color: $color-text-secondary;
-		margin: 0 0 18px;
+		margin: 0;
 		display: -webkit-box;
-		-webkit-line-clamp: 4;
+		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
@@ -219,23 +418,52 @@ const pad = (n: number) => String(n).padStart(2, '0');
 		align-items: center;
 		gap: 6px;
 		margin-top: auto;
+		padding-top: 12px;
 		font-family: $font-family-mono;
 		font-size: 13px;
 		font-weight: $font-weight-medium;
-		color: $color-pe-link;
+		color: var(--acc-ink);
+		opacity: 0.6;
+		transition:
+			opacity $transition-fast,
+			gap $transition-fast;
+	}
+	.topic-card:hover .topic-card__cta {
+		opacity: 1;
+		gap: 9px;
 	}
 	.topic-card__arrow {
 		display: inline-block;
 		transition: transform $transition-fast;
 	}
 	.topic-card:hover .topic-card__arrow {
-		transform: translateX(4px);
+		transform: translateX(3px);
+	}
+
+	// ── Empty state ─────────────────────────────────────────────────
+	.topic-empty {
+		text-align: center;
+		padding: 60px 0;
+		color: $color-text-secondary;
+	}
+	.topic-empty[hidden] {
+		display: none;
+	}
+	.topic-empty h3 {
+		font-size: 18px;
+		color: $color-text-primary;
+		margin: 0 0 6px;
+	}
+	.topic-empty p {
+		margin: 0;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.topic-card,
+		.topic-card__title,
+		.topic-card__cta,
 		.topic-card__arrow,
-		.topic-card__title {
+		.mqtt-pill {
 			transition: none;
 		}
 		.topic-card:hover {

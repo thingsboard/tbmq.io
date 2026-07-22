@@ -14,12 +14,16 @@ export interface MqttTopic {
 	eyebrow: string;
 	/** 2–3 sentence boxed definition (featured-snippet target) */
 	quickAnswer: string;
+	/** One crisp sentence for the hub-grid card blurb (clamped to 2 lines) */
+	cardSummary: string;
 	/** One-line "how TBMQ relates" summary (hub card + How-TBMQ block) */
 	tbmqTieIn: string;
 	/** Slugs shown in the related-topics grid */
 	related: string[];
 	/** 'full' = flagship article, 'short' = short-form scaffold */
 	status: 'full' | 'short';
+	/** Marks the single entry-point card on the hub grid ("Start here" badge) */
+	startHere?: boolean;
 	/** Meta description */
 	seoDescription: string;
 }
@@ -29,6 +33,8 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'what-is-mqtt',
 		title: "What Is MQTT? A Beginner's Guide to the Protocol",
 		navLabel: 'What is MQTT?',
+		cardSummary:
+			'A lightweight publish/subscribe messaging protocol built for constrained devices and unreliable networks.',
 		icon: '/src/assets/images/landings/nav/learn-what-is-mqtt.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
@@ -37,6 +43,7 @@ export const mqttTopics: MqttTopic[] = [
 			'TBMQ is an open-source MQTT broker (3.1, 3.1.1 and 5.0) engineered to scale to 100M+ concurrent connections.',
 		related: ['mqtt-broker', 'mqtt-client', 'publish-subscribe', 'mqtt-vs-kafka'],
 		status: 'full',
+		startHere: true,
 		seoDescription:
 			"What is MQTT? A plain-English guide to the lightweight publish/subscribe protocol behind modern IoT — how it works, why it's used, and how it compares to HTTP.",
 	},
@@ -44,6 +51,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-vs-kafka',
 		title: 'MQTT vs Kafka: Key Differences and When to Use Each',
 		navLabel: 'MQTT vs Kafka',
+		cardSummary: 'A device-edge protocol paired with a high-throughput backend event log.',
 		eyebrow: 'MQTT COMPARISON',
 		quickAnswer:
 			'MQTT is a lightweight pub/sub protocol for connecting devices over unreliable networks; Apache Kafka is a distributed event-streaming log for high-throughput backend data pipelines. They solve different problems and are frequently used together — MQTT at the edge, Kafka in the data center.',
@@ -58,6 +66,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'shared-subscriptions',
 		title: 'MQTT Shared Subscriptions Explained',
 		navLabel: 'Shared subscriptions',
+		cardSummary: 'Load-balance a subscription across a group so each message reaches only one member.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'A shared subscription lets a group of MQTT clients share one subscription so each message is delivered to only one member of the group, instead of to all of them. That turns MQTT’s broadcast model into a load-balanced work queue for scaling consumers horizontally.',
@@ -72,6 +81,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'qos',
 		title: 'MQTT QoS 0, 1 and 2 Explained',
 		navLabel: 'QoS levels',
+		cardSummary: 'Per-message delivery guarantees: at most once, at least once, and exactly once.',
 		icon: '/src/assets/images/landings/nav/learn-qos.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
@@ -87,6 +97,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-5',
 		title: "MQTT 5.0: What's New vs MQTT 3.1.1",
 		navLabel: 'MQTT 5.0',
+		cardSummary: 'The latest protocol version: reason codes, user properties, topic aliases, and more.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT 5.0 is the latest version of the protocol. It keeps the lightweight pub/sub core of 3.1.1 and adds reason codes, user properties, topic aliases, shared subscriptions, message and session expiry, and flow control — giving you far better error reporting and control.',
@@ -101,6 +112,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-message-expiry',
 		title: 'MQTT Session and Message Expiry',
 		navLabel: 'Session & message expiry',
+		cardSummary: 'Controls for how long the broker keeps a session and its queued messages.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT 5.0 adds two expiry controls. The Session Expiry Interval sets how long the broker keeps a disconnected client’s session — its subscriptions and queued messages — before discarding it. The Message Expiry Interval sets how long an individual message stays valid while queued; if it expires before it can be delivered, the broker drops it.',
@@ -115,6 +127,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-reason-codes',
 		title: 'MQTT Reason Codes',
 		navLabel: 'Reason codes',
+		cardSummary: 'Single-byte status values attached to control packets to report outcomes.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'A reason code is a single-byte status value MQTT 5.0 attaches to control packets that report an outcome (CONNACK, PUBACK, SUBACK, DISCONNECT and more). Values below 0x80 mean success or a normal outcome; 0x80 and above signal a failure and say why. It replaces MQTT 3.1.1’s near-silent failures with actionable feedback.',
@@ -129,6 +142,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-user-properties',
 		title: 'MQTT User Properties',
 		navLabel: 'User properties',
+		cardSummary: 'Arbitrary key–value pairs that travel with a message, like custom headers.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'User Properties are arbitrary UTF-8 key–value pairs you can attach to MQTT 5.0 packets — the MQTT equivalent of custom HTTP headers. They travel with the message and let you carry metadata such as a content type, tenant ID, or tracing token without encoding it into the topic or payload.',
@@ -143,6 +157,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-topic-alias',
 		title: 'MQTT Topic Alias',
 		navLabel: 'Topic alias',
+		cardSummary: 'Replace a long topic name with a small integer for the life of a connection.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'A Topic Alias lets a client or broker replace a long topic name with a small integer for the life of a connection. The first PUBLISH sends the full topic plus an alias number; later PUBLISHes to the same topic send only the number, cutting bandwidth on repetitive, long topic names.',
@@ -157,6 +172,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-flow-control',
 		title: 'MQTT Flow Control',
 		navLabel: 'Flow control',
+		cardSummary: 'The Receive Maximum property caps in-flight QoS 1 and 2 messages per side.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT 5.0 flow control uses the Receive Maximum property: each side tells the other how many QoS 1 and QoS 2 messages it will accept without acknowledgement at once. The sender stops when that many are in flight and resumes as acknowledgements arrive, so a fast sender can’t overwhelm a slower receiver.',
@@ -171,6 +187,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'persistent-session',
 		title: 'MQTT Persistent Sessions and Clean Start',
 		navLabel: 'Persistent sessions',
+		cardSummary: 'Letting the broker remember subscriptions and queue messages while a client is offline.',
 		icon: '/src/assets/images/landings/nav/learn-session.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
@@ -186,6 +203,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'topics',
 		title: 'MQTT Topics and Wildcards',
 		navLabel: 'Topics & wildcards',
+		cardSummary: 'Hierarchical, slash-separated strings and the wildcards used to subscribe across them.',
 		icon: '/src/assets/images/landings/nav/learn-topics.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
@@ -201,6 +219,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'retained-messages',
 		title: 'MQTT Retained Messages',
 		navLabel: 'Retained messages',
+		cardSummary: 'The last message on a topic, delivered immediately to any new subscriber.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'A retained message is the last message the broker stored for a topic with the retain flag set. Any client that subscribes later immediately receives that last known value instead of waiting for the next publish — ideal for state like a device’s current status.',
@@ -215,6 +234,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'last-will',
 		title: 'MQTT Last Will and Testament (LWT)',
 		navLabel: 'Last Will & Testament',
+		cardSummary: 'A message the broker publishes when a client disconnects unexpectedly.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'The Last Will and Testament (LWT) is a message a client registers when it connects; if the client disconnects unexpectedly, the broker publishes that message on its behalf. It’s how MQTT signals that a device dropped off ungracefully.',
@@ -229,6 +249,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'security',
 		title: 'MQTT Security: TLS and Authentication',
 		navLabel: 'Security',
+		cardSummary: 'The three layers: transport encryption, authentication, and authorization.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT security has three layers: transport encryption with TLS (port 8883), client authentication (username/password, client certificates, or tokens), and authorization that controls which topics a client may publish to or subscribe from.',
@@ -243,6 +264,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-tls',
 		title: 'MQTT over TLS/SSL',
 		navLabel: 'TLS / SSL',
+		cardSummary: 'Wrapping the MQTT connection in an encrypted channel on port 8883.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT over TLS (often written MQTTS) wraps the MQTT connection in a TLS-encrypted channel, so credentials and payloads can’t be read or tampered with on the wire. It runs on port 8883 by default, versus 1883 for plaintext MQTT. TLS can also authenticate the client with a certificate (mutual TLS).',
@@ -257,6 +279,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-authentication',
 		title: 'MQTT Authentication',
 		navLabel: 'Authentication',
+		cardSummary: 'How the broker verifies a client’s identity: passwords, tokens, or certificates.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT authentication is how the broker verifies a client’s identity when it connects. Common methods are username/password, signed tokens such as JWT, and challenge-response schemes like SCRAM; client certificates (mutual TLS) are a separate option. The broker checks the credential on CONNECT and refuses the connection if it fails.',
@@ -271,6 +294,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-client-certificates',
 		title: 'MQTT Client Certificate Authentication (X.509)',
 		navLabel: 'Client certificates',
+		cardSummary: 'Mutual TLS, where the client presents an X.509 certificate during the handshake.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'Client certificate authentication uses mutual TLS (mTLS): as well as the broker proving its identity, the client presents an X.509 certificate during the TLS handshake. The broker trusts it if it chains to a trusted CA and identifies the client from the certificate — so no password is ever sent.',
@@ -285,6 +309,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-authorization',
 		title: 'MQTT Authorization and ACLs',
 		navLabel: 'Authorization',
+		cardSummary: 'Deciding which topics an authenticated client may publish to and subscribe from.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'Authorization decides what an authenticated MQTT client is allowed to do — which topics it may publish to and which it may subscribe to. Brokers enforce this with access-control rules (ACLs) attached to each client’s credentials, so being connected doesn’t mean a client can touch every topic.',
@@ -299,6 +324,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-payload-encryption',
 		title: 'MQTT Payload Encryption',
 		navLabel: 'Payload encryption',
+		cardSummary: 'End-to-end encryption of the payload itself, independent of the transport.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'Payload encryption means encrypting the message payload itself, inside the MQTT packet, so only the intended recipients can read it — end to end, independent of the transport. It complements TLS: TLS protects data in transit to and from the broker, while payload encryption keeps it unreadable even to the broker.',
@@ -313,6 +339,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'websocket',
 		title: 'MQTT over WebSocket',
 		navLabel: 'MQTT over WebSocket',
+		cardSummary: 'Carrying MQTT inside a WebSocket so browsers can publish and subscribe.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT over WebSocket carries the same MQTT protocol inside a WebSocket connection, so browsers and other HTTP-only clients can publish and subscribe directly. Brokers commonly expose it on port 8084 (WS) or 8085 (WSS).',
@@ -327,6 +354,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-broker',
 		title: 'What Is an MQTT Broker?',
 		navLabel: 'MQTT broker',
+		cardSummary: 'The central server that receives every published message and routes it to matching subscribers.',
 		icon: '/src/assets/images/landings/nav/learn-broker.svg',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
@@ -342,6 +370,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-client',
 		title: 'What Is an MQTT Client?',
 		navLabel: 'MQTT client',
+		cardSummary: 'Any device or app that connects to a broker to publish, subscribe, or both.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'An MQTT client is any device or application that connects to an MQTT broker to publish messages, subscribe to topics, or both. Anything from an 8-bit microcontroller to a backend service or a browser tab can be a client, as long as it speaks the MQTT protocol over a supported transport.',
@@ -356,6 +385,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'publish-subscribe',
 		title: 'MQTT Publish/Subscribe Explained',
 		navLabel: 'Publish/subscribe',
+		cardSummary: 'The messaging model MQTT is built on: senders and receivers share only a topic.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT uses a publish/subscribe model: clients publish messages to named topics on a broker, and the broker delivers each message to every client subscribed to a matching topic. Publishers and subscribers are decoupled — they interact only through topics, never directly. The three core operations are PUBLISH, SUBSCRIBE, and UNSUBSCRIBE.',
@@ -370,6 +400,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-connection',
 		title: 'MQTT Connection: CONNECT and CONNACK',
 		navLabel: 'Connection (CONNECT)',
+		cardSummary: 'How a session begins: the CONNECT packet, CONNACK, clean-start flag, and keep-alive.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'An MQTT session begins with the client sending a CONNECT packet and the broker replying with CONNACK. CONNECT carries the client ID, the clean-start flag, the keep-alive interval, optional credentials and a Last Will; CONNACK returns a reason code and a session-present flag that tells the client whether the broker resumed an existing session.',
@@ -384,6 +415,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-client-id',
 		title: 'MQTT Client ID and Client Take-Over',
 		navLabel: 'Client ID',
+		cardSummary: 'The unique string that identifies a client and links it to its session state.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'The MQTT client ID is a string that uniquely identifies a client to the broker and links it to its session state. Only one connection per client ID may be active at a time: if a second client connects with an ID already in use, the broker performs a take-over — disconnecting the existing connection and keeping the new one.',
@@ -398,6 +430,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-packets',
 		title: 'MQTT Packets: Control Packet Types',
 		navLabel: 'MQTT packets',
+		cardSummary: 'The control packets clients and brokers exchange, from CONNECT to PUBLISH.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT control packets are the messages exchanged between client and broker. Each has a fixed header of at least 2 bytes (packet type, flags and remaining length), an optional variable header, and an optional payload. The types include CONNECT/CONNACK, PUBLISH with its acknowledgements, SUBSCRIBE/SUBACK, UNSUBSCRIBE/UNSUBACK, PINGREQ/PINGRESP, DISCONNECT and — in MQTT 5.0 — AUTH.',
@@ -412,6 +445,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-request-response',
 		title: 'MQTT Request-Response Pattern',
 		navLabel: 'Request-response',
+		cardSummary: 'A first-class reply pattern over pub/sub using a response topic.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'The request-response pattern lets a requester get a reply over MQTT’s publish/subscribe transport. Made first-class in MQTT 5.0, the requester publishes with a Response Topic (where the reply should go) and Correlation Data (an ID to match the reply to the request); the responder publishes its answer to that topic, echoing the same Correlation Data.',
@@ -426,6 +460,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'keep-alive',
 		title: 'MQTT Keep-Alive and Ping Explained',
 		navLabel: 'Keep-alive',
+		cardSummary: 'The heartbeat that keeps a connection alive and detects dead peers.',
 		eyebrow: 'MQTT GUIDE',
 		quickAnswer:
 			'MQTT keep-alive is a heartbeat between client and broker. The client promises to send at least one packet within each keep-alive interval; if it has nothing else to send, it sends a PINGREQ and the broker replies with PINGRESP. If the broker receives nothing for 1.5× the interval, it assumes the client is gone and closes the connection.',
@@ -440,6 +475,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-vs-http',
 		title: 'MQTT vs HTTP: Which to Use for IoT',
 		navLabel: 'MQTT vs HTTP',
+		cardSummary: 'Push-based pub/sub versus short-lived request/response — and when each fits.',
 		eyebrow: 'MQTT COMPARISON',
 		quickAnswer:
 			'HTTP is a request/response protocol built for the web: the client asks and the server answers, and it must ask again to get anything new. MQTT is a publish/subscribe protocol built for devices: a long-lived connection lets the broker push messages the instant they are published, with far less per-message overhead. For frequent, small, bidirectional IoT messaging, MQTT usually wins.',
@@ -454,6 +490,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-vs-amqp',
 		title: 'MQTT vs AMQP: Differences and When to Use Each',
 		navLabel: 'MQTT vs AMQP',
+		cardSummary: 'Two messaging protocols aimed at different problems and fleet sizes.',
 		eyebrow: 'MQTT COMPARISON',
 		quickAnswer:
 			'MQTT and AMQP are both messaging protocols aimed at different problems. MQTT is a lightweight publish/subscribe protocol optimized for large fleets of constrained devices over unreliable networks. AMQP is a richer, heavier protocol with queues, exchanges, and transactions, aimed at enterprise application-to-application messaging and interoperability.',
@@ -468,6 +505,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-vs-coap',
 		title: 'MQTT vs CoAP: Differences and When to Use Each',
 		navLabel: 'MQTT vs CoAP',
+		cardSummary: 'Broker-based pub/sub over TCP versus a lightweight request model over UDP.',
 		eyebrow: 'MQTT COMPARISON',
 		quickAnswer:
 			'MQTT and CoAP are both lightweight IoT protocols with different models. MQTT is a broker-based publish/subscribe protocol over long-lived TCP connections, ideal for pushing events to many subscribers. CoAP is a RESTful request/response protocol over UDP, ideal for occasional, one-to-one interactions with very constrained devices.',
@@ -506,9 +544,17 @@ export const learnNavTopics: MqttTopic[] = learnNavSlugs.map((slug) => getTopic(
 // order on the page, and the slug order within each category is the card order.
 // This is the single place the hub taxonomy lives; the completeness guard below
 // fails the build if it ever drifts from the topic registry.
+// Per-category accent color for the hub grid (filter pill dot, section chip +
+// rule, and card tag). Resolved to concrete CSS custom properties in TopicGrid.
+export type MqttAccent = 'green' | 'blue' | 'purple' | 'amber' | 'teal';
+
 export interface MqttCategory {
 	id: string;
 	label: string;
+	/** Short label shown on the card tag (e.g. "Fundamentals") */
+	tag: string;
+	/** Accent color applied across the category's grid section */
+	accent: MqttAccent;
 	slugs: string[];
 }
 
@@ -516,6 +562,8 @@ export const mqttCategories: MqttCategory[] = [
 	{
 		id: 'fundamentals',
 		label: 'MQTT fundamentals',
+		tag: 'Fundamentals',
+		accent: 'green',
 		slugs: [
 			'what-is-mqtt',
 			'mqtt-broker',
@@ -530,11 +578,15 @@ export const mqttCategories: MqttCategory[] = [
 	{
 		id: 'connections',
 		label: 'Connections & sessions',
+		tag: 'Connections',
+		accent: 'blue',
 		slugs: ['mqtt-connection', 'mqtt-client-id', 'keep-alive', 'persistent-session', 'last-will'],
 	},
 	{
 		id: 'mqtt-5',
 		label: 'MQTT 5.0 features',
+		tag: 'MQTT 5.0',
+		accent: 'purple',
 		slugs: [
 			'mqtt-5',
 			'shared-subscriptions',
@@ -549,6 +601,8 @@ export const mqttCategories: MqttCategory[] = [
 	{
 		id: 'security',
 		label: 'Security',
+		tag: 'Security',
+		accent: 'amber',
 		slugs: [
 			'security',
 			'mqtt-tls',
@@ -561,6 +615,8 @@ export const mqttCategories: MqttCategory[] = [
 	{
 		id: 'comparisons',
 		label: 'Transports & comparisons',
+		tag: 'Transports',
+		accent: 'teal',
 		slugs: ['websocket', 'mqtt-vs-http', 'mqtt-vs-kafka', 'mqtt-vs-amqp', 'mqtt-vs-coap'],
 	},
 ];
@@ -587,6 +643,8 @@ export const mqttCategories: MqttCategory[] = [
 export interface MqttCategoryGroup {
 	id: string;
 	label: string;
+	tag: string;
+	accent: MqttAccent;
 	topics: MqttTopic[];
 }
 
@@ -594,5 +652,7 @@ export interface MqttCategoryGroup {
 export const mqttCategoryGroups: MqttCategoryGroup[] = mqttCategories.map((category) => ({
 	id: category.id,
 	label: category.label,
+	tag: category.tag,
+	accent: category.accent,
 	topics: category.slugs.map((slug) => getTopic(slug)),
 }));

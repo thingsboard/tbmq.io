@@ -4,6 +4,7 @@ import TopicGrid from '@components/MqttLearn/TopicGrid.astro';
 import LearnCta from '@components/MqttLearn/LearnCta.astro';
 import { Products } from '@models/site.models';
 import { marketingJsonLd } from '~/util/structuredData';
+import { mqttTopics, mqttCategoryGroups } from '~/data/mqttLearn';
 
 const title = 'MQTT Guide — Learn the Protocol Behind Modern IoT';
 const description =
@@ -14,6 +15,9 @@ const jsonLd = marketingJsonLd({
 	description,
 	breadcrumb: 'Learn',
 });
+
+const guideCount = mqttTopics.length;
+const categoryCount = mqttCategoryGroups.length;
 ---
 
 <BaseLayout
@@ -33,10 +37,34 @@ const jsonLd = marketingJsonLd({
 					Practical explanations of the MQTT protocol — from core concepts to QoS, MQTT 5.0, security, and protocol
 					comparisons.
 				</p>
+				<p class="mqtt-hero__meta">{guideCount} guides · {categoryCount} categories</p>
+				<div class="mqtt-search">
+					<svg
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
+					>
+						<circle cx="11" cy="11" r="7"></circle>
+						<path d="m20 20-3-3"></path>
+					</svg>
+					<input
+						id="mqtt-search"
+						type="text"
+						placeholder="Search guides — e.g. QoS, retained, TLS…"
+						autocomplete="off"
+						aria-label="Search MQTT guides"
+					/>
+				</div>
 			</div>
 		</header>
-		<div class="mqtt-hub__inner">
-			<TopicGrid />
+
+		<TopicGrid />
+
+		<div class="mqtt-hub__cta">
 			<LearnCta />
 		</div>
 	</main>
@@ -50,10 +78,12 @@ const jsonLd = marketingJsonLd({
 	// faint schematic dot-field warmed by a green halo behind the hero. The
 	// dots live behind the content layer, so they read only in the gutters
 	// around the cards — a technical "reference" atmosphere, not clutter.
+	// Horizontal padding is 0 here so the sticky filter bar (rendered by
+	// TopicGrid) can span the full width; inner blocks own their own gutters.
 	.mqtt-hub {
 		position: relative;
 		isolation: isolate;
-		padding: calc(#{$header-height} + 56px) $spacing-6 $spacing-20;
+		padding: calc(#{$header-height} + 56px) 0 $spacing-20;
 		background: linear-gradient(180deg, #ffffff 0%, #f3f6fa 560px, #f3f6fa 100%);
 
 		&::before {
@@ -81,8 +111,8 @@ const jsonLd = marketingJsonLd({
 		position: relative;
 		z-index: 1;
 		text-align: center;
-		padding: $spacing-2 0 $spacing-1;
-		margin: 0 auto $spacing-12;
+		padding: $spacing-2 $spacing-6 $spacing-1;
+		margin: 0 auto $spacing-10;
 		max-width: 820px;
 	}
 	.mqtt-hero__inner {
@@ -110,14 +140,64 @@ const jsonLd = marketingJsonLd({
 			font-size: 17px;
 		}
 	}
+	.mqtt-hero__meta {
+		margin: $spacing-3 0 0;
+		font-family: $font-family-mono;
+		font-size: 13.5px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.01em;
+		color: $color-pe-link;
+	}
 
-	.mqtt-hub__inner {
-		@include container;
+	// ── Search ──────────────────────────────────────────────────────
+	.mqtt-search {
+		position: relative;
+		max-width: 520px;
+		margin: $spacing-6 auto 0;
+
+		svg {
+			position: absolute;
+			left: 16px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: $color-text-muted;
+			pointer-events: none;
+		}
+
+		input {
+			width: 100%;
+			height: 50px;
+			padding: 0 18px 0 46px;
+			font-family: inherit;
+			font-size: 15px;
+			color: $color-text-primary;
+			background: $color-bg-white;
+			border: 1px solid $color-border-light;
+			border-radius: 12px;
+			box-shadow:
+				0 1px 2px rgba(23, 24, 28, 0.04),
+				0 10px 24px -18px rgba(23, 24, 28, 0.14);
+			outline: none;
+			transition:
+				border-color $transition-fast,
+				box-shadow $transition-fast;
+
+			&::placeholder {
+				color: $color-text-muted;
+			}
+			&:focus {
+				border-color: $color-pe;
+				box-shadow: 0 0 0 3px rgba(23, 187, 82, 0.15);
+			}
+		}
+	}
+
+	// ── CTA gutter ──────────────────────────────────────────────────
+	.mqtt-hub__cta {
 		position: relative;
 		z-index: 1;
 		max-width: 1120px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
+		margin: 0 auto;
+		padding: 0 $spacing-6;
 	}
 </style>
