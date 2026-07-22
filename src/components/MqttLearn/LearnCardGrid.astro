@@ -33,7 +33,10 @@ const { cards } = Astro.props;
 			grid-template-columns: 1fr 1fr;
 		}
 	}
-	.learn-card {
+	// Nested under .learn-card-grid so the specificity beats the layout's
+	// global prose rule (.learn-body a { text-decoration: underline }), which
+	// otherwise re-adds an underline to these card links.
+	.learn-card-grid .learn-card {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
@@ -42,14 +45,24 @@ const { cards } = Astro.props;
 		border-radius: $radius-lg;
 		padding: 14px 16px;
 		text-decoration: none;
-		transition: border-color $transition-fast;
+		transition:
+			border-color $transition-fast,
+			box-shadow $transition-fast,
+			transform $transition-fast;
 		&:hover {
-			border-color: $color-pe-dark;
+			border-color: $color-pe;
+			box-shadow: var(--shadow-sm);
 			text-decoration: none;
 		}
 		&:focus-visible {
 			outline: 2px solid $color-pe;
 			outline-offset: 2px;
+		}
+	}
+	// Subtle lift on hover — motion only, so gate it behind reduced-motion.
+	@media (prefers-reduced-motion: no-preference) {
+		.learn-card-grid .learn-card:hover {
+			transform: translateY(-1px);
 		}
 	}
 	.learn-card__title {
