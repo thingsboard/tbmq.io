@@ -133,6 +133,9 @@ const jsonLd = marketingJsonLd({
 			});
 		};
 
+		// Assumes default Astro navigation (no transition:persist on .learn-toc):
+		// on page change the old nodes + observer are detached and GC'd, and the
+		// fresh .learn-toc has no dataset.ready, so it rebuilds cleanly.
 		const io = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((e) => {
@@ -142,6 +145,11 @@ const jsonLd = marketingJsonLd({
 			{ rootMargin: '-96px 0px -70% 0px' }
 		);
 		heads.forEach((h) => io.observe(h));
+
+		// Seed the first section active on load — the tall hero band keeps every
+		// h2 below the observer's active band until the user scrolls, so without
+		// this the TOC renders with nothing highlighted on arrival.
+		setActive(links[0].getAttribute('href')!.slice(1));
 	}
 
 	buildLearnToc();
