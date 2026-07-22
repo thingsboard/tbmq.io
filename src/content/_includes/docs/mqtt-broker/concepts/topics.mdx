@@ -101,7 +101,6 @@ Consider a client with these subscriptions:
 
 When the topic `sensors/room1/temperature` is published, **both filters match**.
 In that case, TBMQ delivers the message **once**, using the subscription with the **highest QoS**.
-If multiple matching subscriptions share the same QoS, the first match wins.
 
 ## Shared subscription topics
 

@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -112,19 +114,18 @@ const faq: FaqItem[] = [
 
 	<h2>Why pub/sub scales</h2>
 	<p>The decoupling is what makes the model efficient for IoT:</p>
-	<ul>
-		<li>
-			<strong>Decoupled in space:</strong> publishers and subscribers don’t know each other’s address or identity.
-		</li>
-		<li>
-			<strong>Decoupled in time:</strong> with <a href="/mqtt/persistent-session/">persistent sessions</a>, a subscriber
-			can receive messages published while it was offline.
-		</li>
-		<li>
-			<strong>Decoupled in synchronization:</strong> publishing is non-blocking — the publisher doesn’t wait for subscribers
-			to process anything.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:map-pin" title="Decoupled in space">
+			publishers and subscribers don’t know each other’s address or identity.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:clock" title="Decoupled in time">
+			with <a href="/mqtt/persistent-session/">persistent sessions</a>, a subscriber can receive messages published
+			while it was offline.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:bolt" title="Decoupled in synchronization">
+			publishing is non-blocking — the publisher doesn’t wait for subscribers to process anything.
+		</LearnIconRow>
+	</LearnIconRows>
 	<p>
 		One publish can fan out to thousands of subscribers, and a subscriber can receive from thousands of publishers, all
 		without any of them being aware of the others.
@@ -135,7 +136,8 @@ const faq: FaqItem[] = [
 		TBMQ matches every PUBLISH against subscriptions held in an in-memory <strong>topic trie</strong>, so match cost
 		scales with a topic’s depth rather than the total number of subscriptions, and one publish fans out to all matching
 		subscribers. For load-balanced consumption — each message to only one member of a group — TBMQ also supports
-		<a href="/mqtt/shared-subscriptions/">shared subscriptions</a>. See the
-		<a href="/docs/mqtt-broker/concepts/topics/">topics &amp; subscriptions guide</a> for details.
+		<a href="/mqtt/shared-subscriptions/">shared subscriptions</a>. See how the broker routes a PUBLISH to matching
+		subscribers in the <a href="/docs/mqtt-broker/architecture/">TBMQ architecture guide</a>, and the
+		<a href="/docs/mqtt-broker/concepts/topics/">topics &amp; subscriptions reference</a> for topic and wildcard rules.
 	</p>
 </MqttTopicLayout>

@@ -391,7 +391,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT uses a publish/subscribe model: clients publish messages to named topics on a broker, and the broker delivers each message to every client subscribed to a matching topic. Publishers and subscribers are decoupled — they interact only through topics, never directly. The three core operations are PUBLISH, SUBSCRIBE, and UNSUBSCRIBE.',
 		tbmqTieIn:
 			'TBMQ matches every PUBLISH against subscriptions held in an in-memory topic trie and fans it out to all matching subscribers, so match cost scales with a topic’s depth rather than its total subscription count.',
-		related: ['what-is-mqtt', 'topics', 'shared-subscriptions'],
+		related: ['what-is-mqtt', 'topics', 'shared-subscriptions', 'mqtt-request-response'],
 		status: 'full',
 		seoDescription:
 			'MQTT publish/subscribe explained — how the pub/sub model decouples publishers and subscribers through topics, and how the PUBLISH, SUBSCRIBE and UNSUBSCRIBE operations work.',
