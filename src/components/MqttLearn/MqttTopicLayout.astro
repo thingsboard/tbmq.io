@@ -79,6 +79,75 @@ const jsonLd = marketingJsonLd({
 	</main>
 </BaseLayout>
 
+<script>
+	// Build the left TOC rail from the page's body H2s and highlight the active
+	// section on scroll. Progressive enhancement: no JS → the rail stays empty
+	// (and is display:none < lg anyway), content unaffected.
+	function buildLearnToc() {
+		const toc = document.querySelector('.learn-toc') as HTMLElement | null;
+		const body = document.querySelector('.learn-body') as HTMLElement | null;
+		if (!toc || !body || toc.dataset.ready) return;
+
+		const heads = Array.from(body.querySelectorAll('h2'));
+		if (!heads.length) return;
+
+		const slugify = (s: string) =>
+			s
+				.toLowerCase()
+				.trim()
+				.replace(/[^\w]+/g, '-')
+				.replace(/^-+|-+$/g, '');
+
+		const used = new Set<string>();
+		const links: HTMLAnchorElement[] = [];
+
+		heads.forEach((h) => {
+			const base = h.id || slugify(h.textContent || '');
+			if (!base) return;
+			let id = base;
+			let n = 2;
+			while (used.has(id)) id = `${base}-${n++}`;
+			used.add(id);
+			h.id = id;
+
+			const a = document.createElement('a');
+			a.href = `#${id}`;
+			a.className = 'learn-toc__link';
+			a.textContent = h.textContent || '';
+			links.push(a);
+		});
+		if (!links.length) return;
+
+		const title = document.createElement('p');
+		title.className = 'learn-toc__title';
+		title.textContent = 'On this page';
+		toc.append(title, ...links);
+		toc.dataset.ready = 'true';
+
+		const setActive = (id: string) => {
+			links.forEach((a) => {
+				const on = a.getAttribute('href') === `#${id}`;
+				a.classList.toggle('is-active', on);
+				if (on) a.setAttribute('aria-current', 'true');
+				else a.removeAttribute('aria-current');
+			});
+		};
+
+		const io = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((e) => {
+					if (e.isIntersecting) setActive((e.target as HTMLElement).id);
+				});
+			},
+			{ rootMargin: '-96px 0px -70% 0px' }
+		);
+		heads.forEach((h) => io.observe(h));
+	}
+
+	buildLearnToc();
+	document.addEventListener('astro:page-load', buildLearnToc);
+</script>
+
 <style lang="scss">
 	@use '../../styles/variables' as *;
 
