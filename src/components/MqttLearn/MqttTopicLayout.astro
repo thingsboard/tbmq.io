@@ -167,14 +167,15 @@ const jsonLd = marketingJsonLd({
 	// Full-bleed tinted hero band: breadcrumb + eyebrow + H1 + quick answer.
 	.learn-hero-band {
 		position: relative;
-		padding: calc(#{$header-height} + #{$spacing-12}) $spacing-6 $spacing-12;
+		padding: calc(#{$header-height} + #{$spacing-12}) 0 $spacing-12;
 		background:
 			radial-gradient(760px 420px at 50% -40px, rgba($color-pe, 0.12), rgba($color-pe, 0) 68%), var(--color-bg-surface);
 		border-bottom: 1px solid $color-border;
 	}
 	.learn-hero-band__inner {
-		max-width: 1180px;
+		max-width: 1394px;
 		margin: 0 auto;
+		padding: 0 $spacing-6;
 	}
 
 	.breadcrumb {
@@ -217,7 +218,7 @@ const jsonLd = marketingJsonLd({
 
 	// 3-column body: TOC · content · TBMQ rail. Collapses to 1 column < lg.
 	.learn-layout {
-		max-width: 1180px;
+		max-width: 1394px;
 		margin: 0 auto;
 		padding: $spacing-12 $spacing-6 0;
 		display: grid;
@@ -261,7 +262,7 @@ const jsonLd = marketingJsonLd({
 		}
 	}
 	.learn-foot {
-		max-width: 1180px;
+		max-width: 1394px;
 		margin: 0 auto;
 		padding: 0 $spacing-6;
 	}
