@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnFeatureGrid from '@components/MqttLearn/LearnFeatureGrid.astro';
+import LearnCardGrid from '@components/MqttLearn/LearnCardGrid.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -24,6 +26,50 @@ const faq: FaqItem[] = [
 		q: 'What is an MQTT broker?',
 		a: 'The broker is the central server that receives every published message and routes it to the clients subscribed to the matching topic. TBMQ is one example of an MQTT broker.',
 	},
+];
+
+const whyFeatures = [
+	{
+		icon: 'tabler:feather',
+		title: 'Lightweight',
+		text: 'A compact fixed header — just 2 bytes at minimum — keeps overhead and battery use low.',
+	},
+	{
+		icon: 'tabler:refresh-alert',
+		title: 'Resilient',
+		text: 'Persistent connections, QoS levels, and Last Will messages handle flaky links gracefully.',
+	},
+	{
+		icon: 'tabler:topology-star-3',
+		title: 'Scalable',
+		text: 'The decoupled pub/sub model lets one broker fan a message out to many subscribers efficiently.',
+	},
+	{
+		icon: 'tabler:database',
+		title: 'Stateful when needed',
+		text: 'Persistent sessions and retained messages keep clients in sync across reconnects.',
+	},
+];
+
+const conceptCards = [
+	{ href: '/mqtt/mqtt-broker/', title: 'MQTT broker', blurb: 'The central server that routes every message.' },
+	{ href: '/mqtt/mqtt-client/', title: 'MQTT clients', blurb: 'The devices and apps that publish and subscribe.' },
+	{ href: '/mqtt/publish-subscribe/', title: 'Publish/subscribe', blurb: 'The messaging model MQTT is built on.' },
+	{ href: '/mqtt/topics/', title: 'Topics & wildcards', blurb: 'How messages are addressed and matched.' },
+	{ href: '/mqtt/mqtt-connection/', title: 'Connection (CONNECT)', blurb: 'How a client opens a session.' },
+	{ href: '/mqtt/mqtt-client-id/', title: 'Client ID', blurb: 'How the broker identifies each client.' },
+	{ href: '/mqtt/mqtt-packets/', title: 'MQTT packets', blurb: 'The control packets clients and brokers exchange.' },
+	{
+		href: '/mqtt/qos/',
+		title: 'Quality of Service (QoS)',
+		blurb: 'At-most-once, at-least-once, exactly-once delivery.',
+	},
+	{ href: '/mqtt/retained-messages/', title: 'Retained messages', blurb: 'The last known value on a topic.' },
+	{ href: '/mqtt/last-will/', title: 'Last Will & Testament', blurb: 'Signalling ungraceful disconnects.' },
+	{ href: '/mqtt/persistent-session/', title: 'Persistent sessions', blurb: 'Queuing messages for offline clients.' },
+	{ href: '/mqtt/mqtt-5/', title: 'MQTT 5.0', blurb: 'The latest version and what it adds.' },
+	{ href: '/mqtt/shared-subscriptions/', title: 'Shared subscriptions', blurb: 'Load-balancing consumers.' },
+	{ href: '/mqtt/security/', title: 'Security', blurb: 'TLS, authentication, and authorization.' },
 ];
 ---
 
@@ -86,23 +132,7 @@ const faq: FaqItem[] = [
 		MQTT was designed for constrained devices and unreliable networks, which is exactly the environment most IoT fleets
 		live in. Its advantages:
 	</p>
-	<ul>
-		<li>
-			<strong>Lightweight:</strong> a compact fixed header (just 2 bytes at minimum) keeps overhead and battery use low.
-		</li>
-		<li>
-			<strong>Resilient:</strong> persistent connections, <a href="/mqtt/qos/">Quality of Service</a>
-			levels, and <a href="/mqtt/last-will/">Last Will</a> messages handle flaky links gracefully.
-		</li>
-		<li>
-			<strong>Scalable:</strong> the decoupled pub/sub model lets one broker fan a message out to many subscribers efficiently.
-		</li>
-		<li>
-			<strong>Stateful when needed:</strong>
-			<a href="/mqtt/persistent-session/">persistent sessions</a> and
-			<a href="/mqtt/retained-messages/">retained messages</a> keep clients in sync across reconnects.
-		</li>
-	</ul>
+	<LearnFeatureGrid features={whyFeatures} />
 
 	<h2>MQTT vs HTTP</h2>
 	<p>
@@ -116,22 +146,5 @@ const faq: FaqItem[] = [
 
 	<h2>Core MQTT concepts</h2>
 	<p>Once the pub/sub basics click, these are the concepts worth knowing next:</p>
-	<ul>
-		<li><a href="/mqtt/mqtt-broker/">MQTT broker</a> — the central server that routes every message.</li>
-		<li><a href="/mqtt/mqtt-client/">MQTT clients</a> — the devices and apps that publish and subscribe.</li>
-		<li><a href="/mqtt/publish-subscribe/">Publish/subscribe</a> — the messaging model MQTT is built on.</li>
-		<li><a href="/mqtt/topics/">Topics &amp; wildcards</a> — how messages are addressed and matched.</li>
-		<li><a href="/mqtt/mqtt-connection/">Connection (CONNECT)</a> — how a client opens a session.</li>
-		<li><a href="/mqtt/mqtt-client-id/">Client ID</a> — how the broker identifies each client.</li>
-		<li><a href="/mqtt/mqtt-packets/">MQTT packets</a> — the control packets clients and brokers exchange.</li>
-		<li>
-			<a href="/mqtt/qos/">Quality of Service (QoS)</a> — at-most-once, at-least-once, exactly-once delivery.
-		</li>
-		<li><a href="/mqtt/retained-messages/">Retained messages</a> — the last known value on a topic.</li>
-		<li><a href="/mqtt/last-will/">Last Will &amp; Testament</a> — signalling ungraceful disconnects.</li>
-		<li><a href="/mqtt/persistent-session/">Persistent sessions</a> — queuing messages for offline clients.</li>
-		<li><a href="/mqtt/mqtt-5/">MQTT 5.0</a> — the latest version and what it adds.</li>
-		<li><a href="/mqtt/shared-subscriptions/">Shared subscriptions</a> — load-balancing consumers.</li>
-		<li><a href="/mqtt/security/">Security</a> — TLS, authentication, and authorization.</li>
-	</ul>
+	<LearnCardGrid cards={conceptCards} />
 </MqttTopicLayout>
