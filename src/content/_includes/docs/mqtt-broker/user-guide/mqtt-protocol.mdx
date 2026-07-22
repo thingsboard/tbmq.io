@@ -5,7 +5,7 @@ MQTT is the wire protocol TBMQ speaks. This page covers **how TBMQ implements MQ
 
 ## MQTT versions
 
-TBMQ speaks **MQTT 3.1**, **MQTT 3.1.1**, and **MQTT 5.0**. A client declares its version in the `CONNECT` packet, and the broker adapts accordingly (reason codes, enhanced authentication, flow control, and other MQTT 5.0 behaviors apply only to 5.0 clients). All three versions are served on the same listeners — there is nothing to switch on per version.
+TBMQ speaks **MQTT 3.1**, **MQTT 3.1.1**, and **MQTT 5.0**. A client declares its version in the `CONNECT` packet, and the broker adapts accordingly — MQTT 5.0-only behaviors such as reason codes and enhanced authentication apply only to 5.0 clients. All three versions are served on the same listeners — there is nothing to switch on per version.
 
 For MQTT 3.1 clients specifically, the maximum accepted client identifier length is **1024** characters (`MQTT_3_1_MAX_CLIENT_ID_LENGTH`); 3.1.1 and 5.0 clients follow the spec's own client-ID rules.
 
@@ -24,7 +24,7 @@ TBMQ exposes four MQTT endpoints. The plaintext TCP and WebSocket listeners are 
   Port `8083` is TBMQ's web UI / REST API, **not** an MQTT endpoint.
 </Aside>
 
-Each listener rejects packets larger than **64 KB** by default (`*_NETTY_MAX_PAYLOAD_SIZE=65536`, per listener); raise it if your application publishes larger payloads. To turn on the encrypted listeners see <DocLink product={props.product} path="security/mqtts">MQTTS</DocLink>, and for the browser/WebSocket endpoints see <DocLink product={props.product} path="user-guide/mqtt-over-ws">MQTT over WebSocket</DocLink>.
+Each listener rejects packets larger than **64 KB** by default, set per listener via `TCP_NETTY_MAX_PAYLOAD_SIZE`, `SSL_NETTY_MAX_PAYLOAD_SIZE`, `WS_NETTY_MAX_PAYLOAD_SIZE`, and `WSS_NETTY_MAX_PAYLOAD_SIZE` (all `65536`); raise the relevant one if your application publishes larger payloads. To turn on the encrypted listeners see <DocLink product={props.product} path="security/mqtts">MQTTS</DocLink>, and for the browser/WebSocket endpoints see <DocLink product={props.product} path="user-guide/mqtt-over-ws">MQTT over WebSocket</DocLink>.
 
 ## Protocol limits and settings
 
@@ -66,7 +66,7 @@ TBMQ implements the MQTT 5.0 feature set, including:
 | Maximum packet size | The broker advertises the largest packet it accepts — the listener payload limit, 64 KB by default |
 | Enhanced authentication (`AUTH`) | SCRAM challenge/response — see <DocLink product={props.product} path="security/authentication/scram">SCRAM authentication</DocLink> |
 | Shared subscriptions | `ROUND_ROBIN` distribution — see <DocLink product={props.product} path="user-guide/shared-subscriptions">Shared subscriptions</DocLink> |
-| Request/response | The broker advertises response information to clients that ask for it when `MQTT_RESPONSE_INFO` is set |
+| Request/response | Off by default; when `MQTT_RESPONSE_INFO` is set, the broker advertises response information to clients that request it |
 | Payload format indicator & content type | Preserved and delivered with the message |
 | Subscription options (No Local, Retain As Published, Retain Handling) | Honored |
 | Subscription identifier | Honored and echoed in matching `PUBLISH` packets |

@@ -45,7 +45,7 @@ export const mqttTopics: MqttTopic[] = [
 		status: 'full',
 		startHere: true,
 		seoDescription:
-			"What is MQTT? A plain-English guide to the lightweight publish/subscribe protocol behind modern IoT — how it works, why it's used, and how it compares to HTTP.",
+			"What is MQTT? An introductory guide to the lightweight publish/subscribe protocol behind modern IoT — how it works, why it's used, and how it compares to HTTP.",
 	},
 	{
 		slug: 'mqtt-vs-kafka',
