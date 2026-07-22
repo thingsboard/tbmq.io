@@ -12,7 +12,7 @@ The `/mqtt` learn hub is TBMQ's top-of-funnel SEO engine: educational MQTT guide
 ## Principles (why the hub is shaped this way)
 
 - **Marketing-framed, not reference.** Guides are benefit-first and conversational ("what it is, why it matters"), so they target *informational* search intent and do **not** cannibalize `/docs/mqtt-broker/` (which targets *how-to/reference* intent). Depth is delegated: link into `/docs` rather than duplicating it.
-- **Every guide links its companion doc.** The `<Topic> in TBMQ` body section must carry an in-body link to the guide's single most-relevant `/docs/mqtt-broker/` page — a **specific** page where one exists (both `concepts/*` and `user-guide/*` targets are valid; pick the closest), or the generic `/docs/mqtt-broker/` root *only* as a placeholder when no dedicated doc exists yet (upgrade it when the doc lands). `HowTbmqBlock`'s auto-rendered docs link is generic by design, so the specific link lives in your body. (All 32 shipped guides already follow this; `what-is-mqtt` was the lone gap, since fixed.)
+- **Every guide links its companion doc.** The `<Topic> in TBMQ` body section must carry an in-body link to the guide's single most-relevant `/docs/mqtt-broker/` page — a **specific** page where one exists (both `concepts/*` and `user-guide/*` targets are valid; pick the closest), or the generic `/docs/mqtt-broker/` root *only* as a placeholder when no dedicated doc exists yet (upgrade it when the doc lands). Always link the **CE** path (`/docs/mqtt-broker/user-guide/…`), never `/docs/mqtt-broker/pe/…` — the learn hub is vendor-neutral and both editions render the same content. `HowTbmqBlock`'s auto-rendered docs link is generic by design, so the specific link lives in your body. Watch for the near-miss where the section links only `architecture`/`getting-started` (adjacent docs) but *not* the topic's own companion page — that still counts as a gap (e.g. `mqtt-broker` linked those two but was missing its own `user-guide/mqtt-broker` link until it was added).
 - **One registry drives everything.** The hub grid, the Learn nav dropdown, related-topics, breadcrumbs, and per-page SEO all read from `src/data/mqttLearn.ts`. Adding a topic is mostly a registry entry + a thin page. Note `quickAnswer` is **dual-purpose**: it renders in full inside the `QuickAnswer` box *and* as the hub-grid card blurb (CSS-clamped to 4 lines) — so its opening must read well both as a standalone definition and as a ~4-line card preview.
 - **Accuracy is the product.** These are public technical pages under TBMQ's name. A wrong protocol detail or an overstated product claim erodes the trust the whole funnel depends on. See [Content accuracy](#content-accuracy-mandatory) — it's the part most likely to bite you.
 
@@ -31,6 +31,10 @@ src/components/MqttLearn/
   TopicGrid.astro                      ← hub grid: topics grouped by mqttCategories + a category jump-nav
   MqttDiagram.astro                    ← designed inline-SVG diagram (framed canvas + click-to-enlarge) — the standard (see Diagrams)
   AsciiDiagram.astro                   ← monospaced ASCII fallback for quick scaffolds
+  LearnFeatureGrid.astro               ← 2-col feature/benefit cards (icon chip + title + one-line text); props {icon,title,text}[]
+  LearnCardGrid.astro                  ← 2-col link tiles (title + blurb) to other topics; props {href,title,blurb}[]
+  LearnIconRows.astro + LearnIconRow   ← bordered icon-row panel for capability lists (icon + bold label + description w/ inline links)
+  LearnTypeCards.astro                 ← 2-col type/variant cards, optional "you're here — TBMQ" highlight + badge; props {icon,title,text,highlight?,badge?}[]
 src/pages/mqtt/
   index.astro                          ← the hub
   <slug>.astro                         ← one thin page per topic
@@ -150,6 +154,30 @@ A `status: 'full'` guide should be genuinely self-explaining. Body skeleton (all
 6. **FAQ** — 3–5 real questions people search. Plain-text answers (they become FAQPage JSON-LD).
 
 Keep it benefit-first and readable. If you find yourself writing configuration steps or a full reference table, stop — that belongs in `/docs`; link to it instead.
+
+## Content block components (prefer these over plain bullet lists)
+
+Body lists read better as designed blocks than as raw `<ul>`s. **Default to these shared components for bold-lead lists** — don't ship a plain `<strong>Label:</strong> …` bullet list when one of these fits. They all use our tokens (green tints via `rgba($color-pe, …)`, tabler icons via `astro-icon`, `--shadow-sm` + a reduced-motion-gated lift on hover), so they stay on-brand with no new hex:
+
+| Component | Use for | Authoring |
+|---|---|---|
+| `LearnFeatureGrid` | a set of **benefits / features** ("why X for IoT", "advantages") | `features={[{ icon, title, text }]}` — `text` is plain (no links) |
+| `LearnCardGrid` | a **link list** to other topics/pages — title + blurb tiles | `cards={[{ href, title, blurb }]}` |
+| `LearnIconRows` + `LearnIconRow` | a **capability / responsibility list** ("what the broker manages", "what CONNECT carries", "what a client can do") — items whose descriptions MAY carry inline `<a>` links | wrapper + one `<LearnIconRow icon="tabler:…" title="Label">description with <a href="…">links</a></LearnIconRow>` per item. The row renders the em-dash; the description is slot content, so inline links work. |
+| `LearnTypeCards` | an enumeration of **types / variants / options** ("types of brokers", "one-way vs mutual TLS") — icon + title + plain text, with an optional highlighted "you're here" card | `cards={[{ icon, title, text, highlight?, badge? }]}` — `text` is plain (no links). On the option TBMQ *is*, set `highlight: true` + `badge: "You're here — TBMQ"`. |
+
+**Which one — decide by the list's shape:**
+- items are `<strong>Label:</strong> description` (facets/responsibilities), possibly with links → **`LearnIconRows`**
+- items enumerate *kinds/variants* of the thing, plain descriptions → **`LearnTypeCards`**
+- items are selling-point benefits → **`LearnFeatureGrid`**
+- items are links to other guides → **`LearnCardGrid`**
+- label-less simple bullets → keep a plain `<ul>`; many-column comparison data → a `<table>` (see the content model).
+
+**Reuse across guides.** These blocks are shared on purpose — apply them wherever the same shape recurs, not only on the page you're editing. Pick tabler icons that match each item's meaning, and **verify the icon name exists** in `@iconify-json/tabler` before using it (a missing name fails the build).
+
+**`LearnTypeCards` text is plain — no markup.** If a variant needs an inline doc link (e.g. mTLS → client-certificate auth), keep the card `text` plain and put the link in a short `<p>` right after the grid.
+
+**Why the blocks use `<div>`/`<span>`, not `<p>`/`<h3>`:** the layout's `.learn-body :global(p|h3|ul|li|a|…)` prose rules out-specify a component's own scoped class, so a `<p>`/`<h3>` inside a block would inherit the 17px/20px body sizing. The block components deliberately use `<div>`/`<span>` (which the prose rules don't target) for their text; only real inline links stay `<a>` (and correctly pick up the green prose-link style). Follow the same rule in any new block component — this is the same cascade trap as the scoped-`h2` gotcha below.
 
 ## Diagrams
 

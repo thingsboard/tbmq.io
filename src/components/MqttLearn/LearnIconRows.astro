@@ -1,0 +1,28 @@
+---
+// Bordered panel that stacks <LearnIconRow> children with hairline separators.
+// Use for a "what X manages / handles / checks" capability list where each item
+// is an icon + bold label + a short description (which may contain inline links).
+//
+//   <LearnIconRows>
+//     <LearnIconRow icon="tabler:plug-connected" title="Connections">
+//       accepting clients over TCP, TLS, and <a href="/mqtt/websocket/">WebSocket</a>.
+//     </LearnIconRow>
+//     ...
+//   </LearnIconRows>
+---
+
+<div class="learn-icon-rows">
+	<slot />
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.learn-icon-rows {
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: $radius-xl;
+		overflow: hidden;
+		margin: $spacing-4 0 $spacing-6;
+	}
+</style>
