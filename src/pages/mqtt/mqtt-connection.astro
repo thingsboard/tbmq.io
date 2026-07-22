@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -70,26 +72,25 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>What CONNECT carries</h2>
-	<ul>
-		<li>
-			<strong>Client ID:</strong> the client’s unique identity — see <a href="/mqtt/mqtt-client-id/">client ID</a>.
-		</li>
-		<li>
-			<strong>Clean start / clean session:</strong> whether to resume a stored session or begin fresh — see
-			<a href="/mqtt/persistent-session/">persistent sessions</a>.
-		</li>
-		<li>
-			<strong>Keep-alive interval:</strong> the heartbeat the client promises to maintain — see
-			<a href="/mqtt/keep-alive/">keep-alive</a>.
-		</li>
-		<li>
-			<strong>Last Will:</strong> an optional message the broker publishes if the client drops unexpectedly — see
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:id" title="Client ID">
+			the client’s unique identity — see <a href="/mqtt/mqtt-client-id/">client ID</a>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:refresh" title="Clean start / clean session">
+			whether to resume a stored session or begin fresh — see <a href="/mqtt/persistent-session/">persistent sessions</a
+			>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:heartbeat" title="Keep-alive interval">
+			the heartbeat the client promises to maintain — see <a href="/mqtt/keep-alive/">keep-alive</a>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:file-alert" title="Last Will">
+			an optional message the broker publishes if the client drops unexpectedly — see
 			<a href="/mqtt/last-will/">Last Will &amp; Testament</a>.
-		</li>
-		<li>
-			<strong>Username / password:</strong> optional credentials for <a href="/mqtt/security/">authentication</a>.
-		</li>
-	</ul>
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:key" title="Username / password">
+			optional credentials for <a href="/mqtt/security/">authentication</a>.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>What CONNACK returns</h2>
 	<p>

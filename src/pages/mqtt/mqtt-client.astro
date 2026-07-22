@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -76,17 +78,17 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>What a client can do</h2>
-	<ul>
-		<li><strong>Publish:</strong> send a message to a topic (e.g. a sensor reporting a reading).</li>
-		<li>
-			<strong>Subscribe:</strong> register interest in one or more <a href="/mqtt/topics/">topics</a> and receive matching
-			messages as they arrive.
-		</li>
-		<li>
-			<strong>Both:</strong> a client often does both — a device publishes telemetry and subscribes to commands on the same
-			connection.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:send" title="Publish">
+			send a message to a topic (e.g. a sensor reporting a reading).
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:bell" title="Subscribe">
+			register interest in one or more <a href="/mqtt/topics/">topics</a> and receive matching messages as they arrive.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:arrows-exchange" title="Both">
+			a client often does both — a device publishes telemetry and subscribes to commands on the same connection.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>MQTT client libraries</h2>
 	<p>

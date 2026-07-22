@@ -1,6 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnTypeCards from '@components/MqttLearn/LearnTypeCards.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -72,16 +73,24 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>One-way vs mutual TLS</h2>
-	<ul>
-		<li>
-			<strong>One-way TLS:</strong> only the broker presents a certificate. The channel is encrypted and the broker is verified,
-			but the client still authenticates separately (password, token, etc.).
-		</li>
-		<li>
-			<strong>Mutual TLS (mTLS):</strong> the client also presents a certificate, so the handshake authenticates both ends
-			— see <a href="/mqtt/mqtt-client-certificates/">client certificate authentication</a>.
-		</li>
-	</ul>
+	<LearnTypeCards
+		cards={[
+			{
+				icon: 'tabler:shield-lock',
+				title: 'One-way TLS',
+				text: 'Only the broker presents a certificate. The channel is encrypted and the broker is verified, but the client still authenticates separately (password, token, etc.).',
+			},
+			{
+				icon: 'tabler:certificate',
+				title: 'Mutual TLS (mTLS)',
+				text: 'The client also presents a certificate, so the TLS handshake authenticates both ends of the connection.',
+			},
+		]}
+	/>
+	<p>
+		With mutual TLS, the client’s certificate is what identifies it to the broker — see
+		<a href="/mqtt/mqtt-client-certificates/">client certificate authentication</a>.
+	</p>
 
 	<h2>TLS in TBMQ</h2>
 	<p>
