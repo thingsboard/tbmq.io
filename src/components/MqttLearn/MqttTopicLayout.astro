@@ -36,28 +36,43 @@ const jsonLd = marketingJsonLd({
 	ogImageAlt={title}
 >
 	<main class="learn-page">
-		<div class="learn-page__inner">
-			<nav class="breadcrumb" aria-label="Breadcrumb">
-				<a href="/">Home</a>
-				<span aria-hidden="true">/</span>
-				<a href="/mqtt/">Learn</a>
-				<span aria-hidden="true">/</span>
-				<span aria-current="page">{topic.navLabel}</span>
-			</nav>
+		<div class="learn-hero-band">
+			<div class="learn-hero-band__inner">
+				<nav class="breadcrumb" aria-label="Breadcrumb">
+					<a href="/">Home</a>
+					<span aria-hidden="true">/</span>
+					<a href="/mqtt/">Learn</a>
+					<span aria-hidden="true">/</span>
+					<span aria-current="page">{topic.navLabel}</span>
+				</nav>
 
-			<header class="learn-hero">
-				<p class="learn-hero__eyebrow">{topic.eyebrow}</p>
-				<h1 class="learn-hero__title">{topic.title}</h1>
-			</header>
+				<header class="learn-hero">
+					<p class="learn-hero__eyebrow">{topic.eyebrow}</p>
+					<h1 class="learn-hero__title">{topic.title}</h1>
+				</header>
 
-			<QuickAnswer text={topic.quickAnswer} />
+				<QuickAnswer text={topic.quickAnswer} />
+			</div>
+		</div>
 
-			<div class="learn-body">
-				<slot />
+		<div class="learn-layout">
+			<aside class="learn-toc" aria-label="On this page">
+				{/* Populated client-side by the scrollspy script (Task 6). Empty + hidden without JS. */}
+			</aside>
+
+			<div class="learn-main">
+				<div class="learn-body">
+					<slot />
+				</div>
+				<FaqAccordion items={faq} />
 			</div>
 
-			<HowTbmqBlock text={topic.tbmqTieIn} />
-			<FaqAccordion items={faq} />
+			<aside class="learn-rail">
+				<HowTbmqBlock text={topic.tbmqTieIn} />
+			</aside>
+		</div>
+
+		<div class="learn-foot">
 			<RelatedTopics slug={slug} />
 			<LearnCta />
 		</div>
@@ -68,13 +83,23 @@ const jsonLd = marketingJsonLd({
 	@use '../../styles/variables' as *;
 
 	.learn-page {
-		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
 		background: var(--color-bg-surface);
+		padding-bottom: $spacing-20;
 	}
-	.learn-page__inner {
-		max-width: 760px;
+
+	// Full-bleed tinted hero band: breadcrumb + eyebrow + H1 + quick answer.
+	.learn-hero-band {
+		position: relative;
+		padding: calc(#{$header-height} + #{$spacing-12}) $spacing-6 $spacing-12;
+		background:
+			radial-gradient(760px 420px at 50% -40px, rgba($color-pe, 0.12), rgba($color-pe, 0) 68%), var(--color-bg-surface);
+		border-bottom: 1px solid $color-border;
+	}
+	.learn-hero-band__inner {
+		max-width: 1180px;
 		margin: 0 auto;
 	}
+
 	.breadcrumb {
 		display: flex;
 		flex-wrap: wrap;
@@ -107,9 +132,92 @@ const jsonLd = marketingJsonLd({
 		font-weight: $font-weight-semibold;
 		color: $color-text-primary;
 		margin: 0;
+		max-width: 20ch;
 		@include media-up(md) {
 			font-size: 46px;
 		}
+	}
+
+	// 3-column body: TOC · content · TBMQ rail. Collapses to 1 column < lg.
+	.learn-layout {
+		max-width: 1180px;
+		margin: 0 auto;
+		padding: $spacing-12 $spacing-6 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-10;
+		@include media-up(lg) {
+			grid-template-columns: 230px minmax(0, 1fr) 300px;
+			gap: $spacing-12;
+			align-items: start;
+		}
+	}
+	.learn-main {
+		min-width: 0;
+		max-width: 760px;
+		margin: 0 auto;
+		width: 100%;
+		@include media-up(lg) {
+			max-width: none;
+			margin: 0;
+		}
+	}
+	.learn-toc {
+		display: none;
+		@include media-up(lg) {
+			display: block;
+			position: sticky;
+			top: calc(#{$header-height} + #{$spacing-6});
+			align-self: start;
+		}
+	}
+	.learn-rail {
+		max-width: 760px;
+		margin: 0 auto;
+		width: 100%;
+		@include media-up(lg) {
+			max-width: none;
+			margin: 0;
+			position: sticky;
+			top: calc(#{$header-height} + #{$spacing-6});
+			align-self: start;
+		}
+	}
+	.learn-foot {
+		max-width: 1180px;
+		margin: 0 auto;
+		padding: 0 $spacing-6;
+	}
+
+	// TOC links are created by JS, so they need :global styling.
+	.learn-toc__title {
+		font-size: 12px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-text-muted;
+		margin: 0 0 12px;
+	}
+	:global(.learn-toc__link) {
+		display: block;
+		font-size: 14px;
+		line-height: 1.4;
+		color: $color-text-muted;
+		padding: 6px 0 6px 14px;
+		border-left: 2px solid $color-border;
+		text-decoration: none;
+	}
+	:global(.learn-toc__link:hover) {
+		color: $color-text-primary;
+	}
+	:global(.learn-toc__link.is-active) {
+		color: $color-pe-link;
+		border-left-color: $color-pe;
+		font-weight: $font-weight-semibold;
+	}
+	:global(.learn-toc__link:focus-visible) {
+		outline: 2px solid $color-pe;
+		outline-offset: 2px;
 	}
 
 	// Shared prose styling for the <slot /> body of every learn page.
@@ -119,6 +227,7 @@ const jsonLd = marketingJsonLd({
 			font-weight: $font-weight-semibold;
 			color: $color-text-primary;
 			margin: $spacing-10 0 $spacing-4;
+			scroll-margin-top: calc(#{$header-height} + #{$spacing-4});
 		}
 		:global(h3) {
 			font-size: 20px;
