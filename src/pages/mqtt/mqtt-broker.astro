@@ -131,12 +131,38 @@ const faq: FaqItem[] = [
 		</li>
 	</ul>
 
+	<h2>Types of MQTT brokers</h2>
+	<p>Brokers come in a few flavors, and the right one depends on how much you want to run yourself:</p>
+	<ul>
+		<li>
+			<strong>Open-source</strong> — free and self-hosted; you deploy and scale them. Ideal for prototyping, full control,
+			and integrating into your own stack.
+		</li>
+		<li>
+			<strong>Commercial</strong> — enterprise builds that add clustering, management dashboards, advanced security, and SLA-backed
+			support.
+		</li>
+		<li>
+			<strong>Cloud / MQTT-as-a-Service</strong> — fully managed offerings where the provider handles deployment, scaling,
+			and uptime, so you run no infrastructure yourself.
+		</li>
+		<li>
+			<strong>Embedded</strong> — lightweight brokers that run on a gateway or inside an application for local, offline-first
+			processing at the edge.
+		</li>
+	</ul>
+	<p>
+		TBMQ is open-source, with a professional edition and a managed private-cloud option — so you can start self-hosted
+		and move to managed hosting later without switching brokers.
+	</p>
+
 	<h2>What to look for in a broker</h2>
 	<p>
 		Brokers differ most in how far they scale and how they persist data. For production IoT, the questions that matter
 		are: how many concurrent connections and how much throughput it sustains, whether it clusters horizontally, which
 		MQTT versions it supports (such as 3.1.1 and 5.0), how it persists messages for offline clients, and what
-		authentication and authorization it offers.
+		authentication and authorization it offers. For the long run, also weigh the strength of its community or commercial
+		support and the total cost of running it.
 	</p>
 
 	<h2>The broker in TBMQ</h2>
