@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -76,15 +78,17 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>What retained messages are good for</h2>
-	<ul>
-		<li>
-			<strong>Device presence:</strong> an <code>online</code>/<code>offline</code> status a new dashboard reads instantly.
-		</li>
-		<li><strong>Current configuration:</strong> the latest settings a device should apply when it connects.</li>
-		<li>
-			<strong>Latest reading:</strong> the most recent value of a slow-changing sensor, so subscribers don't start blind.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:broadcast" title="Device presence">
+			an <code>online</code>/<code>offline</code> status a new dashboard reads instantly.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:settings" title="Current configuration">
+			the latest settings a device should apply when it connects.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:gauge" title="Latest reading">
+			the most recent value of a slow-changing sensor, so subscribers don't start blind.
+		</LearnIconRow>
+	</LearnIconRows>
 	<p>
 		It's worth being clear about the boundary: a retained message is the <em>current value</em> of a topic, kept for everyone.
 		It is not a replay log — there is only one retained message per topic. To catch up on messages a specific client missed
