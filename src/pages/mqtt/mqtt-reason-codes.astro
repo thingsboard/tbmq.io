@@ -57,11 +57,12 @@ const faq: FaqItem[] = [
 			<line class="d-life" x1="198" y1="40" x2="198" y2="96"></line>
 			<line class="d-life" x1="518" y1="40" x2="518" y2="96"></line>
 			<line class="d-line" x1="198" y1="62" x2="515" y2="62" marker-end="url(#arGray)"></line>
-			<rect class="d-chip" x="286" y="51" width="144" height="22" rx="11"></rect>
+			<rect class="d-chip" x="268" y="51" width="180" height="22" rx="11"></rect>
 			<text class="d-ctext d-mid" x="358" y="66">PUBLISH sensors/temp</text>
 			<line class="d-line d-line--green" x1="518" y1="88" x2="201" y2="88" marker-end="url(#arGreen)"></line>
-			<rect class="d-chip d-chip--green" x="282" y="77" width="152" height="22" rx="11"></rect>
+			<rect class="d-chip d-chip--green" x="272" y="77" width="172" height="22" rx="11"></rect>
 			<text class="d-ctext d-ctext--green d-mid" x="358" y="92">PUBACK 0x00 Success</text>
+			<text class="d-yes d-mid" x="600" y="92">✓ &lt; 0x80</text>
 			<line x1="40" y1="118" x2="640" y2="118" stroke="#eef0f3" stroke-width="1"></line>
 			<text class="d-glabel" x="40" y="146" style="fill:#c23b3b">Refused</text>
 			<rect class="d-actor" x="150" y="134" width="96" height="28" rx="8"></rect>
@@ -71,11 +72,12 @@ const faq: FaqItem[] = [
 			<line class="d-life" x1="198" y1="162" x2="198" y2="216"></line>
 			<line class="d-life" x1="518" y1="162" x2="518" y2="216"></line>
 			<line class="d-line" x1="198" y1="184" x2="515" y2="184" marker-end="url(#arGray)"></line>
-			<rect class="d-chip" x="286" y="173" width="144" height="22" rx="11"></rect>
+			<rect class="d-chip" x="268" y="173" width="180" height="22" rx="11"></rect>
 			<text class="d-ctext d-mid" x="358" y="188">PUBLISH admin/config</text>
 			<line class="d-line d-line--red" x1="518" y1="210" x2="201" y2="210" marker-end="url(#arRed)"></line>
-			<rect class="d-chip" x="266" y="199" width="184" height="22" rx="11" style="stroke:#e3b3b3"></rect>
+			<rect class="d-chip" x="246" y="199" width="224" height="22" rx="11" style="stroke:#e3b3b3"></rect>
 			<text class="d-ctext d-mid" x="358" y="214" style="fill:#c23b3b">PUBACK 0x87 Not authorized</text>
+			<text class="d-no d-mid" x="600" y="214">✗ ≥ 0x80</text>
 		</svg>
 	</MqttDiagram>
 
