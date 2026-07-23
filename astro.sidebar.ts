@@ -194,10 +194,12 @@ const guideItems = (prefix: string, { isPE = false } = {}) => [
 		label: 'Contribution',
 		collapsed: true,
 		items: [
-			...(!isPE ? [
-				`${prefix}/contribution/how-to-contribute`,
-				`${prefix}/contribution/how-to-contribute-your-device-integration-guide`,
-			] : []),
+			...(!isPE
+				? [
+						`${prefix}/contribution/how-to-contribute`,
+						`${prefix}/contribution/how-to-contribute-your-device-integration-guide`,
+					]
+				: []),
 			`${prefix}/contribution/rule-node-development`,
 			`${prefix}/scada-symbol-dev`,
 			`${prefix}/contribution/custom-action-development`,
@@ -254,9 +256,7 @@ const edgeInstallationItems = (prefix: string) => {
 			label: 'Cluster',
 			items: [`${prefix}/installation/docker-compose-setup`],
 		},
-		...(isPE
-			? []
-			: [{ label: 'Building from Sources', slug: `${prefix}/installation/building-from-source` }]),
+		...(isPE ? [] : [{ label: 'Building from Sources', slug: `${prefix}/installation/building-from-source` }]),
 		{ label: 'Upgrade instructions', slug: `${prefix}/installation/upgrade-instructions` },
 	];
 };
@@ -337,10 +337,7 @@ const installationItems = (prefix: string) => {
 					{
 						label: 'Upgrade',
 						collapsed: true,
-						items: [
-							`${prefix}/installation/upgrade-instructions`,
-							`${prefix}/installation/upgrade-from-ce`,
-						],
+						items: [`${prefix}/installation/upgrade-instructions`, `${prefix}/installation/upgrade-from-ce`],
 					},
 				]
 			: [{ label: 'Upgrade instructions', slug: `${prefix}/installation/upgrade-instructions` }]),
@@ -351,12 +348,27 @@ const recipeItems = (prefix: string, extraProcessingItems: string[] = []) => [
 	{
 		label: 'Rule Engine',
 		collapsed: true,
-		items: [`${prefix}/python-telemetry`, `${prefix}/trigger-related-entities-via-relation`, `${prefix}/rpc-reply-with-related-telemetry`, `${prefix}/send-rpc-to-related-device`, `${prefix}/fetch-weather-data`, `${prefix}/validate-incoming-telemetry`, `${prefix}/websocket-live-telemetry`, ...extraProcessingItems],
+		items: [
+			`${prefix}/python-telemetry`,
+			`${prefix}/trigger-related-entities-via-relation`,
+			`${prefix}/rpc-reply-with-related-telemetry`,
+			`${prefix}/send-rpc-to-related-device`,
+			`${prefix}/fetch-weather-data`,
+			`${prefix}/validate-incoming-telemetry`,
+			`${prefix}/websocket-live-telemetry`,
+			...extraProcessingItems,
+		],
 	},
 	{
 		label: 'Calculated Fields',
 		collapsed: true,
-		items: [`${prefix}/aggregate-related-entities`, `${prefix}/average-temperature-related-devices`, `${prefix}/water-consumption-hourly-delta`, `${prefix}/telemetry-delta-two-devices`, `${prefix}/telemetry-delta-calculation`],
+		items: [
+			`${prefix}/aggregate-related-entities`,
+			`${prefix}/average-temperature-related-devices`,
+			`${prefix}/water-consumption-hourly-delta`,
+			`${prefix}/telemetry-delta-two-devices`,
+			`${prefix}/telemetry-delta-calculation`,
+		],
 	},
 	{
 		label: 'Storage & Retention',
@@ -366,7 +378,19 @@ const recipeItems = (prefix: string, extraProcessingItems: string[] = []) => [
 	{
 		label: 'Alarms & Notifications',
 		collapsed: true,
-		items: [`${prefix}/alarm-rule-tutorials`, `${prefix}/create-clear-alarms`, `${prefix}/device-inactivity-alarm`, `${prefix}/enrich-alarms-with-details`, `${prefix}/send-email-alarm`, `${prefix}/send-sms-alarm`, `${prefix}/send-slack-alarm`, `${prefix}/send-mobile-app-alarm`, `${prefix}/send-microsoft-teams-alarm`, `${prefix}/send-alarm-email-to-customer`, `${prefix}/telegram-alarm-notification`],
+		items: [
+			`${prefix}/alarm-rule-tutorials`,
+			`${prefix}/create-clear-alarms`,
+			`${prefix}/device-inactivity-alarm`,
+			`${prefix}/enrich-alarms-with-details`,
+			`${prefix}/send-email-alarm`,
+			`${prefix}/send-sms-alarm`,
+			`${prefix}/send-slack-alarm`,
+			`${prefix}/send-mobile-app-alarm`,
+			`${prefix}/send-microsoft-teams-alarm`,
+			`${prefix}/send-alarm-email-to-customer`,
+			`${prefix}/telegram-alarm-notification`,
+		],
 	},
 ];
 
@@ -674,10 +698,7 @@ const paasReferenceItems = (prefix: string): SidebarConfig => {
 				{
 					label: 'Alarm Widgets',
 					collapsed: true,
-					items: [
-						`${prefix}/widgets/alarm-widgets/alarms-table`,
-						`${prefix}/widgets/alarm-widgets/alarm-count`,
-					],
+					items: [`${prefix}/widgets/alarm-widgets/alarms-table`, `${prefix}/widgets/alarm-widgets/alarm-count`],
 				},
 				{
 					label: 'Analogue Gauges',
@@ -743,18 +764,12 @@ const paasReferenceItems = (prefix: string): SidebarConfig => {
 				{
 					label: 'Count Widgets',
 					collapsed: true,
-					items: [
-						`${prefix}/widgets/count-widgets/alarm-count`,
-						`${prefix}/widgets/count-widgets/entity-count`,
-					],
+					items: [`${prefix}/widgets/count-widgets/alarm-count`, `${prefix}/widgets/count-widgets/entity-count`],
 				},
 				{
 					label: 'Files',
 					collapsed: true,
-					items: [
-						`${prefix}/widgets/files/files`,
-						`${prefix}/widgets/files/dashboard-reports`,
-					],
+					items: [`${prefix}/widgets/files/files`, `${prefix}/widgets/files/dashboard-reports`],
 				},
 				{
 					label: 'HTML Widgets',
@@ -816,9 +831,7 @@ const paasReferenceItems = (prefix: string): SidebarConfig => {
 								{
 									label: 'Leak Sensors',
 									collapsed: true,
-									items: [
-										`${prefix}/widgets/scada/traditional-fluid-system/leak-sensor`,
-									],
+									items: [`${prefix}/widgets/scada/traditional-fluid-system/leak-sensor`],
 								},
 								{
 									label: 'Pipes',
@@ -854,9 +867,7 @@ const paasReferenceItems = (prefix: string): SidebarConfig => {
 								{
 									label: 'Pools',
 									collapsed: true,
-									items: [
-										`${prefix}/widgets/scada/traditional-fluid-system/pool`,
-									],
+									items: [`${prefix}/widgets/scada/traditional-fluid-system/pool`],
 								},
 								{
 									label: 'Pumps',
@@ -1026,10 +1037,7 @@ const paasReferenceItems = (prefix: string): SidebarConfig => {
 				{
 					label: 'Scheduling',
 					collapsed: true,
-					items: [
-						`${prefix}/widgets/scheduling/scheduler-events`,
-						`${prefix}/widgets/scheduling/reports-schedule`,
-					],
+					items: [`${prefix}/widgets/scheduling/scheduler-events`, `${prefix}/widgets/scheduling/reports-schedule`],
 				},
 				{
 					label: 'Video Streaming',
@@ -1261,10 +1269,7 @@ const referenceItems = (prefix: string, extraConfigItems: SidebarConfig = []) =>
 				{
 					label: 'Alarm Widgets',
 					collapsed: true,
-					items: [
-						`${prefix}/widgets/alarm-widgets/alarms-table`,
-						`${prefix}/widgets/alarm-widgets/alarm-count`,
-					],
+					items: [`${prefix}/widgets/alarm-widgets/alarms-table`, `${prefix}/widgets/alarm-widgets/alarm-count`],
 				},
 				{
 					label: 'Analogue Gauges',
@@ -1330,21 +1335,17 @@ const referenceItems = (prefix: string, extraConfigItems: SidebarConfig = []) =>
 				{
 					label: 'Count Widgets',
 					collapsed: true,
-					items: [
-						`${prefix}/widgets/count-widgets/alarm-count`,
-						`${prefix}/widgets/count-widgets/entity-count`,
-					],
+					items: [`${prefix}/widgets/count-widgets/alarm-count`, `${prefix}/widgets/count-widgets/entity-count`],
 				},
-				...(prefix.includes('/pe/') ? [
-					{
-						label: 'Files',
-						collapsed: true,
-						items: [
-							`${prefix}/widgets/files/files`,
-							`${prefix}/widgets/files/dashboard-reports`,
-						],
-					},
-				] : []),
+				...(prefix.includes('/pe/')
+					? [
+							{
+								label: 'Files',
+								collapsed: true,
+								items: [`${prefix}/widgets/files/files`, `${prefix}/widgets/files/dashboard-reports`],
+							},
+						]
+					: []),
 				{
 					label: 'HTML Widgets',
 					collapsed: true,
@@ -1405,9 +1406,7 @@ const referenceItems = (prefix: string, extraConfigItems: SidebarConfig = []) =>
 								{
 									label: 'Leak Sensors',
 									collapsed: true,
-									items: [
-										`${prefix}/widgets/scada/traditional-fluid-system/leak-sensor`,
-									],
+									items: [`${prefix}/widgets/scada/traditional-fluid-system/leak-sensor`],
 								},
 								{
 									label: 'Pipes',
@@ -1443,9 +1442,7 @@ const referenceItems = (prefix: string, extraConfigItems: SidebarConfig = []) =>
 								{
 									label: 'Pools',
 									collapsed: true,
-									items: [
-										`${prefix}/widgets/scada/traditional-fluid-system/pool`,
-									],
+									items: [`${prefix}/widgets/scada/traditional-fluid-system/pool`],
 								},
 								{
 									label: 'Pumps',
@@ -1612,16 +1609,18 @@ const referenceItems = (prefix: string, extraConfigItems: SidebarConfig = []) =>
 						`${prefix}/widgets/tables/persistent-table`,
 					],
 				},
-				...(prefix.includes('/pe/') ? [
-					{
-						label: 'Scheduling',
-						collapsed: true,
-						items: [
-							`${prefix}/widgets/scheduling/scheduler-events`,
-							`${prefix}/widgets/scheduling/reports-schedule`,
-						],
-					},
-				] : []),
+				...(prefix.includes('/pe/')
+					? [
+							{
+								label: 'Scheduling',
+								collapsed: true,
+								items: [
+									`${prefix}/widgets/scheduling/scheduler-events`,
+									`${prefix}/widgets/scheduling/reports-schedule`,
+								],
+							},
+						]
+					: []),
 				{
 					label: 'Video Streaming',
 					collapsed: true,
@@ -1681,10 +1680,7 @@ const mainSidebarItems = (
 			{
 				label: 'ThingsBoard CLI',
 				collapsed: false,
-				items: [
-					`${prefix}/user-guide/cli`,
-					`${prefix}/user-guide/cli-solutions`,
-				],
+				items: [`${prefix}/user-guide/cli`, `${prefix}/user-guide/cli-solutions`],
 			},
 			`${prefix}/user-guide/ai-solution-creator`,
 			`${prefix}/user-guide/ai-assistant`,
@@ -1700,10 +1696,7 @@ const mainSidebarItems = (
 			{
 				label: 'Workflow Automation',
 				collapsed: false,
-				items: [
-					`${prefix}/user-guide/mcp-server`,
-					`${prefix}/user-guide/n8n-node`,
-				],
+				items: [`${prefix}/user-guide/mcp-server`, `${prefix}/user-guide/n8n-node`],
 			},
 		],
 	},
@@ -1798,10 +1791,7 @@ export const peSidebar: SidebarConfig = mainSidebarItems(
 			],
 		},
 	],
-	[
-		'docs/pe/reference/configuration/ie-executor-config',
-		'docs/pe/reference/configuration/report-service-config',
-	],
+	['docs/pe/reference/configuration/ie-executor-config', 'docs/pe/reference/configuration/report-service-config'],
 	['docs/pe/recipes/add-devices-to-group']
 );
 
@@ -2067,10 +2057,7 @@ export const paasSidebar: SidebarConfig = [
 			{
 				label: 'ThingsBoard CLI',
 				collapsed: false,
-				items: [
-					'docs/paas/user-guide/cli',
-					'docs/paas/user-guide/cli-solutions',
-				],
+				items: ['docs/paas/user-guide/cli', 'docs/paas/user-guide/cli-solutions'],
 			},
 			'docs/paas/user-guide/ai-solution-creator',
 			'docs/paas/user-guide/ai-assistant',
@@ -2086,10 +2073,7 @@ export const paasSidebar: SidebarConfig = [
 			{
 				label: 'Workflow Automation',
 				collapsed: false,
-				items: [
-					'docs/paas/user-guide/mcp-server',
-					'docs/paas/user-guide/n8n-node',
-				],
+				items: ['docs/paas/user-guide/mcp-server', 'docs/paas/user-guide/n8n-node'],
 			},
 		],
 	},
@@ -2438,10 +2422,7 @@ export const paasEuSidebar: SidebarConfig = [
 			{
 				label: 'ThingsBoard CLI',
 				collapsed: false,
-				items: [
-					'docs/paas/eu/user-guide/cli',
-					'docs/paas/eu/user-guide/cli-solutions',
-				],
+				items: ['docs/paas/eu/user-guide/cli', 'docs/paas/eu/user-guide/cli-solutions'],
 			},
 			'docs/paas/eu/user-guide/ai-solution-creator',
 			'docs/paas/eu/user-guide/ai-assistant',
@@ -2457,10 +2438,7 @@ export const paasEuSidebar: SidebarConfig = [
 			{
 				label: 'Workflow Automation',
 				collapsed: false,
-				items: [
-					'docs/paas/eu/user-guide/mcp-server',
-					'docs/paas/eu/user-guide/n8n-node',
-				],
+				items: ['docs/paas/eu/user-guide/mcp-server', 'docs/paas/eu/user-guide/n8n-node'],
 			},
 		],
 	},
@@ -2535,10 +2513,7 @@ export const paasEuSidebar: SidebarConfig = [
 	{
 		label: 'Reference',
 		collapsed: true,
-		items: [
-			...paasReferenceItems('docs/paas/eu/reference'),
-			'docs/paas/eu/reference/subscriptions',
-		],
+		items: [...paasReferenceItems('docs/paas/eu/reference'), 'docs/paas/eu/reference/subscriptions'],
 	},
 ];
 
@@ -2580,10 +2555,7 @@ export const edgeSidebar: SidebarConfig = [
 					{
 						label: 'Connect Edge behind a proxy',
 						collapsed: true,
-						items: [
-							'docs/edge/user-guide/edge-proxy/debian',
-							'docs/edge/user-guide/edge-proxy/docker',
-						],
+						items: ['docs/edge/user-guide/edge-proxy/debian', 'docs/edge/user-guide/edge-proxy/docker'],
 					},
 					'docs/edge/user-guide/grpc-ssl',
 					'docs/edge/user-guide/iot-gateway',
@@ -2649,10 +2621,7 @@ export const edgeSidebar: SidebarConfig = [
 			{
 				label: 'Sending Data',
 				collapsed: true,
-				items: [
-					'docs/edge/recipes/send-telemetry-mqtt',
-					'docs/edge/recipes/data-filtering-traffic-reduce',
-				],
+				items: ['docs/edge/recipes/send-telemetry-mqtt', 'docs/edge/recipes/data-filtering-traffic-reduce'],
 			},
 			{
 				label: 'Cloud Sync',
@@ -2735,10 +2704,7 @@ export const edgeSidebar: SidebarConfig = [
 			{
 				label: 'Server-side REST Clients',
 				collapsed: true,
-				items: [
-					'docs/edge/reference/java-client',
-					'docs/edge/reference/python-client',
-				],
+				items: ['docs/edge/reference/java-client', 'docs/edge/reference/python-client'],
 			},
 			{
 				label: 'MCP Server',
@@ -2987,10 +2953,7 @@ export const edgePeSidebar: SidebarConfig = [
 					{
 						label: 'Connect Edge behind a proxy',
 						collapsed: true,
-						items: [
-							'docs/edge/pe/user-guide/edge-proxy/debian',
-							'docs/edge/pe/user-guide/edge-proxy/docker',
-						],
+						items: ['docs/edge/pe/user-guide/edge-proxy/debian', 'docs/edge/pe/user-guide/edge-proxy/docker'],
 					},
 					'docs/edge/pe/user-guide/grpc-ssl',
 					'docs/edge/pe/user-guide/iot-gateway',
@@ -3089,10 +3052,7 @@ export const edgePeSidebar: SidebarConfig = [
 			{
 				label: 'Sending Data',
 				collapsed: true,
-				items: [
-					'docs/edge/pe/recipes/send-telemetry-mqtt',
-					'docs/edge/pe/recipes/data-filtering-traffic-reduce',
-				],
+				items: ['docs/edge/pe/recipes/send-telemetry-mqtt', 'docs/edge/pe/recipes/data-filtering-traffic-reduce'],
 			},
 			{
 				label: 'Cloud Sync',
@@ -3175,10 +3135,7 @@ export const edgePeSidebar: SidebarConfig = [
 			{
 				label: 'Server-side REST Clients',
 				collapsed: true,
-				items: [
-					'docs/edge/pe/reference/java-client',
-					'docs/edge/pe/reference/python-client',
-				],
+				items: ['docs/edge/pe/reference/java-client', 'docs/edge/pe/reference/python-client'],
 			},
 			{
 				label: 'MCP Server',
@@ -3510,6 +3467,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 			items: [
 				{ label: 'MQTT protocol', slug: `${prefix}/user-guide/mqtt-protocol` },
 				{ label: 'MQTT broker', slug: `${prefix}/user-guide/mqtt-broker` },
+				{ label: 'Client ID', slug: `${prefix}/user-guide/mqtt-client-id` },
 				{ label: 'Topics and wildcards', slug: `${prefix}/user-guide/topics` },
 				{ label: 'Quality of service (QoS)', slug: `${prefix}/user-guide/qos` },
 				{
@@ -3601,9 +3559,7 @@ const tbmqInstallItems = (prefix: string): SidebarConfig => {
 					items: [
 						{ label: 'Docker (Linux & macOS)', slug: `${prefix}/installation/docker` },
 						{ label: 'Docker (Windows)', slug: `${prefix}/installation/docker-windows` },
-						...(!isPE
-							? [{ label: 'Building from source', slug: `${prefix}/installation/building-from-source` }]
-							: []),
+						...(!isPE ? [{ label: 'Building from source', slug: `${prefix}/installation/building-from-source` }] : []),
 					],
 				},
 				{
@@ -4043,11 +3999,7 @@ export const trendzSidebar: SidebarConfig = [
 			{
 				label: 'Other',
 				collapsed: true,
-				items: [
-					'docs/trendz/topology-discovery',
-					'docs/trendz/tasks-service',
-					'docs/trendz/rest-api',
-				],
+				items: ['docs/trendz/topology-discovery', 'docs/trendz/tasks-service', 'docs/trendz/rest-api'],
 			},
 			{
 				label: 'Versions & Support',
@@ -4141,11 +4093,7 @@ export const licenseSidebar: SidebarConfig = [
 	{
 		label: 'License Management',
 		translations: { uk: 'Управління ліцензіями' },
-		items: [
-			'docs/license-server/subscription',
-			'docs/license-server/perpetual',
-			'docs/license-server/instance',
-		],
+		items: ['docs/license-server/subscription', 'docs/license-server/perpetual', 'docs/license-server/instance'],
 	},
 	{
 		label: 'Account & Billing',

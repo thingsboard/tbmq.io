@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -143,22 +145,22 @@ const faq: FaqItem[] = [
 	<h2>Persistent sessions in TBMQ</h2>
 	<p>
 		TBMQ stores persistent-session state differently depending on the
-		<a href="/docs/mqtt-broker/concepts/client-types/">client type</a>, because devices and backend consumers have very
-		different scaling profiles:
+		<a href="/docs/mqtt-broker/user-guide/mqtt-client-type/">client type</a>, because devices and backend consumers have
+		very different scaling profiles:
 	</p>
-	<ul>
-		<li>
-			<strong>DEVICE clients</strong> keep their offline message queue in <strong>Redis</strong> — fast, low-latency reads
-			suited to millions of devices with moderate per-client volume.
-		</li>
-		<li>
-			<strong>APPLICATION clients</strong> get a <strong>dedicated Kafka topic</strong>, a durable log that scales to
-			high throughput and long retention without broker memory pressure.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:device-mobile" title="DEVICE clients">
+			keep their offline message queue in <strong>Redis</strong> — fast, low-latency reads suited to millions of devices with
+			moderate per-client volume.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:server" title="APPLICATION clients">
+			get a <strong>dedicated Kafka topic</strong>, a durable log that scales to high throughput and long retention
+			without broker memory pressure.
+		</LearnIconRow>
+	</LearnIconRows>
 	<p>
 		In MQTT 5.0 the session-expiry interval bounds how long an offline session is kept, so stale sessions don't
-		accumulate. For the full model, see <a href="/docs/mqtt-broker/concepts/sessions/">Sessions</a> and the
+		accumulate. For the full model, see the
 		<a href="/docs/mqtt-broker/user-guide/clean-persistent-sessions/">clean vs persistent sessions</a> guide.
 	</p>
 </MqttTopicLayout>

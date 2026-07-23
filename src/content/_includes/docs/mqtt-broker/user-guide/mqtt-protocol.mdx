@@ -7,7 +7,7 @@ MQTT is the wire protocol TBMQ speaks. This page covers **how TBMQ implements MQ
 
 TBMQ speaks **MQTT 3.1**, **MQTT 3.1.1**, and **MQTT 5.0**. A client declares its version in the `CONNECT` packet, and the broker adapts accordingly — MQTT 5.0-only behaviors such as reason codes and enhanced authentication apply only to 5.0 clients. All three versions are served on the same listeners — there is nothing to switch on per version.
 
-For MQTT 3.1 clients specifically, the maximum accepted client identifier length is **1024** characters (`MQTT_3_1_MAX_CLIENT_ID_LENGTH`); 3.1.1 and 5.0 clients follow the spec's own client-ID rules.
+For MQTT 3.1 clients specifically, the maximum accepted client identifier length is **1024** characters (`MQTT_3_1_MAX_CLIENT_ID_LENGTH`); 3.1.1 and 5.0 clients follow the spec's own client-ID rules. See <DocLink product={props.product} path="user-guide/mqtt-client-id">Client ID</DocLink> for how TBMQ handles uniqueness, client take-over, and broker-assigned identifiers.
 
 ## Connecting to TBMQ
 

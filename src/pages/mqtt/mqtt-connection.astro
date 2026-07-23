@@ -99,6 +99,12 @@ const faq: FaqItem[] = [
 		or started a new one. If session-present is false, a client that expected a persistent session knows it must
 		re-subscribe.
 	</p>
+	<p>
+		In MQTT 5.0, CONNACK can also carry broker-negotiated properties — an assigned client ID, a
+		<a href="/mqtt/keep-alive/">server keep-alive</a>, the session expiry the broker will honor, and limits such as
+		receive maximum and topic alias maximum — so the client learns the terms of the connection up front. MQTT 3.1.1
+		returns only the return code and session-present bit.
+	</p>
 
 	<h2>Connections in TBMQ</h2>
 	<p>
@@ -106,6 +112,6 @@ const faq: FaqItem[] = [
 		authenticates each CONNECT before the session opens. It also enforces one live connection per client ID — a second
 		CONNECT with the same ID takes over the session (see <a href="/mqtt/mqtt-client-id/">client take-over</a>). For the
 		supported protocol details, see the <a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> and
-		the <a href="/docs/mqtt-broker/concepts/sessions/">sessions concept</a>.
+		the <a href="/docs/mqtt-broker/user-guide/clean-persistent-sessions/">sessions guide</a>.
 	</p>
 </MqttTopicLayout>

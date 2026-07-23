@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -86,27 +88,32 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>Choosing a client ID</h2>
-	<ul>
-		<li>
-			<strong>Use a stable, unique ID</strong> per device or app instance if you rely on
-			<a href="/mqtt/persistent-session/">persistent sessions</a> — that is what lets a client resume its state.
-		</li>
-		<li>
-			<strong>Avoid accidental sharing:</strong> two devices flashed with the same ID will keep kicking each other off in
-			a reconnect loop. Derive IDs from something unique (serial number, MAC).
-		</li>
-		<li>
-			<strong>Empty client ID</strong> is allowed (the broker assigns one) but only suits throwaway, clean-session connections,
-			since there is no stable key to map stored state to.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:fingerprint" title="Use a stable, unique ID">
+			one per device or app instance if you rely on <a href="/mqtt/persistent-session/">persistent sessions</a> — that is
+			what lets a client resume its state across reconnects.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:copy" title="Avoid accidental sharing">
+			two devices flashed with the same ID will keep kicking each other off in a reconnect loop. Derive IDs from
+			something unique, like a serial number or MAC address.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:wand" title="Empty client ID">
+			allowed (the broker assigns one), but it only suits throwaway, clean-session connections, since there is no stable
+			key to map stored state back to.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>Client IDs in TBMQ</h2>
 	<p>
 		TBMQ enforces one live connection per client ID across the whole cluster: a conflicting CONNECT takes over the
 		session and disconnects the previous connection with reason <code>SESSION_TAKEN_OVER</code>, even when the two
-		clients are connected to different nodes. See the <a href="/docs/mqtt-broker/concepts/sessions/">sessions concept</a
-		>
-		for how client IDs map to session state.
+		clients are connected to different nodes.
+	</p>
+	<p>
+		If a client sends an empty client ID, TBMQ generates one for it (and, for MQTT 5.0, returns it in the CONNACK as the
+		Assigned Client Identifier) — but only for a clean session. A CONNECT that asks to <em>resume</em> a session (clean-start
+		off) while sending no client ID is refused, because there would be no stable key to map the stored state back to. For
+		TBMQ's client-ID behavior in full — cluster-wide uniqueness, generated IDs, and length limits — see the
+		<a href="/docs/mqtt-broker/user-guide/mqtt-client-id/">Client ID</a> docs.
 	</p>
 </MqttTopicLayout>

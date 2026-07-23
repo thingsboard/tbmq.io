@@ -24,6 +24,10 @@ const faq: FaqItem[] = [
 		q: 'Can I disable MQTT keep-alive?',
 		a: 'Yes — set keep-alive to 0. The client then sends no periodic pings and the broker does not monitor the connection for inactivity. This is generally discouraged because unexpected disconnects go undetected until the next send.',
 	},
+	{
+		q: 'Can the broker override the keep-alive value?',
+		a: 'In MQTT 5.0, yes. The broker can return a <strong>Server Keep Alive</strong> value in CONNACK, and the client must then use that interval instead of the one it requested. TBMQ caps MQTT 5.0 clients at <code>600</code> seconds (10 minutes) by default. MQTT 3.1.1 has no such mechanism, so the client’s requested value always stands.',
+	},
 ];
 ---
 
@@ -83,6 +87,15 @@ const faq: FaqItem[] = [
 		</svg>
 	</MqttDiagram>
 
+	<h2>Server keep-alive (MQTT 5.0)</h2>
+	<p>
+		MQTT 5.0 lets the broker push back on the interval a client asks for. If the requested keep-alive is longer than the
+		broker is willing to allow, it returns its own <strong>Server Keep Alive</strong> value in the <code>CONNACK</code>,
+		and the client must adopt <em>that</em> interval instead. This caps how long a connection can sit idle before the broker
+		is prepared to reclaim it, no matter what the client proposed. MQTT 3.1.1 has no such property, so there the client’s
+		value always stands.
+	</p>
+
 	<h2>Why it matters: half-open connections</h2>
 	<p>
 		Without keep-alive, a broker can accumulate <strong>half-open connections</strong> — sessions it believes are active but
@@ -104,7 +117,9 @@ const faq: FaqItem[] = [
 		TBMQ monitors keep-alive per connection (checking on an interval set by
 		<code>MQTT_KEEP_ALIVE_MONITORING_DELAY_MS</code>, every second by default). On timeout it closes the connection with
 		reason <code>KEEP_ALIVE_TIMEOUT</code> and publishes the client's
-		<a href="/mqtt/last-will/">Last Will</a> if one was set. See the
+		<a href="/mqtt/last-will/">Last Will</a> if one was set. For MQTT 5.0 clients it also enforces a
+		<strong>Server Keep Alive</strong>: a requested interval above <code>600</code> seconds (10 minutes) is capped to that
+		maximum and returned in the CONNACK. See the
 		<a href="/docs/mqtt-broker/user-guide/keep-alive/">keep-alive docs</a> for the full behavior, including client take-over
 		when the same client ID reconnects.
 	</p>
