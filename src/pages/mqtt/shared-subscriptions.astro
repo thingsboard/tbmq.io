@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -98,16 +100,20 @@ const faq: FaqItem[] = [
 	</p>
 
 	<h2>Common use cases and pitfalls</h2>
-	<ul>
-		<li><strong>Scaling consumers:</strong> worker pools that process high-volume ingestion.</li>
-		<li><strong>High availability:</strong> if one consumer drops, others in the group keep working.</li>
-		<li>
-			<strong>Watch ordering:</strong> messages are spread across consumers, so don't rely on strict global order.
-		</li>
-		<li>
-			<strong>Mind QoS:</strong> combine with the right <a href="/mqtt/qos/">QoS level</a> for your delivery guarantees.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:stack-2" title="Scaling consumers">
+			worker pools that process high-volume ingestion.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:shield-check" title="High availability">
+			if one consumer drops, others in the group keep working.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:arrows-sort" title="Watch ordering">
+			messages are spread across consumers, so don't rely on strict global order.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:checkup-list" title="Mind QoS">
+			combine with the right <a href="/mqtt/qos/">QoS level</a> for your delivery guarantees.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>Shared subscriptions in TBMQ</h2>
 	<p>

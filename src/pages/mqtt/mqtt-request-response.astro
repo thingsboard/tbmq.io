@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -77,16 +79,16 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>Response Topic and Correlation Data</h2>
-	<ul>
-		<li>
-			<strong>Response Topic:</strong> the <a href="/mqtt/topics/">topic</a> the reply should be published to. The requester
-			usually subscribes to it before sending the request.
-		</li>
-		<li>
-			<strong>Correlation Data:</strong> an opaque identifier the responder copies back verbatim, so the requester can line
-			up each reply with the right request when several are in flight.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:mail-forward" title="Response Topic">
+			the <a href="/mqtt/topics/">topic</a> the reply should be published to. The requester usually subscribes to it before
+			sending the request.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:link" title="Correlation Data">
+			an opaque identifier the responder copies back verbatim, so the requester can line up each reply with the right
+			request when several are in flight.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>Before MQTT 5.0</h2>
 	<p>

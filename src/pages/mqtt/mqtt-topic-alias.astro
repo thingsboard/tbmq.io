@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -75,13 +77,17 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>Things to keep in mind</h2>
-	<ul>
-		<li><strong>Per connection:</strong> aliases reset on reconnect — re-send the full topic to re-establish them.</li>
-		<li><strong>Per direction:</strong> client-to-broker and broker-to-client aliases are negotiated separately.</li>
-		<li>
-			<strong>Bounded:</strong> you can only use as many aliases as the other side’s Topic Alias Maximum allows.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:plug-connected" title="Per connection">
+			aliases reset on reconnect — re-send the full topic to re-establish them.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:arrows-left-right" title="Per direction">
+			client-to-broker and broker-to-client aliases are negotiated separately.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:ruler-2" title="Bounded">
+			you can only use as many aliases as the other side’s Topic Alias Maximum allows.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>Topic aliases in TBMQ</h2>
 	<p>

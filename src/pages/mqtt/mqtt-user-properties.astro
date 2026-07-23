@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -70,18 +72,25 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>Good uses for user properties</h2>
-	<ul>
-		<li><strong>Message type / schema version:</strong> let consumers dispatch without sniffing the payload.</li>
-		<li><strong>Tenant or device identity:</strong> tag multi-tenant traffic for filtering downstream.</li>
-		<li><strong>Content type:</strong> declare how the payload is encoded.</li>
-		<li><strong>Tracing:</strong> carry a correlation or trace ID across services for debugging.</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:category" title="Message type / schema version">
+			let consumers dispatch without sniffing the payload.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:id" title="Tenant or device identity">
+			tag multi-tenant traffic for filtering downstream.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:file-code" title="Content type"> declare how the payload is encoded. </LearnIconRow>
+		<LearnIconRow icon="tabler:route" title="Tracing">
+			carry a correlation or trace ID across services for debugging.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>User properties in TBMQ</h2>
 	<p>
 		TBMQ passes User Properties through end to end, from the publishing client to every subscriber, untouched — so you
-		can rely on them for routing hints and metadata. This is the same pass-through the MQTT 5.0
-		<a href="/mqtt/mqtt-request-response/">request-response</a> properties use. See the
+		can rely on them for routing hints and metadata. It's the same pass-through the broker gives the other MQTT 5.0
+		message metadata: the <a href="/mqtt/mqtt-request-response/">request-response</a> properties and the
+		<a href="/mqtt/mqtt-payload-format/">payload format and content type</a>. See the
 		<a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> for supported 5.0 features.
 	</p>
 </MqttTopicLayout>

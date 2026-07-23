@@ -1,6 +1,7 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnCardGrid from '@components/MqttLearn/LearnCardGrid.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -35,36 +36,50 @@ const faq: FaqItem[] = [
 	</p>
 
 	<h2>What MQTT 5.0 adds</h2>
-	<ul>
-		<li>
-			<strong><a href="/mqtt/mqtt-reason-codes/">Reason codes and reason strings</a>:</strong> acknowledgements now explain
-			<em>why</em> something failed, instead of a bare success/fail.
-		</li>
-		<li>
-			<strong><a href="/mqtt/mqtt-user-properties/">User properties</a>:</strong> attach custom key/value metadata to messages
-			and packets, like application-level headers.
-		</li>
-		<li>
-			<strong><a href="/mqtt/mqtt-message-expiry/">Session and message expiry</a>:</strong> bound how long a session survives
-			after disconnect and how long a queued message stays valid.
-		</li>
-		<li>
-			<strong><a href="/mqtt/mqtt-topic-alias/">Topic aliases</a>:</strong> replace a long topic string with a short integer
-			for the rest of a connection, cutting bandwidth on repetitive topics.
-		</li>
-		<li>
-			<strong><a href="/mqtt/mqtt-flow-control/">Flow control</a>:</strong> a client advertises how many unacknowledged messages
-			it will accept (receive maximum), so the broker can't overwhelm it.
-		</li>
-		<li>
-			<strong><a href="/mqtt/shared-subscriptions/">Shared subscriptions</a>:</strong> standardized load balancing across
-			a group of consumers.
-		</li>
-		<li>
-			<strong><a href="/mqtt/mqtt-request-response/">Request/response</a>:</strong> a response-topic and correlation-data
-			convention for RPC-style exchanges over pub/sub.
-		</li>
-	</ul>
+	<LearnCardGrid
+		cards={[
+			{
+				href: '/mqtt/mqtt-reason-codes/',
+				title: 'Reason codes & reason strings',
+				blurb: 'Acknowledgements now explain why something failed, instead of a bare success or fail.',
+			},
+			{
+				href: '/mqtt/mqtt-user-properties/',
+				title: 'User properties',
+				blurb: 'Attach custom key/value metadata to messages and packets, like application-level headers.',
+			},
+			{
+				href: '/mqtt/mqtt-payload-format/',
+				title: 'Payload format & content type',
+				blurb: 'Flag a payload as UTF-8 text or bytes and label it with a MIME-like content type.',
+			},
+			{
+				href: '/mqtt/mqtt-message-expiry/',
+				title: 'Session & message expiry',
+				blurb: 'Bound how long a session survives after disconnect and how long a queued message stays valid.',
+			},
+			{
+				href: '/mqtt/mqtt-topic-alias/',
+				title: 'Topic aliases',
+				blurb: 'Replace a long topic string with a short integer for the rest of a connection, cutting bandwidth.',
+			},
+			{
+				href: '/mqtt/mqtt-flow-control/',
+				title: 'Flow control',
+				blurb: 'A client advertises how many unacknowledged messages it will accept, so the broker can’t overwhelm it.',
+			},
+			{
+				href: '/mqtt/shared-subscriptions/',
+				title: 'Shared subscriptions',
+				blurb: 'Standardized load balancing across a group of consumers.',
+			},
+			{
+				href: '/mqtt/mqtt-request-response/',
+				title: 'Request / response',
+				blurb: 'A response-topic and correlation-data convention for RPC-style exchanges over pub/sub.',
+			},
+		]}
+	/>
 
 	<MqttDiagram caption="5.0 turns an opaque failure code into a precise, human-readable reason">
 		<svg viewBox="0 0 680 232" role="img" aria-label="MQTT 3.1.1 opaque failure versus MQTT 5.0 reason codes">
