@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -39,24 +41,22 @@ const faq: FaqItem[] = [
 		Each level trades reliability against the number of network round-trips it costs. The higher the guarantee, the more
 		packets and broker state involved.
 	</p>
-	<ul>
-		<li>
-			<strong>QoS 0 — at most once:</strong> the message is sent once with no acknowledgement. The sender forgets it immediately.
-			Fastest and lightest, but a message is lost if the connection drops.
-		</li>
-		<li>
-			<strong>QoS 1 — at least once:</strong> the sender retransmits until it receives a <code>PUBACK</code>. The
-			message always arrives, but a lost acknowledgement causes a re-send (flagged <code>DUP</code>), so consumers must
-			be
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:bolt" title="QoS 0">
+			<strong>At most once.</strong> The message is sent a single time with no acknowledgement — fastest and lightest, but
+			a message is lost if the connection drops.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:refresh" title="QoS 1">
+			<strong>At least once.</strong> The sender retransmits until it receives a <code>PUBACK</code>. The message always
+			arrives, but a lost acknowledgement causes a re-send (flagged <code>DUP</code>), so consumers must be
 			<strong>idempotent</strong> — safe to handle the same message twice.
-		</li>
-		<li>
-			<strong>QoS 2 — exactly once:</strong> a four-packet handshake (<code>PUBLISH</code> → <code>PUBREC</code> → <code
-				>PUBREL</code
-			> → <code>PUBCOMP</code>) guarantees the message is delivered a single time. Strongest guarantee, highest
-			overhead.
-		</li>
-	</ul>
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:shield-check" title="QoS 2">
+			<strong>Exactly once.</strong> A four-packet handshake (<code>PUBLISH</code> → <code>PUBREC</code> →
+			<code>PUBREL</code> → <code>PUBCOMP</code>) guarantees the message is delivered a single time — strongest
+			guarantee, highest overhead.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<MqttDiagram caption="More packets buy a stronger delivery guarantee">
 		<svg viewBox="0 0 680 250" role="img" aria-label="The three QoS delivery handshakes">
