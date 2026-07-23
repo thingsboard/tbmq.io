@@ -6,23 +6,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'What are the three MQTT QoS levels?',
-		a: 'QoS 0 (at most once) sends a message a single time with no acknowledgement. QoS 1 (at least once) retransmits until the receiver confirms it, so the message always arrives but may duplicate. QoS 2 (exactly once) uses a four-packet handshake so the message is delivered once and only once.',
+		a: 'QoS 0 (<strong>at most once</strong>) sends a message a single time with no acknowledgement. QoS 1 (<strong>at least once</strong>) retransmits until the receiver confirms it, so the message always arrives but may duplicate. QoS 2 (<strong>exactly once</strong>) uses a four-packet handshake so the message is delivered once and only once.',
 	},
 	{
 		q: 'Which QoS level should I use?',
-		a: 'Use QoS 0 for frequent, disposable readings where an occasional gap is harmless. Use QoS 1 for data that must arrive and whose consumers can tolerate or de-duplicate repeats — it is the common default. Reserve QoS 2 for messages where duplicate processing would cause real harm, such as billing events or actuation commands.',
+		a: 'Use QoS 0 for frequent, disposable readings where an occasional gap is harmless. Use QoS 1 for data that must arrive and whose consumers can tolerate or de-duplicate repeats — <strong>it is the common default</strong>. Reserve QoS 2 for messages where duplicate processing would cause real harm, such as billing events or actuation commands.',
 	},
 	{
 		q: 'Does higher QoS mean the message is more secure?',
-		a: 'No. QoS controls delivery reliability, not security. Encryption and access control come from TLS, authentication, and topic authorization — a separate layer from QoS.',
+		a: 'No. QoS controls <strong>delivery reliability, not security</strong>. Encryption and access control come from TLS, authentication, and topic authorization — a separate layer from QoS.',
 	},
 	{
 		q: 'What happens if the publisher and subscriber use different QoS levels?',
-		a: 'The broker delivers each message at the lower of the two levels. A subscriber that subscribes at QoS 2 still only receives QoS 1 if the publisher published at QoS 1, so design for the level actually delivered rather than the level requested.',
+		a: 'The broker delivers each message at the <strong>lower of the two levels</strong>. A subscriber that subscribes at QoS 2 still only receives QoS 1 if the publisher published at QoS 1, so design for the level actually delivered rather than the level requested.',
 	},
 	{
 		q: 'Is QoS 2 exactly-once guaranteed end to end?',
-		a: 'QoS 2 guarantees exactly-once between each pair of hops — publisher to broker, and broker to subscriber. True end-to-end exactly-once requires both the publisher and the subscriber to use QoS 2.',
+		a: 'QoS 2 guarantees exactly-once <strong>between each pair of hops</strong> — publisher to broker, and broker to subscriber. True end-to-end exactly-once requires <strong>both the publisher and the subscriber</strong> to use QoS 2.',
 	},
 ];
 ---

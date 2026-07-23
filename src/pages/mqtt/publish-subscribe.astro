@@ -8,23 +8,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'What is the difference between publish/subscribe and request/response?',
-		a: 'In request/response (like HTTP) a client asks a specific server and waits for that server’s answer. In publish/subscribe, a publisher sends to a topic and the broker delivers to whoever subscribed — the publisher never addresses a receiver and does not wait. Pub/sub decouples senders from receivers in space, time, and synchronization.',
+		a: 'In request/response (like HTTP) a client asks a specific server and waits for that server’s answer. In publish/subscribe, a publisher sends to a topic and the broker delivers to whoever subscribed — the publisher never addresses a receiver and does not wait. Pub/sub <strong>decouples senders from receivers in space, time, and synchronization</strong>.',
 	},
 	{
 		q: 'Does the publisher know who receives its messages?',
-		a: 'No. A publisher sends to a topic and is done; it has no knowledge of how many subscribers exist, who they are, or whether any are connected. The broker handles matching and delivery.',
+		a: 'No. A publisher sends to a topic and is done; it has <strong>no knowledge of how many subscribers exist</strong>, who they are, or whether any are connected. The broker handles matching and delivery.',
 	},
 	{
 		q: 'Can one client both publish and subscribe?',
-		a: 'Yes. Most real clients do both — a device might publish its telemetry and subscribe to command topics on the same connection.',
+		a: 'Yes. <strong>Most real clients do both</strong> — a device might publish its telemetry and subscribe to command topics on the same connection.',
 	},
 	{
 		q: 'Is MQTT publish/subscribe the same as a message queue?',
-		a: 'Not by default. A normal MQTT subscription is a broadcast: every subscriber to a topic gets every message. To get queue-like load balancing where each message goes to only one of several consumers, you use shared subscriptions.',
+		a: 'Not by default. A normal MQTT subscription is a <strong>broadcast</strong>: every subscriber to a topic gets every message. To get queue-like load balancing where each message goes to only one of several consumers, you use <strong>shared subscriptions</strong>.',
 	},
 	{
 		q: 'What is a topic in publish/subscribe?',
-		a: 'A topic is the named channel a message is published to and subscribers subscribe to. Topics are hierarchical, and subscriptions can use wildcards to match many topics at once.',
+		a: 'A topic is the <strong>named channel</strong> a message is published to and subscribers subscribe to. Topics are hierarchical, and subscriptions can use wildcards to match many topics at once.',
 	},
 ];
 ---

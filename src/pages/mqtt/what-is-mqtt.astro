@@ -8,23 +8,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'What does MQTT stand for?',
-		a: 'MQTT originally stood for Message Queuing Telemetry Transport. Today it is simply the protocol name — it is not tied to any specific message-queue product.',
+		a: 'MQTT originally stood for <strong>Message Queuing Telemetry Transport</strong>. Today it is simply the protocol name — it is not tied to any specific message-queue product.',
 	},
 	{
 		q: 'Is MQTT open source?',
-		a: 'MQTT is an open OASIS and ISO standard, not a product, so anyone can implement it. There are many open-source brokers and clients, including the open-source TBMQ broker.',
+		a: 'MQTT is an <strong>open OASIS and ISO standard</strong>, not a product, so anyone can implement it. There are many open-source brokers and clients, including the open-source TBMQ broker.',
 	},
 	{
 		q: 'What port does MQTT use?',
-		a: 'MQTT uses TCP port 1883 by default, and 8883 for MQTT over TLS. Over WebSocket the port varies by broker — TBMQ uses 8084 for WS and 8085 for WSS.',
+		a: 'MQTT uses TCP port <code>1883</code> by default, and <code>8883</code> for MQTT over TLS. Over WebSocket the port varies by broker — TBMQ uses <code>8084</code> for WS and <code>8085</code> for WSS.',
 	},
 	{
 		q: 'Is MQTT secure?',
-		a: 'MQTT itself is a messaging protocol; security is added by running it over TLS for encryption, plus authentication and topic authorization enforced at the broker.',
+		a: 'MQTT itself is a messaging protocol; security is added by running it over <strong>TLS</strong> for encryption, plus <strong>authentication and topic authorization</strong> enforced at the broker.',
 	},
 	{
 		q: 'What is an MQTT broker?',
-		a: 'The broker is the central server that receives every published message and routes it to the clients subscribed to the matching topic. TBMQ is one example of an MQTT broker.',
+		a: 'The broker is the <strong>central server</strong> that receives every published message and routes it to the clients subscribed to the matching topic. TBMQ is one example of an MQTT broker.',
 	},
 ];
 

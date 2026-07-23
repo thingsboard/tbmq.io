@@ -6,23 +6,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'What is a retained message in MQTT?',
-		a: 'A message published with the retain flag set, which the broker stores as the last known value for that topic. Any client that subscribes later receives it immediately, instead of having to wait for the next publish.',
+		a: 'A message published with the <code>retain</code> flag set, which the broker stores as the <strong>last known value</strong> for that topic. Any client that subscribes later receives it immediately, instead of having to wait for the next publish.',
 	},
 	{
 		q: 'How do you clear a retained message?',
-		a: 'Publish a message to the same topic with the retain flag set and an empty (zero-byte) payload. The broker removes the stored value, so future subscribers get nothing until a new retained message is published.',
+		a: 'Publish a message to the same topic with the <code>retain</code> flag set and an <strong>empty (zero-byte) payload</strong>. The broker removes the stored value, so future subscribers get nothing until a new retained message is published.',
 	},
 	{
 		q: 'How many retained messages can a topic hold?',
-		a: 'One. Retained storage is last-value-wins per topic — each new retained publish replaces the previous one. Retained messages are not a history or replay log; for that you need a persistent session or a streaming platform.',
+		a: '<strong>One.</strong> Retained storage is last-value-wins per topic — each new retained publish replaces the previous one. Retained messages are <strong>not a history or replay log</strong>; for that you need a persistent session or a streaming platform.',
 	},
 	{
 		q: 'What is the difference between retained messages and persistent sessions?',
-		a: 'A retained message is the current value of a topic, kept for any future subscriber. A persistent session is a per-client queue of messages missed while that specific client was offline. Retained messages serve everyone; persistent sessions serve one client’s catch-up.',
+		a: 'A retained message is the <strong>current value of a topic</strong>, kept for any future subscriber. A persistent session is a <strong>per-client queue</strong> of messages missed while that specific client was offline. Retained messages serve everyone; persistent sessions serve one client’s catch-up.',
 	},
 	{
 		q: 'Are retained messages a good fit for device status?',
-		a: 'Yes — it is the classic use case. Publishing a device’s online/offline status or latest configuration as a retained message means any dashboard or service that connects later immediately knows the current state without waiting.',
+		a: 'Yes — it is the <strong>classic use case</strong>. Publishing a device’s online/offline status or latest configuration as a retained message means any dashboard or service that connects later immediately knows the current state without waiting.',
 	},
 ];
 ---

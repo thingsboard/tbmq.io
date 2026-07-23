@@ -1,28 +1,30 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
 	{
 		q: 'What is an MQTT topic?',
-		a: 'A topic is a UTF-8 string that names the subject of a message, split into levels by forward slashes — for example sensors/floor1/temp. Publishers send to a full topic and subscribers register interest in topics, and the broker routes each message to the matching subscribers.',
+		a: 'A topic is a <strong>UTF-8 string that names the subject of a message</strong>, split into levels by forward slashes — for example <code>sensors/floor1/temp</code>. Publishers send to a full topic and subscribers register interest in topics, and the broker routes each message to the matching subscribers.',
 	},
 	{
 		q: 'What is the difference between + and # wildcards?',
-		a: 'The + wildcard matches exactly one topic level, so sensors/+/temp matches sensors/floor1/temp and sensors/floor2/temp. The # wildcard matches the current level and everything beneath it, so sensors/# matches all topics under sensors. # must be the last character of the filter; + can appear at any level.',
+		a: 'The <code>+</code> wildcard matches <strong>exactly one topic level</strong>, so <code>sensors/+/temp</code> matches <code>sensors/floor1/temp</code> and <code>sensors/floor2/temp</code>. The <code>#</code> wildcard matches <strong>the current level and everything beneath it</strong>, so <code>sensors/#</code> matches all topics under <code>sensors</code>. <code>#</code> must be the last character of the filter; <code>+</code> can appear at any level.',
 	},
 	{
 		q: 'Can you publish to a wildcard topic?',
-		a: 'No. Wildcards are only valid in subscriptions. A published message must go to a specific, fully qualified topic — the broker needs one concrete destination to route from.',
+		a: 'No. Wildcards are <strong>only valid in subscriptions</strong>. A published message must go to a specific, fully qualified topic — the broker needs one concrete destination to route from.',
 	},
 	{
 		q: 'Are MQTT topics case-sensitive?',
-		a: 'Yes. sensors/Temp and sensors/temp are different topics. Topics are also created on the fly — there is no need to register or pre-declare a topic before publishing to it.',
+		a: 'Yes. <code>sensors/Temp</code> and <code>sensors/temp</code> are <strong>different topics</strong>. Topics are also created on the fly — there is no need to register or pre-declare a topic before publishing to it.',
 	},
 	{
 		q: 'What makes a good MQTT topic structure?',
-		a: 'Use a consistent, hierarchical scheme that goes from general to specific, such as site/area/device/metric. Avoid leading slashes and spaces, keep names predictable, and design the hierarchy so common subscriptions map cleanly to a single-level (+) or multi-level (#) wildcard.',
+		a: 'Use a consistent, hierarchical scheme that goes from <strong>general to specific</strong>, such as <code>site/area/device/metric</code>. Avoid leading slashes and spaces, keep names predictable, and design the hierarchy so common subscriptions map cleanly to a single-level (<code>+</code>) or multi-level (<code>#</code>) wildcard.',
 	},
 ];
 ---
@@ -91,12 +93,20 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>Naming best practices</h2>
-	<ul>
-		<li>Go from general to specific: <code>site/area/device/metric</code>.</li>
-		<li>Don't start a topic with a leading slash and avoid spaces — both create confusing empty or padded levels.</li>
-		<li>Never publish to a wildcard, and don't put a <code>+</code> or <code>#</code> in a topic you publish to.</li>
-		<li>Design the hierarchy around the subscriptions you'll actually need, so they map to one clean wildcard.</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:hierarchy-2" title="General to specific">
+			structure topics from broad to narrow, like <code>site/area/device/metric</code>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:slash" title="No leading slashes or spaces">
+			both create confusing empty or padded levels.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:asterisk" title="Never publish to a wildcard">
+			wildcards are for subscriptions only — don't put a <code>+</code> or <code>#</code> in a topic you publish to.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:target" title="Design around your subscriptions">
+			shape the hierarchy so the subscriptions you'll actually need map to one clean wildcard.
+		</LearnIconRow>
+	</LearnIconRows>
 	<p>
 		If two of a client's subscriptions both match a message (say <code>sensors/#</code> and <code>sensors/+/temp</code
 		>), the broker usually delivers a single copy at the highest matching QoS rather than one per subscription — as TBMQ

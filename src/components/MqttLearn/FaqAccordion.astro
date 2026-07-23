@@ -8,13 +8,17 @@ interface Props {
 }
 const { items } = Astro.props;
 
+// Answers may carry inline <code>/<strong> markup for special fields and emphasis; it renders as HTML.
+// The FAQPage JSON-LD uses the tag-stripped plain text (structured data must not contain markup).
+const stripTags = (a: string) => a.replace(/<[^>]+>/g, '');
+
 const faqJsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'FAQPage',
 	mainEntity: items.map((it) => ({
 		'@type': 'Question',
 		name: it.q,
-		acceptedAnswer: { '@type': 'Answer', text: it.a },
+		acceptedAnswer: { '@type': 'Answer', text: stripTags(it.a) },
 	})),
 };
 ---
@@ -26,7 +30,7 @@ const faqJsonLd = {
 			{items.map((it) => (
 				<details class="faq__item">
 					<summary class="faq__q">{it.q}</summary>
-					<p class="faq__a">{it.a}</p>
+					<p class="faq__a" set:html={it.a} />
 				</details>
 			))}
 			<script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
@@ -75,5 +79,18 @@ const faqJsonLd = {
 		line-height: 1.7;
 		color: $color-text-secondary;
 		margin: 12px 0 0 20px;
+
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 0.9em;
+			background: $color-bg-light;
+			padding: 2px 6px;
+			border-radius: 3px;
+			color: $color-text-primary;
+		}
+		:global(strong) {
+			font-weight: $font-weight-semibold;
+			color: $color-text-primary;
+		}
 	}
 </style>

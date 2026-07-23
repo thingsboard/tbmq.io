@@ -8,23 +8,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'What is an MQTT client?',
-		a: 'Any device or program that connects to an MQTT broker to publish messages, subscribe to topics, or both. A temperature sensor, a mobile app, a backend service, and a browser tab can all be MQTT clients.',
+		a: '<strong>Any device or program that connects to an MQTT broker</strong> to publish messages, subscribe to topics, or both. A temperature sensor, a mobile app, a backend service, and a browser tab can all be MQTT clients.',
 	},
 	{
 		q: 'Can a client both publish and subscribe?',
-		a: 'Yes. A single client can publish to some topics and subscribe to others over the same connection. Roles are per message, not per client.',
+		a: 'Yes. A single client can publish to some topics and subscribe to others over the same connection. <strong>Roles are per message, not per client.</strong>',
 	},
 	{
 		q: 'What is a client ID in MQTT?',
-		a: 'A client identifier is a string that uniquely identifies a client to the broker. It ties a connection to its session, so the broker can resume a persistent session or take over a stale one when the same ID reconnects.',
+		a: 'A client identifier is a string that <strong>uniquely identifies a client to the broker</strong>. It ties a connection to its session, so the broker can resume a persistent session or take over a stale one when the same ID reconnects.',
 	},
 	{
 		q: 'Do I need a special library to build an MQTT client?',
-		a: 'You use an MQTT client library for your language or platform (for example Eclipse Paho, MQTT.js, or a device SDK). Any library that implements the MQTT protocol works with any compliant broker.',
+		a: 'You use an MQTT client library for your language or platform (for example Eclipse Paho, MQTT.js, or a device SDK). <strong>Any library that implements the MQTT protocol works with any compliant broker.</strong>',
 	},
 	{
 		q: 'Can a web browser be an MQTT client?',
-		a: 'Yes, over MQTT on WebSocket. Browsers cannot open raw TCP sockets, so they connect using MQTT over WebSocket — TBMQ even ships a browser-based MQTT client in its UI.',
+		a: 'Yes, over MQTT on WebSocket. Browsers cannot open raw TCP sockets, so they connect using <strong>MQTT over WebSocket</strong> — TBMQ even ships a browser-based MQTT client in its UI.',
 	},
 ];
 ---

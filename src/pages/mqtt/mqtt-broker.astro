@@ -9,23 +9,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'Is an MQTT broker a server?',
-		a: 'Yes. The broker is the central server in an MQTT deployment. Every client connects to it, and it is responsible for receiving published messages and forwarding them to the right subscribers.',
+		a: 'Yes. The broker is the <strong>central server</strong> in an MQTT deployment. Every client connects to it, and it is responsible for receiving published messages and forwarding them to the right subscribers.',
 	},
 	{
 		q: 'What is the difference between an MQTT broker and an MQTT client?',
-		a: 'A client is any device or application that publishes or subscribes; the broker is the single hub they all connect to. Clients never talk to each other directly — the broker routes every message between them.',
+		a: 'A client is any device or application that publishes or subscribes; the broker is the <strong>single hub</strong> they all connect to. Clients never talk to each other directly — the broker routes every message between them.',
 	},
 	{
 		q: 'Do I need a broker to use MQTT?',
-		a: 'Yes. MQTT is a broker-centric publish/subscribe protocol, so a broker is required. There is no peer-to-peer mode; publishers and subscribers are decoupled through the broker.',
+		a: 'Yes. MQTT is a broker-centric publish/subscribe protocol, so <strong>a broker is required</strong>. There is no peer-to-peer mode; publishers and subscribers are decoupled through the broker.',
 	},
 	{
 		q: 'What are examples of MQTT brokers?',
-		a: 'There are many open-source and commercial brokers. TBMQ is an open-source MQTT broker built by ThingsBoard for very large-scale deployments.',
+		a: 'There are many open-source and commercial brokers. <strong>TBMQ</strong> is an open-source MQTT broker built by ThingsBoard for very large-scale deployments.',
 	},
 	{
 		q: 'How many devices can an MQTT broker handle?',
-		a: 'It depends on the broker and its architecture. Lightweight single-node brokers handle thousands to hundreds of thousands of connections; clustered brokers like TBMQ are designed to scale to 100M+ concurrent connections.',
+		a: 'It depends on the broker and its architecture. Lightweight single-node brokers handle thousands to hundreds of thousands of connections; clustered brokers like TBMQ are designed to scale to <strong>100M+ concurrent connections</strong>.',
 	},
 ];
 ---

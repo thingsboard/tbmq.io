@@ -6,23 +6,23 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'How many MQTT packet types are there?',
-		a: 'MQTT 3.1.1 defines 14 control packet types. MQTT 5.0 adds one more, AUTH, for enhanced authentication — for 15 in total.',
+		a: 'MQTT 3.1.1 defines <strong>14 control packet types</strong>. MQTT 5.0 adds one more, <code>AUTH</code>, for enhanced authentication — for <strong>15 in total</strong>.',
 	},
 	{
 		q: 'What is the smallest MQTT packet?',
-		a: 'Two bytes. PINGREQ and PINGRESP are just a fixed header with no variable header or payload, so they are the minimal 2-byte packets — which is part of why MQTT is so lightweight.',
+		a: '<strong>Two bytes.</strong> <code>PINGREQ</code> and <code>PINGRESP</code> are just a fixed header with no variable header or payload, so they are the minimal 2-byte packets — which is part of why MQTT is so lightweight.',
 	},
 	{
 		q: 'What is in the fixed header?',
-		a: 'The control packet type and a set of type-specific flags in the first byte, followed by the Remaining Length — a variable-length integer giving the number of bytes left in the packet (variable header plus payload).',
+		a: 'The <strong>control packet type</strong> and a set of type-specific flags in the first byte, followed by the <strong>Remaining Length</strong> — a variable-length integer giving the number of bytes left in the packet (variable header plus payload).',
 	},
 	{
 		q: 'What is the AUTH packet?',
-		a: 'AUTH is an MQTT 5.0 packet used for enhanced authentication — a challenge/response exchange (for example SCRAM) that can happen during connection or be re-issued later. It does not exist in MQTT 3.1.1.',
+		a: '<code>AUTH</code> is an MQTT 5.0 packet used for <strong>enhanced authentication</strong> — a challenge/response exchange (for example SCRAM) that can happen during connection or be re-issued later. It does not exist in MQTT 3.1.1.',
 	},
 	{
 		q: 'Is there a limit on MQTT packet size?',
-		a: 'The Remaining Length field caps a packet at about 256 MB (268,435,455 bytes). MQTT 5.0 also lets each side advertise a smaller Maximum Packet Size, and brokers typically enforce their own limit well below the protocol maximum.',
+		a: 'The Remaining Length field caps a packet at <strong>about 256 MB</strong> (268,435,455 bytes). MQTT 5.0 also lets each side advertise a smaller <strong>Maximum Packet Size</strong>, and brokers typically enforce their own limit well below the protocol maximum.',
 	},
 ];
 ---
