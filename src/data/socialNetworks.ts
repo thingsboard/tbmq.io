@@ -8,7 +8,7 @@ export interface SocialNetwork {
 
 export const socialNetworks: SocialNetwork[] = [
 	{
-		href: 'https://github.com/thingsboard/thingsboard',
+		href: 'https://github.com/thingsboard/tbmq',
 		icon: 'simple-icons:github',
 		ariaLabel: 'Link to our Github',
 	},
