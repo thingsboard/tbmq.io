@@ -219,4 +219,6 @@ Key points:
 - Only one client in the group receives each matching message, regardless of QoS.
 - QoS does not affect load balancing behavior — it only defines delivery guarantees for each individual client.
 
-**Best practice:** use the same QoS level for all subscribers within a shared group. This consistency simplifies message flow, ensures predictable behavior, and makes it easier to debug and monitor message delivery across clients.
+<Aside type="tip">
+  As a best practice, use the same QoS level for all subscribers within a shared group. This consistency simplifies message flow, ensures predictable behavior, and makes it easier to debug and monitor message delivery across clients.
+</Aside>
