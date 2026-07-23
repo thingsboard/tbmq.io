@@ -148,7 +148,7 @@ export const mqttTopics: MqttTopic[] = [
 			'User Properties are arbitrary UTF-8 key–value pairs you can attach to MQTT 5.0 packets — the MQTT equivalent of custom HTTP headers. They travel with the message and let you carry metadata such as a content type, tenant ID, or tracing token without encoding it into the topic or payload.',
 		tbmqTieIn:
 			'TBMQ passes User Properties through end to end, from the publishing client to every subscriber, untouched — so you can rely on them for routing hints and metadata.',
-		related: ['mqtt-5', 'publish-subscribe', 'mqtt-request-response'],
+		related: ['mqtt-5', 'mqtt-payload-format', 'publish-subscribe', 'mqtt-request-response'],
 		status: 'full',
 		seoDescription:
 			'MQTT user properties explained — the MQTT 5.0 key–value metadata you attach to messages like HTTP headers, how they are carried end to end, and what to use them for.',
@@ -182,6 +182,21 @@ export const mqttTopics: MqttTopic[] = [
 		status: 'full',
 		seoDescription:
 			'MQTT flow control explained — how the MQTT 5.0 Receive Maximum limits unacknowledged QoS 1 and 2 messages in flight so a fast sender cannot overwhelm a receiver.',
+	},
+	{
+		slug: 'mqtt-payload-format',
+		title: 'MQTT Payload Format Indicator and Content Type',
+		navLabel: 'Payload format & content type',
+		cardSummary: 'Flag a payload as UTF-8 text or bytes and give it a MIME-like content type.',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'The MQTT 5.0 Payload Format Indicator and Content Type are two optional PUBLISH properties that describe a message’s payload. The Payload Format Indicator is a single byte — 0 for an unspecified byte stream, 1 for UTF-8 text — and the Content Type is a free-form UTF-8 string, usually a MIME type such as application/json. Both travel with the message to every subscriber, so a receiver can tell how to read a payload without inspecting it.',
+		tbmqTieIn:
+			'TBMQ carries both the Payload Format Indicator and Content Type end to end, from the publishing client through to every subscriber, untouched.',
+		related: ['mqtt-5', 'mqtt-user-properties', 'mqtt-request-response'],
+		status: 'full',
+		seoDescription:
+			'MQTT payload format indicator and content type explained — the MQTT 5.0 properties that flag a payload as UTF-8 or bytes and label it with a MIME-like content type.',
 	},
 	{
 		slug: 'persistent-session',
@@ -451,7 +466,7 @@ export const mqttTopics: MqttTopic[] = [
 			'The request-response pattern lets a requester get a reply over MQTT’s publish/subscribe transport. Made first-class in MQTT 5.0, the requester publishes with a Response Topic (where the reply should go) and Correlation Data (an ID to match the reply to the request); the responder publishes its answer to that topic, echoing the same Correlation Data.',
 		tbmqTieIn:
 			'TBMQ fully supports MQTT 5.0, carrying Response Topic, Correlation Data and User Properties through end to end, so request/response flows run over the same broker as the rest of your traffic.',
-		related: ['mqtt-5', 'topics', 'publish-subscribe'],
+		related: ['mqtt-5', 'topics', 'mqtt-payload-format', 'publish-subscribe'],
 		status: 'full',
 		seoDescription:
 			'MQTT request-response pattern explained — how MQTT 5.0 Response Topic and Correlation Data let a client send a request and correlate the reply over pub/sub.',
@@ -593,6 +608,7 @@ export const mqttCategories: MqttCategory[] = [
 			'mqtt-request-response',
 			'mqtt-reason-codes',
 			'mqtt-user-properties',
+			'mqtt-payload-format',
 			'mqtt-topic-alias',
 			'mqtt-flow-control',
 			'mqtt-message-expiry',

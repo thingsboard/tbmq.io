@@ -1,0 +1,95 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the MQTT Payload Format Indicator?',
+		a: 'A single-byte MQTT 5.0 property on a PUBLISH that says how to interpret the payload: <code>0</code> means an unspecified byte stream (the default), and <code>1</code> means the payload is UTF-8 encoded character data.',
+	},
+	{
+		q: 'What is the Content Type property in MQTT 5.0?',
+		a: 'An optional UTF-8 string a publisher attaches to describe the payload — usually a MIME type such as <code>application/json</code>. It is free-form: the broker forwards it to subscribers but does not interpret it.',
+	},
+	{
+		q: 'Does the broker check that a payload marked UTF-8 really is UTF-8?',
+		a: 'It may. The spec lets a server reject a mismatched payload with reason code <code>0x99</code> (Payload format invalid), but that validation is <strong>optional</strong>. Many brokers, including TBMQ, forward the properties and payload to subscribers unchanged.',
+	},
+	{
+		q: 'Are these properties available in MQTT 3.1.1?',
+		a: 'No. The Payload Format Indicator and Content Type are MQTT 5.0 features. In 3.1.1 you have to signal the payload type yourself — through the topic name, the payload, or an out-of-band convention.',
+	},
+	{
+		q: 'Where can these properties appear?',
+		a: 'On <code>PUBLISH</code> packets, and on a Will message defined in the <code>CONNECT</code> packet. They describe the application payload, so they do not apply to control packets like <code>SUBSCRIBE</code>.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-payload-format" faq={faq}>
+	<p>
+		An MQTT payload is just a blob of bytes — the protocol never cared what was inside. That works fine until a
+		subscriber has to guess whether it received JSON, a protobuf, or a JPEG. <a href="/mqtt/mqtt-5/">MQTT 5.0</a> removes
+		the guesswork with two optional descriptors a publisher can attach to a message.
+	</p>
+
+	<h2>How it works</h2>
+	<p>
+		When a client publishes, MQTT 5.0 lets it set two properties on the <code>PUBLISH</code> packet — and on a
+		<a href="/mqtt/last-will/">Will</a> message registered at connect. They describe the payload without changing it:
+	</p>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:binary" title="Payload Format Indicator">
+			a single byte — 0 means an unspecified byte stream (the default), 1 means the payload is UTF-8 encoded character
+			data.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:file-description" title="Content Type">
+			a free-form UTF-8 string describing the payload, typically a MIME type such as application/json or text/plain.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<MqttDiagram caption="The descriptor tells a subscriber how to read the payload before opening it">
+		<svg
+			viewBox="0 0 680 196"
+			role="img"
+			aria-label="MQTT payload format: a message marked payload-format-indicator 1 with content-type application/json is read as UTF-8 JSON, while one marked indicator 0 with content-type image/png is handled as raw bytes"
+		>
+			<text class="d-glabel d-mid" x="74" y="57" style="fill:#166c37">Text</text>
+			<rect x="150" y="20" width="252" height="66" rx="8" style="fill:#f7f9fc;stroke:#dfe3ea"></rect>
+			<text class="d-ctext d-mid" x="276" y="47" style="font-size:11px">payload-format-indicator: 1 → UTF-8</text>
+			<text class="d-ctext d-mid" x="276" y="69" style="font-size:11px">content-type: application/json</text>
+			<line class="d-line d-line--green" x1="402" y1="53" x2="470" y2="53" marker-end="url(#arGreen)"></line>
+			<rect x="476" y="34" width="182" height="40" rx="8" style="fill:#eaf7ef;stroke:#bfe3cd"></rect>
+			<text class="d-yes d-mid" x="567" y="59" style="font-size:12px">read as UTF-8 JSON ✓</text>
+			<line x1="40" y1="105" x2="640" y2="105" stroke="#eef0f3" stroke-width="1"></line>
+			<text class="d-glabel d-mid" x="74" y="152">Binary</text>
+			<rect x="150" y="115" width="252" height="66" rx="8" style="fill:#f7f9fc;stroke:#dfe3ea"></rect>
+			<text class="d-ctext d-mid" x="276" y="142" style="font-size:11px">payload-format-indicator: 0 → bytes</text>
+			<text class="d-ctext d-mid" x="276" y="164" style="font-size:11px">content-type: image/png</text>
+			<line class="d-line" x1="402" y1="148" x2="470" y2="148" marker-end="url(#arGray)"></line>
+			<rect x="476" y="129" width="182" height="40" rx="8" style="fill:#f7f9fc;stroke:#dfe3ea"></rect>
+			<text class="d-head d-mid" x="567" y="154" style="font-size:12px">handle as raw bytes</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>The indicator is a hint, not a contract</h2>
+	<p>
+		The Payload Format Indicator is advisory. The MQTT 5.0 spec <em>lets</em> a server that receives a payload marked UTF-8
+		but containing invalid UTF-8 reject it with reason code <code>0x99</code> (Payload format invalid), but that validation
+		is optional — most brokers simply forward the properties and the payload to subscribers as-is. The Content Type is never
+		interpreted by the broker at all; it is opaque metadata for the receiving application.
+	</p>
+
+	<h2>Payload format in TBMQ</h2>
+	<p>
+		TBMQ treats both descriptors as pass-through metadata: the Payload Format Indicator and Content Type a publisher
+		sets are carried through to every subscriber unchanged — including across TBMQ's Kafka-backed message persistence —
+		so your consumers can dispatch on them reliably. TBMQ does not reject a publish whose payload doesn't match its
+		declared format; it delivers the message and its descriptors as sent. See the
+		<a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> for the full list of supported MQTT 5.0
+		features.
+	</p>
+</MqttTopicLayout>
