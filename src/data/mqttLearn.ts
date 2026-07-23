@@ -72,10 +72,25 @@ export const mqttTopics: MqttTopic[] = [
 			'A shared subscription lets a group of MQTT clients share one subscription so each message is delivered to only one member of the group, instead of to all of them. That turns MQTT’s broadcast model into a load-balanced work queue for scaling consumers horizontally.',
 		tbmqTieIn:
 			'TBMQ implements shared subscriptions and pairs them with dedicated per-application Kafka topics, so you can add consumer instances to absorb high load and scale throughput horizontally.',
-		related: ['what-is-mqtt', 'mqtt-5', 'mqtt-vs-kafka'],
+		related: ['what-is-mqtt', 'mqtt-5', 'subscription-options', 'mqtt-vs-kafka'],
 		status: 'full',
 		seoDescription:
 			'How MQTT shared subscriptions work: the $share syntax, load balancing across a consumer group, MQTT 5.0 vs 3.1.1, and common pitfalls.',
+	},
+	{
+		slug: 'subscription-options',
+		title: 'MQTT Subscription Options and Identifiers',
+		navLabel: 'Subscription options & IDs',
+		cardSummary: 'Per-subscription delivery flags, plus an identifier the broker echoes back on every match.',
+		eyebrow: 'MQTT GUIDE',
+		quickAnswer:
+			'Subscription options are per-subscription settings a client sends in the SUBSCRIBE packet that control how the broker delivers matching messages — the maximum QoS, and in MQTT 5.0 the No Local, Retain As Published, and Retain Handling flags. MQTT 5.0 also adds an optional Subscription Identifier: a number the client assigns to a subscription that the broker then stamps on every matching message it delivers, so the client can tell which subscription a message matched.',
+		tbmqTieIn:
+			'TBMQ honors all four subscription options and MQTT 5.0 subscription identifiers — echoing the identifier on every matching message — and lets you view and edit them per subscription in its UI.',
+		related: ['mqtt-5', 'shared-subscriptions', 'retained-messages', 'topics'],
+		status: 'full',
+		seoDescription:
+			'MQTT subscription options and identifiers explained — the No Local, Retain As Published and Retain Handling flags, the per-subscription maximum QoS, and the MQTT 5.0 subscription identifier the broker echoes back.',
 	},
 	{
 		slug: 'qos',
@@ -225,7 +240,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT topics are hierarchical, slash-separated strings (e.g. sensors/floor1/temp) that messages are published to and clients subscribe to. Subscriptions can use wildcards: + matches a single level and # matches all remaining levels.',
 		tbmqTieIn:
 			'TBMQ matches subscriptions with an in-memory topic trie, so match cost scales with a topic’s depth rather than its total subscription count.',
-		related: ['what-is-mqtt', 'shared-subscriptions', 'retained-messages'],
+		related: ['what-is-mqtt', 'shared-subscriptions', 'subscription-options', 'retained-messages'],
 		status: 'full',
 		seoDescription:
 			'MQTT topics and wildcards explained — topic hierarchy, single-level (+) and multi-level (#) wildcards, and topic naming best practices.',
@@ -240,7 +255,7 @@ export const mqttTopics: MqttTopic[] = [
 			'A retained message is the last message the broker stored for a topic with the retain flag set. Any client that subscribes later immediately receives that last known value instead of waiting for the next publish — ideal for state like a device’s current status.',
 		tbmqTieIn:
 			'TBMQ keeps retained messages in an in-memory trie backed by a compacted Kafka topic, so new subscribers get the latest value instantly and it survives restarts.',
-		related: ['topics', 'what-is-mqtt', 'last-will'],
+		related: ['topics', 'subscription-options', 'what-is-mqtt', 'last-will'],
 		status: 'full',
 		seoDescription:
 			'MQTT retained messages explained — how the retain flag stores the last value on a topic so new subscribers get current state immediately.',
@@ -605,6 +620,7 @@ export const mqttCategories: MqttCategory[] = [
 		slugs: [
 			'mqtt-5',
 			'shared-subscriptions',
+			'subscription-options',
 			'mqtt-request-response',
 			'mqtt-reason-codes',
 			'mqtt-user-properties',
