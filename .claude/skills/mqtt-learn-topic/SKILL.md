@@ -25,7 +25,7 @@ src/components/MqttLearn/
   MqttTopicLayout.astro                ← the page template (breadcrumb, hero, quick-answer, <slot/>, How-TBMQ, FAQ, related, CTA)
   QuickAnswer.astro                    ← boxed definition (auto, from registry.quickAnswer)
   HowTbmqBlock.astro                   ← green tie-in block (auto, from registry.tbmqTieIn; links to /product/ + /docs/mqtt-broker/)
-  FaqAccordion.astro                   ← accordion + FAQPage JSON-LD; exports `interface FaqItem { q; a }`
+  FaqAccordion.astro                   ← accordion + FAQPage JSON-LD; answer `a` renders as HTML (inline `<code>`/`<strong>` ok), tag-stripped for the JSON-LD; exports `interface FaqItem { q; a }`
   RelatedTopics.astro                  ← grid from registry.related[]
   LearnCta.astro                       ← bottom CTA band
   TopicGrid.astro                      ← hub grid: topics grouped by mqttCategories + a category jump-nav
@@ -86,7 +86,7 @@ import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
-	{ q: 'What is the MQTT keep-alive interval?', a: 'Plain-text answer. No HTML or links here — FaqAccordion renders answers as text and emits FAQPage JSON-LD from them.' },
+	{ q: 'What is the MQTT keep-alive interval?', a: 'The max idle time a client promises between packets. Answers may use inline <code>…</code> for special fields and <strong>…</strong> for the key takeaway (no links) — FaqAccordion renders the HTML and strips the tags for the FAQPage JSON-LD.' },
 	{ q: 'What happens if a client misses the keep-alive?', a: '...' },
 ];
 ---
@@ -151,7 +151,7 @@ A `status: 'full'` guide should be genuinely self-explaining. Body skeleton (all
 3. **Diagram** — a `<MqttDiagram>` where a picture beats prose (fan-out, a connection/ping sequence, request/response-vs-pub/sub, an auth gate). Optional but encouraged.
 4. **At-a-glance** — a table or tight list. **Required for "X vs Y" comparison pages** (feature-by-feature table, wrapped in `<div class="overflow-x">`).
 5. **<Topic> in TBMQ** — practical notes + a **required** explicit link to the companion `/docs/mqtt-broker/…` page (see the "Every guide links its companion doc" principle). Stay high-level here — name the TBMQ behavior and hand off to the doc for the parameters/steps; do **not** reproduce the doc's config tables or reason-code lists (that's the duplication the two-surface split exists to avoid). The `HowTbmqBlock` also renders `tbmqTieIn` automatically; this section is where you go deeper and point to the doc.
-6. **FAQ** — 3–5 real questions people search. Plain-text answers (they become FAQPage JSON-LD).
+6. **FAQ** — 3–5 real questions people search. Answers are prose that may carry inline `<code>` for special fields (topics, filters, `+`/`#`, packet names, ports, env vars) and `<strong>` for the key takeaway — no links. `FaqAccordion` renders the HTML and strips the tags so the FAQPage JSON-LD stays plain text.
 
 Keep it benefit-first and readable. If you find yourself writing configuration steps or a full reference table, stop — that belongs in `/docs`; link to it instead.
 
@@ -234,7 +234,7 @@ Ask the user before running `pnpm build:fast` (repo build policy). For anything 
 ## Gotchas
 
 - **Tabs** in `.ts` and `.astro` files (repo convention; prettier enforces it).
-- **Entities in JSX bodies:** `&lt;` `&gt;` `&amp;`. In FAQ *string* values (plain JS strings), raw `<`/`>` are fine.
+- **Entities in JSX bodies:** `&lt;` `&gt;` `&amp;`. FAQ answer strings render as HTML (`set:html`), so inline `<code>`/`<strong>` work — but a bare `<`/`>`/`&` that isn't part of a tag must be written `&lt;`/`&gt;`/`&amp;`.
 - **Trailing-slash links:** `/mqtt/<slug>/`, `/docs/mqtt-broker/…/` — the site uses `trailingSlash: 'always'`.
 - **`HowTbmqBlock` links are fixed** to `/product/` and `/docs/mqtt-broker/`; put topic-specific doc links in your body instead.
 - **Adding a slug to `learnNavSlugs`** grows the nav dropdown and needs a matching `icon` — confirm the topic is headline-worthy first; the dropdown is deliberately short.
