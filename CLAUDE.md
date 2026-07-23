@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **TBMQ website** — the documentation and marketing site for **TBMQ**, the open-source MQTT broker by ThingsBoard. It is built with **Astro + Starlight**.
 
-**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the `mqtt-broker/` docs tree plus TBMQ marketing pages). The multi-product scaffolding inherited from upstream — the `Products` enum, `versions.ts`, `astro.sidebar.ts`, the redirect tables, and the content schemas — is **kept intact on purpose** so that changes can still be merged cleanly from the upstream ThingsBoard site. When editing, prefer trimming/deploying content over restructuring these shared files, so the repo stays merge-compatible with upstream.
+**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the `mqtt-broker/` docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed. To keep those cherry-picks clean, some multi-product scaffolding inherited from upstream is still **kept intact on purpose**: the `Products` enum, `versions.ts`, the redirect tables, and the content schemas. `astro.sidebar.ts` is the exception — it has been **trimmed to the TBMQ sidebars only** (the unused upstream product sidebars were removed). When editing the remaining shared files, prefer trimming/deploying content over restructuring them.
 
 The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking.
 
@@ -47,7 +47,7 @@ Content uses Astro's Content Collections with type-safe Zod schemas defined in `
 
 **Schema types** determine frontmatter shape: `base`, `deploy`, `backend`, `cms`, `media`, `integration`, `migration`, `tutorial`, `recipe`. The `type` frontmatter field selects the schema. (The schema set is inherited from upstream; TBMQ pages are almost all `base`.)
 
-**Sidebar** is configured in `astro.sidebar.ts`. This file retains the full upstream sidebar definitions for structural compatibility; the TBMQ site renders the TBMQ (`mqtt-broker`) sidebar branch.
+**Sidebar** is configured in `astro.sidebar.ts`. This file has been trimmed to the TBMQ sidebars only — `tbmqSidebar` / `tbmqPeSidebar` and their tab-links (the unused upstream product sidebars were removed). The site consumes the combined `sidebar` export (filtered per edition by route middleware) plus `sidebarTabLinksByPrefix`.
 
 ### i18n
 
