@@ -87,7 +87,7 @@ It is possible for a client to have multiple subscriptions that all match the to
 
 For example, if a client subscribes to both `sensors/+/temperature` and `sensors/room1/#`, and a message is published to `sensors/room1/temperature`, both subscriptions match.
 
-In this case, TBMQ delivers the message to the **subscription with the highest QoS**. If multiple matching subscriptions have the same QoS, the message is delivered to the first matching subscription.
+In this case, TBMQ delivers the message **once**, using the subscription with the **highest QoS**.
 
 ## Configuring maximum topic segments
 
