@@ -16,6 +16,9 @@ export interface MqttTopic {
 	quickAnswer: string;
 	/** One crisp sentence for the hub-grid card blurb (clamped to 2 lines) */
 	cardSummary: string;
+	/** Estimated reading time in minutes, shown on the hub card. Computed from the
+	 *  rendered page word count (~200 wpm); regenerate via scripts/mqtt-reading-time. */
+	readingMinutes: number;
 	/** One-line "how TBMQ relates" summary (hub card + How-TBMQ block) */
 	tbmqTieIn: string;
 	/** Slugs shown in the related-topics grid */
@@ -31,6 +34,7 @@ export interface MqttTopic {
 export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'what-is-mqtt',
+		readingMinutes: 3,
 		title: "What Is MQTT? A Beginner's Guide to the Protocol",
 		navLabel: 'What is MQTT?',
 		cardSummary:
@@ -49,6 +53,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-vs-kafka',
+		readingMinutes: 2,
 		title: 'MQTT vs Kafka: Key Differences and When to Use Each',
 		navLabel: 'MQTT vs Kafka',
 		cardSummary: 'A device-edge protocol paired with a high-throughput backend event log.',
@@ -64,6 +69,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'shared-subscriptions',
+		readingMinutes: 3,
 		title: 'MQTT Shared Subscriptions Explained',
 		navLabel: 'Shared subscriptions',
 		cardSummary: 'Load-balance a subscription across a group so each message reaches only one member.',
@@ -79,6 +85,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'subscription-options',
+		readingMinutes: 3,
 		title: 'MQTT Subscription Options and Identifiers',
 		navLabel: 'Subscription options & IDs',
 		cardSummary: 'Per-subscription delivery flags, plus an identifier the broker echoes back on every match.',
@@ -94,6 +101,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'qos',
+		readingMinutes: 4,
 		title: 'MQTT QoS 0, 1 and 2 Explained',
 		navLabel: 'QoS levels',
 		cardSummary: 'Per-message delivery guarantees: at most once, at least once, and exactly once.',
@@ -110,6 +118,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-5',
+		readingMinutes: 3,
 		title: "MQTT 5.0: What's New vs MQTT 3.1.1",
 		navLabel: 'MQTT 5.0',
 		cardSummary: 'The latest protocol version: reason codes, user properties, topic aliases, and more.',
@@ -125,6 +134,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-message-expiry',
+		readingMinutes: 3,
 		title: 'MQTT Session and Message Expiry',
 		navLabel: 'Session & message expiry',
 		cardSummary: 'Controls for how long the broker keeps a session and its queued messages.',
@@ -140,6 +150,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-reason-codes',
+		readingMinutes: 2,
 		title: 'MQTT Reason Codes',
 		navLabel: 'Reason codes',
 		cardSummary: 'Single-byte status values attached to control packets to report outcomes.',
@@ -155,6 +166,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-user-properties',
+		readingMinutes: 3,
 		title: 'MQTT User Properties',
 		navLabel: 'User properties',
 		cardSummary: 'Arbitrary key–value pairs that travel with a message, like custom headers.',
@@ -170,6 +182,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-topic-alias',
+		readingMinutes: 2,
 		title: 'MQTT Topic Alias',
 		navLabel: 'Topic alias',
 		cardSummary: 'Replace a long topic name with a small integer for the life of a connection.',
@@ -185,6 +198,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-flow-control',
+		readingMinutes: 2,
 		title: 'MQTT Flow Control',
 		navLabel: 'Flow control',
 		cardSummary: 'The Receive Maximum property caps in-flight QoS 1 and 2 messages per side.',
@@ -200,6 +214,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-payload-format',
+		readingMinutes: 3,
 		title: 'MQTT Payload Format Indicator and Content Type',
 		navLabel: 'Payload format & content type',
 		cardSummary: 'Flag a payload as UTF-8 text or bytes and give it a MIME-like content type.',
@@ -215,6 +230,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'persistent-session',
+		readingMinutes: 3,
 		title: 'MQTT Persistent Sessions and Clean Start',
 		navLabel: 'Persistent sessions',
 		cardSummary: 'Letting the broker remember subscriptions and queue messages while a client is offline.',
@@ -231,6 +247,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'topics',
+		readingMinutes: 3,
 		title: 'MQTT Topics and Wildcards',
 		navLabel: 'Topics & wildcards',
 		cardSummary: 'Hierarchical, slash-separated strings and the wildcards used to subscribe across them.',
@@ -247,6 +264,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'retained-messages',
+		readingMinutes: 3,
 		title: 'MQTT Retained Messages',
 		navLabel: 'Retained messages',
 		cardSummary: 'The last message on a topic, delivered immediately to any new subscriber.',
@@ -262,6 +280,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'last-will',
+		readingMinutes: 3,
 		title: 'MQTT Last Will and Testament (LWT)',
 		navLabel: 'Last Will & Testament',
 		cardSummary: 'A message the broker publishes when a client disconnects unexpectedly.',
@@ -277,6 +296,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'security',
+		readingMinutes: 3,
 		title: 'MQTT Security: TLS and Authentication',
 		navLabel: 'Security',
 		cardSummary: 'The three layers: transport encryption, authentication, and authorization.',
@@ -292,6 +312,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-tls',
+		readingMinutes: 3,
 		title: 'MQTT over TLS/SSL',
 		navLabel: 'TLS / SSL',
 		cardSummary: 'Wrapping the MQTT connection in an encrypted channel on port 8883.',
@@ -307,6 +328,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-authentication',
+		readingMinutes: 3,
 		title: 'MQTT Authentication',
 		navLabel: 'Authentication',
 		cardSummary: 'How the broker verifies a client’s identity: passwords, tokens, or certificates.',
@@ -322,6 +344,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-client-certificates',
+		readingMinutes: 2,
 		title: 'MQTT Client Certificate Authentication (X.509)',
 		navLabel: 'Client certificates',
 		cardSummary: 'Mutual TLS, where the client presents an X.509 certificate during the handshake.',
@@ -337,6 +360,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-authorization',
+		readingMinutes: 2,
 		title: 'MQTT Authorization and ACLs',
 		navLabel: 'Authorization',
 		cardSummary: 'Deciding which topics an authenticated client may publish to and subscribe from.',
@@ -352,6 +376,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-payload-encryption',
+		readingMinutes: 3,
 		title: 'MQTT Payload Encryption',
 		navLabel: 'Payload encryption',
 		cardSummary: 'End-to-end encryption of the payload itself, independent of the transport.',
@@ -367,6 +392,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'websocket',
+		readingMinutes: 3,
 		title: 'MQTT over WebSocket',
 		navLabel: 'MQTT over WebSocket',
 		cardSummary: 'Carrying MQTT inside a WebSocket so browsers can publish and subscribe.',
@@ -382,6 +408,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-broker',
+		readingMinutes: 4,
 		title: 'What Is an MQTT Broker?',
 		navLabel: 'MQTT broker',
 		cardSummary: 'The central server that receives every published message and routes it to matching subscribers.',
@@ -398,6 +425,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-client',
+		readingMinutes: 3,
 		title: 'What Is an MQTT Client?',
 		navLabel: 'MQTT client',
 		cardSummary: 'Any device or app that connects to a broker to publish, subscribe, or both.',
@@ -413,6 +441,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'publish-subscribe',
+		readingMinutes: 3,
 		title: 'MQTT Publish/Subscribe Explained',
 		navLabel: 'Publish/subscribe',
 		cardSummary: 'The messaging model MQTT is built on: senders and receivers share only a topic.',
@@ -428,6 +457,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-connection',
+		readingMinutes: 3,
 		title: 'MQTT Connection: CONNECT and CONNACK',
 		navLabel: 'Connection (CONNECT)',
 		cardSummary: 'How a session begins: the CONNECT packet, CONNACK, clean-start flag, and keep-alive.',
@@ -443,6 +473,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-client-id',
+		readingMinutes: 4,
 		title: 'MQTT Client ID and Client Take-Over',
 		navLabel: 'Client ID',
 		cardSummary: 'The unique string that identifies a client and links it to its session state.',
@@ -458,6 +489,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-packets',
+		readingMinutes: 3,
 		title: 'MQTT Packets: Control Packet Types',
 		navLabel: 'MQTT packets',
 		cardSummary: 'The control packets clients and brokers exchange, from CONNECT to PUBLISH.',
@@ -473,6 +505,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-request-response',
+		readingMinutes: 3,
 		title: 'MQTT Request-Response Pattern',
 		navLabel: 'Request-response',
 		cardSummary: 'A first-class reply pattern over pub/sub using a response topic.',
@@ -488,6 +521,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'keep-alive',
+		readingMinutes: 4,
 		title: 'MQTT Keep-Alive and Ping Explained',
 		navLabel: 'Keep-alive',
 		cardSummary: 'The heartbeat that keeps a connection alive and detects dead peers.',
@@ -503,6 +537,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-vs-http',
+		readingMinutes: 3,
 		title: 'MQTT vs HTTP: Which to Use for IoT',
 		navLabel: 'MQTT vs HTTP',
 		cardSummary: 'Push-based pub/sub versus short-lived request/response — and when each fits.',
@@ -518,6 +553,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-vs-amqp',
+		readingMinutes: 3,
 		title: 'MQTT vs AMQP: Differences and When to Use Each',
 		navLabel: 'MQTT vs AMQP',
 		cardSummary: 'Two messaging protocols aimed at different problems and fleet sizes.',
@@ -533,6 +569,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-vs-coap',
+		readingMinutes: 3,
 		title: 'MQTT vs CoAP: Differences and When to Use Each',
 		navLabel: 'MQTT vs CoAP',
 		cardSummary: 'Broker-based pub/sub over TCP versus a lightweight request model over UDP.',
@@ -670,6 +707,18 @@ export const mqttCategories: MqttCategory[] = [
 			throw new Error(`MQTT topic missing from mqttCategories: ${topic.slug}`);
 		}
 	}
+}
+
+// Reverse lookup: slug → its (single) category. Built after the guard above has
+// proven every topic belongs to exactly one category, so this can't be stale.
+const categoryBySlug = new Map<string, MqttCategory>(
+	mqttCategories.flatMap((category) => category.slugs.map((slug) => [slug, category] as const))
+);
+
+export function categoryForSlug(slug: string): MqttCategory {
+	const category = categoryBySlug.get(slug);
+	if (!category) throw new Error(`No MQTT category for slug: ${slug}`);
+	return category;
 }
 
 export interface MqttCategoryGroup {

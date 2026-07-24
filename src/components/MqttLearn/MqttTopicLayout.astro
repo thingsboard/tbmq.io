@@ -4,6 +4,7 @@ import { Products } from '@models/site.models';
 import { marketingJsonLd } from '~/util/structuredData';
 import { getTopic, topicHref } from '~/data/mqttLearn';
 import QuickAnswer from './QuickAnswer.astro';
+import TopicSeriesNav from './TopicSeriesNav.astro';
 import HowTbmqBlock from './HowTbmqBlock.astro';
 import RelatedTopics from './RelatedTopics.astro';
 import LearnCta from './LearnCta.astro';
@@ -47,7 +48,25 @@ const jsonLd = marketingJsonLd({
 				</nav>
 
 				<header class="learn-hero">
-					<p class="learn-hero__eyebrow">{topic.eyebrow}</p>
+					<div class="learn-hero__eyebrow-row">
+						<p class="learn-hero__eyebrow">{topic.eyebrow}</p>
+						<span class="learn-hero__readtime">
+							<span class="learn-hero__dot" aria-hidden="true">·</span>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								width="14"
+								height="14"
+								aria-hidden="true"
+							>
+								<circle cx="12" cy="12" r="9"></circle>
+								<path d="M12 7v5l3 2"></path>
+							</svg>
+							{topic.readingMinutes} min read
+						</span>
+					</div>
 					<h1 class="learn-hero__title">{topic.title}</h1>
 				</header>
 
@@ -56,9 +75,13 @@ const jsonLd = marketingJsonLd({
 		</div>
 
 		<div class="learn-layout">
-			<nav class="learn-toc" aria-label="On this page">
-				{/* Populated client-side by the scrollspy script (Task 6). Empty + hidden without JS. */}
-			</nav>
+			<aside class="learn-side">
+				<nav class="learn-toc" aria-label="On this page">
+					{/* Populated client-side by the scrollspy script (Task 6). Empty + hidden without JS. */}
+				</nav>
+				<div class="learn-side__divider" aria-hidden="true"></div>
+				<TopicSeriesNav slug={slug} />
+			</aside>
 
 			<div class="learn-main">
 				<div class="learn-body">
@@ -196,13 +219,32 @@ const jsonLd = marketingJsonLd({
 	.learn-hero {
 		margin-bottom: $spacing-8;
 	}
+	.learn-hero__eyebrow-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 0 12px;
+	}
 	.learn-hero__eyebrow {
 		font-size: 13px;
 		font-weight: $font-weight-semibold;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: $color-pe-link;
-		margin: 0 0 12px;
+		margin: 0;
+	}
+	.learn-hero__readtime {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-text-muted;
+	}
+	.learn-hero__dot {
+		color: $color-border;
 	}
 	.learn-hero__title {
 		font-size: 40px;
@@ -240,7 +282,10 @@ const jsonLd = marketingJsonLd({
 			margin: 0;
 		}
 	}
-	.learn-toc {
+	// Left column: the scrollspy TOC plus the in-category series nav below it.
+	// Hidden below lg (like the TOC always was), so the block never shows on the
+	// single-column mobile layout.
+	.learn-side {
 		display: none;
 		@include media-up(lg) {
 			display: block;
@@ -248,6 +293,17 @@ const jsonLd = marketingJsonLd({
 			top: calc(#{$header-height} + #{$spacing-6});
 			align-self: start;
 		}
+	}
+	// Rule between the TOC and the series nav — only when the JS-built TOC has
+	// content, so the series nav sits flush at the top when there is no TOC.
+	.learn-side__divider {
+		display: none;
+		height: 1px;
+		background: $color-border;
+		margin: $spacing-6 0;
+	}
+	.learn-toc[data-ready='true'] ~ .learn-side__divider {
+		display: block;
 	}
 	.learn-rail {
 		max-width: 760px;

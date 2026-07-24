@@ -64,7 +64,7 @@ const categoryCount = mqttCategoryGroups.length;
 
 		<TopicGrid />
 
-		<div class="mqtt-hub__cta">
+		<div class="mqtt-hub__cta reveal">
 			<LearnCta />
 		</div>
 	</main>
@@ -74,17 +74,17 @@ const categoryCount = mqttCategoryGroups.length;
 	@use '../../styles/variables' as *;
 
 	// ── Background system ───────────────────────────────────────────
-	// Cool off-white ground (so the white cards visibly float) + a page-wide
-	// faint schematic dot-field warmed by a green halo behind the hero. The
-	// dots live behind the content layer, so they read only in the gutters
-	// around the cards — a technical "reference" atmosphere, not clutter.
+	// White ground + a page-wide faint schematic dot-field warmed by a green
+	// halo behind the hero. The dots live behind the content layer, so they
+	// read only in the gutters around the category panels — a technical
+	// "reference" atmosphere, not clutter.
 	// Horizontal padding is 0 here so the sticky filter bar (rendered by
 	// TopicGrid) can span the full width; inner blocks own their own gutters.
 	.mqtt-hub {
 		position: relative;
 		isolation: isolate;
 		padding: calc(#{$header-height} + 56px) 0 $spacing-20;
-		background: linear-gradient(180deg, #ffffff 0%, #f3f6fa 560px, #f3f6fa 100%);
+		background: $color-bg-white;
 
 		&::before {
 			content: '';
@@ -200,4 +200,47 @@ const categoryCount = mqttCategoryGroups.length;
 		margin: 0 auto;
 		padding: 0 $spacing-6;
 	}
+
+	// ── Reveal-on-scroll ────────────────────────────────────────────
+	// Elements marked .reveal fade/slide in as they enter the viewport. The
+	// hidden start state is gated behind .reveal-ready (added by the script),
+	// so with JS off — or with reduced motion — content stays fully visible.
+	:global(.reveal-ready .reveal) {
+		opacity: 0;
+		transform: translateY(16px);
+		transition:
+			opacity 0.6s ease,
+			transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+		will-change: opacity, transform;
+	}
+	:global(.reveal-ready .reveal.in) {
+		opacity: 1;
+		transform: none;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(.reveal-ready .reveal) {
+			opacity: 1;
+			transform: none;
+			transition: none;
+		}
+	}
 </style>
+
+<script>
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	if ('IntersectionObserver' in window && !reduceMotion) {
+		document.documentElement.classList.add('reveal-ready');
+		const io = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						entry.target.classList.add('in');
+						io.unobserve(entry.target);
+					}
+				}
+			},
+			{ threshold: 0.12 }
+		);
+		for (const el of document.querySelectorAll('.reveal')) io.observe(el);
+	}
+</script>

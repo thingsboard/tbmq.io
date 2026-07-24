@@ -34,9 +34,8 @@ const categoryIcon: Record<string, string> = {
 	<div class="topic-groups">
 		{
 			mqttCategoryGroups.map((group) => (
-				<section class={`topic-group c-${group.accent}`} id={group.id} data-cat={group.id}>
+				<section class={`topic-group c-${group.accent} reveal`} id={group.id} data-cat={group.id}>
 					<header class="topic-group__head">
-						<span class="topic-group__rule" aria-hidden="true" />
 						<span class="topic-group__chip" aria-hidden="true">
 							<svg
 								width="20"
@@ -61,7 +60,21 @@ const categoryIcon: Record<string, string> = {
 								data-search={`${t.navLabel} ${t.cardSummary} ${group.tag}`.toLowerCase()}
 							>
 								{t.startHere && <span class="topic-card__badge">Start here</span>}
-								<span class="topic-card__tag">{group.tag}</span>
+								<span class="topic-card__read">
+									<svg
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										width="11"
+										height="11"
+										aria-hidden="true"
+									>
+										<circle cx="12" cy="12" r="9" />
+										<path d="M12 7v5l3 2" />
+									</svg>
+									{t.readingMinutes} min read
+								</span>
 								<h3 class="topic-card__title">{t.navLabel}</h3>
 								<p class="topic-card__text">{t.cardSummary}</p>
 								<span class="topic-card__cta">
@@ -248,10 +261,18 @@ const categoryIcon: Record<string, string> = {
 	.topic-groups {
 		display: flex;
 		flex-direction: column;
-		gap: $spacing-16;
+		gap: $spacing-8;
 	}
+	// Each category is a rounded white panel; the cards layer on top of it.
 	.topic-group {
 		scroll-margin-top: calc(#{$header-height} + 84px);
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: $radius-xl;
+		padding: $spacing-6 $spacing-6 $spacing-8;
+		box-shadow:
+			0 1px 2px rgba(23, 24, 28, 0.04),
+			0 10px 24px -18px rgba(23, 24, 28, 0.14);
 	}
 	// Descendant selectors (specificity 0,2,0) throughout this header row: a
 	// single-class scoped rule resolves to :where()-zeroed (0,1,0) and loses to
@@ -262,13 +283,6 @@ const categoryIcon: Record<string, string> = {
 		align-items: center;
 		gap: 14px;
 		margin-bottom: $spacing-6;
-	}
-	.topic-groups .topic-group__rule {
-		flex: none;
-		width: 28px;
-		height: 3px;
-		border-radius: 3px;
-		background: var(--acc);
 	}
 	.topic-groups .topic-group__chip {
 		flex: none;
@@ -380,8 +394,11 @@ const categoryIcon: Record<string, string> = {
 		border-radius: 6px;
 		padding: 3px 8px;
 	}
-	.topic-card__tag {
+	.topic-card__read {
 		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
 		font-size: 11px;
 		font-weight: $font-weight-semibold;
 		letter-spacing: 0.01em;
@@ -390,6 +407,9 @@ const categoryIcon: Record<string, string> = {
 		margin-bottom: 10px;
 		background: var(--acc-tint);
 		color: var(--acc-ink);
+	}
+	.topic-card__read svg {
+		flex: none;
 	}
 	.topic-card__title {
 		font-size: 16.5px;
