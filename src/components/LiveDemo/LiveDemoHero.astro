@@ -33,6 +33,7 @@ import { Icon } from 'astro-icon/components';
 
 	#ld-hero {
 		background-color: #00240f;
+		background-image: radial-gradient(1100px 420px at 50% -12%, rgba(23, 187, 82, 0.18), transparent 62%);
 		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
 	}
 
@@ -136,6 +137,7 @@ import { Icon } from 'astro-icon/components';
 	}
 
 	.dot {
+		position: relative;
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
@@ -147,7 +149,37 @@ import { Icon } from 'astro-icon/components';
 		background: #30d158;
 	}
 
+	.status.online .dot::after {
+		content: '';
+		position: absolute;
+		inset: -4px;
+		border-radius: 50%;
+		background: #30d158;
+		opacity: 0.5;
+		animation: ld-pulse 2s ease-out infinite;
+	}
+
 	.status.offline .dot {
 		background: #ff453a;
+	}
+
+	@keyframes ld-pulse {
+		0% {
+			transform: scale(0.7);
+			opacity: 0.6;
+		}
+		70% {
+			transform: scale(2.1);
+			opacity: 0;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.status.online .dot::after {
+			display: none;
+		}
 	}
 </style>

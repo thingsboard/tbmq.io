@@ -21,13 +21,15 @@ const cards = [
 
 <section id="ld-production">
 	<div class="inner">
-		<h2>Ready for production?</h2>
-		<p class="lead">When you've seen enough, take TBMQ to production your way.</p>
+		<h2 class="reveal">Ready for production?</h2>
+		<p class="lead reveal">When you've seen enough, take TBMQ to production your way.</p>
 		<div class="grid">
 			{
-				cards.map((c) => (
-					<div class="prod-card">
-						<Icon name={c.icon} class="prod-icon" />
+				cards.map((c, i) => (
+					<div class="prod-card reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<span class="prod-icon-wrap">
+							<Icon name={c.icon} class="prod-icon" />
+						</span>
 						<h3>{c.title}</h3>
 						<p>{c.text}</p>
 						<a class="btn" href={c.href}>
@@ -89,6 +91,16 @@ const cards = [
 		border: 1px solid $color-border;
 		border-radius: 14px;
 		background: $color-white;
+		transition:
+			transform $transition-fast,
+			box-shadow $transition-fast,
+			border-color $transition-fast;
+
+		&:hover {
+			transform: translateY(-3px);
+			box-shadow: 0 7px 32px rgba(20, 26, 23, 0.08);
+			border-color: #cfe4d5;
+		}
 
 		h3 {
 			@include card-title;
@@ -103,10 +115,20 @@ const cards = [
 		}
 	}
 
-	:global(.prod-icon) {
-		width: 32px;
-		height: 32px;
+	.prod-icon-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 12px;
+		background: rgba(23, 187, 82, 0.1);
 		color: $color-pe-dark;
+	}
+
+	:global(.prod-icon) {
+		width: 26px;
+		height: 26px;
 	}
 
 	.btn {

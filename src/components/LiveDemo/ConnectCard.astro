@@ -34,9 +34,9 @@ const tabs = [
 
 <section id="ld-connect">
 	<div class="inner">
-		<p class="kicker">No signup required</p>
-		<h2>Connect to our free public MQTT broker</h2>
-		<p class="lead">
+		<p class="kicker reveal">No signup required</p>
+		<h2 class="reveal">Connect to our free public MQTT broker</h2>
+		<p class="lead reveal">
 			Point any MQTT client at the public demo broker. Use the connection details below — the examples use <a
 				href="https://mosquitto.org/download/"
 				target="_blank"
@@ -44,11 +44,44 @@ const tabs = [
 			>, a widely used open-source CLI client.
 		</p>
 
+		<div
+			class="flow reveal"
+			role="img"
+			aria-label="Connection flow: your MQTT client connects to the demo.tbmq.io broker, which publishes and subscribes with the TBMQ dashboard"
+		>
+			<div class="flow-node">
+				<span class="flow-ic"><Icon name="tabler:device-desktop" /></span>
+				<span class="flow-title">Your MQTT client</span>
+				<span class="flow-note">mosquitto</span>
+			</div>
+			<div class="flow-conn">
+				<span class="flow-label">Connect</span>
+				<span class="flow-track"><i></i></span>
+			</div>
+			<div class="flow-node core">
+				<span class="flow-ic"><Icon name="tabler:shield-check" /></span>
+				<span class="flow-title">demo.tbmq.io broker</span>
+				<span class="flow-note">public MQTT</span>
+			</div>
+			<div class="flow-conn">
+				<span class="flow-label">Pub / Sub</span>
+				<span class="flow-track"><i></i></span>
+			</div>
+			<div class="flow-node">
+				<span class="flow-ic"><Icon name="tabler:layout-dashboard" /></span>
+				<span class="flow-title">TBMQ dashboard</span>
+				<span class="flow-note">web UI</span>
+			</div>
+		</div>
+
 		<div class="grid">
 			<!-- Connection details card -->
-			<div class="conn-card">
+			<div class="conn-card reveal">
 				<div class="conn-head">
-					<span class="conn-host">demo.tbmq.io</span>
+					<div class="conn-head-host">
+						<span class="conn-head-label">Host</span>
+						<span class="conn-host">demo.tbmq.io</span>
+					</div>
 					<button class="copy" data-copy="demo.tbmq.io" aria-label="Copy host">Copy</button>
 				</div>
 				<div class="conn-rows">
@@ -56,7 +89,15 @@ const tabs = [
 						ports.map((p) => (
 							<div class="conn-row">
 								<span class="conn-label">{p.label}</span>
-								<span class="conn-value">{p.value}</span>
+								<button
+									type="button"
+									class="conn-value port"
+									data-copy={p.value}
+									title={`Copy ${p.value}`}
+									aria-label={`Copy ${p.label} port ${p.value}`}
+								>
+									{p.value}
+								</button>
 							</div>
 						))
 					}
@@ -70,7 +111,12 @@ const tabs = [
 					</div>
 					<div class="conn-row">
 						<span class="conn-label">CA Certificate</span>
-						<a class="conn-value link" href="/resources/tbmq-demo-root-ca.pem" download="tbmq-demo-root-ca.pem">
+						<a
+							class="conn-value link"
+							href="/resources/tbmq-demo-root-ca.pem"
+							download="tbmq-demo-root-ca.pem"
+							title="Download certificate"
+						>
 							tbmq-demo-root-ca.pem
 						</a>
 					</div>
@@ -78,7 +124,7 @@ const tabs = [
 			</div>
 
 			<!-- Tabbed CLI examples -->
-			<div class="tabs" data-ld-tabs>
+			<div class="tabs reveal" data-ld-tabs style="--reveal-delay: 90ms">
 				<div class="tab-bar" role="tablist">
 					{
 						tabs.map((t, i) => (
@@ -116,7 +162,7 @@ const tabs = [
 			</div>
 		</div>
 
-		<div class="safety">
+		<div class="safety reveal">
 			<span class="safety-icon-wrap">
 				<Icon name="tabler:alert-triangle" class="safety-icon" />
 			</span>
@@ -171,6 +217,199 @@ const tabs = [
 		}
 	}
 
+	.flow {
+		display: flex;
+		align-items: stretch;
+		justify-content: center;
+		width: 100%;
+		max-width: 920px;
+		margin: 0 auto 48px;
+	}
+
+	.flow-node {
+		flex: 1;
+		max-width: 280px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		text-align: center;
+		padding: 20px 16px;
+		border-radius: 14px;
+		background: $color-white;
+		border: 1px solid $color-border;
+
+		&.core {
+			background: linear-gradient(180deg, rgba(23, 187, 82, 0.1), $color-white);
+			border-color: rgba(23, 187, 82, 0.4);
+		}
+	}
+
+	.flow-ic {
+		width: 46px;
+		height: 46px;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(23, 187, 82, 0.1);
+		color: $color-pe-dark;
+		border: 1px solid rgba(23, 187, 82, 0.3);
+
+		:global(svg) {
+			width: 26px;
+			height: 26px;
+		}
+	}
+
+	.flow-node.core .flow-ic {
+		background: $color-pe-dark;
+		color: $color-white;
+		border-color: $color-pe-dark;
+	}
+
+	.flow-title {
+		font-size: 15px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		line-height: 1.25;
+	}
+
+	.flow-note {
+		font-size: 12.5px;
+		color: $color-text-muted;
+	}
+
+	.flow-conn {
+		flex: none;
+		width: 96px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+	}
+
+	.flow-label {
+		font-size: 11px;
+		font-weight: $font-weight-bold;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: $color-pe-dark;
+	}
+
+	.flow-track {
+		position: relative;
+		width: 100%;
+		height: 2px;
+		background: $color-border-light;
+
+		&::before {
+			content: '';
+			position: absolute;
+			right: -1px;
+			top: -4px;
+			border-left: 8px solid #bcd8c4;
+			border-top: 5px solid transparent;
+			border-bottom: 5px solid transparent;
+		}
+
+		i {
+			position: absolute;
+			top: -3px;
+			left: 0;
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: $color-pe-dark;
+			box-shadow: 0 0 8px rgba(23, 187, 82, 0.5);
+			animation: flow-packet-x 2.6s linear infinite;
+		}
+	}
+
+	.flow-conn:nth-of-type(4) .flow-track i {
+		animation-delay: 1.3s;
+	}
+
+	@keyframes flow-packet-x {
+		0% {
+			left: -4%;
+			opacity: 0;
+		}
+		10% {
+			opacity: 1;
+		}
+		90% {
+			opacity: 1;
+		}
+		100% {
+			left: 104%;
+			opacity: 0;
+		}
+	}
+
+	@keyframes flow-packet-y {
+		0% {
+			top: -8%;
+			opacity: 0;
+		}
+		10% {
+			opacity: 1;
+		}
+		90% {
+			opacity: 1;
+		}
+		100% {
+			top: 104%;
+			opacity: 0;
+		}
+	}
+
+	@include media-down(md) {
+		.flow {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.flow-node {
+			max-width: 340px;
+			width: 100%;
+		}
+
+		.flow-conn {
+			width: auto;
+			height: 60px;
+			flex-direction: column;
+		}
+
+		.flow-track {
+			width: 2px;
+			height: 100%;
+
+			&::before {
+				right: auto;
+				top: auto;
+				left: -4px;
+				bottom: -1px;
+				border-left: 5px solid transparent;
+				border-right: 5px solid transparent;
+				border-top: 8px solid #bcd8c4;
+			}
+
+			i {
+				left: -3px;
+				top: 0;
+				animation-name: flow-packet-y;
+			}
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.flow-track i {
+			display: none;
+		}
+	}
+
 	.grid {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -197,6 +436,20 @@ const tabs = [
 		justify-content: space-between;
 		padding: 16px 20px;
 		border-bottom: 1px solid $color-border;
+	}
+
+	.conn-head-host {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.conn-head-label {
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 12px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-muted;
 	}
 
 	.conn-host {
@@ -230,6 +483,31 @@ const tabs = [
 		font-family: $font-family-mono;
 		font-size: 14px;
 		color: $color-text-primary;
+
+		&.port {
+			color: $color-pe-link;
+			background: rgba(23, 187, 82, 0.1);
+			border: 1px solid rgba(23, 187, 82, 0.3);
+			border-radius: 6px;
+			padding: 1px 8px;
+			cursor: pointer;
+			transition: $transition-fast;
+
+			&:hover {
+				background: rgba(23, 187, 82, 0.18);
+				border-color: rgba(23, 187, 82, 0.5);
+			}
+
+			&.copied {
+				color: $color-white;
+				background: $color-pe-dark;
+				border-color: $color-pe-dark;
+
+				&::after {
+					content: ' ✓';
+				}
+			}
+		}
 
 		&.muted {
 			font-family: inherit;
@@ -273,6 +551,7 @@ const tabs = [
 	.tab-panel {
 		display: none;
 		position: relative;
+		background: #0f1614;
 
 		&.active {
 			display: block;
@@ -281,15 +560,15 @@ const tabs = [
 		pre {
 			margin: 0;
 			padding: 20px;
-			overflow-x: auto;
 		}
 
 		code {
 			font-family: $font-family-mono;
 			font-size: 13px;
-			line-height: 1.6;
-			white-space: pre;
-			color: $color-text-primary;
+			line-height: 1.7;
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+			color: #dfe9e2;
 		}
 	}
 
@@ -318,6 +597,15 @@ const tabs = [
 		position: absolute;
 		top: 12px;
 		right: 12px;
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.18);
+		color: #cfe8d6;
+
+		&:hover {
+			background: rgba(255, 255, 255, 0.14);
+			border-color: rgba(255, 255, 255, 0.3);
+			color: $color-white;
+		}
 	}
 
 	.safety {
@@ -393,6 +681,21 @@ const tabs = [
 						btn.textContent = original;
 						btn.classList.remove('copied');
 					}, 1500);
+				})
+				.catch(() => {});
+		});
+	});
+
+	// Port chips — copy the value on click and flash a "copied" state
+	// (keeps the number visible instead of swapping the label like .copy does)
+	document.querySelectorAll<HTMLButtonElement>('.conn-value.port').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			if (btn.classList.contains('copied')) return;
+			navigator.clipboard
+				.writeText(btn.dataset.copy ?? '')
+				.then(() => {
+					btn.classList.add('copied');
+					setTimeout(() => btn.classList.remove('copied'), 1200);
 				})
 				.catch(() => {});
 		});
