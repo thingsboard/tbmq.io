@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 660" width="1060" height="660" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"><defs><pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1.4" cy="1.4" r="1.4" fill="#33363d" opacity="0.7"/></pattern></defs><rect x="0" y="0" width="1060" height="660" fill="#16171a"/><rect x="0" y="0" width="1060" height="660" fill="url(#dots)"/><rect x="512" y="70" width="96" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="560" y="92" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">root</text>
+<rect x="501" y="170" width="118" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="560" y="192" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">sensors</text>
+<rect x="235" y="290" width="90" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="280" y="312" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">+</text>
+<rect x="411" y="290" width="118" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="470" y="312" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">room1</text>
+<rect x="601" y="290" width="118" height="44" rx="10" fill="#1e1f23" stroke="#3b3e45" stroke-width="1.5"/>
+<text x="660" y="312" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#e6e7ea" text-anchor="middle" opacity="1" dominant-baseline="middle">room2</text>
+<rect x="795" y="290" width="90" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="840" y="312" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">#</text>
+<rect x="205" y="410" width="150" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="280" y="432" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">temperature</text>
+<rect x="395" y="410" width="150" height="44" rx="10" fill="#12301f" stroke="#37d67f" stroke-width="2"/>
+<text x="470" y="432" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">temperature</text>
+<rect x="585" y="410" width="150" height="44" rx="10" fill="#1e1f23" stroke="#3b3e45" stroke-width="1.5"/>
+<text x="660" y="432" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#e6e7ea" text-anchor="middle" opacity="1" dominant-baseline="middle">temperature</text>
+<path d="M 560 114 L 560 170" stroke="#37d67f" stroke-width="2.2" />
+<path d="M 560 214 L 280 290" stroke="#37d67f" stroke-width="2.2" />
+<path d="M 560 214 L 470 290" stroke="#37d67f" stroke-width="2.2" />
+<path d="M 560 214 L 660 290" stroke="#3b3e45" stroke-width="1.5" stroke-dasharray="1 0"/>
+<path d="M 560 214 L 840 290" stroke="#37d67f" stroke-width="2.2" />
+<path d="M 280 334 L 280 410" stroke="#37d67f" stroke-width="2.2" />
+<path d="M 470 334 L 470 410" stroke="#37d67f" stroke-width="2.2" />
+<path d="M 660 334 L 660 410" stroke="#3b3e45" stroke-width="1.5" stroke-dasharray="1 0"/>
+<text x="280" y="470" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">sub A: sensors/+/temperature</text>
+<text x="470" y="470" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">sub C: sensors/room1/temperature</text>
+<text x="660" y="470" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#83868c" text-anchor="middle" opacity="1" dominant-baseline="middle">sub D: sensors/room2/temperature</text>
+<text x="840" y="350" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#74e6a4" text-anchor="middle" opacity="1" dominant-baseline="middle">sub B: sensors/#</text>
+<rect x="70" y="60" width="300" height="64" rx="12" fill="#182148" stroke="#6b8cff" stroke-width="1.6"/>
+<text x="220" y="84" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#aebfff" text-anchor="middle" opacity="1" dominant-baseline="middle">PUBLISH</text>
+<text x="220" y="104" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" font-weight="650" fill="#aebfff" text-anchor="middle" opacity="1" dominant-baseline="middle">sensors/room1/temperature</text>
+<text x="530" y="590" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#83868c" text-anchor="middle" opacity="1" dominant-baseline="middle">One PUBLISH matches three subscriptions: exact (sub C), single-level "+" (sub A), multi-level "#" (sub B). The room2 branch is pruned — never visited.</text>
+<text x="530" y="616" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="500" fill="#83868c" text-anchor="middle" opacity="1" dominant-baseline="middle">Lookup cost scales with the topic depth (levels traversed), not with the total number of subscriptions.</text></svg>

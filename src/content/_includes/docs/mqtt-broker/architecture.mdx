@@ -6,15 +6,25 @@ TBMQ is designed with four core attributes:
 
 - **Scalability** — horizontally scalable, built on proven open-source technologies.
 - **Fault tolerance** — no single point of failure; every node in the cluster is functionally identical.
-- **Performance** — handles millions of clients and processes millions of messages per second.
-- **Durability** — high message durability; once the broker acknowledges a message, it is never lost.
+- **Performance** — handles millions of clients and messages per second: up to
+  <DocLink product={props.product} path="reference/3m-throughput-single-node-performance-test">3 million messages per second on a single node</DocLink> and
+  <DocLink product={props.product} path="reference/100m-connections-performance-test">100 million concurrent connections in a cluster</DocLink>.
+- **Durability** — a message is acknowledged only after Kafka has persisted it, so once the broker acknowledges a publish it is never lost.
 
 ## Architecture diagram
 
+The diagram below is the top-level map of a TBMQ node and the services around it. Each MQTT client connects
+through [Netty](#netty); packets are handled by the [Actor system](#actor-system), routed by the
+[Message dispatcher service](#message-dispatcher-service) using the [Subscriptions Trie](#subscriptions-trie), and
+persisted to Kafka — the durability backbone. [Redis](#redis) stores messages for persistent DEVICE clients,
+[PostgreSQL](#postgresql) holds metadata, and the [Integration Executor](#integration-executor) bridges to external
+systems. The rest of this page zooms into each of these.
+
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-architecture.png',
-    alt: 'TBMQ architecture diagram showing components and message flow', caption: 'TBMQ architecture diagram showing components and message flow',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-architecture.svg',
+    alt: 'TBMQ layered architecture: MQTT clients connect through Netty to a TBMQ node (Actor system, Message dispatcher, Subscription Trie); the node produces to and consumes from Apache Kafka, which fans out to Redis/Valkey (persistent DEVICE storage), PostgreSQL (metadata) and the Integration Executor (external HTTP/MQTT/Kafka systems); a Web UI/REST API manages the broker.',
+    caption: 'TBMQ architecture — components and message flow',
   },
 ]} />
 
@@ -29,7 +39,11 @@ ThingsBoard's experience building scalable IoT applications has surfaced three p
 
 In all scenarios, persistent clients with QoS 1 or 2 are often used to ensure reliable delivery even during temporary offline periods.
 
-TBMQ is intentionally designed to excel at all three. Key design principles:
+TBMQ is intentionally designed to excel at all three, and its performance tests are built around them:
+<DocLink product={props.product} path="reference/100m-connections-performance-test">fan-in — 100M connections</DocLink>,
+<DocLink product={props.product} path="reference/3m-throughput-single-node-performance-test">fan-out — 3M msg/sec per node</DocLink>, and
+<DocLink product={props.product} path="reference/1m-throughput-p2p-performance-test">point-to-point — 1M msg/sec persistent</DocLink>.
+Key design principles:
 
 - No master or coordinator processes — all nodes have identical functionality.
 - Distributed processing enables effortless horizontal scalability.
@@ -52,20 +66,53 @@ When a publisher sends a **PUBLISH** message:
 4. Depending on client type (**DEVICE** or **APPLICATION**) and persistence settings, the broker either
    routes the message to another Kafka topic or delivers it directly.
 
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-publish-lifecycle.svg',
+    alt: 'Sequence diagram of a PUBLISH: publisher → client actor → message dispatcher → Kafka tbmq.msg.all; only after Kafka persists the message is PUBACK/PUBREC returned to the publisher (durability gate); asynchronously the message is consumed, matched in the Subscription Trie and delivered to the subscriber.',
+    caption: 'PUBLISH lifecycle — the acknowledgement is sent only after Kafka persists the message',
+  },
+]} />
+
+**Durability guarantee.** The acknowledgement for a QoS 1/2 publish is emitted **only after** the Kafka producer
+confirms the write to `tbmq.msg.all`. Once the publisher receives its PUBACK/PUBREC the message is durably stored and
+survives a broker-node failure — another node resumes processing it from Kafka. To also survive the loss of a Kafka
+broker, run a replicated Kafka cluster (the shipped defaults use `acks=1` and a replication factor of `1`).
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-qos-durability.svg',
+    alt: 'QoS 0, 1 and 2 handshakes aligned to a Kafka persistence gate: QoS 0 gets no acknowledgement; QoS 1 gets PUBACK and QoS 2 gets PUBREC/PUBREL/PUBCOMP, all emitted only after the message is persisted to tbmq.msg.all.',
+    caption: 'QoS handshakes vs. the Kafka persistence gate',
+  },
+]} />
+
+The DEVICE/APPLICATION client type and the session type (persistent vs. non-persistent) together decide where a
+message is stored and how it is delivered:
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-client-type-decision.svg',
+    alt: 'Decision tree: an MQTT CONNECT with a clean session is non-persistent (delivered in-memory, nothing stored); a persistent session branches by client type — DEVICE messages go to a Redis/Valkey queue, APPLICATION messages go to a dedicated tbmq.msg.app.$CLIENT_ID Kafka topic.',
+    caption: 'How session type and client type map to a storage/delivery path',
+  },
+]} />
+
 ### Non-persistent client
 
 A client is non-persistent when the CONNECT packet specifies:
 - **MQTT v3.x:** `clean_session = true`
 - **MQTT v5:** `clean_start = true` and `sessionExpiryInterval = 0` (or not specified)
 
-Non-persistent clients receive messages published directly without additional persistence. Only **DEVICE** clients
-can be non-persistent.
+Non-persistent clients receive messages published directly without additional persistence. Non-persistent sessions
+are used by **DEVICE** clients; the persistence path is chosen purely from the session flags above, independent of the
+client type.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-non-persistent-dev.png',
-    alt: 'Non-persistent DEVICE client message flow',
-    caption: 'Non-persistent DEVICE client flow',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-non-persistent-dev.svg',
+    alt: 'Single-node non-persistent DEVICE flow: PUBLISH is stored in tbmq.msg.all, acknowledged after persistence, consumed, and delivered straight to the subscriber with nothing stored for the client.',
+    caption: 'Non-persistent DEVICE client — single node',
   },
 ]} />
 
@@ -76,8 +123,8 @@ connection.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-non-persist-dev-cluster.png',
-    alt: 'Non-persistent DEVICE client flow in cluster mode',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-non-persist-dev-cluster.svg',
+    alt: 'Cluster non-persistent DEVICE flow: node A stores to tbmq.msg.all (shared consumer group) and forwards to the subscriber\'s owner node B via tbmq.msg.downlink.basic.$SERVICE_ID for delivery.',
     caption: 'Non-persistent DEVICE client — cluster mode',
   },
 ]} />
@@ -93,6 +140,8 @@ Persistent clients are classified into two types:
 - **DEVICE** — primarily publish large volumes; subscribe to few topics with moderate message rates. Typically IoT sensors.
 - **APPLICATION** — subscribe to high-rate topics; require offline message persistence for later delivery. Used for analytics, data processing, and similar backend functions.
 
+The client type is assigned through the <DocLink product={props.product} path="concepts/client-types">MQTT client credentials</DocLink>, not by the CONNECT packet.
+
 #### Persistent DEVICE client
 
 Messages for persistent DEVICE clients flow through the `tbmq.msg.persisted` Kafka topic, separating them from
@@ -101,9 +150,9 @@ client reconnects, stored messages are retrieved and delivered efficiently.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-persistent-dev.png',
-    alt: 'Persistent DEVICE client message flow',
-    caption: 'Persistent DEVICE client flow',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-persistent-dev.svg',
+    alt: 'Single-node persistent DEVICE flow: PUBLISH is stored in tbmq.msg.all, routed to tbmq.msg.persisted, then written to a per-client Redis/Valkey queue and delivered to the subscriber, remaining stored until acknowledged.',
+    caption: 'Persistent DEVICE client — single node',
   },
 ]} />
 
@@ -115,8 +164,8 @@ A detailed breakdown of Redis-based persistence for DEVICE clients is available 
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-persist-dev-cluster.png',
-    alt: 'Persistent DEVICE client flow in cluster mode',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-persist-dev-cluster.svg',
+    alt: 'Cluster persistent DEVICE flow: node A stores to tbmq.msg.all, routes to tbmq.msg.persisted, writes the Redis/Valkey queue, and forwards to the subscriber\'s owner node B via tbmq.msg.downlink.persisted.$SERVICE_ID.',
     caption: 'Persistent DEVICE client — cluster mode',
   },
 ]} />
@@ -125,22 +174,24 @@ A detailed breakdown of Redis-based persistence for DEVICE clients is available 
 
 Each APPLICATION client maps to a dedicated Kafka topic (`tbmq.msg.app.$CLIENT_ID`). Messages read from
 `tbmq.msg.all` are routed to the client's topic. A separate Kafka consumer thread per APPLICATION client
-retrieves and delivers messages. This architecture supports millions of topics and enables high message throughput
-for individual clients, reaching millions of messages per second.
+retrieves and delivers messages. This architecture supports millions of dedicated topics and sustains high message
+throughput per client — the topic itself is the durable, replayable inbox.
 
 The dedicated consumer group structure also makes
 <DocLink product={props.product} path="user-guide/shared-subscriptions#application-client-type">MQTT 5 shared subscriptions</DocLink>
 extremely efficient for APPLICATION clients.
 
 <Aside type="caution">
-  APPLICATION clients can only use persistent sessions.
+  APPLICATION clients are designed to run with persistent sessions — that is how they retain and replay messages while
+  offline. A clean-session connection is handled on the non-persistent path regardless of client type, so configure
+  APPLICATION clients with a persistent session.
 </Aside>
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-app.png',
-    alt: 'Persistent APPLICATION client message flow',
-    caption: 'Persistent APPLICATION client flow',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-app.svg',
+    alt: 'Single-node persistent APPLICATION flow: PUBLISH is stored in tbmq.msg.all, routed to the dedicated tbmq.msg.app.$CLIENT_ID topic, and read by a dedicated consumer that delivers to the APPLICATION client.',
+    caption: 'Persistent APPLICATION client — single node',
   },
 ]} />
 
@@ -150,8 +201,8 @@ directly on the target node.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-app-cluster.png',
-    alt: 'Persistent APPLICATION client flow in cluster mode',
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-app-cluster.svg',
+    alt: 'Cluster persistent APPLICATION flow: the dedicated tbmq.msg.app.$CLIENT_ID consumer is created on the node where the APPLICATION client connects, so it reads its topic locally with no internode hop.',
     caption: 'Persistent APPLICATION client — cluster mode',
   },
 ]} />
@@ -165,6 +216,10 @@ directly on the target node.
 | `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL` | TTL for persisted DEVICE client messages |
 
 See the full <DocLink product={props.product} path="installation/config">configuration reference</DocLink> for details.
+
+Related mechanics that shape delivery: <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink>,
+<DocLink product={props.product} path="other/msg-delivery-strategy">Msg delivery strategies</DocLink>, and
+<DocLink product={props.product} path="user-guide/shared-subscriptions">Shared subscriptions</DocLink>.
 
 ### Kafka topics
 
@@ -187,11 +242,32 @@ See the full <DocLink product={props.product} path="installation/config">configu
 | `tbmq.client.blocked` | Distributes and stores the blocked clients list across the cluster |
 | `tbmq.sys.internode.notifications.$SERVICE_ID` | System notifications between broker nodes for auth provider sync, admin settings sync, and cache cleanup |
 
+Topics fall into a few functional groups. Their scope tells you how they are partitioned across the cluster: **global**
+topics are shared by every node (consumer groups rebalance across them), **per-node** topics carry the owner node's
+`$SERVICE_ID`, and **per-client** topics are dedicated to a single APPLICATION client.
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
+    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), and system/housekeeping — each tagged global, per-node, per-client or per-filter, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
+    caption: 'Kafka topics grouped by function and scope',
+  },
+]} />
+
+<Aside>
+  Every topic name is prefixed by the optional `queue.kafka.kafka-prefix` (empty by default, so names match the table
+  exactly). In per-topic suffixes, alphanumeric client IDs / topic filters pass through verbatim while other values are
+  sanitized or SHA-256 hashed to form a valid topic name.
+</Aside>
+
 ### Redis
 
-<a href="https://redis.io/" target="_blank" rel="noopener noreferrer">Redis</a> is an in-memory data store used in TBMQ to persist messages for DEVICE persistent
-clients. Its low-latency, high-throughput read/write operations and Redis Cluster horizontal scalability ensure
-that persistent messages can be retrieved and delivered efficiently even as message volume grows.
+<a href="https://redis.io/" target="_blank" rel="noopener noreferrer">Redis</a> — or its drop-in fork
+<a href="https://valkey.io/" target="_blank" rel="noopener noreferrer">Valkey</a>, which TBMQ bundles by default in its
+Docker and Kubernetes deployments — is the in-memory data store used to persist messages for DEVICE persistent
+clients. Each client's queue is stored as a Redis sorted set, giving low-latency, high-throughput reads and writes.
+Redis Cluster horizontal scalability ensures persistent messages are retrieved and delivered efficiently even as
+message volume grows.
 
 <Aside>
   Before TBMQ v2.0, PostgreSQL was used for DEVICE persistent client message storage. The migration to Redis in
@@ -202,7 +278,8 @@ that persistent messages can be retrieved and delivered efficiently even as mess
 
 TBMQ uses <a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer">PostgreSQL</a> to store users, user credentials, MQTT client credentials,
 statistics, WebSocket connections, WebSocket subscriptions, and other metadata. PostgreSQL's ACID compliance and
-transaction management guarantee data integrity and consistency for these critical entities.
+transaction management guarantee data integrity and consistency for these critical entities. MQTT message payloads are
+never stored in PostgreSQL — they live in Kafka and Redis.
 
 ### Web UI
 
@@ -225,6 +302,19 @@ This approach ensures high throughput and low-latency communication even under h
 
 Netty's modular design provides fine-grained control over protocol handling, message parsing, and connection management. It also offers built-in TLS encryption support, making it both secure and extensible.
 
+TBMQ exposes four MQTT listeners; each is a separate Netty server with its own thread pool:
+
+| Listener | Default port | Enabled by default |
+|---|---|---|
+| MQTT over TCP | 1883 | Yes |
+| MQTT over TLS (MQTTS) | 8883 | No |
+| MQTT over WebSocket (WS) | 8084 | Yes |
+| MQTT over secure WebSocket (WSS) | 8085 | No |
+
+When TBMQ runs behind a load balancer, the <DocLink product={props.product} path="other/proxy-protocol">PROXY protocol</DocLink>
+(v1/v2) can be enabled per listener so the broker sees each client's real IP address. See
+<DocLink product={props.product} path="security/listeners">MQTT listeners</DocLink> for the full listener and TLS configuration.
+
 ### Actor system
 
 TBMQ uses a custom Actor System as the underlying mechanism for handling MQTT clients. The <a href="https://en.wikipedia.org/wiki/Actor_model" target="_blank" rel="noopener noreferrer">Actor model</a> enables efficient, concurrent message processing — each actor operates independently, which eliminates shared-state contention and ensures high-performance operation.
@@ -233,6 +323,18 @@ Two distinct actor types exist within the system:
 
 - **Client actors** — one per connected MQTT client. Responsible for processing the main MQTT message types: CONNECT, SUBSCRIBE, UNSUBSCRIBE, PUBLISH, and related control messages. Client actors manage all interactions with their respective MQTT client.
 - **Persisted Device actors** — one per persistent DEVICE client, created in addition to the Client actor. Specifically designated to manage persistence-related operations, including the storage and retrieval of messages for offline delivery.
+
+Both are sibling root actors, scheduled on the `client-dispatcher` and `persisted-device-dispatcher` thread pools. Each
+actor has a mailbox guarded so that at most one thread processes it at a time — giving per-client isolation and message
+ordering with no locks on the hot path.
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-actor-system.svg',
+    alt: 'The two TBMQ actor types: a Client actor (one per connected client) handling CONNECT/DISCONNECT, keep-alive, SUBSCRIBE/UNSUBSCRIBE, PUBLISH and QoS acknowledgements; and a Persisted DEVICE actor (one per persistent DEVICE client) that retrieves and delivers offline messages, tracks in-flight packet ids and updates Redis on acknowledgement.',
+    caption: 'Actor system — the two actor types and the messages they handle',
+  },
+]} />
 
 ### Message dispatcher service
 
@@ -246,6 +348,9 @@ The Message dispatcher service manages the flow from publisher to Kafka to subsc
    - **Persistent APPLICATION:** published to the client's dedicated `tbmq.msg.app.$CLIENT_ID` topic.
 4. Passes messages to Netty for network transmission to online clients.
 
+The produce step writes to Kafka through a queue publisher, while a separate consumer service reads `tbmq.msg.all` back
+and drives the routing above — decoupling ingestion from fan-out.
+
 ### Subscriptions Trie
 
 The <a href="https://en.wikipedia.org/wiki/Trie" target="_blank" rel="noopener noreferrer">Trie</a> data structure provides fast topic matching:
@@ -253,7 +358,15 @@ The <a href="https://en.wikipedia.org/wiki/Trie" target="_blank" rel="noopener n
 - Common topic prefixes are stored once, minimizing memory and search space.
 - Lookup time depends on the topic length, not the total number of subscriptions — consistent performance at scale.
 
-All subscriptions are consumed from Kafka and stored in the Trie in memory. The Trie organizes topic filters hierarchically — each node represents a topic level. When a PUBLISH message arrives, the broker queries the Trie with the topic name to find all matching subscribers, then delivers a copy to each. The trade-off is increased memory consumption proportional to the number of active subscriptions.
+All subscriptions are consumed from Kafka and stored in the Trie in memory. The Trie organizes topic filters hierarchically — each node represents a topic level. When a PUBLISH message arrives, the broker queries the Trie with the topic name to find all matching subscribers, then delivers a copy to each. Single-level (`+`) and multi-level (`#`) wildcards are followed alongside the exact match at each level, while non-matching branches are pruned. The trade-off is increased memory consumption proportional to the number of active subscriptions.
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-subscription-trie.svg',
+    alt: 'Subscription Trie example: a PUBLISH to sensors/room1/temperature matches three subscriptions — exact (sensors/room1/temperature), single-level wildcard (sensors/+/temperature) and multi-level wildcard (sensors/#) — while the sensors/room2 branch is pruned and never visited; lookup cost scales with topic depth, not subscription count.',
+    caption: 'Subscription Trie — matching a PUBLISH against +, # and exact filters',
+  },
+]} />
 
 ## Standalone vs cluster mode
 
@@ -264,6 +377,37 @@ In standalone mode, a single TBMQ node handles all connections and processing. I
 - If a client loses its connection to a node (node failure, network issue), it reconnects to any healthy node.
 - New nodes added to the cluster automatically receive the current state from Kafka topics.
 
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-standalone-vs-cluster.svg',
+    alt: 'Standalone vs cluster topology side by side: standalone is one TBMQ node over Kafka, Redis and PostgreSQL; cluster adds a load balancer in front of several identical nodes (no master) sharing the same Kafka, Redis and PostgreSQL, with session and subscription state replicated to every node via Kafka.',
+    caption: 'Standalone vs cluster topology',
+  },
+]} />
+
+See <DocLink product={props.product} path="concepts/clustering">Clustering</DocLink> for deployment details.
+
+## Integration Executor
+
+TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
+broker to external systems without adding load to the message path. It consumes messages from Kafka and pushes them to
+the configured targets, supporting **HTTP**, **MQTT**, and **Kafka** integration types.
+
+Because it is deployed and scaled independently of the broker, a slow or failing external endpoint never back-pressures
+MQTT traffic, and integration throughput can be scaled by running more executor instances.
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-integration-executor.svg',
+    alt: 'Integration Executor data flow: the TBMQ broker publishes to Kafka (tbmq.msg.ie); a separate Integration Executor microservice consumes it and delivers to external HTTP, MQTT and Kafka systems, sending results back to the broker via tbmq.ie.uplink; it runs in its own JVM and scales independently.',
+    caption: 'Integration Executor — TBMQ → Kafka → external HTTP / MQTT / Kafka',
+  },
+]} />
+
+Integrations are available in both editions. See <DocLink product={props.product} path="integrations">Integrations</DocLink>
+for the supported types and <DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink>
+for deployment and tuning.
+
 ## Programming languages
 
-TBMQ backend is implemented in **Java 17**. The frontend is a single-page application built with **Angular 19**.
+TBMQ backend is implemented in **Java 25**. The frontend is a single-page application built with **Angular 21**.
