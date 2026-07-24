@@ -32,16 +32,16 @@ const faq: FaqItem[] = [
 		systems use to move and process high-throughput data. One lives at the edge; the other lives in the data center.
 	</p>
 
-	<MqttDiagram caption="MQTT connects devices at the edge; the broker forwards into Kafka in the data center">
+	<MqttDiagram caption="MQTT connects devices at the edge; the central broker forwards into Kafka in the data center">
 		<svg
 			viewBox="0 0 680 160"
 			role="img"
-			aria-label="MQTT and Kafka pipeline: devices connect to the TBMQ broker over MQTT at the edge, and the broker forwards messages into Kafka in the data center for durable, replayable backend streams"
+			aria-label="MQTT and Kafka pipeline: edge devices connect over MQTT to the central TBMQ broker, which forwards messages into Kafka for durable, replayable backend streams in the data center"
 		>
-			<text class="d-tiny d-mid" x="160" y="22">EDGE</text>
-			<text class="d-tiny d-mid" x="518" y="22">DATA CENTER</text>
-			<path class="d-brk" d="M16 30 L16 36 L305 36 L305 30" fill="none"></path>
-			<path class="d-brk" d="M374 30 L374 36 L663 36 L663 30" fill="none"></path>
+			<text class="d-tiny d-mid" x="71" y="22">EDGE</text>
+			<text class="d-tiny d-mid" x="429" y="22">DATA CENTER</text>
+			<path class="d-brk" d="M16 30 L16 36 L126 36 L126 30" fill="none"></path>
+			<path class="d-brk" d="M195 30 L195 36 L663 36 L663 30" fill="none"></path>
 			<rect class="d-actor" x="16" y="64" width="110" height="48" rx="10"></rect>
 			<text class="d-alabel d-mid" x="71" y="92">Devices</text>
 			<rect class="d-actor d-actor--hero" x="195" y="64" width="110" height="48" rx="10"></rect>
