@@ -77,7 +77,11 @@ const benchmarks: Benchmark[] = [
 					<article class="card reveal" style={`--reveal-delay: ${i * 90}ms`}>
 						<div class="card-viz">
 							{b.viz === 'fan-in' && (
-								<svg viewBox="0 0 360 196" role="img" aria-label="Fan-in: many publishers send to one broker">
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Fan-in: many publishers through the broker to one subscriber"
+								>
 									<defs>
 										<marker
 											id="bm-0"
@@ -123,76 +127,6 @@ const benchmarks: Benchmark[] = [
 										>
 											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
 										</marker>
-									</defs>
-									<path
-										d="M68 36 C 139.1 36 154.9 73 226 73"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-0)"
-									/>
-									<path
-										d="M68 72 C 139.1 72 154.9 86 226 86"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-1)"
-									/>
-									<path
-										d="M68 108 C 139.1 108 154.9 98 226 98"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-2)"
-									/>
-									<path
-										d="M68 144 C 139.1 144 154.9 111 226 111"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-3)"
-									/>
-									<circle cx="54" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="54" cy="36" r="8" fill="#17bb52" />
-									<circle cx="54" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="54" cy="72" r="8" fill="#17bb52" />
-									<circle cx="54" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="54" cy="108" r="8" fill="#17bb52" />
-									<circle cx="54" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="54" cy="144" r="8" fill="#17bb52" />
-									<rect x="232" y="62" width="112" height="60" rx="12" fill="#155e2b" />
-									<text
-										x="288"
-										y="93"
-										text-anchor="middle"
-										dominant-baseline="middle"
-										font-size="15"
-										font-weight="700"
-										fill="#fff"
-										letter-spacing="0.6"
-									>
-										BROKER
-									</text>
-									<text
-										x="60"
-										y="174"
-										text-anchor="middle"
-										font-size="15"
-										font-weight="600"
-										fill="#3f4a44"
-										letter-spacing="0.3"
-									>
-										Publishers
-									</text>
-								</svg>
-							)}
-							{b.viz === 'fan-out' && (
-								<svg viewBox="0 0 360 196" role="img" aria-label="Fan-out: one broker delivers to many subscribers">
-									<defs>
 										<marker
 											id="bm-4"
 											markerUnits="userSpaceOnUse"
@@ -204,6 +138,101 @@ const benchmarks: Benchmark[] = [
 										>
 											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
 										</marker>
+									</defs>
+									<path
+										d="M58 36 C 85 36 91 73 118 73"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-0)"
+									/>
+									<path
+										d="M58 72 C 85 72 91 86 118 86"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-1)"
+									/>
+									<path
+										d="M58 108 C 85 108 91 98 118 98"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-2)"
+									/>
+									<path
+										d="M58 144 C 85 144 91 111 118 111"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-3)"
+									/>
+									<path
+										d="M242 92 C 269 92 275 92 302 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-4)"
+									/>
+									<circle cx="44" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="36" r="8" fill="#17bb52" />
+									<circle cx="44" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="72" r="8" fill="#17bb52" />
+									<circle cx="44" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="108" r="8" fill="#17bb52" />
+									<circle cx="44" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="144" r="8" fill="#17bb52" />
+									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="180"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="316" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="92" r="8" fill="#17bb52" />
+									<text
+										x="52"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publishers
+									</text>
+									<text
+										x="316"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscriber
+									</text>
+								</svg>
+							)}
+							{b.viz === 'fan-out' && (
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Fan-out: one publisher through the broker to many subscribers"
+								>
+									<defs>
 										<marker
 											id="bm-5"
 											markerUnits="userSpaceOnUse"
@@ -237,80 +266,6 @@ const benchmarks: Benchmark[] = [
 										>
 											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
 										</marker>
-									</defs>
-									<path
-										d="M134 73 C 205.1 73 220.9 36 292 36"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-4)"
-									/>
-									<path
-										d="M134 86 C 205.1 86 220.9 72 292 72"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-5)"
-									/>
-									<path
-										d="M134 98 C 205.1 98 220.9 108 292 108"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-6)"
-									/>
-									<path
-										d="M134 111 C 205.1 111 220.9 144 292 144"
-										fill="none"
-										stroke="#4fb97a"
-										stroke-width="2.25"
-										stroke-linecap="round"
-										marker-end="url(#bm-7)"
-									/>
-									<rect x="16" y="62" width="112" height="60" rx="12" fill="#155e2b" />
-									<text
-										x="72"
-										y="93"
-										text-anchor="middle"
-										dominant-baseline="middle"
-										font-size="15"
-										font-weight="700"
-										fill="#fff"
-										letter-spacing="0.6"
-									>
-										BROKER
-									</text>
-									<circle cx="306" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="306" cy="36" r="8" fill="#17bb52" />
-									<circle cx="306" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="306" cy="72" r="8" fill="#17bb52" />
-									<circle cx="306" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="306" cy="108" r="8" fill="#17bb52" />
-									<circle cx="306" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="306" cy="144" r="8" fill="#17bb52" />
-									<text
-										x="300"
-										y="174"
-										text-anchor="middle"
-										font-size="15"
-										font-weight="600"
-										fill="#3f4a44"
-										letter-spacing="0.3"
-									>
-										Subscribers
-									</text>
-								</svg>
-							)}
-							{b.viz === 'p2p' && (
-								<svg
-									viewBox="0 0 360 196"
-									role="img"
-									aria-label="Point-to-point: one publisher to one subscriber through the broker"
-								>
-									<defs>
 										<marker
 											id="bm-8"
 											markerUnits="userSpaceOnUse"
@@ -335,7 +290,31 @@ const benchmarks: Benchmark[] = [
 										</marker>
 									</defs>
 									<path
-										d="M70 92 C 91.6 92 96.4 92 118 92"
+										d="M58 92 C 85 92 91 92 118 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-5)"
+									/>
+									<path
+										d="M242 73 C 269 73 275 36 302 36"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-6)"
+									/>
+									<path
+										d="M242 86 C 269 86 275 72 302 72"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-7)"
+									/>
+									<path
+										d="M242 98 C 269 98 275 108 302 108"
 										fill="none"
 										stroke="#4fb97a"
 										stroke-width="2.25"
@@ -343,15 +322,15 @@ const benchmarks: Benchmark[] = [
 										marker-end="url(#bm-8)"
 									/>
 									<path
-										d="M242 92 C 263.6 92 268.4 92 290 92"
+										d="M242 111 C 269 111 275 144 302 144"
 										fill="none"
 										stroke="#4fb97a"
 										stroke-width="2.25"
 										stroke-linecap="round"
 										marker-end="url(#bm-9)"
 									/>
-									<circle cx="56" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="56" cy="92" r="8" fill="#17bb52" />
+									<circle cx="44" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="92" r="8" fill="#17bb52" />
 									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
 									<text
 										x="180"
@@ -365,11 +344,17 @@ const benchmarks: Benchmark[] = [
 									>
 										BROKER
 									</text>
-									<circle cx="304" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
-									<circle cx="304" cy="92" r="8" fill="#17bb52" />
+									<circle cx="316" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="36" r="8" fill="#17bb52" />
+									<circle cx="316" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="72" r="8" fill="#17bb52" />
+									<circle cx="316" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="108" r="8" fill="#17bb52" />
+									<circle cx="316" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="144" r="8" fill="#17bb52" />
 									<text
-										x="56"
-										y="134"
+										x="44"
+										y="174"
 										text-anchor="middle"
 										font-size="15"
 										font-weight="600"
@@ -379,8 +364,95 @@ const benchmarks: Benchmark[] = [
 										Publisher
 									</text>
 									<text
-										x="304"
-										y="134"
+										x="308"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscribers
+									</text>
+								</svg>
+							)}
+							{b.viz === 'p2p' && (
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Point-to-point: one publisher through the broker to one subscriber"
+								>
+									<defs>
+										<marker
+											id="bm-10"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-11"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M58 92 C 85 92 91 92 118 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-10)"
+									/>
+									<path
+										d="M242 92 C 269 92 275 92 302 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-11)"
+									/>
+									<circle cx="44" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="92" r="8" fill="#17bb52" />
+									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="180"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="316" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="92" r="8" fill="#17bb52" />
+									<text
+										x="44"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publisher
+									</text>
+									<text
+										x="316"
+										y="174"
 										text-anchor="middle"
 										font-size="15"
 										font-weight="600"
