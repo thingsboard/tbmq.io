@@ -68,8 +68,8 @@ For example, if the **Client ID** strategy is active, but you attempt to add or 
 
 ## Credentials ID
 
-When a client connects, the combination of the username, password, and clientId from the `CONNECT` packet is matched with the persisted credentials to authenticate the client.
-The matching is based on the auto-generated `credentialsId` field from the MQTT client credentials.
+When a client connects, the username and clientId from the `CONNECT` packet are used to find the persisted credentials, and the password is then verified against the matched record.
+The lookup is based on the auto-generated `credentialsId` field of the MQTT client credentials, which is derived from the username and clientId — never the password.
 
 The `credentialsId` is generated as follows:
 
