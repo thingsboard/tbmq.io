@@ -1,7 +1,15 @@
 ---
-const stats = [
-	{ value: '3M+', label: 'Messages/sec on a single node', href: '/performance/' },
-	{ value: '100M+', label: 'Concurrent MQTT connections', href: '/performance/' },
+interface Stat {
+	value: string;
+	count?: number;
+	suffix?: string;
+	label: string;
+	href: string;
+}
+
+const stats: Stat[] = [
+	{ value: '3M+', count: 3, suffix: 'M+', label: 'Messages/sec on a single node', href: '/performance/' },
+	{ value: '100M+', count: 100, suffix: 'M+', label: 'Concurrent MQTT connections', href: '/performance/' },
 	{ value: 'Zero', label: 'Message loss, by design', href: '#architecture-pillars' },
 ];
 ---
@@ -23,7 +31,9 @@ const stats = [
 			{
 				stats.map((s) => (
 					<a class="stat" href={s.href}>
-						<span class="stat-value">{s.value}</span>
+						<span class="stat-value" data-count-target={s.count ?? undefined} data-count-suffix={s.suffix ?? undefined}>
+							{s.value}
+						</span>
 						<span class="stat-label">{s.label}</span>
 					</a>
 				))
@@ -31,6 +41,47 @@ const stats = [
 		</div>
 	</div>
 </section>
+
+<script>
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	function countUp(el: HTMLElement) {
+		const target = Number(el.dataset.countTarget);
+		const suffix = el.dataset.countSuffix ?? '';
+		if (!Number.isFinite(target)) return;
+
+		if (reduceMotion) {
+			el.textContent = target.toLocaleString() + suffix;
+			return;
+		}
+
+		const duration = 1200;
+		const start = performance.now();
+		const step = (now: number) => {
+			const p = Math.min((now - start) / duration, 1);
+			const eased = 1 - Math.pow(1 - p, 3);
+			el.textContent = Math.round(target * eased).toLocaleString() + suffix;
+			if (p < 1) requestAnimationFrame(step);
+		};
+		requestAnimationFrame(step);
+	}
+
+	const targets = document.querySelectorAll<HTMLElement>('#product-hero .stat-value[data-count-target]');
+	if (targets.length) {
+		const observer = new IntersectionObserver(
+			(entries, obs) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						countUp(entry.target as HTMLElement);
+						obs.unobserve(entry.target);
+					}
+				});
+			},
+			{ threshold: 0.4 }
+		);
+		targets.forEach((el) => observer.observe(el));
+	}
+</script>
 
 <style lang="scss">
 	@use '../../styles/variables' as *;

@@ -1,20 +1,19 @@
 ---
 import SectionHeader from '@components/Landing/SectionHeader.astro';
-import { Icon } from 'astro-icon/components';
 
 const patterns = [
 	{
-		icon: 'tabler:arrow-merge',
+		type: 'fan-in',
 		title: 'Fan-in',
 		text: 'Millions of devices publish telemetry continuously. A few backend applications must consume every message in order — even during spikes or partial outages.',
 	},
 	{
-		icon: 'tabler:broadcast',
+		type: 'fan-out',
 		title: 'Fan-out',
 		text: 'A single update or command must reach many subscribed devices at once. One message in, many deliveries out — and every subscriber receives it.',
 	},
 	{
-		icon: 'tabler:arrows-right-left',
+		type: 'point-to-point',
 		title: 'Point-to-point',
 		text: 'A publisher targets one subscriber through a unique topic. Command-response and remote-control flows need low-latency, targeted delivery.',
 	},
@@ -24,18 +23,335 @@ const patterns = [
 <section id="traffic-patterns">
 	<div class="inner">
 		<SectionHeader
+			class="reveal"
 			title="Purpose-built for IoT traffic"
 			subtitle="IoT traffic isn't uniform. Most brokers treat every message the same. TBMQ gives each pattern its own processing path."
 		/>
 		<div class="cards">
 			{
-				patterns.map((p) => (
-					<div class="card">
-						<span class="card-icon">
-							<Icon name={p.icon} />
-						</span>
-						<h3 class="card-title">{p.title}</h3>
-						<p class="card-text">{p.text}</p>
+				patterns.map((p, i) => (
+					<div class="card reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<div class="card-viz">
+							{p.type === 'fan-in' && (
+								<svg viewBox="0 0 360 196" role="img" aria-label="Fan-in: many publishers send to one broker">
+									<defs>
+										<marker
+											id="tp-0"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-1"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-2"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-3"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M68 36 C 139.1 36 154.9 73 226 73"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-0)"
+									/>
+									<path
+										d="M68 72 C 139.1 72 154.9 86 226 86"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-1)"
+									/>
+									<path
+										d="M68 108 C 139.1 108 154.9 98 226 98"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-2)"
+									/>
+									<path
+										d="M68 144 C 139.1 144 154.9 111 226 111"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-3)"
+									/>
+									<circle cx="54" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="54" cy="36" r="8" fill="#17bb52" />
+									<circle cx="54" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="54" cy="72" r="8" fill="#17bb52" />
+									<circle cx="54" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="54" cy="108" r="8" fill="#17bb52" />
+									<circle cx="54" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="54" cy="144" r="8" fill="#17bb52" />
+									<rect x="232" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="288"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<text
+										x="60"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publishers
+									</text>
+								</svg>
+							)}
+							{p.type === 'fan-out' && (
+								<svg viewBox="0 0 360 196" role="img" aria-label="Fan-out: one broker delivers to many subscribers">
+									<defs>
+										<marker
+											id="tp-4"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-5"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-6"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-7"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M134 73 C 205.1 73 220.9 36 292 36"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-4)"
+									/>
+									<path
+										d="M134 86 C 205.1 86 220.9 72 292 72"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-5)"
+									/>
+									<path
+										d="M134 98 C 205.1 98 220.9 108 292 108"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-6)"
+									/>
+									<path
+										d="M134 111 C 205.1 111 220.9 144 292 144"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-7)"
+									/>
+									<rect x="16" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="72"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="306" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="306" cy="36" r="8" fill="#17bb52" />
+									<circle cx="306" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="306" cy="72" r="8" fill="#17bb52" />
+									<circle cx="306" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="306" cy="108" r="8" fill="#17bb52" />
+									<circle cx="306" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="306" cy="144" r="8" fill="#17bb52" />
+									<text
+										x="300"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscribers
+									</text>
+								</svg>
+							)}
+							{p.type === 'point-to-point' && (
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Point-to-point: one publisher to one subscriber through the broker"
+								>
+									<defs>
+										<marker
+											id="tp-8"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="tp-9"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M70 92 C 91.6 92 96.4 92 118 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-8)"
+									/>
+									<path
+										d="M242 92 C 263.6 92 268.4 92 290 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#tp-9)"
+									/>
+									<circle cx="56" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="56" cy="92" r="8" fill="#17bb52" />
+									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="180"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="304" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="304" cy="92" r="8" fill="#17bb52" />
+									<text
+										x="56"
+										y="134"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publisher
+									</text>
+									<text
+										x="304"
+										y="134"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscriber
+									</text>
+								</svg>
+							)}
+						</div>
+						<div class="card-body">
+							<h3 class="card-title">{p.title}</h3>
+							<p class="card-text">{p.text}</p>
+						</div>
 					</div>
 				))
 			}
@@ -70,27 +386,34 @@ const patterns = [
 	}
 
 	.card {
+		display: flex;
+		flex-direction: column;
 		background: var(--color-bg-surface);
 		border-radius: 16px;
 		padding: 32px;
 		box-shadow: 0 7px 32px 0 rgba(0, 0, 0, 0.08);
 	}
 
-	.card-icon {
-		display: inline-flex;
+	// Diagram sits in its own rounded, bordered panel; card padding sets the outer spacing.
+	.card-viz {
+		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 56px;
-		height: 56px;
+		margin-bottom: 24px;
+		padding: 8px 12px;
+		background: linear-gradient(180deg, #f4faf6, #eef7f1);
+		border: 1px solid $color-border-light;
 		border-radius: 14px;
-		border: 1px solid $color-pe;
-		color: $color-pe;
-		margin-bottom: 20px;
 
-		:global(svg) {
-			width: 28px;
-			height: 28px;
+		svg {
+			width: 100%;
+			height: auto;
+			max-height: 184px;
 		}
+	}
+
+	.card-body {
+		padding: 0;
 	}
 
 	.card-title {

@@ -21,13 +21,14 @@ const capabilities = [
 <section id="compliance">
 	<div class="inner">
 		<SectionHeader
+			class="reveal"
 			title="Full MQTT compliance"
 			subtitle="Fully compliant with the MQTT protocol in both single-node and cluster deployments."
 		/>
-		<div class="versions">
+		<div class="versions reveal">
 			{versions.map((v) => <span class="version-badge">{v}</span>)}
 		</div>
-		<ul class="capabilities">
+		<ul class="capabilities reveal">
 			{
 				capabilities.map((c) => (
 					<li>
@@ -37,7 +38,7 @@ const capabilities = [
 				))
 			}
 		</ul>
-		<p class="pe-note">
+		<p class="pe-note reveal">
 			TBMQ Professional Edition adds Single Sign-On (SSO), Role-Based Access Control (RBAC), and White labeling. <a
 				href="/#comparison-features">Compare editions</a
 			>.
