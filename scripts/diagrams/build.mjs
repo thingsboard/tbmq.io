@@ -202,6 +202,7 @@ const DIAGRAMS = {
 	'app-cluster': { file: 'tbmq-app-cluster', build: flows.appCluster },
 	'publish-lifecycle': { file: 'tbmq-publish-lifecycle', build: extras.publishLifecycle },
 	'client-type-tree': { file: 'tbmq-client-type-decision', build: extras.clientTypeTree },
+	'persistence-model': { file: 'tbmq-persistence-model', build: extras.persistenceModel },
 	'subscription-trie': { file: 'tbmq-subscription-trie', build: extras.subscriptionTrie },
 	'kafka-topics-map': { file: 'tbmq-kafka-topics', build: extras.kafkaTopicsMap },
 	'standalone-vs-cluster': { file: 'tbmq-standalone-vs-cluster', build: extras.standaloneVsCluster },

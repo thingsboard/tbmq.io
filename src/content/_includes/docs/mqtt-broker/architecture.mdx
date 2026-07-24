@@ -142,6 +142,17 @@ Persistent clients are classified into two types:
 
 The client type is assigned through the <DocLink product={props.product} path="concepts/client-types">MQTT client credentials</DocLink>, not by the CONNECT packet.
 
+The two types are stored very differently — DEVICE messages in a Redis / Valkey sorted set per client, APPLICATION messages
+in that client's own dedicated Kafka topic:
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-persistence-model.svg',
+    alt: 'Side-by-side persistence model. Persistent DEVICE clients: messages arrive on the tbmq.msg.persisted Kafka topic (ingest buffer) and are stored in a per-client Redis/Valkey sorted set keyed {clientId}_messages, scored by packet id, each value carrying a TTL, the list trimmed to a messages limit, and redelivered via ZRANGE on reconnect. Persistent APPLICATION clients: each client has a dedicated Kafka topic tbmq.msg.app.$CLIENT_ID consumed by a per-client consumer group that tracks a committed offset and resumes from it on reconnect, with shared subscriptions on tbmq.msg.app.shared.$TOPIC_FILTER.',
+    caption: 'Persistence model — DEVICE messages in a Redis/Valkey sorted set per client vs. APPLICATION messages in a dedicated, replayable Kafka topic per client',
+  },
+]} />
+
 #### Persistent DEVICE client
 
 Messages for persistent DEVICE clients flow through the `tbmq.msg.persisted` Kafka topic, separating them from

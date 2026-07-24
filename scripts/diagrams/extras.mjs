@@ -7,6 +7,7 @@
  *   N5 standalone-vs-cluster— side-by-side topology
  *   N6 actor-system         — the two actor types + handled control messages
  *   N7 qos-durability       — QoS 0/1/2 handshake vs the persistence gate
+ *   N8 persistence-model    — DEVICE (Redis sorted set) vs APPLICATION (dedicated Kafka topic)
  *   N9 integration-executor — TBMQ → Kafka → IE → external
  */
 import { rectC, top, bottom, left, right } from './kit.mjs';
@@ -323,7 +324,7 @@ export function subscriptionTrie(k) {
 // =============================================================================
 export function kafkaTopicsMap(k) {
 	const W = 1280,
-		H = 720;
+		H = 970;
 	const P = [];
 	const groups = [
 		{
@@ -360,7 +361,7 @@ export function kafkaTopicsMap(k) {
 			y: 340,
 			w: 590,
 			h: 250,
-			kind: 'ie',
+			kind: 'core',
 			label: 'Cross-node routing (per-node)',
 			rows: [
 				['tbmq.msg.downlink.basic.$SERVICE_ID', 'per-node', ''],
@@ -380,6 +381,21 @@ export function kafkaTopicsMap(k) {
 				['tbmq.sys.historical.data', 'global', 'stats'],
 				['tbmq.sys.app.removed', 'global', ''],
 				['tbmq.client.blocked', 'global', ''],
+			],
+		},
+		{
+			x: 40,
+			y: 624,
+			w: 1200,
+			h: 250,
+			kind: 'ie',
+			label: 'Integration Executor',
+			rows: [
+				['tbmq.msg.ie', 'global', 'broker → executor'],
+				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config'],
+				['tbmq.ie.uplink', 'global', 'results → broker'],
+				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
+				['tbmq.ie.event', 'global', 'lifecycle'],
 			],
 		},
 	];
@@ -411,7 +427,7 @@ export function kafkaTopicsMap(k) {
 		cap(
 			k,
 			W,
-			632,
+			906,
 			'Global topics are shared by all nodes (consumer groups rebalance across them); per-node topics carry the $SERVICE_ID of their owner; per-client topics are dedicated to one APPLICATION client.'
 		)
 	);
@@ -419,7 +435,7 @@ export function kafkaTopicsMap(k) {
 		cap(
 			k,
 			W,
-			662,
+			936,
 			'All topic names carry an optional queue.kafka.kafka-prefix (empty by default). Client IDs / topic filters in suffixes are sanitised or SHA-256 hashed.',
 			{ size: 12 }
 		)
@@ -821,6 +837,134 @@ export function integrationExecutor(k) {
 			{ type: 'flow', label: 'broker → executor → external' },
 			{ type: 'ack', label: 'uplink (results / lifecycle)' },
 		])
+	);
+	return k.frame(W, H, P);
+}
+
+// =============================================================================
+// N8 — Persistence model: DEVICE (Redis sorted set) vs APPLICATION (Kafka topic)
+// =============================================================================
+export function persistenceModel(k) {
+	const W = 1240,
+		H = 706;
+	const P = [];
+
+	const pDev = rectC(40, 56, 560, 548);
+	const pApp = rectC(640, 56, 560, 548);
+	P.push(k.groupBox({ ...pDev, label: 'Persistent DEVICE', kind: 'redis', labelKind: 'redis' }));
+	P.push(k.groupBox({ ...pApp, label: 'Persistent APPLICATION', kind: 'kafka', labelKind: 'kafka' }));
+
+	// Local stacked structure box: coloured header + left-aligned rows (mono or muted).
+	const structBox = (x, y, w, title, kind, rows) => {
+		const rh = 23;
+		const headH = 34;
+		const h = headH + rows.length * rh + 14;
+		const kk = k.T.kinds[kind];
+		P.push(
+			`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${k.T.neutralSoft}" stroke="${kk.stroke}" stroke-width="1.4"/>`
+		);
+		P.push(k.text(x + 16, y + 21, title, { size: 12.5, weight: 700, fill: kk.ink }));
+		let iy = y + headH + 14;
+		for (const r of rows) {
+			P.push(
+				k.text(x + 18, iy, r.t, {
+					size: r.mono ? 12 : 11.5,
+					weight: r.mono ? 600 : 500,
+					mono: !!r.mono,
+					fill: r.mono ? kk.ink : k.T.inkSub,
+				})
+			);
+			iy += rh;
+		}
+		return rectC(x, y, w, h);
+	};
+
+	// ---- LEFT: persistent DEVICE → Redis / Valkey sorted set ----
+	const devIngest = { x: 120, y: 110, w: 400, h: 58 };
+	P.push(k.kafkaTopic({ ...devIngest, name: 'tbmq.msg.persisted', note: 'ingest buffer · 12 partitions' }));
+	const devStore = structBox(90, 250, 460, 'Redis / Valkey — sorted set per client', 'redis', [
+		{ t: '{clientId}_messages', mono: true },
+		{ t: 'score = packet id  →  message key', mono: false },
+		{ t: 'packet 7 → msg:2f9c    ·    packet 8 → msg:6b1a', mono: true },
+		{ t: 'each value: SET msgKey … EX = TTL', mono: false },
+		{ t: '{clientId}_last_packet_id', mono: true },
+		{ t: 'counter · list trimmed to messages-limit', mono: false },
+	]);
+	P.push(
+		k.connector({
+			from: [pDev.cx, devIngest.y + devIngest.h],
+			to: [pDev.cx, devStore.y],
+			type: 'flow',
+			label: 'consume → store',
+		})
+	);
+	structBox(90, 470, 460, 'On reconnect', 'redis', [
+		{ t: 'ZRANGE (REV) → redeliver unacked messages', mono: false },
+		{ t: 'each message removed from the set on ack', mono: false },
+	]);
+
+	// ---- RIGHT: persistent APPLICATION → dedicated Kafka topic ----
+	const appTopic = { x: 700, y: 110, w: 440, h: 58 };
+	P.push(k.kafkaTopic({ ...appTopic, name: 'tbmq.msg.app.$CLIENT_ID', note: 'dedicated · durable, replayable log' }));
+
+	// partition / offset bar — filled cells before the committed offset, empty after
+	const barY = 214,
+		cellW = 46,
+		cellH = 30,
+		gap = 5,
+		n = 8,
+		filled = 5;
+	const barX = pApp.cx - (n * (cellW + gap) - gap) / 2;
+	const kk = k.T.kinds.kafka;
+	for (let i = 0; i < n; i++) {
+		const cx = barX + i * (cellW + gap);
+		const isF = i < filled;
+		P.push(
+			`<rect x="${cx}" y="${barY}" width="${cellW}" height="${cellH}" rx="5" fill="${isF ? kk.fill : k.T.canvas}" stroke="${kk.stroke}" stroke-width="1.3" opacity="${isF ? 1 : 0.6}"/>`
+		);
+	}
+	P.push(k.text(barX, barY - 12, 'partition (offset →)', { size: 10.5, weight: 600, fill: k.T.inkMuted }));
+	const offX = barX + filled * (cellW + gap) - gap / 2;
+	P.push(k.connector({ from: [offX, barY + cellH + 34], to: [offX, barY + cellH + 4], type: 'ack' }));
+	P.push(k.text(offX, barY + cellH + 48, 'committed offset', { anchor: 'middle', size: 11, weight: 600, fill: k.T.inkSub }));
+
+	P.push(k.connector({ from: [pApp.cx, appTopic.y + appTopic.h], to: [pApp.cx, barY], type: 'flow' }));
+	structBox(690, 322, 460, 'Per-app consumer group', 'kafka', [
+		{ t: 'application-persisted-msg-', mono: true },
+		{ t: 'consumer-group-$CLIENT_ID', mono: true },
+		{ t: 'one consumer per APPLICATION client', mono: false },
+		{ t: 'ack = commit offset (no per-message delete)', mono: false },
+	]);
+	structBox(690, 470, 460, 'Shared subscriptions', 'kafka', [
+		{ t: 'tbmq.msg.app.shared.$TOPIC_FILTER', mono: true },
+		{ t: 'one group shared across APPLICATION clients', mono: false },
+	]);
+
+	P.push(
+		cap(
+			k,
+			W,
+			628,
+			'Both types survive restarts but store differently: DEVICE messages in a per-client Redis/Valkey sorted set; APPLICATION messages in a dedicated per-client Kafka topic that acts as a replayable log.'
+		)
+	);
+	P.push(
+		cap(
+			k,
+			W,
+			654,
+			'DEVICE delivery removes messages on acknowledgement; APPLICATION delivery advances a committed offset.',
+			{ size: 12 }
+		)
+	);
+	P.push(
+		cap(
+			k,
+			W,
+			678,
+			'$CLIENT_ID / $TOPIC_FILTER are documentation placeholders — the real suffix is the sanitised or SHA-256-hashed id.',
+			{ size: 12 }
+		)
 	);
 	return k.frame(W, H, P);
 }
