@@ -4,16 +4,19 @@ import { Icon } from 'astro-icon/components';
 const repoLinks = [
 	{
 		label: 'TBMQ on GitHub',
+		leadIcon: 'tabler:brand-github',
 		href: 'https://github.com/thingsboard/tbmq',
 		external: true,
 	},
 	{
 		label: 'Performance testing tool',
+		leadIcon: 'tabler:device-desktop',
 		href: 'https://github.com/thingsboard/tb-mqtt-perf-tests',
 		external: true,
 	},
 	{
 		label: 'AWS cluster setup guide',
+		leadIcon: 'tabler:refresh',
 		href: '/docs/mqtt-broker/pe/installation/cluster/aws-cluster-setup/',
 		external: false,
 	},
@@ -22,7 +25,7 @@ const repoLinks = [
 
 <section id="benchmark-trust">
 	<div class="inner">
-		<div class="cost-panel">
+		<div class="cost-panel reveal">
 			<div class="cost-figure">
 				<span class="cost-eyebrow">Total cost of ownership</span>
 				<span class="cost-value">~$0.0003</span>
@@ -43,7 +46,7 @@ const repoLinks = [
 		</div>
 
 		<div class="repro">
-			<div class="repro-text">
+			<div class="repro-text reveal">
 				<h2>Every benchmark is open and reproducible</h2>
 				<p>
 					We publish the test scripts, load configurations, and exact hardware specs behind every
@@ -52,14 +55,18 @@ const repoLinks = [
 			</div>
 			<div class="repro-links">
 				{
-					repoLinks.map((l) => (
+					repoLinks.map((l, i) => (
 						<a
-							class="repro-link"
+							class="repro-link reveal"
+							style={`--reveal-delay: ${i * 90}ms`}
 							href={l.href}
 							target={l.external ? '_blank' : undefined}
 							rel={l.external ? 'noopener noreferrer' : undefined}
 						>
-							{l.label}
+							<span class="repro-ic">
+								<Icon name={l.leadIcon} />
+							</span>
+							<span class="repro-label">{l.label}</span>
 							<Icon name={l.external ? 'tabler:arrow-up-right' : 'tabler:arrow-right'} class="link-icon" />
 						</a>
 					))
@@ -170,18 +177,11 @@ const repoLinks = [
 	.repro {
 		display: flex;
 		flex-direction: column;
-		gap: 28px;
-
-		@include media-up(lg) {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: center;
-			gap: 48px;
-		}
+		gap: 32px;
 	}
 
 	.repro-text {
-		max-width: 620px;
+		max-width: 820px;
 
 		h2 {
 			font-size: 28px;
@@ -200,24 +200,54 @@ const repoLinks = [
 	}
 
 	.repro-links {
-		display: flex;
-		flex-direction: column;
-		gap: 14px;
-		flex-shrink: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 16px;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+		}
 	}
 
 	.repro-link {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		gap: 6px;
+		gap: 12px;
+		padding: 16px 18px;
+		border: 1px solid $color-border;
+		border-radius: 12px;
+		background: $color-white;
 		font-size: 16px;
 		font-weight: $font-weight-medium;
 		color: $color-pe-link;
 		text-decoration: none;
+		transition: 0.18s;
 
 		&:hover {
-			text-decoration: underline;
+			border-color: #cfe4d5;
+			box-shadow: 0 7px 32px 0 rgba(0, 0, 0, 0.06);
 		}
+	}
+
+	.repro-ic {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		flex-shrink: 0;
+		background: #eef7f0;
+		color: $color-pe-dark;
+
+		:global(svg) {
+			width: 22px;
+			height: 22px;
+		}
+	}
+
+	.repro-label {
+		flex: 1;
 	}
 
 	:global(.link-icon) {

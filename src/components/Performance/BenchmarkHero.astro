@@ -1,9 +1,18 @@
 ---
-const stats = [
-	{ value: '100M+', label: 'Concurrent MQTT connections' },
-	{ value: '3M+', label: 'Messages/sec on a single node' },
-	{ value: '7.4 ms', label: 'Average end-to-end latency' },
-	{ value: '~$0.0003', label: 'Per device / month at 100M scale' },
+type Stat = {
+	value: string;
+	label: string;
+	target: number;
+	decimals?: number;
+	prefix?: string;
+	suffix?: string;
+};
+
+const stats: Stat[] = [
+	{ value: '100M+', label: 'Concurrent MQTT connections', target: 100, suffix: 'M+' },
+	{ value: '3M+', label: 'Messages/sec on a single node', target: 3, suffix: 'M+' },
+	{ value: '7.4 ms', label: 'Average end-to-end latency', target: 7.4, decimals: 1, suffix: ' ms' },
+	{ value: '~$0.0003', label: 'Per device / month at 100M scale', target: 0.0003, decimals: 4, prefix: '~$' },
 ];
 ---
 
@@ -23,7 +32,15 @@ const stats = [
 			{
 				stats.map((s) => (
 					<div class="stat">
-						<span class="stat-value">{s.value}</span>
+						<span
+							class="stat-value"
+							data-target={s.target}
+							data-decimals={s.decimals}
+							data-prefix={s.prefix}
+							data-suffix={s.suffix}
+						>
+							{s.value}
+						</span>
 						<span class="stat-label">{s.label}</span>
 					</div>
 				))
@@ -164,3 +181,41 @@ const stats = [
 		max-width: 20ch;
 	}
 </style>
+
+<script>
+	// Count the headline numbers up from zero once, on page load.
+	const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	const format = (n: number, dec: number) =>
+		dec ? n.toFixed(dec) : Math.round(n).toLocaleString('en-US');
+
+	const countUp = (el: HTMLElement) => {
+		const target = parseFloat(el.dataset.target ?? '');
+		if (Number.isNaN(target)) return;
+
+		const dec = parseInt(el.dataset.decimals ?? '0', 10);
+		const prefix = el.dataset.prefix ?? '';
+		const suffix = el.dataset.suffix ?? '';
+		const render = (value: number) => {
+			el.textContent = prefix + format(value, dec) + suffix;
+		};
+
+		if (reduce) {
+			render(target);
+			return;
+		}
+
+		const duration = 1400;
+		const start = performance.now();
+		render(0);
+		const step = (now: number) => {
+			const progress = Math.min((now - start) / duration, 1);
+			const eased = 1 - Math.pow(1 - progress, 3);
+			render(target * eased);
+			if (progress < 1) requestAnimationFrame(step);
+		};
+		requestAnimationFrame(step);
+	};
+
+	document.querySelectorAll<HTMLElement>('#benchmark-hero .stat-value').forEach(countUp);
+</script>

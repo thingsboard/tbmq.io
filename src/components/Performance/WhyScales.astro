@@ -4,18 +4,26 @@ import { Icon } from 'astro-icon/components';
 
 const points = [
 	{
+		color: 'green',
+		icon: 'tabler:affiliate',
 		title: 'Masterless cluster',
 		text: 'No node-to-node communication. Add nodes and throughput scales linearly — the 1M msg/sec P2P test proved it phase by phase.',
 	},
 	{
+		color: 'blue',
+		icon: 'tabler:database',
 		title: 'Kafka-backed durability',
 		text: 'Messages are persisted in Kafka, not just buffered in memory. The 100M test moved 11.4 billion messages with 100% delivery.',
 	},
 	{
+		color: 'purple',
+		icon: 'tabler:stack-2',
 		title: 'Redis-powered delivery',
 		text: 'Persistent DEVICE clients get reliable, ordered delivery even after disconnects — without overloading the database.',
 	},
 	{
+		color: 'amber',
+		icon: 'tabler:activity',
 		title: 'Non-blocking network core',
 		text: "A Netty-based, event-driven I/O layer holds millions of connections per node without a thread for each — the reason one cluster reaches 100M.",
 	},
@@ -25,20 +33,24 @@ const points = [
 <section id="why-scales">
 	<div class="inner">
 		<SectionHeader
+			class="reveal"
 			title="Why TBMQ scales"
 			subtitle="The numbers are a consequence of the architecture — not a lucky benchmark run."
 		/>
 		<div class="points">
 			{
-				points.map((p) => (
-					<div class="point">
-						<h3 class="point-title">{p.title}</h3>
-						<p class="point-text">{p.text}</p>
+				points.map((p, i) => (
+					<div class:list={['blk', 'reveal', `c-${p.color}`]} style={`--reveal-delay: ${i * 90}ms`}>
+						<span class="blk-icon">
+							<Icon name={p.icon} />
+						</span>
+						<h3 class="blk-title">{p.title}</h3>
+						<p class="blk-text">{p.text}</p>
 					</div>
 				))
 			}
 		</div>
-		<a class="arch-link" href="/docs/mqtt-broker/pe/architecture/">
+		<a class="arch-link reveal" href="/docs/mqtt-broker/pe/architecture/">
 			Explore the TBMQ architecture
 			<Icon name="tabler:arrow-right" class="link-icon" />
 		</a>
@@ -64,32 +76,79 @@ const points = [
 	.points {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 40px 48px;
+		gap: 16px;
 		width: 100%;
+		max-width: 880px;
 
 		@include media-up(md) {
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 
-	.point {
-		border-left: 3px solid $color-pe-dark;
-		padding-left: 24px;
+	.blk {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		border-radius: 16px;
+		padding: 24px;
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		background: var(--blk-tint);
 	}
 
-	.point-title {
-		font-size: 22px;
+	.blk-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 12px;
+		background: $color-white;
+		color: var(--blk-acc);
+		border: 1px solid rgba(0, 0, 0, 0.06);
+
+		:global(svg) {
+			width: 26px;
+			height: 26px;
+		}
+	}
+
+	.blk-title {
+		font-size: 20px;
 		font-weight: $font-weight-semibold;
 		line-height: 1.3;
-		color: $color-text-primary;
-		margin: 0 0 10px;
+		color: var(--blk-ink);
+		margin: 0;
 	}
 
-	.point-text {
+	.blk-text {
 		font-size: 16px;
 		line-height: 1.7;
 		color: $color-text-secondary;
 		margin: 0;
+	}
+
+	.c-green {
+		--blk-tint: #eef7f0;
+		--blk-acc: #1f8a3d;
+		--blk-ink: #155e2b;
+	}
+
+	.c-blue {
+		--blk-tint: #eaf1fb;
+		--blk-acc: #2f74d0;
+		--blk-ink: #12447c;
+	}
+
+	.c-purple {
+		--blk-tint: #f0edfd;
+		--blk-acc: #7a5af0;
+		--blk-ink: #3f2e8a;
+	}
+
+	.c-amber {
+		--blk-tint: #fbf1de;
+		--blk-acc: #d98a25;
+		--blk-ink: #7a4d0b;
 	}
 
 	.arch-link {
