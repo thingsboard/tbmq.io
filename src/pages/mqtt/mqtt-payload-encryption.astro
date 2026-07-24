@@ -1,6 +1,8 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
 import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -75,16 +77,15 @@ const faq: FaqItem[] = [
 	</MqttDiagram>
 
 	<h2>Confidentiality and integrity</h2>
-	<ul>
-		<li>
-			<strong>Confidentiality:</strong> encrypt the payload so only key holders can read it — the broker and any intermediary
-			see only ciphertext.
-		</li>
-		<li>
-			<strong>Integrity:</strong> add a signature or MAC so a recipient can detect tampering. Authenticated-encryption modes
-			such as AES-GCM give you both at once.
-		</li>
-	</ul>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:eye-off" title="Confidentiality">
+			encrypt the payload so only key holders can read it; the broker and any intermediary see only ciphertext.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:signature" title="Integrity">
+			add a signature or MAC so a recipient can detect tampering. Authenticated-encryption modes such as AES-GCM give
+			you both at once.
+		</LearnIconRow>
+	</LearnIconRows>
 
 	<h2>Payload encryption in TBMQ</h2>
 	<p>
