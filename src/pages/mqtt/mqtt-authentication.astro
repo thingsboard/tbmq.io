@@ -86,7 +86,7 @@ const faq: FaqItem[] = [
 				<tr><th>Method</th><th>How the client proves identity</th></tr>
 			</thead>
 			<tbody>
-				<tr><td>Basic</td><td>Username and password in the <code>CONNECT</code> packet</td></tr>
+				<tr><td>Basic</td><td>Client ID, username and password in the <code>CONNECT</code> packet</td></tr>
 				<tr><td>JWT</td><td>A signed JSON Web Token carried in the password field</td></tr>
 				<tr><td>SCRAM</td><td>A salted challenge-response — the password never crosses the wire (MQTT 5.0)</td></tr>
 				<tr>
