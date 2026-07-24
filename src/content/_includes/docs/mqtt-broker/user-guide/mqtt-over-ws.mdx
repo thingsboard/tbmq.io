@@ -204,7 +204,7 @@ The URL `ws://localhost:8084/mqtt` consists of:
 | `ws://` | WebSocket protocol scheme. Use `wss://` for encrypted connections. |
 | `localhost` | Hostname or DNS of the machine running TBMQ. |
 | `8084` | Port on which the WebSocket listener accepts connections. |
-| `/mqtt` | Required path for MQTT over WebSocket, as defined in the MQTT specification. |
+| `/mqtt` | The WebSocket endpoint path TBMQ serves MQTT on. The MQTT specification doesn't mandate a specific path — it requires the WebSocket subprotocol to be `mqtt` — but `/mqtt` is the common convention and the path TBMQ uses. |
 
 ## WebSocket Secure (WSS)
 
