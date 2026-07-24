@@ -1,5 +1,6 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -30,6 +31,39 @@ const faq: FaqItem[] = [
 		<strong>Apache Kafka</strong> is a distributed <em>event-streaming platform</em> — a durable, replayable log that backend
 		systems use to move and process high-throughput data. One lives at the edge; the other lives in the data center.
 	</p>
+
+	<MqttDiagram caption="MQTT connects devices at the edge; the broker forwards into Kafka in the data center">
+		<svg
+			viewBox="0 0 680 160"
+			role="img"
+			aria-label="MQTT and Kafka pipeline: devices connect to the TBMQ broker over MQTT at the edge, and the broker forwards messages into Kafka in the data center for durable, replayable backend streams"
+		>
+			<text class="d-tiny d-mid" x="160" y="22">EDGE</text>
+			<text class="d-tiny d-mid" x="518" y="22">DATA CENTER</text>
+			<path class="d-brk" d="M16 30 L16 36 L305 36 L305 30" fill="none"></path>
+			<path class="d-brk" d="M374 30 L374 36 L663 36 L663 30" fill="none"></path>
+			<rect class="d-actor" x="16" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="71" y="92">Devices</text>
+			<rect class="d-actor d-actor--hero" x="195" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="250" y="92">TBMQ broker</text>
+			<rect class="d-actor" x="374" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="429" y="92">Kafka</text>
+			<rect class="d-actor" x="553" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="608" y="92">Backend apps</text>
+			<line class="d-line d-line--green" x1="126" y1="88" x2="192" y2="88" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="134" y="77" width="50" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="159" y="92" style="font-size:11px">MQTT</text>
+			<line class="d-line" x1="305" y1="88" x2="371" y2="88" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="308" y="77" width="56" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="336" y="92" style="font-size:11px">bridge</text>
+			<line class="d-line" x1="484" y1="88" x2="550" y2="88" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="486" y="77" width="58" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="515" y="92" style="font-size:11px">consume</text>
+			<text class="d-note d-mid" x="340" y="140"
+				>The broker bridges MQTT from the edge into Kafka&apos;s durable, replayable log</text
+			>
+		</svg>
+	</MqttDiagram>
 
 	<h2>MQTT vs Kafka at a glance</h2>
 	<div class="overflow-x">

@@ -1,5 +1,6 @@
 ---
 import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
 import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 
 const faq: FaqItem[] = [
@@ -39,6 +40,43 @@ const faq: FaqItem[] = [
 		with DTLS (TLS over UDP) and offers an Observe option (RFC 7641) so a server can push resource-change notifications to
 		a client.
 	</p>
+
+	<MqttDiagram caption="MQTT pushes one message to many subscribers; CoAP is one-to-one request/response">
+		<svg
+			viewBox="0 0 680 256"
+			role="img"
+			aria-label="MQTT versus CoAP: MQTT has a device publish to a broker that pushes the message out to many subscribers over TCP, while CoAP has one client send a GET request to one server that answers with a 2.05 Content response over UDP"
+		>
+			<text class="d-panelttl d-mid" x="340" y="24">MQTT — one message, many subscribers (over TCP)</text>
+			<rect class="d-actor" x="548" y="40" width="104" height="30" rx="9"></rect>
+			<text class="d-alabel d-mid" x="600" y="60">App</text>
+			<rect class="d-actor" x="36" y="52" width="104" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="88" y="74">Device</text>
+			<rect class="d-actor d-actor--hero" x="286" y="52" width="108" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="74">Broker</text>
+			<rect class="d-actor" x="548" y="88" width="104" height="30" rx="9"></rect>
+			<text class="d-alabel d-mid" x="600" y="108">App</text>
+			<line class="d-line" x1="140" y1="69" x2="284" y2="69" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="176" y="58" width="64" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="208" y="73" style="font-size:11px">publish</text>
+			<line class="d-line d-line--green" x1="396" y1="64" x2="546" y2="56" marker-end="url(#arGreen)"></line>
+			<line class="d-line d-line--green" x1="396" y1="74" x2="546" y2="102" marker-end="url(#arGreen)"></line>
+			<text class="d-ctext d-ctext--green d-mid" x="471" y="76" style="font-size:11px">push</text>
+			<text class="d-note d-mid" x="340" y="140">The broker fans each message out to every matching subscriber</text>
+			<line x1="20" y1="156" x2="660" y2="156" stroke="#eef0f3" stroke-width="1"></line>
+			<text class="d-panelttl d-mid" x="340" y="176">CoAP — one client asks, one server answers (over UDP)</text>
+			<rect class="d-actor" x="120" y="196" width="110" height="44" rx="9"></rect>
+			<text class="d-alabel d-mid" x="175" y="223">Client</text>
+			<rect class="d-actor" x="450" y="196" width="110" height="44" rx="9"></rect>
+			<text class="d-alabel d-mid" x="505" y="223">Server</text>
+			<line class="d-line" x1="230" y1="210" x2="448" y2="210" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="289" y="199" width="100" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="339" y="214" style="font-size:11px">GET /sensor</text>
+			<line class="d-line d-line--green" x1="450" y1="236" x2="232" y2="236" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="288" y="225" width="102" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="339" y="240" style="font-size:11px">2.05 Content</text>
+		</svg>
+	</MqttDiagram>
 
 	<h2>MQTT vs CoAP at a glance</h2>
 	<div class="overflow-x">
