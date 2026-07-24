@@ -2,6 +2,7 @@ import { CardGrid } from '@astrojs/starlight/components'
 import Card from '~/components/Landing/Card.astro'
 import ListCard from '~/components/Landing/ListCard.astro'
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
 ## Security
@@ -22,25 +23,21 @@ import { Products } from '~/models/site.models';
     - <DocLink product={props.product} path="security/authentication/http" bold={false}>HTTP</DocLink>
   </ListCard>
 
-  {props.product === Products.TBMQ_PE && (
+  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
     <ListCard headingLevel={3} title="Enterprise security" icon="star">
-      <ul>
-        <li><DocLink product={props.product} path="security/oauth-2-support" bold={false}>OAuth 2.0</DocLink></li>
-        <li><DocLink product={props.product} path="security/domains" bold={false}>Domains</DocLink></li>
-        <li><DocLink product={props.product} path="security/rbac" bold={false}>Role-based access control</DocLink></li>
-        <li><DocLink product={props.product} path="security/audit-log" bold={false}>Audit logs</DocLink></li>
-      </ul>
+      - <DocLink product={props.product} path="security/oauth-2-support" bold={false}>OAuth 2.0</DocLink>
+      - <DocLink product={props.product} path="security/domains" bold={false}>Domains</DocLink>
+      - <DocLink product={props.product} path="security/rbac" bold={false}>Role-based access control</DocLink>
+      - <DocLink product={props.product} path="security/audit-log" bold={false}>Audit logs</DocLink>
     </ListCard>
-  )}
+  </ShowFor>
 
-  {props.product === Products.TBMQ_PE && (
+  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
     <ListCard headingLevel={3} title="White labeling" icon="open-book">
-      <ul>
-        <li><DocLink product={props.product} path="white-labeling" bold={false}>Overview</DocLink></li>
-        <li><DocLink product={props.product} path="image-gallery" bold={false}>Image gallery</DocLink></li>
-      </ul>
+      - <DocLink product={props.product} path="white-labeling" bold={false}>Overview</DocLink>
+      - <DocLink product={props.product} path="image-gallery" bold={false}>Image gallery</DocLink>
     </ListCard>
-  )}
+  </ShowFor>
 </CardGrid>
 
 ## MQTT essentials
