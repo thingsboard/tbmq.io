@@ -12,6 +12,8 @@ Nevertheless, it is possible to configure TBMQ to enable SSL and avoid SSL termi
 Use valid SSL certificates from trusted CA authorities. Avoid spending time resolving issues with self-signed certificates.
 See the instructions below on how to configure SSL for certificates stored in PEM file format or Java Keystore.
 
+By default the HTTP server runs without SSL (`SSL_ENABLED=false`) on port `8083` (`HTTP_BIND_PORT`). Enabling SSL serves HTTPS on that same port, and HTTP/2 is turned on automatically.
+
 ## SSL configuration using PEM certificates
 
 Configure the following environment variables via the <DocLink product={props.product} path="installation/config/#http-server-parameters">configuration</DocLink> file, docker-compose, or Kubernetes scripts.
@@ -52,6 +54,7 @@ export SSL_KEY_STORE_TYPE=PKCS12
 export SSL_KEY_STORE=keystore.p12
 export SSL_KEY_STORE_PASSWORD=tbmq
 export SSL_KEY_PASSWORD=tbmq
+export SSL_KEY_ALIAS=tbmq
 ```
 
 Where:
@@ -62,6 +65,7 @@ Where:
 - `SSL_KEY_STORE` — Path to the key store that holds the SSL certificate or certificate chain; also includes the server private key.
 - `SSL_KEY_STORE_PASSWORD` — Password used to access the key store.
 - `SSL_KEY_PASSWORD` — Password used to access the server private key.
+- `SSL_KEY_ALIAS` — Alias of the private key entry inside the key store. Must match the alias the key store was created with; if omitted, the broker looks for the default alias `tomcat`.
 
 After completing the setup, start or restart the TBMQ server.
 
@@ -96,7 +100,7 @@ openssl pkcs12 -export \
   -passout pass:changeit
 ```
 
-The `-certfile ca.pem` line is optional — include it if you have a CA certificate chain. Replace `changeit` with your desired keystore password; you will reference this in your environment variables.
+The `-certfile ca.pem` line is optional — include it if you have a CA certificate chain. Replace `changeit` with your desired keystore password; you will reference this in your environment variables. The `-name tbmq` value sets the key alias inside the keystore, so set `SSL_KEY_ALIAS=tbmq` to match it — otherwise the broker looks for its default alias `tomcat` and fails to load the key.
 
 **Tips and best practices:**
 
