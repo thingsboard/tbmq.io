@@ -145,7 +145,7 @@ TBMQ supports authenticated connections to the external HTTP service. Configure 
 
 The **Advanced settings** section allows you to fine-tune the performance and reliability of the HTTP auth provider:
 
-- **Read timeout**: The maximum time (in milliseconds) TBMQ waits for a response from the external server before failing authentication.
+- **Read timeout**: The maximum time (in milliseconds) TBMQ waits for a response from the external server (default `5000`). If it elapses, the request is treated as **skipped** — not a failure — and TBMQ moves on to the next authentication provider in the chain.
 - **Max parallel requests count**: The maximum number of concurrent authentication requests TBMQ will make to protect the external server.
 - **Max response size**: The maximum size (in KB) of the response body accepted from the server.
 

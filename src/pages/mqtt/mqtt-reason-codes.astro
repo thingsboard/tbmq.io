@@ -90,23 +90,472 @@ const faq: FaqItem[] = [
 			<tbody>
 				<tr><td><code>0x00</code></td><td>Success / Normal</td><td>The operation succeeded</td></tr>
 				<tr
-					><td><code>0x10</code></td><td>No matching subscribers</td><td>PUBLISH accepted, but no one was subscribed</td
-					></tr
-				>
-				<tr
 					><td><code>0x80</code></td><td>Unspecified error</td><td>Something failed without a more specific code</td
 					></tr
 				>
 				<tr><td><code>0x87</code></td><td>Not authorized</td><td>The client isn’t permitted to do this</td></tr>
-				<tr
-					><td><code>0x8E</code></td><td>Session taken over</td><td
-						>Another connection used the same <a href="/mqtt/mqtt-client-id/">client ID</a></td
-					></tr
-				>
 				<tr><td><code>0x97</code></td><td>Quota exceeded</td><td>A broker limit was hit</td></tr>
 			</tbody>
 		</table>
 	</div>
+
+	<h2>Reason codes by packet</h2>
+	<p>
+		Each acknowledgement or control packet defines its own subset of reason codes, and the same code keeps the same
+		meaning wherever it appears. Codes <strong>below 0x80</strong> are a success or normal outcome; <strong
+			>0x80 and above</strong
+		> signal a failure. Expand a packet below to see every reason code the MQTT 5.0 specification defines for it.
+	</p>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">CONNACK</span><span class="rc__meta"
+				>The broker’s answer to CONNECT · 22 codes (+ 6 legacy)</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>Returned by the broker on the CONNACK that answers a client’s CONNECT.</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Success</td><td>The connection is accepted</td></tr>
+						<tr><td><code>0x80</code></td><td>Unspecified error</td><td>Refused without a more specific reason</td></tr>
+						<tr><td><code>0x81</code></td><td>Malformed Packet</td><td>The CONNECT could not be parsed</td></tr>
+						<tr><td><code>0x82</code></td><td>Protocol Error</td><td>The CONNECT broke a protocol rule</td></tr>
+						<tr
+							><td><code>0x83</code></td><td>Implementation specific error</td><td
+								>Valid packet, but rejected by this broker</td
+							></tr
+						>
+						<tr
+							><td><code>0x84</code></td><td>Unsupported Protocol Version</td><td
+								>The broker doesn’t support the requested MQTT version</td
+							></tr
+						>
+						<tr
+							><td><code>0x85</code></td><td>Client Identifier not valid</td><td
+								>The client ID is well-formed but not accepted</td
+							></tr
+						>
+						<tr
+							><td><code>0x86</code></td><td>Bad User Name or Password</td><td>Credentials were malformed or wrong</td
+							></tr
+						>
+						<tr><td><code>0x87</code></td><td>Not authorized</td><td>The client is not authorized to connect</td></tr>
+						<tr><td><code>0x88</code></td><td>Server unavailable</td><td>The broker is not available</td></tr>
+						<tr><td><code>0x89</code></td><td>Server busy</td><td>The broker is busy; try again later</td></tr>
+						<tr><td><code>0x8A</code></td><td>Banned</td><td>The client has been banned by an administrator</td></tr>
+						<tr
+							><td><code>0x8C</code></td><td>Bad authentication method</td><td
+								>The requested authentication method isn’t supported</td
+							></tr
+						>
+						<tr
+							><td><code>0x90</code></td><td>Topic Name invalid</td><td
+								>The Will topic is well-formed but not accepted</td
+							></tr
+						>
+						<tr
+							><td><code>0x95</code></td><td>Packet too large</td><td>The CONNECT exceeded the maximum packet size</td
+							></tr
+						>
+						<tr
+							><td><code>0x97</code></td><td>Quota exceeded</td><td
+								>An implementation or administrative quota was exceeded</td
+							></tr
+						>
+						<tr
+							><td><code>0x99</code></td><td>Payload format invalid</td><td
+								>The Will payload doesn’t match its payload format indicator</td
+							></tr
+						>
+						<tr
+							><td><code>0x9A</code></td><td>Retain not supported</td><td
+								>The Will asks to be retained, but the broker doesn’t support retained messages</td
+							></tr
+						>
+						<tr
+							><td><code>0x9B</code></td><td>QoS not supported</td><td>The Will QoS exceeds what the broker supports</td
+							></tr
+						>
+						<tr
+							><td><code>0x9C</code></td><td>Use another server</td><td
+								>The client should temporarily use another broker</td
+							></tr
+						>
+						<tr
+							><td><code>0x9D</code></td><td>Server moved</td><td>The client should permanently use another broker</td
+							></tr
+						>
+						<tr
+							><td><code>0x9F</code></td><td>Connection rate exceeded</td><td>The connection-rate limit was exceeded</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+			<p>
+				For contrast, MQTT 3.1.1 defined only a small fixed set of CONNACK <em>return codes</em> — with no reason string,
+				and nothing comparable for other packets:
+			</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>MQTT 3.1.1 CONNACK meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Connection accepted</td></tr>
+						<tr><td><code>0x01</code></td><td>Unacceptable protocol version</td></tr>
+						<tr><td><code>0x02</code></td><td>Identifier rejected</td></tr>
+						<tr><td><code>0x03</code></td><td>Server unavailable</td></tr>
+						<tr><td><code>0x04</code></td><td>Bad user name or password</td></tr>
+						<tr><td><code>0x05</code></td><td>Not authorized</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">PUBACK and PUBREC</span><span class="rc__meta"
+				>Acknowledge a received publish · 9 codes</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>
+				Both acknowledge a received PUBLISH — PUBACK for <a href="/mqtt/qos/">QoS 1</a>, PUBREC as the first step for
+				QoS 2 — and share the same reason codes.
+			</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Success</td><td>The message is accepted</td></tr>
+						<tr
+							><td><code>0x10</code></td><td>No matching subscribers</td><td
+								>Accepted, but no subscription matched — it reached no one</td
+							></tr
+						>
+						<tr><td><code>0x80</code></td><td>Unspecified error</td><td>Rejected without a more specific reason</td></tr
+						>
+						<tr><td><code>0x83</code></td><td>Implementation specific error</td><td>Rejected by this broker</td></tr>
+						<tr
+							><td><code>0x87</code></td><td>Not authorized</td><td
+								>The client isn’t authorized to publish to this topic</td
+							></tr
+						>
+						<tr
+							><td><code>0x90</code></td><td>Topic Name invalid</td><td>The topic is well-formed but not accepted</td
+							></tr
+						>
+						<tr
+							><td><code>0x91</code></td><td>Packet Identifier in use</td><td
+								>The packet identifier is already in use (session-state mismatch)</td
+							></tr
+						>
+						<tr><td><code>0x97</code></td><td>Quota exceeded</td><td>A publish quota was exceeded</td></tr>
+						<tr
+							><td><code>0x99</code></td><td>Payload format invalid</td><td
+								>The payload doesn’t match its payload format indicator</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">PUBREL and PUBCOMP</span><span class="rc__meta">Finish the QoS 2 handshake · 2 codes</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>The second and final steps of the QoS 2 handshake. Only two codes apply.</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Success</td><td>The QoS 2 handshake continues normally</td></tr>
+						<tr
+							><td><code>0x92</code></td><td>Packet Identifier not found</td><td
+								>No such packet identifier is known (session-state mismatch)</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">SUBACK</span><span class="rc__meta">Result per subscribed topic filter · 12 codes</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>
+				Answers a SUBSCRIBE with one code <em>per requested topic filter</em> — the granted QoS on success, or why it failed.
+			</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Granted QoS 0</td><td>Subscription accepted at maximum QoS 0</td></tr>
+						<tr><td><code>0x01</code></td><td>Granted QoS 1</td><td>Subscription accepted at maximum QoS 1</td></tr>
+						<tr><td><code>0x02</code></td><td>Granted QoS 2</td><td>Subscription accepted at maximum QoS 2</td></tr>
+						<tr><td><code>0x80</code></td><td>Unspecified error</td><td>Rejected without a more specific reason</td></tr
+						>
+						<tr><td><code>0x83</code></td><td>Implementation specific error</td><td>Rejected by this broker</td></tr>
+						<tr
+							><td><code>0x87</code></td><td>Not authorized</td><td
+								>The client isn’t authorized to subscribe to this topic filter</td
+							></tr
+						>
+						<tr><td><code>0x8F</code></td><td>Topic Filter invalid</td><td>The topic filter is malformed</td></tr>
+						<tr
+							><td><code>0x91</code></td><td>Packet Identifier in use</td><td
+								>The packet identifier is already in use</td
+							></tr
+						>
+						<tr><td><code>0x97</code></td><td>Quota exceeded</td><td>A subscription quota was exceeded</td></tr>
+						<tr
+							><td><code>0x9E</code></td><td>Shared Subscriptions not supported</td><td
+								>The broker doesn’t support <a href="/mqtt/shared-subscriptions/">shared subscriptions</a></td
+							></tr
+						>
+						<tr
+							><td><code>0xA1</code></td><td>Subscription Identifiers not supported</td><td
+								>The broker doesn’t support subscription identifiers</td
+							></tr
+						>
+						<tr
+							><td><code>0xA2</code></td><td>Wildcard Subscriptions not supported</td><td
+								>The broker doesn’t support <a href="/mqtt/topics/">wildcard</a> subscriptions</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">UNSUBACK</span><span class="rc__meta">Result per unsubscribed filter · 7 codes</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>Answers an UNSUBSCRIBE with one code per topic filter.</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Success</td><td>The subscription was removed</td></tr>
+						<tr
+							><td><code>0x11</code></td><td>No subscription existed</td><td>No matching subscription was found</td></tr
+						>
+						<tr><td><code>0x80</code></td><td>Unspecified error</td><td>Rejected without a more specific reason</td></tr
+						>
+						<tr><td><code>0x83</code></td><td>Implementation specific error</td><td>Rejected by this broker</td></tr>
+						<tr><td><code>0x87</code></td><td>Not authorized</td><td>The client isn’t authorized to unsubscribe</td></tr
+						>
+						<tr><td><code>0x8F</code></td><td>Topic Filter invalid</td><td>The topic filter is malformed</td></tr>
+						<tr
+							><td><code>0x91</code></td><td>Packet Identifier in use</td><td
+								>The packet identifier is already in use</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">DISCONNECT</span><span class="rc__meta">Why a connection is closing · 29 codes</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>
+				In MQTT 5.0 either side can send a DISCONNECT with a reason code. The <strong>Sent by</strong> column shows who may
+				use each code.
+			</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Sent by</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr
+							><td><code>0x00</code></td><td>Normal disconnection</td><td>Client or Server</td><td
+								>Close cleanly; do not publish the Will</td
+							></tr
+						>
+						<tr
+							><td><code>0x04</code></td><td>Disconnect with Will Message</td><td>Client</td><td
+								>Disconnect, but ask the broker to publish the <a href="/mqtt/last-will/">Will</a></td
+							></tr
+						>
+						<tr
+							><td><code>0x80</code></td><td>Unspecified error</td><td>Client or Server</td><td
+								>No specific reason given</td
+							></tr
+						>
+						<tr
+							><td><code>0x81</code></td><td>Malformed Packet</td><td>Client or Server</td><td
+								>A packet could not be parsed</td
+							></tr
+						>
+						<tr
+							><td><code>0x82</code></td><td>Protocol Error</td><td>Client or Server</td><td
+								>A protocol rule was violated</td
+							></tr
+						>
+						<tr
+							><td><code>0x83</code></td><td>Implementation specific error</td><td>Client or Server</td><td
+								>Rejected by the sender’s implementation</td
+							></tr
+						>
+						<tr
+							><td><code>0x87</code></td><td>Not authorized</td><td>Server</td><td>The client is not authorized</td></tr
+						>
+						<tr><td><code>0x89</code></td><td>Server busy</td><td>Server</td><td>The broker is busy</td></tr>
+						<tr
+							><td><code>0x8B</code></td><td>Server shutting down</td><td>Server</td><td>The broker is shutting down</td
+							></tr
+						>
+						<tr
+							><td><code>0x8D</code></td><td>Keep Alive timeout</td><td>Server</td><td
+								>No packet arrived within 1.5× the <a href="/mqtt/keep-alive/">keep-alive</a></td
+							></tr
+						>
+						<tr
+							><td><code>0x8E</code></td><td>Session taken over</td><td>Server</td><td
+								>Another connection used the same <a href="/mqtt/mqtt-client-id/">client ID</a></td
+							></tr
+						>
+						<tr
+							><td><code>0x8F</code></td><td>Topic Filter invalid</td><td>Server</td><td
+								>A subscription topic filter is malformed</td
+							></tr
+						>
+						<tr
+							><td><code>0x90</code></td><td>Topic Name invalid</td><td>Client or Server</td><td
+								>A topic name is malformed</td
+							></tr
+						>
+						<tr
+							><td><code>0x93</code></td><td>Receive Maximum exceeded</td><td>Client or Server</td><td
+								>Too many unacknowledged PUBLISHes — see <a href="/mqtt/mqtt-flow-control/">flow control</a></td
+							></tr
+						>
+						<tr
+							><td><code>0x94</code></td><td>Topic Alias invalid</td><td>Client or Server</td><td
+								>A <a href="/mqtt/mqtt-topic-alias/">topic alias</a> exceeded the maximum</td
+							></tr
+						>
+						<tr
+							><td><code>0x95</code></td><td>Packet too large</td><td>Client or Server</td><td
+								>A packet exceeded the maximum size</td
+							></tr
+						>
+						<tr
+							><td><code>0x96</code></td><td>Message rate too high</td><td>Client or Server</td><td
+								>The message rate was too high</td
+							></tr
+						>
+						<tr
+							><td><code>0x97</code></td><td>Quota exceeded</td><td>Client or Server</td><td>A quota was exceeded</td
+							></tr
+						>
+						<tr
+							><td><code>0x98</code></td><td>Administrative action</td><td>Client or Server</td><td
+								>Closed by an administrative action</td
+							></tr
+						>
+						<tr
+							><td><code>0x99</code></td><td>Payload format invalid</td><td>Client or Server</td><td
+								>A payload didn’t match its payload format indicator</td
+							></tr
+						>
+						<tr
+							><td><code>0x9A</code></td><td>Retain not supported</td><td>Server</td><td
+								>The broker doesn’t support <a href="/mqtt/retained-messages/">retained messages</a></td
+							></tr
+						>
+						<tr
+							><td><code>0x9B</code></td><td>QoS not supported</td><td>Server</td><td
+								>The requested QoS isn’t supported</td
+							></tr
+						>
+						<tr
+							><td><code>0x9C</code></td><td>Use another server</td><td>Server</td><td
+								>Temporarily connect to another broker</td
+							></tr
+						>
+						<tr
+							><td><code>0x9D</code></td><td>Server moved</td><td>Server</td><td
+								>Permanently connect to another broker</td
+							></tr
+						>
+						<tr
+							><td><code>0x9E</code></td><td>Shared Subscriptions not supported</td><td>Server</td><td
+								>The broker doesn’t support shared subscriptions</td
+							></tr
+						>
+						<tr
+							><td><code>0x9F</code></td><td>Connection rate exceeded</td><td>Server</td><td
+								>The connection-rate limit was exceeded</td
+							></tr
+						>
+						<tr
+							><td><code>0xA0</code></td><td>Maximum connect time</td><td>Server</td><td
+								>The maximum connection time was exceeded</td
+							></tr
+						>
+						<tr
+							><td><code>0xA1</code></td><td>Subscription Identifiers not supported</td><td>Server</td><td
+								>The broker doesn’t support subscription identifiers</td
+							></tr
+						>
+						<tr
+							><td><code>0xA2</code></td><td>Wildcard Subscriptions not supported</td><td>Server</td><td
+								>The broker doesn’t support wildcard subscriptions</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
+
+	<details class="rc">
+		<summary class="rc__sum"
+			><span class="rc__name">AUTH</span><span class="rc__meta">Enhanced-authentication exchange · 3 codes</span
+			></summary
+		>
+		<div class="rc__body">
+			<p>Drives MQTT 5.0 enhanced authentication (for example SCRAM), exchanged between client and broker.</p>
+			<div class="overflow-x">
+				<table>
+					<thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>
+					<tbody>
+						<tr><td><code>0x00</code></td><td>Success</td><td>Authentication completed successfully</td></tr>
+						<tr
+							><td><code>0x18</code></td><td>Continue authentication</td><td
+								>More data is needed to finish authenticating</td
+							></tr
+						>
+						<tr
+							><td><code>0x19</code></td><td>Re-authenticate</td><td
+								>The client asks to re-authenticate on the live connection</td
+							></tr
+						>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</details>
 
 	<h2>Reason codes in TBMQ</h2>
 	<p>
@@ -115,3 +564,59 @@ const faq: FaqItem[] = [
 		drop. See the <a href="/docs/mqtt-broker/user-guide/mqtt-protocol/">MQTT protocol guide</a> for supported 5.0 behavior.
 	</p>
 </MqttTopicLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.rc {
+		border: 1px solid $color-border;
+		border-radius: 10px;
+		margin: 10px 0;
+		overflow: hidden;
+		background: #fff;
+	}
+	.rc__sum {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 4px 12px;
+		padding: 14px 18px;
+		cursor: pointer;
+		list-style: none;
+		&::-webkit-details-marker {
+			display: none;
+		}
+		&::before {
+			content: '+';
+			flex: none;
+			width: 14px;
+			color: $color-pe-dark;
+			font-weight: $font-weight-bold;
+		}
+		&:hover {
+			background: $color-bg-light;
+		}
+	}
+	details[open] > .rc__sum {
+		border-bottom: 1px solid $color-border;
+		&::before {
+			content: '\2212'; // minus sign
+		}
+	}
+	.rc__name {
+		font-family: $font-family-mono;
+		font-size: 15px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+	}
+	.rc__meta {
+		font-size: 13px;
+		color: $color-text-secondary;
+	}
+	.rc__body {
+		padding: 4px 18px 16px;
+	}
+	.rc__body .overflow-x {
+		margin-top: 12px;
+	}
+</style>

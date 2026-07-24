@@ -1,24 +1,49 @@
 import { Aside } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 
-**Role-Based Access Control (RBAC)** in TBMQ provides a structured and secure way to manage access to broker features
-and operations through predefined <DocLink product={props.product} path="user-guide/ui/users" target="_blank">user roles</DocLink>.
-This system lets administrators grant appropriate permissions to users based on their role within the organization.
+**Role-Based Access Control (RBAC)** governs what a TBMQ user can do in the **web UI and REST API** — which broker
+features they can view versus change. Every TBMQ account is a broker administrator account; the assigned role decides
+whether that access is full or read-only.
+
+RBAC controls _administrative_ access to the broker. It is distinct from MQTT topic authorization, which decides what an
+MQTT _client_ may publish to or subscribe from and is configured per
+<DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials">client credentials</DocLink>.
 
 ## Available roles
 
-TBMQ introduces two predefined user roles:
+TBMQ ships **two predefined roles**. They are built in and cannot be added to, edited, or removed — you assign one of
+them to each user.
 
-- **Admin** — Full access to all broker features.
-- **Viewer** — Read-only access to all broker data, without the ability to perform changes or administrative actions.
+| Role | Access |
+|---|---|
+| **Administrator** | Full access — can create, read, update, and delete every broker entity and setting. |
+| **Viewer** | Read-only — can view all broker data but cannot create, modify, or delete anything, nor perform administrative actions. |
 
-## Benefits
+Permissions are evaluated per operation — create, read, write, delete. An Administrator is allowed every operation; a
+Viewer is allowed only read operations, so any attempt to change something is rejected with a permission-denied error.
+The model is operation-based: there is no per-feature or per-entity permission tuning beyond these two roles.
 
-- **Enhanced security** — Limit access to sensitive broker features based on user responsibilities.
-- **Simplified administration** — Easily assign predefined roles to users without managing granular permissions.
-- **Compliance and auditing** — Support best practices in access control by separating duties between administrative and observability roles.
+## Assigning a role
 
-## Use cases
+A role is assigned when you create or edit a user on the
+<DocLink product={props.product} path="user-guide/ui/users">Users</DocLink> page. Each user has exactly one role.
 
-- Assign the **Admin** role to team members responsible for configuring or maintaining the broker environment.
-- Grant the **Viewer** role to operations or monitoring personnel who need visibility into system health and client behavior without risking configuration changes.
+<Aside type="note">
+  You cannot change your own role — a user editing their own account must keep their current role, so another
+  Administrator has to change it.
+</Aside>
+
+## Assigning roles through SSO
+
+When users sign in through <DocLink product={props.product} path="security/oauth-2-support">OAuth 2.0 / SSO</DocLink>,
+their role is resolved from the identity provider using the role strategy configured on the OAuth 2.0 client:
+
+- **Static** — every user who signs in through this provider is assigned one fixed role.
+- **Dynamic** — the role is derived from a claim in the user's token, mapping its values to **Administrator** or
+  **Viewer**. If a value matches both lists, Administrator takes precedence; if nothing matches, the login is denied.
+
+## When to use each role
+
+- Assign **Administrator** to team members who configure and maintain the broker environment.
+- Assign **Viewer** to operations or monitoring staff who need visibility into broker state and client activity without
+  the ability to make configuration changes.

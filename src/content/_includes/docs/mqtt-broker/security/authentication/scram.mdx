@@ -2,10 +2,10 @@ import { Aside } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 
 SCRAM (Salted Challenge Response Authentication Mechanism) is a secure challenge-response authentication method that allows clients to prove their identity without transmitting the actual password over the network.
-It is defined as part of the MQTT 5.0 specification and provides stronger security guarantees than Basic authentication.
+It is a SASL mechanism (defined in RFC 5802 and RFC 7677); rather than being part of MQTT itself, TBMQ carries it over the MQTT 5.0 enhanced-authentication framework — the `AUTH` packet together with the `Authentication Method` and `Authentication Data` properties. It provides stronger security guarantees than Basic authentication, and TBMQ supports two mechanisms: `SCRAM-SHA-256` and `SCRAM-SHA-512`.
 
 <Aside type="note">
-  SCRAM authentication is available for MQTT 5.0 clients only. It is always handled by the broker according to the MQTT 5.0 specification and does not follow the configured execution order of authentication providers.
+  SCRAM authentication is available for MQTT 5.0 clients only. When the SCRAM provider is enabled, the broker handles it directly per the MQTT 5.0 specification — it does not take part in the configured execution order of the other authentication providers.
 </Aside>
 
 Unlike Basic authentication, where credentials are sent directly in the `CONNECT` packet, SCRAM performs a multi-step handshake:

@@ -7,7 +7,7 @@ your instance is accessible by default via its public **IP address** or the **DN
 However, configuring a **custom domain name** provides several important advantages:
 
 - **Simplified access** — users can log in using a memorable hostname instead of an IP or Load Balancer DNS name.
-- **Secure SSL connections** — domains enable the use of trusted SSL/TLS certificates.
+- **Secure SSL connections** — a memorable hostname can be secured with a trusted SSL/TLS certificate issued for that domain (the certificate itself is provisioned at your load balancer or DNS provider, not inside TBMQ).
 - **White labeling** — TBMQ uses the domain to apply custom branding to the login page (logos, titles, and colors). The domain simplifies configuration management, as each TBMQ deployment supports only one login page branding configuration.
 - **OAuth 2.0 / SSO integration** — multiple domains allow separate login configurations for each authentication provider.
 
@@ -68,6 +68,8 @@ Open a web browser and enter the domain in the address bar — you should see th
 ]} />
 
 ## Viewing domain details
+
+A registered domain ties a hostname to its login configuration. From the details dialog you can toggle **OAuth 2.0** for the domain and choose which <DocLink product={props.product} path="security/oauth-2-support">OAuth 2.0 clients</DocLink> are offered on that domain's login page — so different hostnames can present different SSO providers.
 
 To view details about a registered domain, simply click on it to open the domain details dialog.
 

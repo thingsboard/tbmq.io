@@ -62,6 +62,7 @@ TBMQ records audit log entries for the following entity types:
 | Shared subscription | Application-level shared subscriptions with Kafka-backed consumer groups |
 | Subscription | Individual MQTT client topic subscriptions |
 | Time series | Time series telemetry data collected by the broker |
+| Unauthorized client | MQTT clients that were refused connection (for example, failed authentication), tracked by the unauthorized clients feature |
 | User | System user accounts and their profile changes |
 | WebSocket connection | WebSocket connections established through the TBMQ UI |
 | WebSocket subscription | Topic subscriptions created within WebSocket connections |
@@ -83,6 +84,7 @@ Each audit log entry records one of the following action types:
 | Removed | MQTT session removed |
 | Restarted | Integration restarted |
 | Events cleared | Events cleared for an entity |
+| Timeseries updated | Time series data written |
 | Timeseries deleted | Time series data deleted |
 | Blocked | Client blocked |
 | Unblocked | Client unblocked |

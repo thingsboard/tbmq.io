@@ -39,7 +39,7 @@ After completing the setup, start or restart the TBMQ server.
   **Make sure the certificate files are reachable by the TBMQ process:**
 
   - **Docker Compose:** mount or use an existing volume to the `/config` folder of the container; use the full file path, e.g. `/config/server.pem`.
-  - **Kubernetes:** mount a separate volume to `/https-config` or similar folder; use the full file path, e.g. `/https-config/server.pem`.
+  - **Kubernetes:** mount a separate volume to `/mqtts-config` or similar folder; use the full file path, e.g. `/mqtts-config/server.pem`.
 </Aside>
 
 ## SSL configuration using Java Keystore
@@ -70,7 +70,7 @@ After completing the setup, start or restart the TBMQ server.
   **Make sure the keystore files are reachable by the TBMQ process:**
 
   - **Docker Compose:** mount or use an existing volume to the `/config` folder of the container; use the full file path, e.g. `/config/keystore.p12`.
-  - **Kubernetes:** mount a separate volume to `/https-config` or similar folder; use the full file path, e.g. `/https-config/keystore.p12`.
+  - **Kubernetes:** mount a separate volume to `/mqtts-config` or similar folder; use the full file path, e.g. `/mqtts-config/keystore.p12`.
 </Aside>
 
 ## Additional configuration properties
@@ -80,6 +80,31 @@ You may configure the following additional environment variables via the <DocLin
 - `LISTENER_SSL_BIND_ADDRESS` — The bind address for the MQTT server. Default value `0.0.0.0` indicates all interfaces.
 - `LISTENER_SSL_BIND_PORT` — The bind port for the MQTT server. Default value is `8883`.
 - `LISTENER_SSL_PROTOCOL` — SSL protocol name. Default value is `TLSv1.2`. See the <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms" target="_blank" rel="noopener noreferrer">Java documentation</a> for more details.
+
+## CA certificate for client connections
+
+The **Home** page shows a **CA certificate** entry in the **Connection details** card. This is the CA (root) certificate that client devices use to validate the broker's TLS certificate when connecting over MQTTS — it is distinct from the server key store configured above. Until you point TBMQ at a certificate the entry reads **Not configured**; once set, TBMQ serves the certificate as a download straight from the Home page, so a device can trust the broker (for example, by passing it to `mosquitto_pub` / `mosquitto_sub` with `--cafile`).
+
+Set the following environment variables via the <DocLink product={props.product} path="installation/config">configuration</DocLink> file, docker-compose, or Kubernetes scripts:
+
+```bash
+export MQTTS_CA_CERT=/config/ca.pem
+export MQTTS_CA_CERT_NAME=tbmq-ca-cert.pem
+```
+
+Where:
+
+- `MQTTS_CA_CERT` — path to the CA certificate file in PEM format. It can be a **root CA certificate** (for certificate chains) or a **self-signed certificate**; use the same certificate that signed the server certificate configured for the SSL listener. Default value is `cafile.pem`.
+- `MQTTS_CA_CERT_NAME` — filename applied to the certificate when it is downloaded from the UI. Default value is `tbmq-ca-cert.pem`.
+
+<Aside type="caution">
+  **Make sure the certificate file is reachable by the TBMQ process:**
+
+  - **Docker Compose:** mount or use an existing volume to the `/config` folder of the container; use the full file path, e.g. `/config/ca.pem`.
+  - **Kubernetes:** mount a separate volume to `/mqtts-config` or similar folder; use the full file path, e.g. `/mqtts-config/ca.pem`.
+</Aside>
+
+After completing the setup, start or restart the TBMQ server. The **CA certificate** entry on the Home page then shows the filename with a download button.
 
 ## Self-signed certificates generation
 
@@ -173,6 +198,10 @@ LISTENER_SSL_PEM_CERT=serverChain.pem
 ```
 
 This ensures that both the server certificate and the CA certificate are properly recognized, enabling secure mutual authentication when client certificates are used.
+
+<Aside type="tip">
+  Trusting the CA lets TBMQ validate a client certificate during the TLS handshake, but it does not by itself authenticate clients by certificate. To require clients to present a certificate and identify them by it, also enable and configure the <DocLink product={props.product} path="security/authentication/x509">X.509 certificate chain authentication provider</DocLink>.
+</Aside>
 
 ## Adding certificate into Java Truststore
 
