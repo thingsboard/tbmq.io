@@ -6,6 +6,7 @@ export interface NavItem {
 	submenuId?: string;
 	items?: SubMenuItem[];
 	target?: string;
+	match?: string[]; // path prefixes (each ends in '/') that mark this item current; defaults to [href]
 }
 
 export interface SubMenuItem {
@@ -32,9 +33,9 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Product', href: '/product/' },
 	{ label: 'Live Demo', href: '/live-demo/' },
 	{ label: 'Performance', href: '/performance/' },
-	{ label: 'Company', submenuId: 'nav-company' },
+	{ label: 'Company', submenuId: 'nav-company', match: ['/company/', '/contact-us/'] },
 	{ label: 'Learn', href: '/mqtt/', submenuId: 'nav-learn' },
-	{ label: 'Docs', href: '/docs/pe/' },
+	{ label: 'Docs', href: '/docs/pe/', match: ['/docs/'] },
 	{ label: 'Blog', href: 'https://thingsboard.io/blog/', target: '_blank' },
 ];
 
