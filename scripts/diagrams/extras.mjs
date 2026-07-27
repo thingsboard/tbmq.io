@@ -19,6 +19,10 @@ function lifeline(k, x, y1, y2) {
 	return `<path d="M ${x} ${y1} L ${x} ${y2}" stroke="${k.T.neutralStroke}" stroke-width="1.4" stroke-dasharray="4 5"/>`;
 }
 
+/** Plain connector line with no arrowhead — for shared rails and elbow stubs. */
+const stub = (k, x1, y1, x2, y2) =>
+	`<path d="M ${x1} ${y1} L ${x2} ${y2}" fill="none" stroke="${k.T.flow}" stroke-width="1.9" stroke-linecap="round"/>`;
+
 // =============================================================================
 // N1 — PUBLISH lifecycle (sequence)
 // =============================================================================
@@ -26,14 +30,24 @@ export function publishLifecycle(k) {
 	const W = 1340,
 		H = 720;
 	const P = [];
-	const lanes = [
-		{ x: 105, title: 'Publisher', kind: 'client', icon: 'device' },
-		{ x: 330, title: 'Client actor', kind: 'core', icon: 'actor' },
-		{ x: 580, title: 'Message dispatcher', kind: 'core', icon: 'dispatch' },
-		{ x: 840, title: 'Kafka', sub: 'tbmq.msg.all', kind: 'kafka', icon: 'kafka' },
-		{ x: 1075, title: 'Subscription Trie', kind: 'core', icon: 'trie' },
-		{ x: 1255, title: 'Subscriber', kind: 'client', icon: 'device' },
+	// Header lanes. Each card is sized to its own label (so nothing overflows),
+	// and the GAPS between cards are equal — the row is laid out from a single
+	// gap constant with symmetric side margins rather than hand-placed x values.
+	const laneDefs = [
+		{ w: 124, title: 'Publisher', kind: 'client', icon: 'device' },
+		{ w: 144, title: 'Client actor', kind: 'core', icon: 'actor' },
+		{ w: 184, title: 'Message dispatcher', kind: 'core', icon: 'dispatch' },
+		{ w: 136, title: 'Kafka', sub: 'tbmq.msg.all', kind: 'kafka', icon: 'kafka' },
+		{ w: 178, title: 'Subscription Trie', kind: 'core', icon: 'trie' },
+		{ w: 130, title: 'Subscriber', kind: 'client', icon: 'device' },
 	];
+	const LANE_GAP = 72;
+	let laneX = (W - laneDefs.reduce((a, l) => a + l.w, 0) - LANE_GAP * (laneDefs.length - 1)) / 2;
+	const lanes = laneDefs.map((l) => {
+		const lane = { ...l, cardX: laneX, x: laneX + l.w / 2 };
+		laneX += l.w + LANE_GAP;
+		return lane;
+	});
 	const yTop = 40,
 		yBot = 640;
 	for (const l of lanes) P.push(lifeline(k, l.x, yTop + 56, yBot));
@@ -56,15 +70,24 @@ export function publishLifecycle(k) {
 	const msg = (a, b, y, label, type = 'flow') =>
 		P.push(k.connector({ from: [X[a], y], to: [X[b], y], type, label, labelSide: 'above' }));
 
-	msg(0, 1, 120, 'PUBLISH (QoS 1/2)');
-	msg(1, 2, 160, 'persist');
-	msg(2, 3, 200, 'produce → tbmq.msg.all');
-	msg(3, 2, 250, 'persisted (offset committed)', 'ack');
+	// First row starts at 134, not 120: its label chip sits 22px above the arrow,
+	// which at 120 would have collided with the header cards (they end at y=90).
+	msg(0, 1, 134, 'PUBLISH (QoS 1/2)');
+	msg(1, 2, 174, 'persist');
+	msg(2, 3, 214, 'produce → tbmq.msg.all');
+	msg(3, 2, 256, 'persisted (offset committed)', 'ack');
 	// below the gate: the ack path back to the publisher
 	msg(2, 1, 350, '', 'ack');
 	msg(1, 0, 390, 'PUBACK / PUBREC', 'ack');
-	// async fan-out
-	P.push(k.text(90, 445, 'asynchronous fan-out', { size: 12, weight: 700, fill: k.T.inkMuted }));
+	// async fan-out — centred in the first lane gap so no lifeline crosses it
+	P.push(
+		k.text((lanes[0].x + lanes[1].x) / 2, 445, 'asynchronous fan-out', {
+			size: 12,
+			weight: 700,
+			fill: k.T.inkMuted,
+			anchor: 'middle',
+		})
+	);
 	msg(3, 2, 480, 'consume', 'flow');
 	msg(2, 4, 520, 'match(topic)');
 	msg(4, 2, 560, 'subscribers', 'ack');
@@ -73,9 +96,9 @@ export function publishLifecycle(k) {
 	for (const l of lanes)
 		P.push(
 			k.card({
-				x: l.x - 78,
+				x: l.cardX,
 				y: yTop,
-				w: 156,
+				w: l.w,
 				h: 50,
 				kind: l.kind,
 				icon: l.icon,
@@ -107,26 +130,33 @@ export function publishLifecycle(k) {
 // =============================================================================
 export function clientTypeTree(k) {
 	const W = 1080,
-		H = 640;
+		H = 648;
 	const P = [];
 	const connect = rectC(440, 40, 200, 64);
 	const dSession = rectC(430, 168, 220, 74);
-	const nonPersist = rectC(120, 330, 260, 96);
-	const dType = rectC(620, 320, 240, 74);
+	// Both level-2 nodes share a top edge (320) so the two branches out of
+	// "Persistent session?" drop the same distance onto the same line.
+	const nonPersist = rectC(120, 320, 320, 96);
 	const devLeaf = rectC(560, 470, 200, 110);
 	const appLeaf = rectC(800, 470, 240, 110);
+	// "Client type?" is sized and centred so its bottom edge spans BOTH leaf
+	// centres (660 / 920) — that is what lets each type branch run as a plain
+	// vertical, with no sideways elbow on either side.
+	const dType = rectC(devLeaf.cx - 30, 320, appLeaf.cx - devLeaf.cx + 60, 74);
 
+	// Level-1 branches: one shared elbow line at y=290, symmetric exits.
+	const ELBOW = 290;
 	P.push(k.connector({ from: bottom(connect), to: top(dSession), type: 'flow' }));
 	P.push(
 		k.connector({
 			from: [dSession.x + 30, dSession.y + dSession.h],
 			to: top(nonPersist),
 			route: [
-				[dSession.x + 30, 300],
-				[nonPersist.cx, 300],
+				[dSession.x + 30, ELBOW],
+				[nonPersist.cx, ELBOW],
 			],
 			type: 'flow',
-			label: 'clean session',
+			label: 'no',
 			labelSide: 'above',
 		})
 	);
@@ -135,40 +165,28 @@ export function clientTypeTree(k) {
 			from: [dSession.x + dSession.w - 30, dSession.y + dSession.h],
 			to: top(dType),
 			route: [
-				[dSession.x + dSession.w - 30, 292],
-				[dType.cx, 292],
+				[dSession.x + dSession.w - 30, ELBOW],
+				[dType.cx, ELBOW],
 			],
 			type: 'flow',
-			label: 'persistent',
+			label: 'yes',
 			labelSide: 'above',
 		})
 	);
-	P.push(
-		k.connector({
-			from: [dType.x + 40, dType.y + dType.h],
-			to: top(devLeaf),
-			route: [
-				[dType.x + 40, 440],
-				[devLeaf.cx, 440],
-			],
-			type: 'flow',
-			label: 'DEVICE',
-			labelSide: 'above',
-		})
-	);
-	P.push(
-		k.connector({
-			from: [dType.x + dType.w - 40, dType.y + dType.h],
-			to: top(appLeaf),
-			route: [
-				[dType.x + dType.w - 40, 440],
-				[appLeaf.cx, 440],
-			],
-			type: 'flow',
-			label: 'APPLICATION',
-			labelSide: 'above',
-		})
-	);
+	// Level-2 branches: straight verticals, labels centred on the same line.
+	for (const [leaf, label] of [
+		[devLeaf, 'DEVICE'],
+		[appLeaf, 'APPLICATION'],
+	]) {
+		P.push(
+			k.connector({
+				from: [leaf.cx, dType.y + dType.h],
+				to: top(leaf),
+				type: 'flow',
+				label,
+			})
+		);
+	}
 
 	P.push(k.card({ ...connect, kind: 'client', title: 'MQTT CONNECT', titleSize: 14 }));
 	P.push(
@@ -186,10 +204,22 @@ export function clientTypeTree(k) {
 			kind: 'client',
 			icon: 'device',
 			title: 'Non-persistent',
-			sub: 'delivered in-memory · nothing stored',
+			// Not "nothing stored" — the message is still appended to
+			// tbmq.msg.all; what is missing is the per-client queue.
+			sub: 'delivered while connected · nothing queued',
 		})
 	);
-	P.push(k.card({ ...dType, kind: 'transport', title: 'Client type?', sub: 'set by credentials', titleSize: 14 }));
+	// Credentials carry `clientType`; the JWT / HTTP auth providers set it too
+	// (`defaultClientType`, and for JWT `clientTypeClaims`).
+	P.push(
+		k.card({
+			...dType,
+			kind: 'transport',
+			title: 'Client type?',
+			sub: 'set by credentials or auth provider',
+			titleSize: 14,
+		})
+	);
 	P.push(
 		k.card({
 			...devLeaf,
@@ -211,14 +241,16 @@ export function clientTypeTree(k) {
 		})
 	);
 
+	// Two lines: the one-liner no longer fits the 1080px canvas.
 	P.push(
 		cap(
 			k,
 			W,
-			606,
-			'Client type (DEVICE / APPLICATION) is set by credentials, independent of the session. APPLICATION clients are designed to run with persistent sessions.'
+			604,
+			'Client type (DEVICE / APPLICATION) is set by the client credentials or by the authentication provider, independent of the session.'
 		)
 	);
+	P.push(cap(k, W, 624, 'APPLICATION clients are designed to run with persistent sessions.'));
 	return k.frame(W, H, P);
 }
 
@@ -339,7 +371,7 @@ export function kafkaTopicsMap(k) {
 				['tbmq.msg.persisted', 'global', '12 partitions'],
 				['tbmq.msg.app.$CLIENT_ID', 'per-client', 'dedicated'],
 				['tbmq.msg.app.shared.$TOPIC_FILTER', 'per-filter', 'shared subs'],
-				['tbmq.msg.retained', 'global', ''],
+				['tbmq.msg.retained', 'global', 'compacted'],
 			],
 		},
 		{
@@ -380,7 +412,7 @@ export function kafkaTopicsMap(k) {
 			rows: [
 				['tbmq.sys.historical.data', 'global', 'stats'],
 				['tbmq.sys.app.removed', 'global', ''],
-				['tbmq.client.blocked', 'global', ''],
+				['tbmq.client.blocked', 'global', 'compacted'],
 			],
 		},
 		{
@@ -392,7 +424,7 @@ export function kafkaTopicsMap(k) {
 			label: 'Integration Executor',
 			rows: [
 				['tbmq.msg.ie', 'global', 'broker → executor'],
-				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config'],
+				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
 				['tbmq.ie.uplink', 'global', 'results → broker'],
 				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
 				['tbmq.ie.event', 'global', 'lifecycle'],
@@ -565,16 +597,37 @@ export function standaloneVsCluster(k) {
 // =============================================================================
 export function actorSystem(k) {
 	const W = 1180,
-		H = 640;
+		H = 650;
 	const P = [];
-	const node = rectC(40, 56, 1100, 470);
+	const node = rectC(40, 56, 1100, 500);
 	P.push(
 		k.groupBox({ ...node, label: 'TBMQ node · custom actor system (single-thread-at-a-time mailboxes)', kind: 'core' })
 	);
 
-	const client = rectC(120, 150, 300, 150);
-	const dev = rectC(120, 340, 300, 150);
+	/**
+	 * Mailbox strip: a short queue of message slots, the leading two filled, to
+	 * show that a CAS-guarded mailbox admits one thread at a time. This replaces
+	 * an offset "stacked shadow" rect that read as a second border on the card
+	 * (and was always drawn in the core green, even on the amber DEVICE card).
+	 */
+	const mailbox = (x, y, kind, n = 6) => {
+		const kk = k.T.kinds[kind];
+		let s = '';
+		for (let i = 0; i < n; i++) {
+			s += `<rect x="${x + i * 26}" y="${y}" width="22" height="22" rx="4" fill="${i < 2 ? kk.fill : k.T.canvas}" stroke="${kk.stroke}" stroke-width="1.2"/>`;
+		}
+		s += k.text(x, y + 38, 'mailbox — one thread at a time (CAS)', {
+			size: 10.5,
+			weight: 600,
+			fill: k.T.inkMuted,
+		});
+		return s;
+	};
+
+	const client = rectC(120, 130, 300, 120);
+	const dev = rectC(120, 350, 300, 120);
 	P.push(k.card({ ...client, kind: 'core', icon: 'actor', title: 'Client actor', sub: 'one per connected client' }));
+	P.push(mailbox(client.x + 10, client.y + client.h + 14, 'core'));
 	P.push(
 		k.card({
 			...dev,
@@ -584,13 +637,7 @@ export function actorSystem(k) {
 			sub: 'one per persistent DEVICE client',
 		})
 	);
-
-	// stacked shadow to hint "one per client"
-	for (const c of [client, dev]) {
-		P.push(
-			`<rect x="${c.x + 10}" y="${c.y - 10}" width="${c.w}" height="${c.h}" rx="12" fill="none" stroke="${k.T.kinds.core.stroke}" stroke-width="1.2" opacity="0.4"/>`
-		);
-	}
+	P.push(mailbox(dev.x + 10, dev.y + dev.h + 14, 'redis'));
 
 	const msgBox = (x, y, w, title, items, kind) => {
 		const h = 34 + items.length * 24;
@@ -606,9 +653,12 @@ export function actorSystem(k) {
 		return rectC(x, y, w, h);
 	};
 
+	// Each Handles box is centred on its own actor card, so both connectors are
+	// plain horizontals on the card centrelines — and therefore parallel.
+	const BOX_H = 34 + 4 * 24;
 	const cBox = msgBox(
 		560,
-		130,
+		client.cy - BOX_H / 2,
 		540,
 		'Handles',
 		[
@@ -621,7 +671,7 @@ export function actorSystem(k) {
 	);
 	const dBox = msgBox(
 		560,
-		340,
+		dev.cy - BOX_H / 2,
 		540,
 		'Handles',
 		[
@@ -633,14 +683,14 @@ export function actorSystem(k) {
 		'redis'
 	);
 
-	P.push(k.connector({ from: right(client), to: left(cBox), type: 'flow' }));
-	P.push(k.connector({ from: right(dev), to: left(dBox), type: 'flow' }));
+	P.push(k.connector({ from: right(client), to: [cBox.x, client.cy], type: 'flow' }));
+	P.push(k.connector({ from: right(dev), to: [dBox.x, dev.cy], type: 'flow' }));
 
 	P.push(
 		cap(
 			k,
 			W,
-			566,
+			594,
 			'Two actor types, created as sibling root actors on the client-dispatcher and persisted-device-dispatcher pools.'
 		)
 	);
@@ -648,7 +698,7 @@ export function actorSystem(k) {
 		cap(
 			k,
 			W,
-			594,
+			622,
 			'A CAS-guarded mailbox lets at most one thread process an actor at a time — per-client isolation and ordering with no locks on the hot path.',
 			{ size: 12 }
 		)
@@ -759,57 +809,51 @@ export function qosDurability(k) {
 // N9 — Integration Executor data flow
 // =============================================================================
 export function integrationExecutor(k) {
-	const W = 1240,
-		H = 560;
+	const W = 1300,
+		H = 524;
 	const P = [];
-	const broker = rectC(60, 210, 210, 120);
-	const kUp = rectC(340, 110, 300, 74);
-	const kDown = rectC(340, 320, 300, 74);
-	const ie = rectC(720, 200, 220, 140);
-	const http = rectC(1010, 90, 190, 80);
-	const mqtt = rectC(1010, 220, 190, 80);
-	const kext = rectC(1010, 350, 190, 80);
+	// Two straight, parallel lanes: the forward path (broker → tbmq.msg.ie →
+	// executor) on top, the uplink (executor → tbmq.ie.uplink → broker) below.
+	// The broker and the executor are the same height so both lanes stay
+	// horizontal end to end — no elbows, nothing to bend around.
+	const COL_Y = 94,
+		COL_H = 240;
+	const LANE_FWD = COL_Y + 40,
+		LANE_UP = COL_Y + COL_H - 40;
+	const broker = rectC(60, COL_Y, 210, COL_H);
+	const kDown = rectC(340, LANE_FWD - 34, 300, 68);
+	const kUp = rectC(340, LANE_UP - 34, 300, 68);
+	const ie = rectC(720, COL_Y, 220, COL_H);
+	// External systems share a column, evenly spaced around the executor's
+	// centreline, so every delivery arrow is horizontal too.
+	const EXT_X = 1060,
+		EXT_W = 190,
+		EXT_GAP = 130;
+	const extCol = (cy) => rectC(EXT_X, cy - 40, EXT_W, 80);
+	const http = extCol(ie.cy - EXT_GAP);
+	const mqtt = extCol(ie.cy);
+	const kext = extCol(ie.cy + EXT_GAP);
 
-	P.push(
-		k.connector({
-			from: [broker.x + broker.w, broker.y + 30],
-			to: left(kDown),
-			route: [
-				[kDown.x - 30, broker.y + 30],
-				[kDown.x - 30, kDown.cy],
-			],
-			type: 'flow',
-			label: 'tbmq.msg.ie',
-			labelSide: 'above',
-		})
-	);
-	P.push(k.connector({ from: right(kDown), to: [ie.x, ie.y + ie.h - 30], type: 'flow' }));
-	P.push(
-		k.connector({ from: [ie.x, ie.y + 30], to: right(kUp), type: 'ack', label: 'tbmq.ie.uplink', labelSide: 'above' })
-	);
-	P.push(
-		k.connector({
-			from: left(kUp),
-			to: [broker.x + broker.w, broker.y + 20],
-			route: [
-				[kUp.x - 30, kUp.cy],
-				[kUp.x - 30, broker.y + 20],
-			],
-			type: 'ack',
-		})
-	);
-	P.push(k.connector({ from: [ie.x + ie.w, ie.y + 30], to: left(http), type: 'flow' }));
-	P.push(k.connector({ from: right(ie), to: left(mqtt), type: 'flow' }));
-	P.push(k.connector({ from: [ie.x + ie.w, ie.y + ie.h - 30], to: left(kext), type: 'flow' }));
+	// The topic cards already spell each topic name, so these arrows carry no
+	// label chips — the chips used to overlap the cards they pointed at.
+	P.push(k.connector({ from: [broker.x + broker.w, LANE_FWD], to: left(kDown), type: 'flow' }));
+	P.push(k.connector({ from: right(kDown), to: [ie.x, LANE_FWD], type: 'flow' }));
+	P.push(k.connector({ from: [ie.x, LANE_UP], to: right(kUp), type: 'ack' }));
+	P.push(k.connector({ from: left(kUp), to: [broker.x + broker.w, LANE_UP], type: 'ack' }));
 
-	// second IE instance behind to hint horizontal scaling
-	P.push(
-		`<rect x="${ie.x + 12}" y="${ie.y - 12}" width="${ie.w}" height="${ie.h}" rx="14" fill="none" stroke="${k.T.kinds.ie.stroke}" stroke-width="1.2" opacity="0.4"/>`
-	);
+	// One executor output fans out to whichever external systems the configured
+	// integrations target — drawn as a shared rail rather than three diagonals
+	// from the card, which would imply three simultaneous dedicated links.
+	const RAIL = ie.x + ie.w + 50;
+	P.push(stub(k, ie.x + ie.w, ie.cy, RAIL, ie.cy));
+	P.push(stub(k, RAIL, http.cy, RAIL, kext.cy));
+	for (const ext of [http, mqtt, kext]) {
+		P.push(k.connector({ from: [RAIL, ext.cy], to: left(ext), type: 'flow' }));
+	}
 
-	P.push(k.card({ ...broker, kind: 'core', icon: 'actor', title: 'TBMQ broker', sub: 'cluster' }));
-	P.push(k.kafkaTopic({ ...kUp, name: 'tbmq.ie.uplink', note: 'results → broker' }));
-	P.push(k.kafkaTopic({ ...kDown, name: 'tbmq.msg.ie', note: 'messages → executor' }));
+	P.push(k.card({ ...broker, kind: 'core', icon: 'actor', title: 'TBMQ cluster' }));
+	P.push(k.kafkaTopic({ ...kDown, name: 'tbmq.msg.ie', note: 'matched publish messages' }));
+	P.push(k.kafkaTopic({ ...kUp, name: 'tbmq.ie.uplink', note: 'integration events → broker' }));
 	P.push(
 		k.card({
 			...ie,
@@ -824,18 +868,27 @@ export function integrationExecutor(k) {
 	P.push(k.card({ ...mqtt, kind: 'transport', icon: 'netty', title: 'MQTT', sub: 'external broker' }));
 	P.push(k.card({ ...kext, kind: 'transport', icon: 'kafka', title: 'Kafka', sub: 'external cluster' }));
 
+	// Two lines: the single-line version was wider than the canvas and clipped.
 	P.push(
 		cap(
 			k,
 			W,
-			510,
-			'The Integration Executor runs as its own microservice (its own JVM), consumes messages from Kafka, and delivers them to external HTTP / MQTT / Kafka systems — isolated from the broker and scaled independently.'
+			428,
+			'The Integration Executor runs as its own microservice (its own JVM) and consumes messages from Kafka,'
 		)
 	);
 	P.push(
-		k.legend(60, 536, [
+		cap(
+			k,
+			W,
+			452,
+			'delivering them to external HTTP / MQTT / Kafka systems — isolated from the broker and scaled independently.'
+		)
+	);
+	P.push(
+		k.legend(60, 494, [
 			{ type: 'flow', label: 'broker → executor → external' },
-			{ type: 'ack', label: 'uplink (results / lifecycle)' },
+			{ type: 'ack', label: 'uplink (lifecycle · stats · errors)' },
 		])
 	);
 	return k.frame(W, H, P);
@@ -926,7 +979,9 @@ export function persistenceModel(k) {
 	P.push(k.text(barX, barY - 12, 'partition (offset →)', { size: 10.5, weight: 600, fill: k.T.inkMuted }));
 	const offX = barX + filled * (cellW + gap) - gap / 2;
 	P.push(k.connector({ from: [offX, barY + cellH + 34], to: [offX, barY + cellH + 4], type: 'ack' }));
-	P.push(k.text(offX, barY + cellH + 48, 'committed offset', { anchor: 'middle', size: 11, weight: 600, fill: k.T.inkSub }));
+	P.push(
+		k.text(offX, barY + cellH + 48, 'committed offset', { anchor: 'middle', size: 11, weight: 600, fill: k.T.inkSub })
+	);
 
 	P.push(k.connector({ from: [pApp.cx, appTopic.y + appTopic.h], to: [pApp.cx, barY], type: 'flow' }));
 	structBox(690, 322, 460, 'Per-app consumer group', 'kafka', [

@@ -23,7 +23,7 @@ systems. The rest of this page zooms into each of these.
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-architecture.svg',
-    alt: 'TBMQ layered architecture: MQTT clients connect through Netty to a TBMQ node (Actor system, Message dispatcher, Subscription Trie); the node produces to and consumes from Apache Kafka, which fans out to Redis/Valkey (persistent DEVICE storage), PostgreSQL (metadata) and the Integration Executor (external HTTP/MQTT/Kafka systems); a Web UI/REST API manages the broker.',
+    alt: 'Top-level TBMQ architecture map. Devices publish and Applications subscribe over MQTT. A TBMQ node exposes Netty listeners — TCP 1883 and WS 8084 enabled, SSL 8883 and WSS 8085 off by default — which decode packets into client actors. The broker core holds the actor system (session state), the message dispatcher (persist / route) and the subscription trie (topic matching). The core produces to and consumes from Apache Kafka, the durability backbone that carries tbmq.msg.all, tbmq.msg.persisted, tbmq.msg.app.$CLIENT_ID and tbmq.msg.ie; Kafka in turn feeds Redis / Valkey for persistent DEVICE messages and the Integration Executor, a separate JVM on port 8082, which pushes to external HTTP, MQTT and Kafka systems. Alongside, a Web UI / REST service manages and monitors the broker and PostgreSQL holds metadata and statistics.',
     caption: 'TBMQ architecture — components and message flow',
   },
 ]} />
@@ -140,7 +140,9 @@ Persistent clients are classified into two types:
 - **DEVICE** — primarily publish large volumes; subscribe to few topics with moderate message rates. Typically IoT sensors.
 - **APPLICATION** — subscribe to high-rate topics; require offline message persistence for later delivery. Used for analytics, data processing, and similar backend functions.
 
-The client type is assigned through the <DocLink product={props.product} path="concepts/client-types">MQTT client credentials</DocLink>, not by the CONNECT packet.
+The client type is assigned through the <DocLink product={props.product} path="concepts/client-types">MQTT client credentials</DocLink> or by the
+<DocLink product={props.product} path="security/overview">authentication provider</DocLink> — never by the CONNECT packet. The JWT and HTTP providers
+carry their own default client type, and the JWT provider can additionally resolve it from a token claim.
 
 The two types are stored very differently — DEVICE messages in a Redis / Valkey sorted set per client, APPLICATION messages
 in that client's own dedicated Kafka topic:
@@ -234,6 +236,18 @@ Related mechanics that shape delivery: <DocLink product={props.product} path="us
 
 ### Kafka topics
 
+Topics fall into a few functional groups. Their scope tells you how they are partitioned across the cluster: **global**
+topics are shared by every node (consumer groups rebalance across them), **per-node** topics carry the owner node's
+`$SERVICE_ID`, and **per-client** topics are dedicated to a single APPLICATION client.
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
+    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), and system/housekeeping — each tagged global, per-node, per-client or per-filter, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
+    caption: 'Kafka topics grouped by function and scope',
+  },
+]} />
+
 | Topic | Description |
 |---|---|
 | `tbmq.msg.all` | All published messages from MQTT clients |
@@ -253,17 +267,6 @@ Related mechanics that shape delivery: <DocLink product={props.product} path="us
 | `tbmq.client.blocked` | Distributes and stores the blocked clients list across the cluster |
 | `tbmq.sys.internode.notifications.$SERVICE_ID` | System notifications between broker nodes for auth provider sync, admin settings sync, and cache cleanup |
 
-Topics fall into a few functional groups. Their scope tells you how they are partitioned across the cluster: **global**
-topics are shared by every node (consumer groups rebalance across them), **per-node** topics carry the owner node's
-`$SERVICE_ID`, and **per-client** topics are dedicated to a single APPLICATION client.
-
-<ImageGallery product={props.product} images={[
-  {
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), and system/housekeeping — each tagged global, per-node, per-client or per-filter, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
-    caption: 'Kafka topics grouped by function and scope',
-  },
-]} />
 
 <Aside>
   Every topic name is prefixed by the optional `queue.kafka.kafka-prefix` (empty by default, so names match the table
@@ -410,7 +413,7 @@ MQTT traffic, and integration throughput can be scaled by running more executor 
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-integration-executor.svg',
-    alt: 'Integration Executor data flow: the TBMQ broker publishes to Kafka (tbmq.msg.ie); a separate Integration Executor microservice consumes it and delivers to external HTTP, MQTT and Kafka systems, sending results back to the broker via tbmq.ie.uplink; it runs in its own JVM and scales independently.',
+    alt: 'Integration Executor data flow: the TBMQ cluster produces matched publish messages to the Kafka topic tbmq.msg.ie; a separate Integration Executor microservice consumes that topic and delivers the messages to external HTTP, MQTT and Kafka systems, while sending integration lifecycle, statistics and error events back to the broker over tbmq.ie.uplink; it runs in its own JVM and scales independently.',
     caption: 'Integration Executor — TBMQ → Kafka → external HTTP / MQTT / Kafka',
   },
 ]} />
