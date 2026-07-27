@@ -100,7 +100,9 @@ loss. It also means a client that stops acknowledging blocks its **own** stream 
 
 The acknowledgement the broker expects depends on the message's QoS level:
 
-- **QoS 0** — no acknowledgement required. The message is considered delivered immediately.
+- **QoS 0** — nothing to acknowledge, so the message never enters the pack's pending set and cannot hold up the
+  commit. This only arises on a shared subscription: a client's own topic always carries QoS 1 or 2, since a message
+  is routed there only when both the publish and the subscription used QoS > 0.
 - **QoS 1** — the client sends a **PUBACK**. The message is removed from the pending map.
 - **QoS 2** — a four-step handshake: the broker delivers the PUBLISH, the client sends **PUBREC**, the broker
   responds with **PUBREL**, and the client completes the exchange with **PUBCOMP**. Only after PUBCOMP is the
