@@ -10,22 +10,6 @@
 	// `header.header` rule in HeaderContent, so this only adds the banner band.)
 	--sl-nav-height: calc(#{$header-height} + var(--promo-cur, var(--promo-h, 0px)));
 	--sl-sidebar-width: 300px;
-
-	// Brand-green accent ramp — overrides Starlight's default indigo so
-	// --color-primary (which aliases --sl-color-text-accent) is green sitewide,
-	// on docs and marketing alike. Anchored on #1f8b4d; text-accent is a shade
-	// darker so link text clears AA (4.5:1) on white.
-	--sl-color-accent-low: #cdefda;
-	--sl-color-accent: #1f8b4d;
-	--sl-color-accent-high: #145c33;
-	--sl-color-text-accent: #1a7f46;
-}
-
-:root[data-theme='dark'] {
-	--sl-color-accent-low: #133a26;
-	--sl-color-accent: #22a35a;
-	--sl-color-accent-high: #a7e8c1;
-	--sl-color-text-accent: #4ade80;
 }
 
 // Content offset uses the CONSTANT banner height (not --promo-cur) so the page

@@ -13,6 +13,16 @@
 	--color-primary-darker: #{$color-primary-darker};
 	--color-primary-rgb: 31, 139, 77;
 
+	// Brand-green accent ramp — overrides Starlight's default indigo. Defined here
+	// (global, unlayered) rather than only in _starlight-overrides so it applies on
+	// marketing pages too, not just docs: --color-primary aliases --sl-color-text-accent,
+	// which otherwise falls back to Starlight's layered indigo. Anchored on #1f8b4d;
+	// text-accent is a shade darker so link text clears AA (4.5:1) on white.
+	--sl-color-accent-low: #cdefda;
+	--sl-color-accent: #1f8b4d;
+	--sl-color-accent-high: #145c33;
+	--sl-color-text-accent: #1a7f46;
+
 	// Brand indigo — the single brand colour for the header "Try it now" CTA, the
 	// footer subscribe button, and the promo banner. Adapts per theme (dark override
 	// below); -contrast is the on-indigo text colour. Hover darkens via NButton's
@@ -152,6 +162,12 @@
 }
 
 [data-theme='dark'] {
+	// Brand-green accent ramp (dark) — see the light :root note above.
+	--sl-color-accent-low: #133a26;
+	--sl-color-accent: #22a35a;
+	--sl-color-accent-high: #a7e8c1;
+	--sl-color-text-accent: #4ade80;
+
 	// Colors - Text
 	--color-text: #e4e5e7;
 	--color-text-secondary: #a1a2a8;
