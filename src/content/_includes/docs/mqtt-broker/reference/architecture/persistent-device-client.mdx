@@ -7,6 +7,32 @@ PostgreSQL-based design, its limitations, and the Redis-based architecture intro
 
 In TBMQ 1.x, PostgreSQL handled message persistence and retrieval for persistent DEVICE clients. While it performed well initially, PostgreSQL could only scale vertically. As the number of persistent MQTT sessions grew, its architecture became a bottleneck. Redis was chosen as the replacement due to its horizontal scalability, native clustering support, and widespread adoption.
 
+## Where persistence fits in the message flow
+
+Redis is not on the publisher's critical path. A publish is acknowledged once **Kafka** has accepted it; the DEVICE
+copy is written to Redis afterwards, by a separate consumer:
+
+1. The message is appended to `tbmq.msg.all` and the publisher is acknowledged.
+2. The <DocLink product={props.product} path="architecture/#message-dispatcher-service">message dispatcher</DocLink> matches
+   subscribers. For every persistent DEVICE subscriber it produces a copy to `tbmq.msg.persisted`
+   (12 partitions by default), **keyed by client ID** — so all messages for one client stay in one partition, in
+   order, and are always handled by the same consumer.
+3. A `tbmq.msg.persisted` consumer (3 consumers and 3 threads by default) groups the polled batch **per client ID**
+   and makes one atomic Redis call per client, which stores the whole group and assigns its MQTT packet IDs.
+4. That call returns the packet ID in use before the batch, so the broker can re-derive the same IDs the script
+   assigned and hand each message to the node where the client is connected — in process if that is this node,
+   otherwise over `tbmq.msg.downlink.persisted.$SERVICE_ID`.
+5. If the client is **offline**, step 4 is skipped entirely: the copy simply stays in Redis until the client
+   reconnects.
+
+The practical consequences: a Redis outage cannot lose an accepted message (Kafka still holds it, and the consumer
+retries — `TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE` defaults to `RETRY_ALL` with 3 retries and a 1 s pause), and
+Redis is sized by the number of *pending* messages, not by throughput.
+
+Two rules decide whether a copy is stored at all, and both must pass: the **publisher** must have used QoS 1 or 2,
+and the **subscription** must have been made with QoS 1 or 2. A QoS 0 publish is never persisted for anyone, and a
+QoS 0 subscription of a persistent client receives messages only while it is connected.
+
 ## PostgreSQL — original design
 
 In TBMQ 1.x, persistent DEVICE clients used PostgreSQL for message persistence. Two tables were central to this
@@ -68,6 +94,12 @@ insertion into `device_publish_msg`.
 on hardware, schema, and workload. Vertical scaling can extend this ceiling, but a per-table hard limit is
 eventually reached. For an MQTT broker expecting millions of persistent sessions, this was a fundamental constraint.
 
+<Aside type="note">
+  Both tables are **history**: they were dropped in 2.0 and are not part of the current schema. PostgreSQL still
+  backs TBMQ's entities and statistics — including per-session context such as received QoS 2 packet IDs
+  (`generic_client_session_ctx`) — but it no longer stores DEVICE messages.
+</Aside>
+
 ## Redis — scalable architecture (v2.0+)
 
 Redis was chosen as the replacement due to in-memory operation (low latency), native cluster support, and
@@ -91,6 +123,11 @@ TBMQ uses the persistent MQTT client ID as a <a href="https://redis.io/docs/late
 in key names — the client ID is enclosed in `{}`. Redis hashes all keys sharing the same `{}` content to the same
 slot, guaranteeing that all keys for one client reside together and multi-key operations proceed without errors.
 
+The keys are laid out this way regardless of topology, so the same code path works for all three supported
+connection types — `REDIS_CONNECTION_TYPE` accepts `standalone` (the default), `cluster`, and `sentinel`. Every key
+can also carry a common prefix (`CACHE_PREFIX`, empty by default), which is applied *before* the hash tag, so it
+never breaks slot co-location.
+
 ### Atomic operations via Lua scripts
 
 In high-throughput environments, multiple messages can arrive simultaneously for the same client. Without atomic
@@ -98,13 +135,31 @@ operations, sequential updates to multiple data structures risk race conditions 
 message loss or incorrect ordering.
 
 <a href="https://redis.io/docs/latest/develop/interact/programmability/eval-intro/" target="_blank" rel="noopener noreferrer">Lua scripts</a> execute as a single
-isolated unit — no other commands can run concurrently during execution. TBMQ uses a separate Lua script for each
-operation (save messages, retrieve undelivered messages on reconnect), ensuring all keys accessed within a script
-reside in the same hash slot and all updates are atomic.
+isolated unit — no other commands can run concurrently during execution. TBMQ uses a separate Lua script per
+operation, ensuring all keys accessed within a script reside in the same hash slot and all updates are atomic:
+
+| Script | Invoked when | What it does |
+|---|---|---|
+| add messages | a batch arrives from `tbmq.msg.persisted` | assigns packet IDs, writes payloads with TTL, appends to the sorted set, trims to the limit |
+| get messages | the client connects | returns all pending messages oldest-first and prunes references to expired ones |
+| remove message | PUBACK or PUBCOMP received | deletes one payload key and its sorted-set reference |
+| update packet type | PUBREC received | rewrites the stored copy as a PUBREL marker |
+| remove messages | session is cleared | deletes every payload key, the sorted set, and the packet-ID counter |
+
+All five are loaded with `SCRIPT LOAD` at startup and afterwards invoked **by SHA** (`EVALSHA`), so the script body
+is not shipped with every call. If Redis has forgotten the script — after a restart, a failover, or a
+`SCRIPT FLUSH` — the `NOSCRIPT` error is caught, the script is reloaded once (concurrent callers share that single
+reload), and the call is retried; a plain `EVAL` with the full body is the last-resort fallback.
 
 ### Redis data structures
 
-TBMQ uses two Redis data structures per client:
+TBMQ uses two Redis data structures per client, across three keys:
+
+| Key | Type | Holds |
+|---|---|---|
+| `{clientId}_messages` | sorted set | one reference per pending message, ordered by score |
+| `{clientId}_messages_{packetId}` | string | the message itself, with a TTL |
+| `{clientId}_last_packet_id` | string | the last MQTT packet ID assigned to this client |
 
 **<a href="https://redis.io/docs/latest/develop/data-types/sorted-sets/" target="_blank" rel="noopener noreferrer">Sorted sets</a> (ZSETs)** — maintain message order using the score as a continuously increasing counter (equivalent
 to `serial_number` in PostgreSQL). The sorted set stores *references* to message payload keys, not the payloads
@@ -136,6 +191,14 @@ ZADD {client_id}_messages 65536 {client_id}_messages_1
 
 The score grows monotonically even when the MQTT packet ID wraps at 65535, preserving correct message ordering.
 
+**Packet IDs are assigned inside the script, not by the caller.** For each message in the batch the script
+increments the stored `last_packet_id` (wrapping from 65535 back to 1), writes that ID into the message, and names
+the payload key after it. The score is a separate counter, seeded from the highest score currently in the sorted
+set — or from `last_packet_id` when the set is empty — and incremented once per message. Two messages therefore
+never collide on a score even though their packet IDs eventually repeat. The script returns the packet ID that was
+in use *before* the batch, which is how the broker re-derives the same IDs for the copies it forwards to the node
+holding the connection.
+
 **Example — storing a message payload with TTL:**
 
 ```bash
@@ -150,6 +213,12 @@ SET {client_id}_messages_1 "{
   \"qos\":1
 }" EX 600
 ```
+
+The `EX` value is per message: it is the MQTT 5.0 **Message Expiry Interval** the publisher sent, and when the
+message carries none, the broker-wide default `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL` (604800 s —
+one week). This replaces the periodic cleanup job the PostgreSQL design needed: an expired message disappears on
+its own, and only its now-dangling reference in the sorted set is left to prune (see
+[Message retrieval and cleanup on reconnect](#message-retrieval-and-cleanup-on-reconnect)).
 
 Message payloads can also be retrieved or removed individually with `O(1)` complexity, without affecting the sorted set:
 
@@ -182,8 +251,10 @@ limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:10000}"
 
 This limit controls memory allocation per persistent client. For example, a client might connect, register a persistent session, and then disconnect immediately. Without a limit, messages would accumulate indefinitely while waiting for a potential reconnection, causing unbounded memory usage.
 
-The maximum configurable value is 65535 (MQTT protocol limit). When new messages arrive and the limit is reached,
-the oldest messages are trimmed from the sorted set and their payload string keys are deleted:
+The maximum configurable value is 65535 (MQTT protocol limit) — the broker validates this on startup and refuses to
+start with a higher value. When new messages arrive and the limit is reached, the oldest messages are trimmed from
+the sorted set and their payload string keys are deleted. This runs at the end of the same script that stores the
+batch, so a client never observes more than `limit` pending messages:
 
 ```lua
 -- Get the number of elements to be removed
@@ -224,6 +295,78 @@ end
 return messages
 ```
 
+`ZRANGE messagesKey 0 -1` walks the set by ascending score, so messages come back **oldest first** and are
+re-delivered in their original order. Each returned message carries the `packetType` it was stored with, and that
+field decides what the client actually receives (see below).
+
+### Acknowledgement and removal
+
+Nothing is removed at delivery time — a message leaves Redis only when the client has confirmed it, which is what
+makes redelivery after a dropped connection possible:
+
+| Client sends | TBMQ does |
+|---|---|
+| **PUBACK** (QoS 1) | removes the payload key and its sorted-set reference |
+| **PUBREC** (QoS 2) | rewrites the stored copy with `packetType = PUBREL`, then sends PUBREL |
+| **PUBCOMP** (QoS 2) | removes the payload key and its sorted-set reference |
+
+Rewriting the stored copy is what makes a QoS 2 handshake resumable. If the connection drops between PUBREC and
+PUBCOMP, the pending entry is no longer a PUBLISH: on reconnect the client receives a **PUBREL** for that packet ID
+rather than the payload again, so the exchange continues where it stopped instead of restarting — and the payload is
+not transmitted twice.
+
+### Clearing a session
+
+When a session ends for good — a `clean start` connect, an expired session, or an admin clearing it — a single
+script deletes every payload key, the sorted set, and the packet-ID counter, leaving no orphaned keys behind. See
+<DocLink product={props.product} path="user-guide/clean-persistent-sessions">Clean persistent sessions</DocLink> for
+the operations that trigger this.
+
+## Delivery, DUP flag, and backpressure
+
+Delivery is driven by the client's **DEVICE actor**, which owns the session's in-flight state:
+
+- **DUP flag** — the actor tracks the packet IDs it has already sent. A message re-sent with a packet ID that is
+  still in flight goes out with `DUP = 1`.
+- **Expiry re-check** — expiry is evaluated again just before delivery, and the *remaining* interval is written into
+  the outgoing message's properties, so a client that reconnects after an hour sees an accurate remaining TTL rather
+  than the publisher's original value.
+- **Backpressure** — when Netty reports the channel non-writable (the client is reading too slowly), the actor stops
+  delivering instead of buffering unboundedly. Once the channel is writable again it re-reads the pending set from
+  Redis, with an exponential backoff while acknowledgements are still outstanding. Nothing is lost, because nothing
+  was removed. See <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink>.
+- **Actor lifetime** — after a disconnect the actor is kept alive for
+  `ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES` (5 minutes by default), so a quick reconnect
+  reuses the warm in-memory state instead of rebuilding it.
+
+Delivery is flushed per message by default for persistent DEVICE clients, which favors latency; buffering is
+available for throughput-oriented deployments. Both are covered in
+<DocLink product={props.product} path="other/msg-delivery-strategy">Message delivery strategies</DocLink>. Note that
+APPLICATION clients default the other way.
+
+## Shared subscriptions
+
+DEVICE clients do not use Kafka consumer groups for
+<DocLink product={props.product} path="user-guide/shared-subscriptions">shared subscriptions</DocLink> the way
+APPLICATION clients do. TBMQ picks exactly **one target per message**, at dispatch time:
+
+- **A member is connected** — a round-robin strategy selects one connected member (skipping a local member whose
+  channel is currently non-writable), and the message follows the ordinary DEVICE path, stored under *that member's*
+  client ID.
+- **No member is connected, at least one has a persistent session** — the message is stored under the
+  **subscription's own key** (topic filter + share name) instead of any client ID. The group thus has a single shared
+  backlog rather than one copy per member.
+- **No member is connected and none is persistent** — the message is dropped for that group.
+
+When a member later connects, it drains the group's backlog only if no other DEVICE member of that subscription is
+already connected — otherwise new messages are being routed to that member instead. While draining, packet IDs are
+re-mapped into the reconnecting client's own sequence (the mapping back to the stored IDs is kept in memory so
+acknowledgements still remove the right entries), the QoS is downgraded to the subscription's QoS, and the
+subscription identifier is attached.
+
+A shared subscription established with **QoS 0** is skipped when draining: its messages are delivered at QoS 0, are
+never acknowledged, and are left for another member or for the TTL to remove.
+
 ## Migration from Jedis to Lettuce
 
 To validate Redis scalability, TBMQ was tested with a P2P MQTT pattern — one publisher per subscriber, each pair
@@ -253,3 +396,21 @@ Redis operations.
 
 For the full P2P performance test methodology and results, see the
 <DocLink product={props.product} path="reference/1m-throughput-p2p-performance-test">1M msg/sec P2P performance test</DocLink>.
+
+## Summary
+
+| Aspect | Persistent DEVICE client |
+|---|---|
+| **Offline storage** | Redis — a sorted set of references plus one string per message, per client |
+| **Consumer model** | Shared `tbmq.msg.persisted` consumers (3 by default), batched per client ID |
+| **Message delivery** | Delivered by the client's DEVICE actor; each message removed only once acknowledged |
+| **Flow control** | Netty writability stops delivery; the pending set is re-read when the channel recovers |
+| **Session recovery** | Pending messages replayed oldest-first; an interrupted QoS 2 exchange resumes at PUBREL |
+| **Message expiry** | Per-message TTL — MQTT 5 Message Expiry Interval, else the broker default (1 week) |
+| **Cluster inter-node traffic** | `tbmq.msg.downlink.persisted.$SERVICE_ID` when the client is connected to another node |
+| **Shared subscription support** | One target chosen per message; a group backlog is stored under the subscription key |
+| **Session requirement** | Persistent session **and** subscription QoS > 0 |
+| **Typical use cases** | Devices, sensors, and mobile clients with intermittent connectivity |
+
+For the opposite trade-off — a dedicated Kafka topic and consumer per client, sized for high-rate backend consumers
+— see <DocLink product={props.product} path="architecture-details/persistent-app-client">persistent APPLICATION clients</DocLink>.
