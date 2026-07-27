@@ -1,0 +1,73 @@
+---
+/**
+ * Compact tile for a short "key attribute" summary, meant to be used inside
+ * Starlight's <CardGrid>.
+ *
+ * Deliberately renders NO heading element: these tiles summarise a page rather
+ * than sectioning it, and this site's table of contents includes headings down
+ * to h4 (`tableOfContents.maxHeadingLevel`), so a real heading here would push
+ * four extra entries into the TOC ahead of the page's actual sections. Use
+ * ~/components/Landing/Card.astro instead when the tile IS a section — e.g. on
+ * the landing/hub pages, where its larger padding also suits a full-page grid.
+ */
+import Icon from '~/components/starlight/Icon.astro';
+
+export interface Props {
+	/** Starlight built-in icon name, or an astro-icon name such as `tabler:bolt`. */
+	icon?: string;
+	title: string;
+}
+
+const { icon, title } = Astro.props;
+---
+
+<div class="attribute-card">
+	<p class="attribute-title">
+		{icon && <Icon name={icon} class="attribute-icon" size="1.15em" />}
+		<span>{title}</span>
+	</p>
+	<div class="attribute-body"><slot /></div>
+</div>
+
+<style>
+	.attribute-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		padding: 1rem 1.125rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-inline-start: 3px solid var(--sl-color-accent);
+		border-radius: 0.5rem;
+		/* Starlight inverts the gray scale per theme, so one variable gives a
+		   subtle raised tile in both light and dark. */
+		background-color: var(--sl-color-gray-6);
+	}
+
+	.attribute-title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0;
+		font-size: var(--sl-text-base);
+		font-weight: 600;
+		line-height: var(--sl-line-height-headings);
+		color: var(--sl-color-white);
+	}
+
+	.attribute-title :global(.attribute-icon) {
+		flex-shrink: 0;
+		color: var(--sl-color-accent-high);
+	}
+
+	/* Tighten the slotted paragraph so a tile stays two or three lines tall. */
+	.attribute-body {
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-2);
+	}
+	.attribute-body :global(p) {
+		margin: 0;
+	}
+	.attribute-body :global(p + p) {
+		margin-top: 0.4rem;
+	}
+</style>

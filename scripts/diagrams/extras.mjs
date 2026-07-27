@@ -425,7 +425,7 @@ export function kafkaTopicsMap(k) {
 			rows: [
 				['tbmq.msg.ie', 'global', 'broker → executor'],
 				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
-				['tbmq.ie.uplink', 'global', 'results → broker'],
+				['tbmq.ie.uplink', 'global', 'events → broker'],
 				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
 				['tbmq.ie.event', 'global', 'lifecycle'],
 			],
@@ -935,13 +935,15 @@ export function persistenceModel(k) {
 	// ---- LEFT: persistent DEVICE → Redis / Valkey sorted set ----
 	const devIngest = { x: 120, y: 110, w: 400, h: 58 };
 	P.push(k.kafkaTopic({ ...devIngest, name: 'tbmq.msg.persisted', note: 'ingest buffer · 12 partitions' }));
+	// Member = the message key, score = a monotonic sequence (NOT the packet id,
+	// which wraps at 0xffff); the body lives under its own key with a TTL.
 	const devStore = structBox(90, 250, 460, 'Redis / Valkey — sorted set per client', 'redis', [
 		{ t: '{clientId}_messages', mono: true },
-		{ t: 'score = packet id  →  message key', mono: false },
-		{ t: 'packet 7 → msg:2f9c    ·    packet 8 → msg:6b1a', mono: true },
-		{ t: 'each value: SET msgKey … EX = TTL', mono: false },
+		{ t: 'member = message key · score = monotonic seq', mono: false },
+		{ t: '{clientId}_messages_7    ·    {clientId}_messages_8', mono: true },
+		{ t: 'body: SET msgKey … EX = message expiry or TTL', mono: false },
 		{ t: '{clientId}_last_packet_id', mono: true },
-		{ t: 'counter · list trimmed to messages-limit', mono: false },
+		{ t: 'packet-id counter · oldest evicted past messages-limit', mono: false },
 	]);
 	P.push(
 		k.connector({
@@ -952,7 +954,7 @@ export function persistenceModel(k) {
 		})
 	);
 	structBox(90, 470, 460, 'On reconnect', 'redis', [
-		{ t: 'ZRANGE (REV) → redeliver unacked messages', mono: false },
+		{ t: 'ZRANGE oldest → newest, redeliver unacked', mono: false },
 		{ t: 'each message removed from the set on ack', mono: false },
 	]);
 
