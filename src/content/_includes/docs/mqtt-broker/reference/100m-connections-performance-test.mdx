@@ -8,8 +8,9 @@ per second**.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/reference/perf-tests/mqtt-broker-perf-tests.png',
-    alt: 'TBMQ performance test overview', caption: 'TBMQ performance test overview',
+    src: '/src/assets/images/docs/mqtt-broker/reference/perf-tests/tbmq-perf-test-diagram.svg',
+    alt: '100M connections test topology: 100M connected MQTT devices publish 3M msg/sec at QoS 1 — 114 bytes per message — into a TBMQ cluster of 25 nodes (64 vCPU, 256 GiB RAM each) with 9 Kafka brokers and a PostgreSQL instance; 500 persistent APPLICATION clients consume 3M msg/sec, 6k msg/sec each, for 6M msg/sec across both directions.',
+    caption: '100M connections test topology — 25-node cluster, 3M msg/sec in and out',
   },
 ]} />
 

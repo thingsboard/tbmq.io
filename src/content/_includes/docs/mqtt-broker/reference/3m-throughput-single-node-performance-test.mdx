@@ -7,8 +7,9 @@ millisecond latency — using a single node.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/reference/single-node-test/tbmq-perf-test-diagram.png',
-    alt: 'TBMQ single-node 3M msg/sec performance test architecture diagram', caption: 'TBMQ single-node 3M msg/sec performance test architecture diagram',
+    src: '/src/assets/images/docs/mqtt-broker/reference/single-node-test/tbmq-perf-test-diagram.svg',
+    alt: 'Single-node fan-out test topology: 100 publishing MQTT devices send 1k msg/sec at QoS 0 — 66 bytes per message — to one TBMQ node (32 vCPU, 128 GiB RAM) with 3 Kafka brokers and a PostgreSQL instance; 3000 subscribers each receive 1k msg/sec, so 1k msg/sec inbound leaves as 3M msg/sec delivered.',
+    caption: 'Single-node fan-out topology — 1k msg/sec in, 3M msg/sec out',
   },
 ]} />
 

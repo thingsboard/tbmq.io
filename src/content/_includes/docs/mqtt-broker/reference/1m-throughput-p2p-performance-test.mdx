@@ -15,8 +15,9 @@ client is temporarily offline. The tests scaled infrastructure while progressive
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/reference/p2p-test/tbmq-perf-test-diagram.png',
-    alt: 'TBMQ P2P performance test architecture diagram', caption: 'TBMQ P2P performance test architecture diagram',
+    src: '/src/assets/images/docs/mqtt-broker/reference/p2p-test/tbmq-perf-test-diagram.svg',
+    alt: 'P2P performance test topology at the 1M msg/sec phase: 500k publishing MQTT devices send 500k msg/sec at QoS 1 — one message per second each, 62 bytes per message — into a TBMQ cluster of 5 nodes (16 vCPU, 32 GiB RAM each) backed by 5 Kafka brokers and 11 Redis nodes; 500k persistent DEVICE subscribers each receive one message per second, giving 1M msg/sec in total.',
+    caption: 'P2P test topology at the 1M msg/sec phase — 500k persistent devices on each side',
   },
 ]} />
 

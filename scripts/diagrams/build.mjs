@@ -21,9 +21,11 @@ import * as flows from './flows.mjs';
 import * as extras from './extras.mjs';
 import * as alt from './alt.mjs';
 import { heroDc } from './hero-dc.mjs';
+import * as perf from './perf-dc.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT = resolve(__dirname, '../../src/assets/images/docs/mqtt-broker/architecture');
+const IMAGES = resolve(__dirname, '../../src/assets/images/docs/mqtt-broker');
+const OUT = resolve(IMAGES, 'architecture');
 const PREVIEW = resolve(
 	process.env.SCRATCH ||
 		'/tmp/claude-1000/-home-dlandiak-projects-tbmq-io/d18d02f1-4b2a-4e48-9d34-796b5b631d43/scratchpad',
@@ -54,6 +56,15 @@ const DIAGRAMS = {
 	'actor-system': { file: 'tbmq-actor-system', build: extras.actorSystem },
 	'qos-durability': { file: 'tbmq-qos-durability', build: extras.qosDurability },
 	'integration-executor': { file: 'tbmq-integration-executor', build: extras.integrationExecutor },
+	// Performance-test topologies. These live next to the screenshots of the run
+	// they document, so each one overrides the default output directory.
+	'benchmark-p2p': { file: 'tbmq-perf-test-diagram', dir: 'reference/p2p-test', build: perf.benchmarkP2P },
+	'benchmark-fan-out': {
+		file: 'tbmq-perf-test-diagram',
+		dir: 'reference/single-node-test',
+		build: perf.benchmarkFanOut,
+	},
+	'benchmark-fan-in': { file: 'tbmq-perf-test-diagram', dir: 'reference/perf-tests', build: perf.benchmarkFanIn },
 };
 
 async function rasterize(svg, outPath) {
@@ -67,21 +78,24 @@ async function main() {
 	const onlyIdx = args.indexOf('--only');
 	const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
-	mkdirSync(OUT, { recursive: true });
 	if (preview) mkdirSync(PREVIEW, { recursive: true });
 
 	for (const [id, def] of Object.entries(DIAGRAMS)) {
 		if (only && only !== id) continue;
+		const outDir = def.dir ? resolve(IMAGES, def.dir) : OUT;
+		mkdirSync(outDir, { recursive: true });
 		for (const themeName of ['light', 'dark']) {
 			const kit = makeKit(THEMES[themeName]);
 			const svg = def.build(kit);
 			const suffix = themeName === 'dark' ? '-dark' : '';
-			const svgPath = resolve(OUT, `${def.file}${suffix}.svg`);
+			const svgPath = resolve(outDir, `${def.file}${suffix}.svg`);
 			writeFileSync(svgPath, svg);
 			if (preview) {
-				await rasterize(svg, resolve(PREVIEW, `${def.file}${suffix}.png`));
+				// Keyed by diagram id, not file name: the benchmark diagrams share a
+				// file name and would overwrite each other in the flat preview folder.
+				await rasterize(svg, resolve(PREVIEW, `${id}${suffix}.png`));
 			}
-			console.log(`  ${themeName.padEnd(5)}  ${def.file}${suffix}.svg`);
+			console.log(`  ${themeName.padEnd(5)}  ${def.dir ? `${def.dir}/` : ''}${def.file}${suffix}.svg`);
 		}
 	}
 	console.log('done.');
