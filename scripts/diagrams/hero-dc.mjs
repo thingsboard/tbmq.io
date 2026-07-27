@@ -395,7 +395,7 @@ export function heroDc(kit) {
 		);
 		// `$CLIENT_ID` (not `<clientId>`) to match how every other diagram and the
 		// page prose spell the per-application topic.
-		const topics = ['tbmq.msg.all', 'tbmq.msg.persisted', 'tbmq.msg.app.$CLIENT_ID', 'tbmq.msg.ie'];
+		const topics = ['tbmq.msg.all', 'tbmq.msg.persisted', 'tbmq.msg.app.$CLIENT_ID', 'tbmq.msg.ie.$INTEGRATION_ID'];
 		let tx = x + 18;
 		for (const name of topics) {
 			const c = monoChip(tx, y + 79, 34, name, { size: 13, fill: T.tealTile, ink: T.txt });

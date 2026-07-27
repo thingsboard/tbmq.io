@@ -34,7 +34,7 @@ systems. The rest of this page zooms into each of these.
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-architecture.svg',
-    alt: 'Top-level TBMQ architecture map. Devices publish and Applications subscribe over MQTT. A TBMQ node exposes Netty listeners — TCP 1883 and WS 8084 enabled, SSL 8883 and WSS 8085 off by default — which decode packets into client actors. The broker core holds the actor system (session state), the message dispatcher (persist / route) and the subscription trie (topic matching). The core produces to and consumes from Apache Kafka, the durability backbone that carries tbmq.msg.all, tbmq.msg.persisted, tbmq.msg.app.$CLIENT_ID and tbmq.msg.ie; Kafka in turn feeds Redis / Valkey for persistent DEVICE messages and the Integration Executor, a separate JVM on port 8082, which pushes to external HTTP, MQTT and Kafka systems. Alongside, a Web UI / REST service manages and monitors the broker and PostgreSQL holds metadata and statistics.',
+    alt: 'Top-level TBMQ architecture map. Devices publish and Applications subscribe over MQTT. A TBMQ node exposes Netty listeners — TCP 1883 and WS 8084 enabled, SSL 8883 and WSS 8085 off by default — which decode packets into client actors. The broker core holds the actor system (session state), the message dispatcher (persist / route) and the subscription trie (topic matching). The core produces to and consumes from Apache Kafka, the durability backbone that carries tbmq.msg.all, tbmq.msg.persisted, tbmq.msg.app.$CLIENT_ID and tbmq.msg.ie.$INTEGRATION_ID; Kafka in turn feeds Redis / Valkey for persistent DEVICE messages and the Integration Executor, a separate JVM on port 8082, which pushes to external HTTP, MQTT and Kafka systems. Alongside, a Web UI / REST service manages and monitors the broker and PostgreSQL holds metadata and statistics.',
     caption: 'TBMQ architecture — components and message flow',
   },
 ]} />
@@ -347,7 +347,7 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), and system/housekeeping — each tagged global, per-node, per-client or per-filter, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
+    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
     caption: 'Kafka topics grouped by function and scope',
   },
 ]} />
@@ -373,11 +373,11 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 | `tbmq.sys.historical.data` | global | Historical statistics (incoming/outgoing message counts, etc.) published from each broker node to calculate total values per cluster |
 | `tbmq.sys.app.removed` | global | Events for removal of an APPLICATION client's Kafka topic (client type changed to DEVICE) |
 | `tbmq.client.blocked` | global | Distributes and stores the blocked clients list across the cluster. Compacted |
-| `tbmq.msg.ie` | global | Published messages matched by an integration, for the Integration Executor to deliver |
+| `tbmq.msg.ie.$INTEGRATION_ID` | per-integration | Published messages matched by one integration, for the Integration Executor to deliver. One single-partition topic per integration, created and deleted with the integration |
 | `tbmq.ie.downlink.{http,kafka,mqtt}` | per-type | Integration configuration and validation requests, broker → executor. Compacted, one topic per integration type |
 | `tbmq.ie.uplink` | global | Integration lifecycle, statistics, and error events, executor → broker |
 | `tbmq.ie.uplink.notifications.$SERVICE_ID` | per-node | Validation responses routed back to the node that asked |
-| `tbmq.ie.event` | global | Integration lifecycle events consumed by the executor |
+| `tbmq.ie.event.$INTEGRATION_ID` | per-integration | MQTT **client** lifecycle events (connected, disconnected, subscribed, unsubscribed, authentication/authorization failed, connection failed) for the integrations configured to receive them, broker → executor. One single-partition topic per integration, created by the executor |
 
 </details>
 
@@ -580,20 +580,32 @@ broker to external systems without adding load to the message path. It consumes 
 the configured targets, supporting **HTTP**, **MQTT**, and **Kafka** integration types.
 
 Because it is deployed and scaled independently of the broker, a slow or failing external endpoint never back-pressures
-MQTT traffic, and integration throughput can be scaled by running more executor instances.
+MQTT traffic, and integration throughput can be scaled by running more executor instances. The unit of distribution is
+the **integration**, not the partition: the downlink topics are keyed by integration ID, so a consumer-group rebalance
+across the running executors gives each integration exactly one owning instance, which then processes that integration's
+messages and events on its own.
 
 The executor is decoupled from the broker in exactly the way the nodes are decoupled from each other: it shares no
 memory and makes no direct calls, and every exchange is a Kafka topic. Messages matched by an integration arrive on
-`tbmq.msg.ie`. Integration definitions and validation requests travel the other way on the compacted
+`tbmq.msg.ie.$INTEGRATION_ID` — **one topic per integration**, created when the integration starts and deleted with it,
+so a slow or failing target backs up only its own queue and never the other integrations'. Integration definitions and
+validation requests travel the other way on the compacted
 `tbmq.ie.downlink.{http,kafka,mqtt}` topics — one per integration type — so a starting executor rebuilds the current set
 of integrations from a snapshot, the same trick the broker uses for sessions and subscriptions. Results flow back as
 lifecycle, statistics, and error **events** on `tbmq.ie.uplink`, which the broker persists so the UI can show each
 integration's state and failures.
 
+An integration can also react to session activity rather than only to published messages. For that the broker produces
+MQTT **client** lifecycle events — connected, disconnected, subscribed, unsubscribed, and the authentication,
+authorization, and connection failures — to a dedicated single-partition topic per integration,
+`tbmq.ie.event.$INTEGRATION_ID`, and each integration receives only the event types it is configured for. These events
+are best-effort: they are produced on the MQTT processing thread and dropped (and counted) if Kafka cannot accept them,
+so they never hold up a client's connection.
+
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-integration-executor.svg',
-    alt: 'Integration Executor data flow: the TBMQ cluster produces matched publish messages to the Kafka topic tbmq.msg.ie; a separate Integration Executor microservice consumes that topic and delivers the messages to external HTTP, MQTT and Kafka systems, while sending integration lifecycle, statistics and error events back to the broker over tbmq.ie.uplink; it runs in its own JVM and scales independently.',
+    alt: 'Integration Executor data flow: the TBMQ cluster produces matched publish messages to the per-integration Kafka topic tbmq.msg.ie.$INTEGRATION_ID; a separate Integration Executor microservice consumes that topic and delivers the messages to external HTTP, MQTT and Kafka systems, while sending integration lifecycle, statistics and error events back to the broker over tbmq.ie.uplink; it runs in its own JVM and scales independently.',
     caption: 'Integration Executor — TBMQ → Kafka → external HTTP / MQTT / Kafka',
   },
 ]} />

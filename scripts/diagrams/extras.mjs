@@ -423,11 +423,11 @@ export function kafkaTopicsMap(k) {
 			kind: 'ie',
 			label: 'Integration Executor',
 			rows: [
-				['tbmq.msg.ie', 'global', 'broker → executor'],
+				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
 				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
 				['tbmq.ie.uplink', 'global', 'events → broker'],
 				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
-				['tbmq.ie.event', 'global', 'lifecycle'],
+				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
 			],
 		},
 	];
@@ -460,7 +460,9 @@ export function kafkaTopicsMap(k) {
 			k,
 			W,
 			906,
-			'Global topics are shared by all nodes (consumer groups rebalance across them); per-node topics carry the $SERVICE_ID of their owner; per-client topics are dedicated to one APPLICATION client.'
+			// Names every scope tag used above rather than only three of them, and stays
+			// short enough to keep the caption clear of the canvas edges.
+			'Global topics are shared by all nodes (consumer groups rebalance across them); per-node, per-client, per-filter and per-integration topics each name their single owner in the suffix.'
 		)
 	);
 	P.push(
@@ -852,7 +854,7 @@ export function integrationExecutor(k) {
 	}
 
 	P.push(k.card({ ...broker, kind: 'core', icon: 'actor', title: 'TBMQ cluster' }));
-	P.push(k.kafkaTopic({ ...kDown, name: 'tbmq.msg.ie', note: 'matched publish messages' }));
+	P.push(k.kafkaTopic({ ...kDown, name: 'tbmq.msg.ie.$INTEGRATION_ID', note: 'matched publish messages' }));
 	P.push(k.kafkaTopic({ ...kUp, name: 'tbmq.ie.uplink', note: 'integration events → broker' }));
 	P.push(
 		k.card({
