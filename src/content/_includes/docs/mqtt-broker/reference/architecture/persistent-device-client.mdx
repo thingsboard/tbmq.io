@@ -25,9 +25,16 @@ copy is written to Redis afterwards, by a separate consumer:
 5. If the client is **offline**, step 4 is skipped entirely: the copy simply stays in Redis until the client
    reconnects.
 
-The practical consequences: a Redis outage cannot lose an accepted message (Kafka still holds it, and the consumer
-retries — `TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE` defaults to `RETRY_ALL` with 3 retries and a 1 s pause), and
-Redis is sized by the number of *pending* messages, not by throughput.
+Two practical consequences follow. Redis is sized by the number of *pending* messages rather than by throughput, and
+a brief Redis problem does not lose an accepted message, because Kafka still holds it and the consumer retries the
+write.
+
+That retry budget is finite, though. Each pack waits `TB_DEVICE_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT` (20 s) for its
+Redis calls, and `TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE` defaults to `RETRY_ALL` with
+`TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_RETRIES` = 3 and a 1 s pause between attempts. Once those are exhausted the
+Kafka offset is committed anyway: the copies that never reached Redis are **counted as dropped** in the broker's
+statistics and the stream moves on, rather than stalling behind an unreachable Redis. Set the retry count to `0` for
+unlimited retries if you would rather have the persisted-message stream block until Redis recovers.
 
 Two rules decide whether a copy is stored at all, and both must pass: the **publisher** must have used QoS 1 or 2,
 and the **subscription** must have been made with QoS 1 or 2. A QoS 0 publish is never persisted for anyone, and a
@@ -308,6 +315,7 @@ makes redelivery after a dropped connection possible:
 |---|---|
 | **PUBACK** (QoS 1) | removes the payload key and its sorted-set reference |
 | **PUBREC** (QoS 2) | rewrites the stored copy with `packetType = PUBREL`, then sends PUBREL |
+| **PUBREC** with an MQTT 5 error reason code (`0x80` or higher) | removes the payload key and its reference, and sends **no** PUBREL — the client refused the message, so the exchange ends there |
 | **PUBCOMP** (QoS 2) | removes the payload key and its sorted-set reference |
 
 Rewriting the stored copy is what makes a QoS 2 handshake resumable. If the connection drops between PUBREC and

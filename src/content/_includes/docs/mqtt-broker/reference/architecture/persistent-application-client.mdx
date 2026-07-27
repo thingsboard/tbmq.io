@@ -105,6 +105,9 @@ The acknowledgement the broker expects depends on the message's QoS level:
 - **QoS 2** — a four-step handshake: the broker delivers the PUBLISH, the client sends **PUBREC**, the broker
   responds with **PUBREL**, and the client completes the exchange with **PUBCOMP**. Only after PUBCOMP is the
   message fully acknowledged.
+- **QoS 2, refused** — a **PUBREC** carrying an MQTT 5 error reason code (`0x80` or higher) means the client is
+  rejecting the message. TBMQ settles the packet without sending PUBREL, so the pack can complete and commit instead
+  of waiting out the timeout on a message the client will never accept.
 
 ### Acknowledgement strategies
 
@@ -216,8 +219,9 @@ The shared subscription Kafka topic follows the naming convention:
 | `test/#` | `tbmq.msg.app.shared.test.mlw` |
 | `test/+` | `tbmq.msg.app.shared.test.slw` |
 
-Where `#` maps to `mlw` (multi-level wildcard) and `+` maps to `slw` (single-level wildcard). If the topic
-filter contains characters outside the allowed range, a SHA-256 hash is used for the Kafka topic name instead.
+Where `#` maps to `mlw` (multi-level wildcard) and `+` maps to `slw` (single-level wildcard). The accepted set here is
+`^[a-zA-Z0-9/+#]+$` — wider than the client-ID check, because separators and wildcards are translated rather than
+rejected. A filter containing anything else (`-`, `_`, `.`, …) is replaced wholesale by the SHA-256 hash of the filter.
 This behavior is controlled by `TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION` (enabled by default).
 
 ### Consumer groups
