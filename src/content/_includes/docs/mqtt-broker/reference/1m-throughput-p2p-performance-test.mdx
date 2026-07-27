@@ -28,10 +28,10 @@ to the total number of messages per second, including both incoming and outgoing
 AWS EKS cluster and scaled horizontally as workload increased.
 
 Each test ran for 10 minutes, using an equal number of publishers and subscribers. Both operated with **QoS 1**.
-Subscribers used `clean_session=false` so all messages could be retained during offline periods and delivered on
-reconnect. Publishers sent 62-byte messages to unique topics `europe/ua/kyiv/$number` once per second; subscribers
-subscribed to `europe/ua/kyiv/$number/+`, where `$number` is the unique identifier for each publisher–subscriber
-pair.
+Subscribers used `clean_session=false` so messages could be stored while they were offline and delivered on
+reconnect. Publishers sent 62-byte messages once per second, each to its own topic `europe/ua/kyiv/$number/0`;
+subscribers subscribed to `europe/ua/kyiv/$number/+`, where `$number` is the unique identifier for each
+publisher–subscriber pair — so each subscriber received only its own publisher's messages.
 
 ### Test agent setup
 
@@ -98,10 +98,10 @@ phase; for the 1M test, Kafka nodes were also scaled.
 **Key takeaways:**
 
 - **Scalability:** TBMQ demonstrated linear scalability by incrementally adding nodes at higher workloads.
-- **Efficient resource utilization:** CPU utilization on TBMQ nodes stayed consistently around ~90% across all phases.
-- **Latency:** End-to-end latency remained within two-digit millisecond bounds — predictable given the **QoS 1**
-  level applied to both publishers and **persistent** subscribers. Publisher ACK latency stayed within single-digit
-  milliseconds across all phases.
+- **Efficient resource utilization:** CPU utilization on TBMQ nodes stayed consistently at ~90% across all phases.
+- **Latency:** End-to-end latency stayed in the tens of milliseconds — expected given the **QoS 1** level applied to
+  both publishers and **persistent** subscribers. Publisher ACK latency stayed within single-digit milliseconds
+  across all phases.
 - **Throughput efficiency:** ~8,900 msg/sec per CPU core, calculated by dividing total throughput by total CPU cores.
 
 Final 1M msg/sec test results:

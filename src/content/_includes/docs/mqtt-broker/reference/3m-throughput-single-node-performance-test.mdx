@@ -18,11 +18,12 @@ millisecond latency — using a single node.
 A single TBMQ node was deployed within an <a href="https://aws.amazon.com/eks/" target="_blank" rel="noopener noreferrer">EKS</a> cluster alongside 3
 <a href="https://kafka.apache.org/" target="_blank" rel="noopener noreferrer">Kafka</a> nodes and an <a href="https://aws.amazon.com/rds/" target="_blank" rel="noopener noreferrer">RDS</a> instance.
 
-**Publishers:** 100 clients, each publishing 10 msg/sec to their own topic following the pattern
+**Publishers:** 100 clients, each publishing 10 msg/sec to its own topic following the pattern
 `CountryCode/City/ID`. Message size: ~66 bytes.
 
 **Subscribers:** 3,000 clients, each subscribing to `CountryCode/City/#` to receive all messages from all
-publishers. With 100 publishers × 10 msg/sec × 3,000 subscribers = **3M messages per second** total throughput.
+publishers. That gives 100 publishers × 10 msg/sec × 3,000 subscribers = **3M messages per second** delivered to
+subscribers, from just 1k msg/sec arriving at the broker.
 
 The test ran for 30 minutes to verify TBMQ can sustain this load without performance degradation or resource exhaustion.
 
