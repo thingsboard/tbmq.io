@@ -75,7 +75,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 			label: 'Integrations',
 			collapsed: true,
 			items: [
-				{ label: 'Overview', slug: `${prefix}/integrations` },
+				{ label: 'How it works', slug: `${prefix}/integrations` },
 				{ label: 'HTTP', slug: `${prefix}/integrations/http` },
 				{ label: 'MQTT', slug: `${prefix}/integrations/mqtt` },
 				{ label: 'Kafka', slug: `${prefix}/integrations/kafka` },
