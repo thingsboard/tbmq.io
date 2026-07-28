@@ -29,87 +29,87 @@ interface LinkEntry {
 
 const DOC_PAGES: LinkEntry[] = [
 	{
-		path: 'docs/mqtt-broker/pe',
+		path: 'docs/pe',
 		title: 'TBMQ documentation — home',
 		description: 'Top-level entry point for the TBMQ documentation.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/why-tbmq',
+		path: 'docs/pe/why-tbmq',
 		title: 'Why TBMQ?',
 		description: 'Design goals, guarantees, and how TBMQ compares to other MQTT brokers.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/getting-started',
+		path: 'docs/pe/getting-started',
 		title: 'Getting started',
 		description: 'Connect an MQTT client, publish and subscribe, and set up client credentials end to end.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/architecture',
+		path: 'docs/pe/architecture',
 		title: 'Architecture',
 		description: 'Components, Kafka topics, PUBLISH lifecycle, and the durability guarantees of a TBMQ cluster.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/concepts/client-types',
+		path: 'docs/pe/concepts/client-types',
 		title: 'Client types',
 		description: 'DEVICE vs APPLICATION clients — persistence model, throughput, and when to use each.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/concepts/sessions',
+		path: 'docs/pe/concepts/sessions',
 		title: 'Sessions',
 		description: 'Clean and persistent MQTT sessions, session expiry, and the state TBMQ keeps per client.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/concepts/qos',
+		path: 'docs/pe/concepts/qos',
 		title: 'Delivery guarantees',
 		description: 'QoS 0, 1, and 2 handshakes as TBMQ implements them, and how to pick a level.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/concepts/topics',
+		path: 'docs/pe/concepts/topics',
 		title: 'Topics and wildcards',
 		description: 'Topic structure, single- and multi-level wildcards, and topic design guidelines.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/concepts/clustering',
+		path: 'docs/pe/concepts/clustering',
 		title: 'Clustering',
 		description: 'Masterless nodes, Kafka-based coordination, and horizontal scaling.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/installation',
+		path: 'docs/pe/installation',
 		title: 'Installation options',
 		description: 'Docker, Docker Compose, Kubernetes, Helm, and managed cloud deployment paths.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/installation/config',
+		path: 'docs/pe/installation/config',
 		title: 'Configuration reference',
 		description: 'Broker configuration parameters, environment variables, and tuning options.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/security/overview',
+		path: 'docs/pe/security/overview',
 		title: 'Security model',
 		description: 'Authentication providers and their execution order, authorization rules, and TLS/mTLS listeners.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/user-guide',
+		path: 'docs/pe/user-guide',
 		title: 'User guide',
 		description: 'Protocol features, client management, and the admin UI, task by task.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/integrations',
+		path: 'docs/pe/integrations',
 		title: 'Integrations',
 		description: 'Forward MQTT traffic to external systems over HTTP, MQTT, and Kafka.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/rest-api',
+		path: 'docs/pe/rest-api',
 		title: 'REST API',
 		description: 'HTTP API surface for automating broker administration and monitoring.',
 	},
 	{
-		path: 'docs/mqtt-broker/pe/reference',
+		path: 'docs/pe/reference',
 		title: 'Reference',
 		description: 'Validated system design and high-load performance benchmarks for production sizing.',
 	},
 	{
-		path: 'docs/mqtt-broker',
+		path: 'docs',
 		title: 'TBMQ Community Edition documentation',
 		description: 'Same documentation tree scoped to the open-source edition; PE-only pages are absent here.',
 	},
@@ -216,7 +216,7 @@ export const GET: APIRoute = () => {
 
 	const notes = [
 		`- Current releases: TBMQ Community Edition ${TBMQ_VER}, TBMQ Professional Edition ${TBMQ_PE_VER}.`,
-		'- Documentation links point at the Professional Edition tree. It is a superset of Community Edition and both editions share the same source content, so any CE page exists at the same path without the `/pe` segment (`/docs/mqtt-broker/pe/getting-started/` → `/docs/mqtt-broker/getting-started/`).',
+		'- Documentation links point at the Professional Edition tree. It is a superset of Community Edition and both editions share the same source content, so any CE page exists at the same path without the `/pe` segment (`/docs/pe/getting-started/` → `/docs/getting-started/`).',
 		'- Pages under `/docs/` are reference documentation for running TBMQ; pages under `/mqtt/` explain the MQTT protocol itself and are product-neutral.',
 		'- This file and the catalog are generated at build time from the same sources as the site.',
 	].join('\n');
