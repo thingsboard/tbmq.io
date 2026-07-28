@@ -7,12 +7,25 @@ They connect IoT devices with the broader data infrastructure, allowing the MQTT
 
 Besides messages, an integration can receive [client lifecycle events](#client-lifecycle-events) — clients connecting and disconnecting, subscription changes, and authentication or authorization failures.
 
+Integrations are **outbound only**: TBMQ pushes data to the external system. An integration never pulls data in or subscribes to the external system on your behalf — inbound (source) integrations are on the [roadmap](#roadmap).
+
+Integrations require **TBMQ 2.1 or later** and a running [TBMQ Integration Executor](#tbmq-integration-executor), a separate service included in the standard deployments.
+If you upgraded from an earlier version, confirm you added it: with no reachable executor, saving an integration fails with a [validation timeout](#integration-lifecycle).
+
 ## Why use integrations
 
 - Bridge MQTT messages to external systems for processing, storage, or analytics.
 - Enable interoperability between MQTT and other protocols.
 - Build complex event-driven workflows across different platforms.
 - Maintain modularity and scalability in your IoT architecture.
+
+## Supported integration types
+
+- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages to REST APIs or webhooks via HTTP(S).
+- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication.
+- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages into Kafka topics for real-time processing.
+
+Each guide walks through creating an integration of that type end to end. The rest of this page describes the architecture and the operational behavior that all three share — read it when you need to tune, scale, or troubleshoot them.
 
 ## High-level design
 
@@ -62,9 +75,9 @@ Integration entities are stored in TBMQ's PostgreSQL database and are used for m
 - **Name** — a human-readable name.
 - **Description** — optional free-form notes.
 - **Enabled** — whether the integration is active.
-- **Status** — current state:
+- **Status** — current state, as shown in the UI:
   - `Disabled` — not active.
-  - `Active` — running and processing messages.
+  - `Active` — running and processing messages. The executor calls this state `STARTED` in its [statistics](#integration-state-summary).
   - `Failed` — encountered a connection failure.
   - `Pending` — waiting for validation and activation.
 - **Configuration** — connection details and parameters for the external system.
@@ -346,7 +359,7 @@ Each integration type reuses the connection it already has, but the destination 
 
 Lifecycle events are **best-effort hints**, deliberately weaker than message delivery:
 
-- Events are produced on the MQTT processing thread, the same path as a regular publish. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried. That send is synchronous, so an unavailable Kafka briefly holds the thread — bounded by the low `max.block.ms:5000` TBMQ ships for these topics — and then the event is dropped.
+- Events are produced on the MQTT processing thread, the same path as a regular publish. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried. That send is synchronous, so an unavailable Kafka briefly holds the thread — bounded by the low `max.block.ms=5000` TBMQ ships for these topics — and then the event is dropped.
 - Events travel on their own topic per integration (`tbmq.ie.event.$integrationId`) with a shorter retention than the message topic — 1 day by default against the message topic's 7 days — so an event backlog never holds up message delivery.
 - On the Integration Executor side the events stream has its own acknowledgment strategy, defaulting to `SKIP_ALL` so that a failing target does not cause stale events to be redelivered out of order:
 
@@ -556,7 +569,7 @@ Tracks the current state of all integrations managed by the executor:
 START, success=true, integrationType=MQTT = [1]
 ```
 
-- `success=true` — number of integrations in `STARTED` state.
+- `success=true` — number of integrations in `STARTED` state, shown as **Active** in the UI.
 - `success=false` — number of integrations in `FAILED` state.
 
 These values are updated whenever any integration changes state and help administrators understand the real-time health of all running integrations.
@@ -626,12 +639,6 @@ Reading the two blocks side by side tells you which stream is in trouble: an unr
 - **Fault isolation** — issues in external systems affect only the Integration Executor; the TBMQ broker continues operating normally.
 - **Backpressure management** — Kafka buffers messages when executors are slow or overloaded.
 - **Resilience** — executor instances restart independently; integrations are restored from compacted configuration topics.
-
-## Supported integration types
-
-- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages to REST APIs or webhooks via HTTP(S).
-- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication.
-- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages into Kafka topics for real-time processing.
 
 ## Roadmap
 

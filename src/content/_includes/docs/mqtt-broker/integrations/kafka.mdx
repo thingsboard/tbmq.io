@@ -27,9 +27,13 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 
 ## Prerequisites
 
-- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance.
-- An external Kafka cluster ready to receive messages (e.g., **Confluent Cloud**).
+- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance, **version 2.1 or later**, with the <DocLink product={props.product} path="integrations/#tbmq-integration-executor">TBMQ Integration Executor</DocLink> service running. Without a reachable executor, saving an integration fails with a validation timeout.
+- An external Kafka cluster ready to receive messages (e.g., <a href="https://www.confluent.io/confluent-cloud/" target="_blank" rel="noopener noreferrer">Confluent Cloud</a>).
 - A client capable of publishing MQTT messages (e.g., <DocLink product={props.product} path="user-guide/ui/websocket-client">TBMQ WebSocket Client</DocLink>).
+
+<Aside type="caution">
+  This integration targets a Kafka cluster **of your own**, separate from the Kafka that TBMQ uses internally for its own message flow. Do not point it at TBMQ's internal cluster — an integration writing into it does not feed data back into the broker and only puts load on infrastructure the broker depends on.
+</Aside>
 
 ## Create TBMQ Kafka Integration
 
@@ -37,7 +41,7 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 1. Go to the **Integrations** page and click the **"+"** button.
 2. Select **Kafka** as the integration type and click **Next**.
 3. On the **Filters and events** step, keep the default **Topic filters** entry `tbmq/#`, leave **Lifecycle events** empty, and click **Next**.
-4. In the **Configuration** step, enter the **Bootstrap servers** (Kafka broker addresses). See below for common and Confluent Cloud configurations.
+4. In the **Configuration** step, enter the **Bootstrap servers** (Kafka broker addresses). See below for common and Confluent Cloud configurations. Leave **Topic** at its default `tbmq.messages` — that is the topic this tutorial reads from at the end.
 5. Click **Add** to save the integration.
 </Steps>
 
@@ -51,7 +55,7 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 
 <Tabs>
   <TabItem label="Common / Docker">
-    Specify the bootstrap server address (e.g., `localhost:9092` for a local broker). The screenshot below shows the basic configuration for establishing a connection between TBMQ and a Kafka broker.
+    Specify the bootstrap server address of your own Kafka cluster (e.g., `localhost:9092` for a broker you run locally — not TBMQ's internal Kafka, which uses the same address in the default deployments). The screenshot below shows the basic configuration for establishing a connection between TBMQ and a Kafka broker.
 
     <ImageGallery product={props.product} images={[
       { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/add-kafka-integration-4.png', alt: 'Bootstrap servers configuration for common/Docker Kafka setup', caption: 'Bootstrap servers configuration for common/Docker Kafka setup' },
@@ -150,7 +154,7 @@ Events are published to the same **Topic** as messages, using the configured **K
 
 ## Integration events
 
-TBMQ logs integration-related events for debugging and troubleshooting:
+These are the **integration's own** events, recorded inside TBMQ for debugging and troubleshooting. They are not the client lifecycle events described above: those are about MQTT clients and are published to your Kafka topic, while these describe the integration itself and never leave TBMQ.
 
 - **Lifecycle Events** — logs events such as `Started`, `Created`, `Updated`, `Stopped`.
 - **Statistics** — insights into integration performance, including processed message counts and error rates.
@@ -168,7 +172,8 @@ TBMQ logs integration-related events for debugging and troubleshooting:
 1. Navigate to the **WebSocket Client** page.
 2. Select **WebSocket Default Connection** (or any working connection) and click **Connect**. Verify the connection status shows `Connected`.
 3. Set the **Topic** field to `tbmq/kafka-integration` to match the integration's topic filter `tbmq/#`.
-4. Click the **Send** icon to publish the message.
+4. Leave the pre-filled **Payload** `{"temperature": 25}` as is — it is what lands in the Kafka topic below.
+5. Click the **Send** icon to publish the message.
 </Steps>
 
 <ImageGallery product={props.product} images={[

@@ -24,21 +24,23 @@ TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, 
 
 ## Prerequisites
 
-- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance.
+- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance, **version 2.1 or later**, with the <DocLink product={props.product} path="integrations/#tbmq-integration-executor">TBMQ Integration Executor</DocLink> service running. Without a reachable executor, saving an integration fails with a validation timeout.
 - A client capable of publishing MQTT messages (e.g., <DocLink product={props.product} path="user-guide/ui/websocket-client">TBMQ WebSocket Client</DocLink>).
 - A client capable of receiving MQTT messages (e.g., TBMQ WebSocket Client).
 
 ## Create TBMQ MQTT Integration
 
+To keep the walkthrough self-contained, this tutorial points the integration back at TBMQ itself, so you can publish and observe the forwarded message in the same WebSocket Client. In a real deployment, the host and port belong to your external broker.
+
 <Steps>
 1. Go to the **Integrations** page and click the **"+"** button.
 2. Select **MQTT** as the integration type and click **Next**.
-3. On the **Filters and events** step, set **Topic filters** to `tbmq/mqtt-integration`, leave **Lifecycle events** empty, and click **Next**.
+3. On the **Filters and events** step, replace the default **Topic filters** entry with `tbmq/mqtt-integration`. Narrowing the filter to one exact topic — rather than keeping the default `tbmq/#` — keeps this tutorial from forwarding unrelated messages. Leave **Lifecycle events** empty and click **Next**.
 4. In the **Configuration** step:
    - Enter the **Host** (e.g., `localhost`).
    - Enter the **Port** (e.g., `1883`).
-   - Set **Dynamic topic name** to `false` and **Topic name** to `sensors/mqtt-integration`.
-   - Set **Credentials** type to `Basic` and **Username** to `tbmq_websockets_username`.
+   - Set **Dynamic topic name** to `false` and **Topic name** to `sensors/mqtt-integration`. With the dynamic option off, every forwarded message goes to this one fixed topic instead of the topic it arrived on. The `sensors/` prefix is deliberate: the **WebSocket Default Connection** subscribes to `sensors/#`, which is what makes the forwarded message show up in [Send an uplink message](#send-an-uplink-message) below. If you choose a different topic name, subscribe to it in the WebSocket Client first, or you will see nothing.
+   - Set **Credentials** type to `Basic` and **Username** to `tbmq_websockets_username`. Leave **Password** empty — the WebSocket credentials that ship with TBMQ are username-only.
 5. Click **Add** to save the integration.
 </Steps>
 
@@ -127,7 +129,7 @@ A lifecycle event has no originating MQTT message to take a topic, QoS, or retai
 
 ## Integration events
 
-TBMQ logs integration-related events for debugging and troubleshooting:
+These are the **integration's own** events, recorded inside TBMQ for debugging and troubleshooting. They are not the client lifecycle events described above: those are about MQTT clients and are published to the external broker, while these describe the integration itself and never leave TBMQ.
 
 - **Lifecycle Events** — logs events such as `Started`, `Created`, `Updated`, `Stopped`.
 - **Statistics** — insights into integration performance, including processed message counts and error rates.
@@ -143,9 +145,10 @@ TBMQ logs integration-related events for debugging and troubleshooting:
 
 <Steps>
 1. Navigate to the **WebSocket Client** page.
-2. Select **WebSocket Default Connection** (or any working connection) and click **Connect**. Verify the connection status shows `Connected`.
+2. Select **WebSocket Default Connection** and click **Connect**. Verify the connection status shows `Connected`. This connection's default subscription is `sensors/#`, which covers the integration's **Topic name** `sensors/mqtt-integration` — if you use a different connection, make sure it subscribes to that topic.
 3. Set the **Topic** field to `tbmq/mqtt-integration` to match the integration's topic filter.
-4. Click the **Send** icon to publish the message.
+4. Leave the pre-filled **Payload** `{"temperature": 25}` as is — it is what comes back through the integration.
+5. Click the **Send** icon to publish the message.
 </Steps>
 
 <ImageGallery product={props.product} images={[
