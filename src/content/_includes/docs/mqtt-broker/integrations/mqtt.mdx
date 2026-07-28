@@ -15,7 +15,11 @@ TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, 
 4. **External system receives the message** and processes the data.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-mqtt-integration.png', alt: 'TBMQ MQTT integration data flow', caption: 'TBMQ MQTT integration data flow' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-mqtt-integration.svg',
+    alt: 'MQTT integration data flow: devices exchange MQTT(S) traffic with TBMQ; TBMQ passes matched messages over TCP(TLS) to the MQTT integration running inside the TBMQ Integration Executor; the integration connects to the external MQTT broker over MQTT(S) as an ordinary MQTT client and publishes them there.',
+    caption: 'Devices → TBMQ → Integration Executor → external MQTT broker',
+  },
 ]} />
 
 ## Prerequisites

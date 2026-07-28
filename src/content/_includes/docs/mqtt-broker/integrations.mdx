@@ -87,7 +87,11 @@ TBMQ and its Integration Executor microservices communicate asynchronously over 
 | `tbmq.ie.event.$integrationId` | Per-integration topic for forwarding [client lifecycle events](#client-lifecycle-events) from TBMQ to IE. Created only for integrations that subscribe to at least one event type. |
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-communication.png', alt: 'TBMQ Integration Executor internal communication diagram', caption: 'TBMQ Integration Executor internal communication diagram' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-communication.svg',
+    alt: 'Broker and Integration Executor talking over Kafka: TBMQ broker nodes on the left, the Integration Executor — a separate JVM on port 8082 — on the right, and three Kafka topics between them. tbmq.ie.downlink.$integrationType carries configurations and validation requests from the broker to the executor; tbmq.ie.uplink carries events back; tbmq.ie.uplink.notifications.$serviceId carries validation responses back to the node that asked. The first topic is written by the broker and read by the executor, the other two are written by the executor and read by the broker.',
+    caption: 'The control-plane topics — configurations and validation requests go out on the downlink, events and validation responses come back on the uplink',
+  },
 ]} />
 
 ### Downlink topics
@@ -136,7 +140,11 @@ This mechanism ensures that responses are routed to the correct instance in clus
 ### Message processing
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-msg-processing.png', alt: 'TBMQ integration message processing flow', caption: 'TBMQ integration message processing flow' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-msg-processing.svg',
+    alt: "From a device publish to an external system: devices publish to TBMQ, where the message dispatcher matches the topic against the subscription trie and produces the message to the matched integration's own Kafka topic — tbmq.msg.ie.$id_A through tbmq.msg.ie.$id_Z, one topic per integration. The Integration Executor consumes each topic and pushes the message on to that integration's external system.",
+    caption: "A matched publish is written to the integration's own Kafka topic; the Integration Executor consumes it and pushes to the external system",
+  },
 ]} />
 
 TBMQ uses a **dedicated Kafka topic per integration** (`tbmq.msg.ie.$integrationId`) to deliver MQTT messages to the Integration Executor.
@@ -336,9 +344,21 @@ When a create or update request is received, TBMQ sends a **validation request**
 The validation can result in one of three outcomes:
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-admin-timeout.png', alt: 'Validation timeout — Integration Executor not running', caption: 'Validation timeout — Integration Executor not running' },
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-admin-error.png', alt: 'Validation failure — configuration error', caption: 'Validation failure — configuration error' },
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-admin-ok.png', alt: 'Validation success — integration saved and activated', caption: 'Validation success — integration saved and activated' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-admin-timeout.svg',
+    alt: 'Integration validation when no executor is reachable: the admin creates or updates an integration, the integration service inside TBMQ sends a validation request, and nothing answers it. The validation response, the reply to the admin, and the write of the subscriptions into the subscription trie are all crossed out; the request times out and the integration is never stored. The broker keeps serving MQTT traffic unaffected.',
+    caption: 'Validation timeout — no Integration Executor is reachable, so nothing is stored',
+  },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-admin-error.svg',
+    alt: 'Integration validation that fails: the admin creates or updates an integration, the integration service inside TBMQ sends a validation request, and the Integration Executor answers with a failure. The write of the subscriptions into the subscription trie is crossed out, so nothing is saved and the admin sees the reason for the rejection.',
+    caption: 'Validation failure — the executor rejects the configuration, so no subscriptions are added',
+  },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-admin-ok.svg',
+    alt: 'Integration validation that succeeds: the admin creates or updates an integration, the integration service inside TBMQ sends a validation request, and the Integration Executor answers OK. Only then are the subscriptions saved into the subscription trie, and the admin gets a success response.',
+    caption: 'Validation success — the integration is stored and its subscriptions enter the trie',
+  },
 ]} />
 
 1. **Timeout** — the Integration Executor is not running, so the broker waits until a timeout occurs. The integration is not saved.

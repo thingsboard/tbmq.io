@@ -9,8 +9,10 @@
  * architecture hero) and `perf-dc.mjs` (the three benchmark diagrams).
  *
  * Two deliberate deviations from the HTML sources, both applying to every port:
- *   - brand logos (Kafka, Redis) become stroked line-icons, because a committed
- *     SVG may not reference a CDN;
+ *   - brand logos (Kafka, Redis) and glyph-shaped Material icons (`http`, which
+ *     is the literal lettering "http") become stroked line-icons, because a
+ *     committed SVG may not reference a CDN and lettering does not survive the
+ *     line-icon style;
  *   - CSS line boxes become explicit baselines — text is positioned with
  *     `dominant-baseline="middle"` at the centre of the box the browser would
  *     have produced, so the vertical rhythm survives the translation.
@@ -48,6 +50,10 @@ export const DC = {
 		slateTile: 'rgba(255,255,255,0.07)',
 		slateIco: '#a6a6bb',
 		slateLine: '#6b6b80',
+		err: '#ef5350',
+		errTile: 'rgba(239,83,80,0.14)',
+		errIco: '#ef9a9a',
+		errLine: '#ef5350',
 		chip: 'rgba(255,255,255,0.05)',
 		chipBd: 'rgba(255,255,255,0.12)',
 		dash: 'rgba(139,92,246,0.38)',
@@ -80,6 +86,10 @@ export const DC = {
 		slateTile: '#eff1f6',
 		slateIco: '#4c5568',
 		slateLine: '#8b93a5',
+		err: '#e57373',
+		errTile: '#fdecea',
+		errIco: '#c62828',
+		errLine: '#d32f2f',
 		chip: '#f5f6fa',
 		chipBd: '#e2e5ec',
 		dash: 'rgba(124,58,237,0.35)',
@@ -129,6 +139,16 @@ const ICONS = {
 	tree: `<circle cx="12" cy="4.5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="6" cy="19.5" r="2"/><circle cx="18" cy="19.5" r="2"/><path d="M10.7 6.1 7.1 10.4M13.3 6.1l3.6 4.3M6 14v3.5M18 14v3.5"/>`,
 	dashboard: `<rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5.5" rx="1.5"/><rect x="13.5" y="12" width="7" height="8.5" rx="1.5"/><rect x="3.5" y="15" width="7" height="5.5" rx="1.5"/>`,
 	db: `<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>`,
+	// `settings` — the Integration Executor process
+	gear: `<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/>`,
+	// `settings_suggest` — the broker-side integration service (gear + sparkle)
+	gearSparkle: `<circle cx="10.5" cy="13" r="2.6"/><circle cx="10.5" cy="13" r="6"/><path d="M10.5 4.8v2.2M10.5 19v2.2M2.3 13h2.2M16.5 13h2.2M4.7 7.2 6.2 8.7M14.8 17.3l1.5 1.5M16.3 7.2l-1.5 1.5M6.2 17.3l-1.5 1.5"/><path d="M18.8 2.6l.85 1.95 1.95.85-1.95.85-.85 1.95-.85-1.95-1.95-.85 1.95-.85z"/>`,
+	// `login` — an integration, i.e. the executor's outbound connector
+	login: `<path d="M10.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5h-8.5"/><path d="M3.5 12h10M10 8.5l3.5 3.5-3.5 3.5"/>`,
+	// `desktop_windows` — an external system
+	monitor: `<rect x="2.5" y="4" width="19" height="12.5" rx="1.8"/><path d="M9 20.5h6M12 16.5v4"/>`,
+	// `manage_accounts` — the administrator acting through the UI or REST API
+	adminUser: `<circle cx="9.5" cy="8" r="3.6"/><path d="M3 19.8c0-3.4 2.9-5.6 6.5-5.6.95 0 1.9.15 2.75.45"/><circle cx="17.6" cy="17" r="2"/><path d="M17.6 13.3v1.4M17.6 19.3v1.4M13.9 17h1.4M19.9 17h1.4"/>`,
 	// stand-ins for the designs' CDN brand logos (see module header)
 	kafka: `<circle cx="6" cy="12" r="2.3"/><circle cx="17.5" cy="6" r="2.3"/><circle cx="17.5" cy="18" r="2.3"/><path d="M8 10.9 15.6 6.9M8 13.1l7.6 4"/>`,
 	redis: `<ellipse cx="12" cy="6" rx="7.5" ry="2.6"/><path d="M4.5 6v5c0 1.4 3.4 2.6 7.5 2.6s7.5-1.2 7.5-2.6V6M4.5 11v5c0 1.4 3.4 2.6 7.5 2.6s7.5-1.2 7.5-2.6v-5"/>`,
@@ -180,9 +200,16 @@ export function makeDcKit(T) {
 		return id;
 	}
 
+	/**
+	 * `o.bidir` adds a head at the start, `o.dash` renders a dashed line (with butt
+	 * caps, as the designs do — round caps would swell every dash), and `o.plain`
+	 * drops the end head for the leading segment of a forked connector.
+	 */
 	const arrow = (d, color, o = {}) =>
-		`<path d="${d}" fill="none" ${strokeAttr(color, 1.8)} stroke-linecap="round" stroke-linejoin="round"` +
-		`${o.bidir ? ` marker-start="url(#${marker(color)})"` : ''} marker-end="url(#${marker(color)})"/>`;
+		`<path d="${d}" fill="none" ${strokeAttr(color, 1.8)}` +
+		`${o.dash ? ` stroke-dasharray="${o.dash}"` : ' stroke-linecap="round"'} stroke-linejoin="round"` +
+		`${o.bidir ? ` marker-start="url(#${marker(color)})"` : ''}` +
+		`${o.plain ? '' : ` marker-end="url(#${marker(color)})"`}/>`;
 
 	/** tile + title/sub stacked to its right. */
 	function rowCard(o) {
@@ -231,17 +258,53 @@ export function makeDcKit(T) {
 		);
 	}
 
-	/** Swatch + label row, centred on the canvas — identical in every component. */
+	/**
+	 * Swatch + label row, centred on the canvas — identical in every component.
+	 * An item is `[color, label]` for the default colour chip, or
+	 * `[color, label, 'dash' | 'cross']` for the dashed-line and ✕ keys the
+	 * validation and topic components use.
+	 */
 	function legend(W, cy, items) {
-		const total = items.reduce((a, [, l]) => a + 18 + sw(l, 13), 0) + (items.length - 1) * 24;
+		const lead = (kind) => (kind === 'dash' ? 34 : kind === 'cross' ? 23 : 18);
+		const total = items.reduce((a, [, l, k]) => a + lead(k) + sw(l, 13), 0) + (items.length - 1) * 24;
 		let lx = (W - total) / 2;
 		let s = '';
-		for (const [c, label] of items) {
-			s += rr(lx, cy - 5, 10, 10, 2, { fill: c });
-			s += text(lx + 18, cy, label, { size: 13, fill: T.muted });
-			lx += 18 + sw(label, 13) + 24;
+		for (const [c, label, kind] of items) {
+			if (kind === 'dash') {
+				s += `<path d="M${lx},${cy} H${lx + 26}" fill="none" ${strokeAttr(c, 1.8)} stroke-dasharray="6 5"/>`;
+			} else if (kind === 'cross') {
+				s += cross(lx + 7.5, cy, 12, c);
+			} else {
+				s += rr(lx, cy - 5, 10, 10, 2, { fill: c });
+			}
+			s += text(lx + lead(kind), cy, label, { size: 13, fill: T.muted });
+			lx += lead(kind) + sw(label, 13) + 24;
 		}
 		return s;
+	}
+
+	/** The ✕ that marks a step which did not happen. */
+	function cross(cx, cy, size, color) {
+		const k = size / 2;
+		return (
+			`<path d="M${cx - k},${cy - k} L${cx + k},${cy + k}M${cx + k},${cy - k} L${cx - k},${cy + k}"` +
+			` fill="none" ${strokeAttr(color, 2)} stroke-linecap="round"/>`
+		);
+	}
+
+	/**
+	 * Edge annotation with a background knockout, the SVG equivalent of the
+	 * designs' `<span style="padding:0 6px; background:var(--bg)">` — it hides the
+	 * dot grid (and any line it crosses) behind the text.
+	 */
+	function chipLabel(cx, cy, label, o = {}) {
+		const { size = 12.5, fill = T.muted, weight = 400, padX = 6 } = o;
+		const w = sw(label, size) + padX * 2;
+		const h = size * 1.35;
+		return (
+			rr(cx - w / 2, cy - h / 2, w, h, 0, { fill: T.bg }) +
+			text(cx, cy, label, { size, weight, fill, anchor: 'middle' })
+		);
 	}
 
 	/** Greedy word wrap against the estimated advance width. */
@@ -281,5 +344,22 @@ export function makeDcKit(T) {
 		);
 	}
 
-	return { T, text, rr, icon, tile, marker, arrow, rowCard, colCard, monoChip, groupLabel, legend, wrap, frame };
+	return {
+		T,
+		text,
+		rr,
+		icon,
+		tile,
+		marker,
+		arrow,
+		rowCard,
+		colCard,
+		monoChip,
+		groupLabel,
+		legend,
+		cross,
+		chipLabel,
+		wrap,
+		frame,
+	};
 }

@@ -13,7 +13,11 @@ It acts as a **bridge** between TBMQ and external applications, ensuring reliabl
 4. **External service receives the request** and processes the data.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-http-integration.png', alt: 'TBMQ HTTP integration data flow', caption: 'TBMQ HTTP integration data flow' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-http-integration.svg',
+    alt: 'HTTP integration data flow: devices exchange MQTT(S) traffic with TBMQ; TBMQ passes matched messages over TCP(TLS) to the HTTP integration running inside the TBMQ Integration Executor; the integration pushes them to the external HTTP endpoint over HTTP(S). The executor does the pushing, never the broker itself.',
+    caption: 'Devices → TBMQ → Integration Executor → external HTTP endpoint',
+  },
 ]} />
 
 ## Prerequisites

@@ -22,6 +22,7 @@ import * as extras from './extras.mjs';
 import * as alt from './alt.mjs';
 import { heroDc } from './hero-dc.mjs';
 import * as perf from './perf-dc.mjs';
+import * as integrations from './integrations-dc.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const IMAGES = resolve(__dirname, '../../src/assets/images/docs/mqtt-broker');
@@ -56,6 +57,20 @@ const DIAGRAMS = {
 	'actor-system': { file: 'tbmq-actor-system', build: extras.actorSystem },
 	'qos-durability': { file: 'tbmq-qos-durability', build: extras.qosDurability },
 	'integration-executor': { file: 'tbmq-integration-executor', build: extras.integrationExecutor },
+	// Integrations guides. Each of these supersedes the raster diagram of the same
+	// stem in src/assets/images/docs/mqtt-broker/integrations.
+	'ie-topics': { file: 'tbmq-ie-communication', dir: 'integrations', build: integrations.ieTopics },
+	'ie-fan-out': { file: 'tbmq-ie-msg-processing', dir: 'integrations', build: integrations.integrationFanOut },
+	'ie-validation-ok': { file: 'tbmq-ie-admin-ok', dir: 'integrations', build: integrations.validationSuccess },
+	'ie-validation-error': { file: 'tbmq-ie-admin-error', dir: 'integrations', build: integrations.validationFailure },
+	'ie-validation-timeout': {
+		file: 'tbmq-ie-admin-timeout',
+		dir: 'integrations',
+		build: integrations.validationTimeout,
+	},
+	'http-integration': { file: 'tbmq-http-integration', dir: 'integrations', build: integrations.httpIntegration },
+	'mqtt-integration': { file: 'tbmq-mqtt-integration', dir: 'integrations', build: integrations.mqttIntegration },
+	'kafka-integration': { file: 'tbmq-kafka-integration', dir: 'integrations', build: integrations.kafkaIntegration },
 	// Performance-test topologies. These live next to the screenshots of the run
 	// they document, so each one overrides the default output directory.
 	'benchmark-p2p': { file: 'tbmq-perf-test-diagram', dir: 'reference/p2p-test', build: perf.benchmarkP2P },

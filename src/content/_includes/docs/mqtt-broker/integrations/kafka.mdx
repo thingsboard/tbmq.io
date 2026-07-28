@@ -18,7 +18,11 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 4. **Kafka consumers process the message** in downstream systems.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-kafka-integration.png', alt: 'TBMQ Kafka integration data flow', caption: 'TBMQ Kafka integration data flow' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-kafka-integration.svg',
+    alt: 'Kafka integration data flow: devices exchange MQTT(S) traffic with TBMQ; TBMQ passes matched messages over TCP(TLS) to the Kafka integration running inside the TBMQ Integration Executor; the integration produces them to an external Kafka cluster over TCP(TLS) — a cluster separate from the one TBMQ uses internally.',
+    caption: 'Devices → TBMQ → Integration Executor → external Kafka cluster',
+  },
 ]} />
 
 ## Prerequisites
