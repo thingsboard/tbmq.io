@@ -109,6 +109,17 @@ src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx      ← PE stub (passes 
 
 **Product-conditional content:** wrap it in `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>…</ShowFor>` and write **normal Markdown** inside (`**bold**`, `-`/`1.` lists, `` `code` ``, `<Tabs>`/`<Aside>`/`<Code>` components). Do **not** use `{props.product === … && (<>…</>)}` with hand-written `<p>`/`<ul>`/`<li>`/`<code>` HTML — a JSX `{…}` expression disables Markdown parsing, forcing ugly raw HTML; `<ShowFor>` does not. The one exception: headings inside still use `<ConditionalHeading … showFor="…">` (not `##`), because the TOC plugin needs that metadata to add them conditionally.
 
+### Screenshots in Docs
+
+**Default to no screenshots.** A screenshot has to be regenerated every time the UI changes, which is cumbersome and easy to get wrong — a stale screenshot is worse than none. Instead, **describe precisely what the user sees and does**: the exact page, button, field, tab, and toggle labels, in order, using `<Steps>` with **bold** for UI labels and `` `code` `` for values to type. A reader must be able to complete the task from the text alone.
+
+Add a screenshot only when it is genuinely necessary (for example, the UI itself is what needs explaining and words cannot carry it). When one is necessary:
+
+- **No annotations drawn on the image** — no yellow arrows, no numbered callout boxes, no highlight frames. Older pages have these; do not copy the pattern.
+- The step text still has to be complete on its own; the image only supports it.
+
+**Never bulk-remove existing screenshots from a page you happen to be editing.** Many pages still carry the older annotated galleries. If a page's screenshots look obsolete, say so and ask — removal is the user's call, made page by page.
+
 ### Version Constants
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
