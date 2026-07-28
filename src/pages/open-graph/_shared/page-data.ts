@@ -143,8 +143,8 @@ export async function getCollectionIndexInputs(): Promise<CardInput[]> {
 			props: {
 				variant: 'logo' as const,
 				sectionName: 'Documentation',
-				eyebrow: 'All editions',
-				title: 'ThingsBoard Documentation',
+				eyebrow: 'Community & Professional',
+				title: 'TBMQ Documentation',
 			},
 		},
 	];
