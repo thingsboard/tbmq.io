@@ -1,5 +1,5 @@
 /**
- * INTEGRATIONS — the eight diagrams of the integrations guides.
+ * INTEGRATIONS — the ten diagrams of the integrations guides.
  *
  * Ported from the approved design components:
  *   20 Integration Executor topics      → broker ↔ executor control plane
@@ -10,6 +10,8 @@
  *   25 HTTP integration                 ┐
  *   26 MQTT integration                 ├ one layout, three targets
  *   27 Kafka integration                ┘
+ *   28 Integration payload encoding     → how the outgoing HTTP body is built
+ *   29 MQTT topic QoS retain            → how topic/QoS/retain are resolved
  *
  * Geometry mirrors the components 1:1 — the canvas sizes, the `left`/`top` of
  * every box and the `d` of every connector are the designs' own numbers. Two
@@ -20,7 +22,7 @@
  * Regenerate with `pnpm diagrams:arch`.
  */
 
-import { DC, makeDcKit, sw } from './dc-kit.mjs';
+import { DC, makeDcKit, mw, sw } from './dc-kit.mjs';
 
 /** Line-box centre for CSS `top` + `font-size` + `line-height` factor. */
 const cyOf = (top, size, lh = 1.2) => top + (size * lh) / 2;
@@ -115,6 +117,91 @@ function iconStack(k, o) {
 		s += k.text(cx, cursor + subSize * 1.2 * (i + 0.5), line, { size: subSize, fill: k.T.muted, anchor: 'middle' });
 	});
 	return s;
+}
+
+/**
+ * Horizontal card — icon tile on the left, a stack of lines to its right, the
+ * group centred as the designs' `flex; align-items:center` around an inner
+ * `flex-direction:column; gap:N`. Each line carries its own size and ink.
+ */
+function iconRowStack(k, o) {
+	const {
+		x,
+		y,
+		w,
+		h,
+		border,
+		tileBg,
+		ico,
+		icoColor,
+		icoSize,
+		tileSize = 34,
+		tileR = 8,
+		gap = 13,
+		pad = 16,
+		lines,
+		lineGap = 4,
+	} = o;
+	const cy = y + h / 2;
+	const lineH = (l) => l.size * 1.2;
+	const total = lines.reduce((a, l) => a + lineH(l), 0) + (lines.length - 1) * lineGap;
+	let cursor = cy - total / 2;
+
+	let s = k.rr(x, y, w, h, 10, { fill: k.T.node, stroke: border, sw: 1 });
+	s += k.tile(x + pad, cy - tileSize / 2, tileSize, tileR, tileBg, ico, icoColor, icoSize);
+	const lx = x + pad + tileSize + gap;
+	for (const l of lines) {
+		s += k.text(lx, cursor + lineH(l) / 2, l.text, {
+			size: l.size,
+			weight: l.weight ?? 400,
+			fill: l.fill ?? k.T.txt,
+			mono: l.mono ?? false,
+		});
+		cursor += lineH(l) + lineGap;
+	}
+	return s;
+}
+
+/**
+ * `ON` / `OFF` state pill — the designs' 22px `inline-flex` mono chip. Filled
+ * (a colour tint, no border) marks the branch that is taken, outlined (a
+ * hairline with muted ink) the one that is not. Returns its width so the label
+ * after it can be placed.
+ */
+function pill(k, x, cy, label, o = {}) {
+	const { bg, ink = k.T.txt, border, size = 11.5, h = 22, padX = 8, r = 3, ls = 0 } = o;
+	const w = mw(label, size) + ls * label.length + padX * 2;
+	return {
+		s:
+			k.rr(x, cy - h / 2, w, h, r, { fill: bg ?? 'none', stroke: border, sw: 1 }) +
+			k.text(x + w / 2, cy, label, { size, mono: true, fill: ink, anchor: 'middle', ls }),
+		w,
+	};
+}
+
+/** A state pill followed by its explanation — `flex; align-items:center; gap:N`. */
+function pillRow(k, x, cy, chip, label, o = {}) {
+	const { gap = 10, size = 13.5, fill = k.T.txt } = o;
+	const p = pill(k, x, cy, chip, o.pill);
+	return p.s + k.text(x + p.w + gap, cy, label, { size, fill });
+}
+
+/**
+ * Uppercase band label centred on the canvas, with a background knockout — the
+ * designs' full-width `text-align:center` row whose inner span paints
+ * `var(--bg)` so the dot grid and the bus line behind it are cut away.
+ */
+function bandLabel(k, cx, top, label, o = {}) {
+	const { size = 11, padX = 10, ls = 1.1, fill = k.T.muted } = o;
+	const upper = label.toUpperCase();
+	// 0.62em, not `sw()`'s mixed-case 0.52em: all-caps advances are wider, and a
+	// knockout narrower than its own glyphs leaves the bus line touching them.
+	const w = upper.length * size * 0.62 + ls * upper.length + padX * 2;
+	const cy = cyOf(top, size, 1.3);
+	return (
+		k.rr(cx - w / 2, cy - 7.5, w, 15, 0, { fill: k.T.bg }) +
+		k.text(cx, cy, upper, { size, weight: 500, fill, anchor: 'middle', ls })
+	);
 }
 
 /** Several labels laid out in a centred row, the designs' `flex; gap:N`. */
@@ -741,3 +828,234 @@ export const kafkaIntegration = (kit) =>
 			'Matched messages are produced to an external Kafka cluster — separate from the cluster TBMQ uses ' +
 			'internally.',
 	});
+
+// =============================================================================
+// 28 — Two settings decide the outgoing body: content type, then envelope
+// =============================================================================
+export function payloadEncoding(kit) {
+	const T = themeOf(kit);
+	const k = makeDcKit(T);
+	const { text, rr, icon, arrow, legend, wrap, frame } = k;
+	const W = 1320;
+	const H = 940;
+	const P = [];
+
+	// Teal bus fans the raw payload out to the three encodings, blue bus gathers
+	// them back into the two body shapes. Split into the design's own segments —
+	// each drop is a plain stub plus a headed final leg.
+	P.push(arrow('M660,222 V286', T.tealLine, { plain: true }));
+	P.push(arrow('M300,286 H1020', T.tealLine, { plain: true }));
+	for (const x of [300, 660, 1020]) {
+		P.push(arrow(`M${x},286 V318`, T.tealLine, { plain: true }));
+		P.push(arrow(`M${x},318 V346`, T.tealLine));
+		P.push(arrow(`M${x},442 V474`, T.blueLine, { plain: true }));
+	}
+	P.push(arrow('M300,474 H1020', T.blueLine, { plain: true }));
+	P.push(arrow('M400,474 V536', T.blueLine));
+	P.push(arrow('M920,474 V536', T.blueLine));
+
+	P.push(
+		text(W / 2, cyOf(56, 22, 1.35), 'How an outgoing integration payload is built', {
+			size: 22,
+			weight: 500,
+			fill: T.txt,
+			anchor: 'middle',
+		})
+	);
+
+	P.push(
+		iconRowStack(k, {
+			x: 400,
+			y: 126,
+			w: 520,
+			h: 96,
+			border: T.violet,
+			tileBg: T.violetTile,
+			ico: 'northEast',
+			icoColor: T.violetIco,
+			icoSize: 20,
+			lines: [
+				{ text: 'Raw payload', size: 15, weight: 500 },
+				{ text: '{"temperature":25}', size: 12.5, mono: true, fill: T.muted },
+			],
+		})
+	);
+
+	P.push(bandLabel(k, W / 2, 312, 'Encoded per — Payload content type'));
+
+	/** 320px encoding card: icon + name on the first row, the result beneath it. */
+	const encoding = (x, name, value) =>
+		rr(x, 346, 320, 96, 10, { fill: T.node, stroke: T.teal, sw: 1 }) +
+		icon('dataObject', x + 24.5, 368.5, 17, T.tealIco) +
+		text(x + 42, 368.5, name, { size: 14.5, weight: 500, fill: T.txt }) +
+		text(x + 16, 393.5, value, { size: 12.5, mono: true, fill: T.muted });
+	P.push(encoding(140, 'JSON', '{"temperature":25}'));
+	P.push(encoding(500, 'Text', '"{\\"temperature\\":25}"'));
+	P.push(encoding(860, 'Binary', '"eyJ0ZW1wZXJhdHVyZSI6MjV9"'));
+
+	P.push(bandLabel(k, W / 2, 468, 'Placed per — Send only message payload'));
+
+	/**
+	 * 520px body card. `lines` are mono and top-aligned under the pill; the
+	 * second line of the envelope is indented by two mono characters, as the
+	 * design does with `&nbsp;&nbsp;`.
+	 */
+	const body = (x, state, lines) => {
+		let s = rr(x, 536, 520, 96, 10, { fill: T.node, stroke: T.blue, sw: 1 });
+		const p = pill(k, x + 16, 561, state, { bg: T.blueTile, ls: 0.69 });
+		s += p.s;
+		s += text(x + 16 + p.w + 10, 561, 'body =', { size: 13.5, fill: T.muted });
+		lines.forEach(([line, indent = 0], i) => {
+			s += text(x + 16 + indent, 589.5 + i * 19, line, { size: 12.5, mono: true, fill: T.txt });
+		});
+		return s;
+	};
+	P.push(body(140, 'ON', [['the encoded payload']]));
+	P.push(
+		body(700, 'OFF', [
+			['{ "payload": <encoded>, "topicName": …,'],
+			['"clientId": …, "eventType": "PUBLISH_MSG", … }', 15],
+		])
+	);
+
+	// The failure branch, common to all three encodings.
+	P.push(rr(140, 672, 1080, 136, 12, { fill: T.node, stroke: T.slate, sw: 1 }));
+	P.push(text(158, 697, 'If encoding fails', { size: 15, weight: 500, fill: T.txt }));
+	// The design baseline-aligns this against the heading; at these sizes the
+	// difference from a shared centre line is under a pixel.
+	P.push(
+		text(
+			158 + sw('If encoding fails', 15) + 10,
+			697,
+			'the payload is not valid JSON, or not text — per Send as binary on parsing error',
+			{ size: 13, fill: T.muted }
+		)
+	);
+	const failRow = (cy, state, label) =>
+		pillRow(k, 158, cy, state, label, { gap: 12, fill: T.muted, pill: { bg: T.slateTile, ls: 0.69 } });
+	P.push(failRow(731, 'ON', 'fall back to Base64 binary'));
+	P.push(failRow(763, 'OFF', 'not sent, counted as failed'));
+
+	P.push(
+		legend(W, 856, [
+			[T.teal, 'Payload content type'],
+			[T.blue, 'Send only message payload'],
+			[T.slateLine, 'Failure handling'],
+		])
+	);
+	wrap(
+		'Two independent settings decide what the outgoing body looks like — the content type that encodes the ' +
+			'payload, and whether anything is wrapped around it.',
+		14,
+		1020
+	).forEach((line, i) => {
+		P.push(text(W / 2, cyOf(892, 14, 1.35) + i * 19, line, { size: 14, fill: T.faint, anchor: 'middle' }));
+	});
+
+	return frame(W, H, P);
+}
+
+// =============================================================================
+// 29 — MQTT: which of topic, QoS and retain the incoming message can decide
+// =============================================================================
+export function mqttPublishResolution(kit) {
+	const T = themeOf(kit);
+	const k = makeDcKit(T);
+	const { text, rr, groupLabel, legend, wrap, frame } = k;
+	const W = 1320;
+	const H = 716;
+	const P = [];
+
+	P.push(rr(250, 168, 620, 424, 14, { stroke: T.dashBlue, sw: 1, dash: '5 5' }));
+	P.push(rr(890, 168, 390, 424, 14, { stroke: T.dashTeal, sw: 1, dash: '5 5' }));
+
+	P.push(
+		text(W / 2, cyOf(56, 22, 1.35), 'MQTT integration — how topic, QoS and retain are resolved', {
+			size: 22,
+			weight: 500,
+			fill: T.txt,
+			anchor: 'middle',
+		})
+	);
+	P.push(groupLabel(278, 180, 'Forwarded message'));
+	P.push(groupLabel(918, 180, 'Lifecycle event'));
+
+	const ROWS = [
+		{
+			y: 232,
+			field: 'topic',
+			toggle: 'Dynamic topic name',
+			on: 'take the topic from the message',
+			off: 'use the configured Topic name',
+			fixed: 'Events topic name',
+		},
+		{
+			y: 352,
+			field: 'qos',
+			toggle: 'Dynamic QoS',
+			on: 'take the QoS from the message',
+			off: 'use the configured QoS',
+			fixed: '1',
+		},
+		{
+			y: 472,
+			field: 'retain',
+			toggle: 'Dynamic retain',
+			on: 'take the retain flag from the message',
+			off: 'use the configured Retain',
+			fixed: 'false',
+		},
+	];
+
+	for (const r of ROWS) {
+		// The MQTT field, right-aligned against the card's inner edge.
+		P.push(rr(60, r.y, 150, 96, 10, { fill: T.node, stroke: T.slate, sw: 1 }));
+		P.push(text(194, r.y + 48, r.field, { size: 14, mono: true, fill: T.txt, anchor: 'end' }));
+
+		// Forwarded message — the branch the Dynamic toggle picks.
+		P.push(rr(270, r.y, 580, 96, 10, { fill: T.node, stroke: T.blue, sw: 1 }));
+		P.push(text(834, cyOf(r.y + 13, 11.5), r.toggle, { size: 11.5, mono: true, fill: T.faint, anchor: 'end' }));
+		P.push(pillRow(k, 286, r.y + 24, 'ON', r.on, { pill: { bg: T.blueTile } }));
+		P.push(pillRow(k, 286, r.y + 56, 'OFF', r.off, { fill: T.muted, pill: { border: T.chipBd, ink: T.muted } }));
+
+		// Lifecycle event — the same three fields, none of them negotiable.
+		P.push(
+			iconRowStack(k, {
+				x: 910,
+				y: r.y,
+				w: 350,
+				h: 96,
+				border: T.teal,
+				tileBg: T.tealTile,
+				ico: 'lock',
+				icoColor: T.tealIco,
+				icoSize: 17,
+				tileSize: 30,
+				tileR: 6,
+				lineGap: 3,
+				lines: [
+					{ text: r.fixed, size: 13.5, mono: true },
+					{ text: 'always, not configurable', size: 12, fill: T.muted },
+				],
+			})
+		);
+	}
+
+	P.push(
+		legend(W, 632, [
+			[T.slateLine, 'MQTT field'],
+			[T.blue, 'Forwarded message'],
+			[T.teal, 'Lifecycle event'],
+		])
+	);
+	wrap(
+		'Forwarded messages can inherit topic, QoS and retain from the incoming message when the matching Dynamic ' +
+			'toggle is on; lifecycle events never do.',
+		14,
+		1020
+	).forEach((line, i) => {
+		P.push(text(W / 2, cyOf(668, 14, 1.35) + i * 19, line, { size: 14, fill: T.faint, anchor: 'middle' }));
+	});
+
+	return frame(W, H, P);
+}

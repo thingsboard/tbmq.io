@@ -149,6 +149,15 @@ const ICONS = {
 	monitor: `<rect x="2.5" y="4" width="19" height="12.5" rx="1.8"/><path d="M9 20.5h6M12 16.5v4"/>`,
 	// `manage_accounts` — the administrator acting through the UI or REST API
 	adminUser: `<circle cx="9.5" cy="8" r="3.6"/><path d="M3 19.8c0-3.4 2.9-5.6 6.5-5.6.95 0 1.9.15 2.75.45"/><circle cx="17.6" cy="17" r="2"/><path d="M17.6 13.3v1.4M17.6 19.3v1.4M13.9 17h1.4M19.9 17h1.4"/>`,
+	// `north_east` — the raw payload arriving from a device
+	northEast: `<path d="M6.5 17.5 17.5 6.5"/><path d="M10.5 6.5h7v7"/>`,
+	// `data_object` — an encoding of the payload. The Material glyph is a pair of
+	// braces, which is a shape rather than lettering, so it survives as strokes.
+	dataObject:
+		`<path d="M10.6 4.5c-2.4 0-1.9 4.3-1.9 5.3 0 1-1 2.2-2.6 2.2 1.6 0 2.6 1.2 2.6 2.2 0 1 -.5 5.3 1.9 5.3"/>` +
+		`<path d="M13.4 4.5c2.4 0 1.9 4.3 1.9 5.3 0 1 1 2.2 2.6 2.2-1.6 0-2.6 1.2-2.6 2.2 0 1 .5 5.3-1.9 5.3"/>`,
+	// `lock` — a value that is fixed and not configurable
+	lock: `<rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9"/>`,
 	// stand-ins for the designs' CDN brand logos (see module header)
 	kafka: `<circle cx="6" cy="12" r="2.3"/><circle cx="17.5" cy="6" r="2.3"/><circle cx="17.5" cy="18" r="2.3"/><path d="M8 10.9 15.6 6.9M8 13.1l7.6 4"/>`,
 	redis: `<ellipse cx="12" cy="6" rx="7.5" ry="2.6"/><path d="M4.5 6v5c0 1.4 3.4 2.6 7.5 2.6s7.5-1.2 7.5-2.6V6M4.5 11v5c0 1.4 3.4 2.6 7.5 2.6s7.5-1.2 7.5-2.6v-5"/>`,

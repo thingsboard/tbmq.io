@@ -71,6 +71,16 @@ const DIAGRAMS = {
 	'http-integration': { file: 'tbmq-http-integration', dir: 'integrations', build: integrations.httpIntegration },
 	'mqtt-integration': { file: 'tbmq-mqtt-integration', dir: 'integrations', build: integrations.mqttIntegration },
 	'kafka-integration': { file: 'tbmq-kafka-integration', dir: 'integrations', build: integrations.kafkaIntegration },
+	'http-payload-encoding': {
+		file: 'tbmq-http-payload-encoding',
+		dir: 'integrations',
+		build: integrations.payloadEncoding,
+	},
+	'mqtt-publish-resolution': {
+		file: 'tbmq-mqtt-publish-resolution',
+		dir: 'integrations',
+		build: integrations.mqttPublishResolution,
+	},
 	// Performance-test topologies. These live next to the screenshots of the run
 	// they document, so each one overrides the default output directory.
 	'benchmark-p2p': { file: 'tbmq-perf-test-diagram', dir: 'reference/p2p-test', build: perf.benchmarkP2P },

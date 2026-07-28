@@ -99,13 +99,13 @@ tbmq/devices/gateway-01/status
 
 Topic, QoS, and retain are resolved independently — each one is either copied from the incoming message or taken from its static setting. A lifecycle event has no incoming message, so all three are fixed:
 
-```text
-                    forwarded message              lifecycle event
-                    ─────────────────              ───────────────
-  topic     Dynamic topic name ? message : Topic name    Events topic name
-  qos       Dynamic QoS        ? message : QoS           1
-  retain    Dynamic retain     ? message : Retain        false
-```
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-mqtt-publish-resolution.svg',
+    alt: 'How the MQTT integration resolves topic, QoS and retain. For a forwarded message each field follows its own Dynamic toggle: with Dynamic topic name, Dynamic QoS or Dynamic retain on, the value is taken from the incoming message; with the toggle off, the configured Topic name, QoS or Retain is used. For a lifecycle event all three are fixed and not configurable: the Events topic name, QoS 1, and retain false.',
+    caption: 'Each field is either inherited from the incoming message or taken from its static setting',
+  },
+]} />
 
 ## Client lifecycle events
 

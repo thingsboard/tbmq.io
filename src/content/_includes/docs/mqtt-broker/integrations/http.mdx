@@ -101,23 +101,13 @@ tbmq/devices/gateway-01/status
 
 **Send only message payload** decides whether the endpoint receives the bare payload or the full envelope, and **Payload content type** decides how the payload itself is encoded:
 
-```text
-  raw payload {"temperature":25}
-        │
-        ▼  encoded per Payload content type
-     JSON   → {"temperature":25}
-     Text   → "{\"temperature\":25}"
-     Binary → "eyJ0ZW1wZXJhdHVyZSI6MjV9"
-        │
-        ▼  placed per Send only message payload
-      ON  → body = the encoded payload
-      OFF → body = { "payload": <encoded>, "topicName": …, "clientId": …,
-                     "eventType": "PUBLISH_MSG", … }
-
-  if encoding fails (payload is not valid JSON, or not text)
-      Send as binary on parsing error  ON  → fall back to Base64 binary
-                                       OFF → not sent, counted as failed
-```
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-http-payload-encoding.svg',
+    alt: 'How an outgoing integration payload is built: the raw payload {"temperature":25} is first encoded per the Payload content type — JSON keeps it as is, Text sends it as an escaped string, Binary sends it Base64-encoded. The encoded value is then placed according to Send only message payload: when on, the body is the encoded payload alone; when off, it is a JSON envelope with payload, topicName, clientId and eventType fields. If encoding fails because the payload is not valid JSON or not text, Send as binary on parsing error either falls back to Base64 binary or the message is not sent and counted as failed.',
+    caption: 'Payload content type encodes the payload; Send only message payload decides what wraps it',
+  },
+]} />
 
 A [client lifecycle event](#client-lifecycle-events) never goes through this: it has no MQTT payload to encode and is always sent as its own JSON object.
 
