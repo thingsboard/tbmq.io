@@ -13,12 +13,12 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-payg-buy',
 				question: 'How can I buy a self-managed subscription?',
-				answer: `<p>To purchase a self-managed subscription, you can acquire a license through your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Each license comes with a unique activation key, which allows you to deploy and run the system by following our detailed <a target="_blank" href="/docs/mqtt-broker/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
+				answer: `<p>To purchase a self-managed subscription, you can acquire a license through your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Each license comes with a unique activation key, which allows you to deploy and run the system by following our detailed <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
 			},
 			{
 				id: 'tbmq-payg-license-meaning',
 				question: 'What does it mean to get the license?',
-				answer: `<p>Licensing is applicable to self-hosted platform versions only. Each license comes with a unique license key (activation code) that is automatically generated in your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Using this license key, you can deploy and run the system by following our detailed <a target="_blank" href="/docs/mqtt-broker/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
+				answer: `<p>Licensing is applicable to self-hosted platform versions only. Each license comes with a unique license key (activation code) that is automatically generated in your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Using this license key, you can deploy and run the system by following our detailed <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
 			},
 			{
 				id: 'tbmq-payg-plans',
@@ -277,7 +277,7 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 				id: 'tbmq-payg-vulnerability-matrix',
 				question:
 					'Where can I find the logged vulnerability fixes matrix: version + list of fixes?',
-				answer: `<p>Please stay tuned with our <a target="_blank" href="/docs/mqtt-broker/pe/releases/" rel="noopener noreferrer">Release notes</a>. Critical vulnerabilities or security issues are mentioned in separate line items. Less threatful vulnerabilities appear as a single record (“Vulnerability fixes”) stating that, at the release date, the version is free of known HIGH and some MEDIUM CVEs.</p>`,
+				answer: `<p>Please stay tuned with our <a target="_blank" href="/docs/pe/releases/" rel="noopener noreferrer">Release notes</a>. Critical vulnerabilities or security issues are mentioned in separate line items. Less threatful vulnerabilities appear as a single record (“Vulnerability fixes”) stating that, at the release date, the version is free of known HIGH and some MEDIUM CVEs.</p>`,
 			},
 		],
 	},

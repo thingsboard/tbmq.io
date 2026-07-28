@@ -34,7 +34,7 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Performance', href: '/performance/' },
 	{ label: 'Company', submenuId: 'nav-company' },
 	{ label: 'Learn', href: '/mqtt/', submenuId: 'nav-learn' },
-	{ label: 'Docs', href: '/docs/mqtt-broker/pe/' },
+	{ label: 'Docs', href: '/docs/pe/' },
 	{ label: 'Blog', href: '/blog/' },
 ];
 

@@ -189,8 +189,8 @@ const faq: FaqItem[] = [
 		For durability, TBMQ acknowledges a QoS 1 or QoS 2 publish only after the message is persisted to its internal Kafka
 		backbone — so an accepted message survives a broker-node failure. TBMQ's shipped Kafka defaults use
 		<code>acks=1</code> and a replication factor of 1, so to also survive the loss of a Kafka node you run a replicated Kafka
-		cluster. See the <a href="/docs/mqtt-broker/user-guide/qos/">QoS reference</a> for the full delivery model and
-		<a href="/docs/mqtt-broker/user-guide/clean-persistent-sessions/">Sessions</a> for how queued messages are stored per
+		cluster. See the <a href="/docs/user-guide/qos/">QoS reference</a> for the full delivery model and
+		<a href="/docs/user-guide/clean-persistent-sessions/">Sessions</a> for how queued messages are stored per
 		client type.
 	</p>
 </MqttTopicLayout>
