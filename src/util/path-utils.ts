@@ -39,12 +39,12 @@ export const productVersions: Partial<Record<Products, { label: string; prefix: 
 	},
 	[Products.TBMQ]: {
 		label: 'TBMQ Broker',
-		prefix: 'mqtt-broker/',
+		prefix: '',
 		titleName: 'ThingsBoard TBMQ',
 	},
 	[Products.TBMQ_PE]: {
 		label: 'TBMQ PE Broker',
-		prefix: 'mqtt-broker/pe/',
+		prefix: 'pe/',
 		titleName: 'ThingsBoard TBMQ PE',
 	},
 	[Products.MOBILE]: {
@@ -105,20 +105,18 @@ export function getVersionFromURL(pathname: string): Products {
 	// Normalize: ensure trailing slash so "paas/eu" matches "paas/eu/" prefix
 	const p = path.endsWith('/') ? path : path + '/';
 
-	if (p.startsWith('pe/')) return Products.PE;
+	if (p.startsWith('pe/')) return Products.TBMQ_PE;
 	if (p.startsWith('paas/eu/')) return Products.PAAS_EU;
 	if (p.startsWith('paas/')) return Products.PAAS;
 	if (p.startsWith('edge/pe/')) return Products.EDGE_PE;
 	if (p.startsWith('edge/')) return Products.EDGE;
 	if (p.startsWith('trendz/')) return Products.TRENDZ;
 	if (p.startsWith('iot-gateway/')) return Products.GW;
-	if (p.startsWith('mqtt-broker/pe/')) return Products.TBMQ_PE;
-	if (p.startsWith('mqtt-broker/')) return Products.TBMQ;
 	if (p.startsWith('mobile/pe/')) return Products.MOBILE_PE;
 	if (p.startsWith('mobile/')) return Products.MOBILE;
 	if (p.startsWith('license-server/')) return Products.LICENSE;
 	if (p.startsWith('iot-hub/')) return Products.IOT_HUB;
-	return Products.CE;
+	return Products.TBMQ;
 }
 
 /**
@@ -134,20 +132,18 @@ export function getVersionFromSlug(slug: string): Products {
 	// Normalize: ensure trailing slash so index slugs like "paas/eu" match "paas/eu/" prefix
 	const p = path.endsWith('/') ? path : path + '/';
 
-	if (p.startsWith('pe/')) return Products.PE;
+	if (p.startsWith('pe/')) return Products.TBMQ_PE;
 	if (p.startsWith('paas/eu/')) return Products.PAAS_EU;
 	if (p.startsWith('paas/')) return Products.PAAS;
 	if (p.startsWith('edge/pe/')) return Products.EDGE_PE;
 	if (p.startsWith('edge/')) return Products.EDGE;
 	if (p.startsWith('trendz/')) return Products.TRENDZ;
 	if (p.startsWith('iot-gateway/')) return Products.GW;
-	if (p.startsWith('mqtt-broker/pe/')) return Products.TBMQ_PE;
-	if (p.startsWith('mqtt-broker/')) return Products.TBMQ;
 	if (p.startsWith('mobile/pe/')) return Products.MOBILE_PE;
 	if (p.startsWith('mobile/')) return Products.MOBILE;
 	if (p.startsWith('license-server/')) return Products.LICENSE;
 	if (p.startsWith('iot-hub/')) return Products.IOT_HUB;
-	return Products.CE;
+	return Products.TBMQ;
 }
 
 /** Get the URL prefix for a product version. */
@@ -199,8 +195,6 @@ export function getPageSlugFromURL(pathname: string): string {
 		'edge/',
 		'trendz/',
 		'iot-gateway/',
-		'mqtt-broker/pe/',
-		'mqtt-broker/',
 		'mobile/pe/',
 		'mobile/',
 		'license-server/',

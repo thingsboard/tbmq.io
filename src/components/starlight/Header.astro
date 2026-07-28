@@ -5,9 +5,7 @@ import { Products } from '@models/site.models';
 const pathname = Astro.url.pathname;
 
 function getGitHubPlatform(path: string): Products {
-	if (path.includes('/docs/iot-gateway/')) return Products.GW;
-	if (path.includes('/docs/edge/pe/') || path.includes('/docs/edge/')) return Products.EDGE;
-	if (path.includes('/docs/mqtt-broker/pe/') || path.includes('/docs/mqtt-broker/')) return Products.TBMQ;
+	if (path.includes('/docs/')) return Products.TBMQ;
 	return Products.CE;
 }
 
