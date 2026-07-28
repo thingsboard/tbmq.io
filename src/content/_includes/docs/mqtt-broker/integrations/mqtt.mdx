@@ -53,8 +53,10 @@ TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, 
   When configuring an integration to publish messages back to TBMQ, disable **Dynamic topic name** and ensure the publish topic does not overlap with the integration's topic filter, to prevent creating an infinite message loop.
 </Aside>
 
-<Aside>
-  You can test connectivity to the configured MQTT broker by clicking **Check connection**. This creates an MQTT client that connects to the broker and immediately disconnects.
+<Aside type="caution">
+  You can test connectivity to the configured MQTT broker by clicking **Check connection**. This connects a real MQTT client — using the configuration and **Client ID** currently in the form — and immediately disconnects it.
+
+  Because the client ID is the one you configured, checking the connection while the integration is running takes over its session: the integration is disconnected and only comes back after its **Reconnect period**, or not at all if reconnecting is disabled. The same applies to any other client on the target broker that happens to use this ID. Prefer checking the connection before the integration is started, or accept a brief interruption.
 </Aside>
 
 ## Topic filters
@@ -72,25 +74,38 @@ tbmq/devices/gateway-01/status
 
 ## Configuration
 
-| Field | Description |
-|---|---|
-| **Send only message payload** | If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and additional properties is sent. |
-| **Host** | MQTT broker host. |
-| **Port** | MQTT broker port. |
-| **Client ID** | Client identifier used for connecting to the external broker. |
-| **Dynamic topic name** | If enabled, messages are forwarded with the topic name from the incoming message. |
-| **Topic name** | Used when **Dynamic topic name** is disabled. |
-| **Credentials** | **Anonymous**, **Basic Authentication** (username + password), or **PEM-based authentication**. |
-| **Enable SSL** | Enables a secure connection using SSL/TLS. |
-| **Keep alive (seconds)** | Duration without communication before the session is considered lost. |
-| **Connect timeout (seconds)** | Time to wait for a `CONNACK` before timing out. |
-| **Reconnect period (seconds)** | How often TBMQ attempts to reconnect if the connection is lost. |
-| **Dynamic QoS** | If enabled, messages are forwarded with the QoS from the incoming message. |
-| **QoS** | Used when **Dynamic QoS** is disabled. |
-| **Dynamic retain** | If enabled, messages are forwarded with the Retain flag from the incoming message. |
-| **Retain** | Used when **Dynamic retain** is disabled (`true` or `false`). |
-| **Events topic name** | Topic on the external broker that [client lifecycle events](#client-lifecycle-events) are published to. Shown once at least one event type is selected, and required in that case. Cannot contain the `+` or `#` wildcards. |
-| **Metadata** | Custom metadata attached to forwarded messages. |
+| Field | Default | Description |
+|---|---|---|
+| **Send only message payload** | off | If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and additional properties is sent. |
+| **Host** | — | MQTT broker host. Required. |
+| **Port** | `1883` | MQTT broker port, `1`–`65535`. |
+| **Client ID** | random | Client identifier used to connect to the external broker. Required — the UI pre-fills a random one. It must be unique on the target broker, since a second connection with the same ID takes the session over and disconnects the first. |
+| **Dynamic topic name** | on | If enabled, each message is published under the topic it arrived on. |
+| **Topic name** | `tbmq/messages` | Used when **Dynamic topic name** is disabled. Cannot contain the `+` or `#` wildcards and cannot start with `$`. |
+| **Credentials type** | `Anonymous` | `Anonymous`, `Basic` (username + password), or `PEM` (certificate-based). |
+| **Enable SSL** | off | Enables a secure connection using SSL/TLS. |
+| **Keep alive (sec)** | `60` | Duration without communication before the session is considered lost. `0` disables the keep-alive mechanism. |
+| **Connect timeout (sec)** | `10` | Time to wait for a `CONNACK` before timing out. Must be greater than `0`, and is capped by the executor's `INTEGRATIONS_INIT_CONNECTION_TIMEOUT_SEC` (default `15`) — a larger value is reduced to that limit. |
+| **Reconnect period (sec)** | `5` | How long to wait between reconnect attempts after the connection is lost. `0` disables reconnecting. |
+| **MQTT version** | `MQTT 3.1.1` | Protocol version used against the external broker: `MQTT 3.1`, `MQTT 3.1.1`, or `MQTT 5`. |
+| **Dynamic QoS** | on | If enabled, messages are forwarded with the QoS from the incoming message. |
+| **QoS** | `1` | Used when **Dynamic QoS** is disabled. |
+| **Dynamic retain** | on | If enabled, messages are forwarded with the Retain flag from the incoming message. |
+| **Retain** | off | Used when **Dynamic retain** is disabled. |
+| **Events topic name** | `tbmq/events` | Topic on the external broker that [client lifecycle events](#client-lifecycle-events) are published to. Shown once at least one event type is selected, and required in that case. Same shape rules as **Topic name** — no `+` or `#`, no leading `$`. |
+| **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
+
+### How the outgoing publish is built
+
+Topic, QoS, and retain are resolved independently — each one is either copied from the incoming message or taken from its static setting. A lifecycle event has no incoming message, so all three are fixed:
+
+```text
+                    forwarded message              lifecycle event
+                    ─────────────────              ───────────────
+  topic     Dynamic topic name ? message : Topic name    Events topic name
+  qos       Dynamic QoS        ? message : QoS           1
+  retain    Dynamic retain     ? message : Retain        false
+```
 
 ## Client lifecycle events
 

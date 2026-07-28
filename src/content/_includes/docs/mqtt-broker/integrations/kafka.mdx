@@ -114,22 +114,25 @@ tbmq/devices/gateway-01/status
 
 ## Configuration
 
-| Field | Description |
-|---|---|
-| **Send only message payload** | If enabled, only the raw message payload is forwarded. If disabled, TBMQ wraps the payload in a JSON object with additional metadata. |
-| **Bootstrap servers** | Kafka broker addresses (comma-separated list of hostnames/IPs and ports). |
-| **Topic** | The Kafka topic where messages will be published. |
-| **Key** | (Optional) Used for partitioning. Kafka hashes the key to consistently assign messages to the same partition. |
-| **Client ID prefix** | (Optional) Prefix for the Kafka client ID. Default: `tbmq-ie-kafka-producer`. |
-| **Automatically retry times if fails** | Number of retries before marking a message as failed. |
-| **Produces batch size in bytes** | Maximum batch size before sending messages to Kafka. |
-| **Time to buffer locally (ms)** | Time to buffer messages locally before sending. |
-| **Client buffer max size in bytes** | Maximum memory allocated for buffering messages before sending. |
-| **Number of acknowledgments** | Kafka acknowledgment mode: `all`, `1`, `0`. |
-| **Compression** | Compression algorithm: `none`, `gzip`, `snappy`, `lz4`, `zstd`. |
-| **Other properties** | Additional Kafka producer configuration as key-value pairs. |
-| **Kafka headers** | Custom headers added to Kafka messages. |
-| **Metadata** | Custom metadata attached to forwarded messages. |
+| Field | Default | Description |
+|---|---|---|
+| **Send only message payload** | off | If enabled, only the raw message payload is forwarded. If disabled, TBMQ wraps the payload in a JSON object with additional metadata. |
+| **Bootstrap servers** | `localhost:9092` | Kafka broker addresses (comma-separated list of hostnames/IPs and ports). Required. |
+| **Topic** | `tbmq.messages` | The Kafka topic where messages will be published. Required. |
+| **Key** | — | Optional record key. If set, Kafka hashes it so records with the same key land on the same partition. If left empty, Kafka's sticky partitioner picks a partition and switches only when the batch is full. The integration never sets a partition explicitly. |
+| **Client ID prefix** | `tbmq-ie-kafka-producer` | Prefix for the Kafka client ID. The full ID is `prefix-integrationId-executorServiceId`, so each executor's producer is distinguishable in the Kafka cluster. |
+| **Automatically retry times if fails** | `0` | Producer-level retries for a record whose send fails with a transient error (`retries`). |
+| **Produces batch size in bytes** | `16384` | Maximum batch size before records are sent (`batch.size`). |
+| **Time to buffer locally (ms)** | `0` | How long to wait for more records before sending a batch (`linger.ms`). |
+| **Client buffer max size in bytes** | `33554432` | Total memory for buffering records waiting to be sent (`buffer.memory`). |
+| **Number of acknowledgments** | `-1` | `acks` — `0` (no acknowledgment), `1` (leader only), or `all` / `-1` (all in-sync replicas, the default and safest). |
+| **Compression** | `none` | Compression algorithm: `none`, `gzip`, `snappy`, `lz4`, `zstd`. |
+| **Other properties** | — | Additional Kafka producer configuration as key-value pairs — this is where SASL/SSL settings go. |
+| **Kafka headers** | — | Custom headers added to every record. |
+| **Charset encoding** | `UTF-8` | Charset used to encode the **Kafka headers** values: `US-ASCII`, `ISO-8859-1`, `UTF-8`, `UTF-16BE`, `UTF-16LE`, or `UTF-16`. |
+| **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
+
+With **Send only message payload** enabled, the record value is the payload alone — as UTF-8 text if it is valid UTF-8, Base64-encoded otherwise.
 
 ## Client lifecycle events
 

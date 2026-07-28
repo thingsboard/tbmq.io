@@ -60,6 +60,7 @@ Integration entities are stored in TBMQ's PostgreSQL database and are used for m
 
 - **Type** — HTTP, Kafka, or MQTT.
 - **Name** — a human-readable name.
+- **Description** — optional free-form notes.
 - **Enabled** — whether the integration is active.
 - **Status** — current state:
   - `Disabled` — not active.
@@ -85,6 +86,8 @@ TBMQ and its Integration Executor microservices communicate asynchronously over 
 | `tbmq.ie.uplink.notifications.$serviceId` | Routes validation responses to the correct TBMQ node. |
 | `tbmq.msg.ie.$integrationId` | Per-integration topic for forwarding MQTT messages from TBMQ to IE. |
 | `tbmq.ie.event.$integrationId` | Per-integration topic for forwarding [client lifecycle events](#client-lifecycle-events) from TBMQ to IE. Created only for integrations that subscribe to at least one event type. |
+
+The first three are the **control plane** — a fixed set of topics shared by all integrations. The last two are the **data plane** — one pair per integration.
 
 <ImageGallery product={props.product} images={[
   {
@@ -113,7 +116,10 @@ Kafka's log compaction keeps only the most recent configuration per integration 
 
 Integrations are only initialized after their latest configurations are fully restored from Kafka.
 In real-time mode, new integration events are handled immediately and validation requests are processed on the fly.
+Executors poll the downlink topics every `TB_IE_DOWNLINK_POLL_INTERVAL` ms (default `1000`).
 On shutdown or partition revocation, the `tbmq-ie` instance stops the affected integrations and cleans up underlying resources such as protocol clients and connections.
+
+Downlink records are keyed by integration ID and the topics are consumed as a Kafka consumer group, so the partitions an executor is assigned decide which integrations it runs. Each integration is owned by exactly one executor at a time, and that executor is the only one consuming the integration's message and event topics. Adding or losing an instance rebalances that ownership: nothing is processed twice, and nothing is left unowned.
 
 This approach ensures:
 
@@ -154,8 +160,9 @@ When an MQTT client publishes a message, TBMQ checks the Subscription Trie for m
 This decoupled flow means the broker never waits for external responses, preserving low-latency MQTT performance even when external systems are slow or unavailable.
 
 Each integration has its own Kafka topic, which enables full isolation of message flow.
-Messages for different integrations are processed independently, in separate threads — one Kafka consumer per integration — allowing parallel execution and fine-grained error control.
-Kafka's retention policies and buffering capabilities provide additional resilience in high-load or temporary-failure scenarios.
+Messages for different integrations are processed independently, in separate threads — one Kafka consumer per integration topic — allowing parallel execution and fine-grained error control. An integration that also opted in for [client lifecycle events](#client-lifecycle-events) gets a **second** consumer for its `tbmq.ie.event.$integrationId` topic, so a slow event target never stalls message delivery, and vice versa.
+
+Kafka's retention policies and buffering capabilities provide additional resilience in high-load or temporary-failure scenarios. Message topics are created with a 7-day retention by default (`TB_KAFKA_IE_MSG_TOPIC_PROPERTIES`), so an integration that is down or lagging can catch up once it recovers, as long as it does so within the retention window.
 
 This design provides the following benefits:
 - High throughput and non-blocking broker performance.
@@ -168,10 +175,24 @@ Even when an integration is disabled, TBMQ continues publishing matching message
 
 To avoid unused topics consuming storage indefinitely, TBMQ automatically deletes the Kafka topic for integrations that remain disabled beyond a configurable TTL. The topic is recreated automatically when the integration is re-enabled.
 
-| Environment variable | Default | Description |
-|---|---|---|
-| `INTEGRATIONS_CLEANUP_PERIOD_SEC` | `10800` | How often the cleanup task runs (seconds). Default: 3 hours. |
-| `INTEGRATIONS_CLEANUP_TTL_SEC` | `604800` | Inactivity TTL before topic deletion (seconds). Default: 1 week. |
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_CLEANUP_PERIOD_SEC</code> · <span class="config-def-label">Default</span> <code>10800</code></p>
+    <p class="config-def-desc">How often the cleanup task runs (seconds) — every 3 hours.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_CLEANUP_TTL_SEC</code> · <span class="config-def-label">Default</span> <code>604800</code></p>
+    <p class="config-def-desc">Inactivity TTL before topic deletion (seconds) — 1 week. Set to `0` to disable the cleanup entirely.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_ENABLE_TOPIC_DELETION</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Whether TBMQ may delete integration topics at all. When `false`, the cleanup task and integration deletion both leave the topics in place.</p>
+  </div>
+</div>
+
+The TTL is measured from the moment the integration was disabled, so re-enabling it resets the clock.
+
+**Deleting** an integration is different from disabling it: the message topic and the events topic are both removed a few seconds after the entity is deleted, along with the consumer group.
 
 Kafka topic retention settings can be customized to fine-tune storage limits and control how long messages are retained per topic.
 
@@ -325,17 +346,32 @@ Each integration type reuses the connection it already has, but the destination 
 
 Lifecycle events are **best-effort hints**, deliberately weaker than message delivery:
 
-- Events are produced on the MQTT processing thread, so the broker never lets them delay a client. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried.
-- Events travel on their own per-integration topic (`tbmq.ie.event.$integrationId`) with a shorter retention than the message topic, so an event backlog never holds up message delivery.
+- Events are produced on the MQTT processing thread, the same path as a regular publish. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried. That send is synchronous, so an unavailable Kafka briefly holds the thread — bounded by the low `max.block.ms:5000` TBMQ ships for these topics — and then the event is dropped.
+- Events travel on their own topic per integration (`tbmq.ie.event.$integrationId`) with a shorter retention than the message topic — 1 day by default against the message topic's 7 days — so an event backlog never holds up message delivery.
 - On the Integration Executor side the events stream has its own acknowledgment strategy, defaulting to `SKIP_ALL` so that a failing target does not cause stale events to be redelivered out of order:
 
-| Environment variable | Default | Description |
-|---|---|---|
-| `TB_IE_EVENT_MSG_POLL_INTERVAL` | `1000` | Poll interval for `tbmq.ie.event` topics (ms). |
-| `TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT` | `30000` | Processing timeout per event batch (ms). |
-| `TB_IE_EVENT_MSG_ACK_STRATEGY_TYPE` | `SKIP_ALL` | Strategy: `SKIP_ALL` or `RETRY_ALL`. |
-| `TB_IE_EVENT_MSG_ACK_STRATEGY_RETRIES` | `5` | Number of retries (0 = unlimited). Used with `RETRY_ALL`. |
-| `TB_IE_EVENT_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES` | `1` | Pause between retries (seconds). |
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_EVENT_MSG_POLL_INTERVAL</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
+    <p class="config-def-desc">Poll interval for `tbmq.ie.event` topics (ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
+    <p class="config-def-desc">Processing timeout per event batch (ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_EVENT_MSG_ACK_STRATEGY_TYPE</code> · <span class="config-def-label">Default</span> <code>SKIP_ALL</code></p>
+    <p class="config-def-desc">Strategy: `SKIP_ALL` or `RETRY_ALL`.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_EVENT_MSG_ACK_STRATEGY_RETRIES</code> · <span class="config-def-label">Default</span> <code>5</code></p>
+    <p class="config-def-desc">Number of retries (`0` = unlimited). Used with `RETRY_ALL`.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_EVENT_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES</code> · <span class="config-def-label">Default</span> <code>1</code></p>
+    <p class="config-def-desc">Pause between retries (seconds).</p>
+  </div>
+</div>
 
 ## Integration lifecycle
 
@@ -365,19 +401,64 @@ The validation can result in one of three outcomes:
 2. **Failure** — the Integration Executor is running, but the configuration is invalid. The integration is not saved.
 3. **Success** — the configuration is valid. The integration entity is saved in the database, subscriptions are added to the Subscription Trie, and the configuration event is sent to IE.
 
-You can manually test connectivity to the external system at any time using the **Check Connection** button in the UI or via the REST API.
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_INIT_CONNECTION_CHECK_API_REQUEST_TIMEOUT_SEC</code> · <span class="config-def-label">Default</span> <code>20</code></p>
+    <p class="config-def-desc">Deadline for validation and check-connection requests (seconds).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_INIT_CONNECTION_TIMEOUT_SEC</code> · <span class="config-def-label">Default</span> <code>15</code></p>
+    <p class="config-def-desc">Upper bound for a connection timeout configured on an integration (seconds). A larger user-defined value is silently reduced to this limit.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Whether integrations may target local network hosts. When `false`, validation rejects any target that resolves to a loopback, link-local, site-local, or wildcard address — worth turning off on a public deployment to keep an integration from reaching into the internal network.</p>
+  </div>
+</div>
+
+Validation checks the **configuration**, not connectivity: the executor verifies the per-type rules — a required field left empty, a malformed `host:port`, a topic name containing wildcards, an unsupported `acks` or compression value, a target host that `INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS` forbids. The failure message shown to the admin is the one the executor produced, so it names the offending field.
+
+An integration whose configuration is valid but whose target is unreachable is therefore saved successfully, and then reports the connection problem through its status and error events. Use **Check connection** to test the target itself before saving.
+
+### Managing a running integration
+
+| Action | UI | REST API |
+|---|---|---|
+| Check connection | **Check connection** on the integration form | `POST /api/integration/check` |
+| Restart | **Restart integration** | `POST /api/integration/{integrationId}` |
+| Enable / disable | **Enable integration** toggle | `POST /api/integration` with `enabled` set |
+| Delete | **Delete integration** | `DELETE /api/integration/{integrationId}` |
+
+**Check connection** tests connectivity to the external system at any time, without saving anything. It is safe for HTTP and Kafka, but for MQTT it opens a real session with the configured client ID — see the <DocLink product={props.product} path="integrations/mqtt">MQTT integration</DocLink> guide for why that matters.
+
+**Restart** reinitializes the integration process: the executor stops the current instance, discards its protocol client, and starts it again from the stored configuration. Use it after fixing something on the remote side that the automatic [hot reinitialization](#hot-reinitialization) has not picked up yet.
 
 ## Error handling and retry
 
 When a message fails to be processed, the Integration Executor handles it based on the configured acknowledgment strategy:
 
-| Environment variable | Default | Description |
-|---|---|---|
-| `TB_IE_MSG_POLL_INTERVAL` | `1000` | Poll interval for `tbmq.msg.ie` topics (ms). |
-| `TB_IE_MSG_PACK_PROCESSING_TIMEOUT` | `30000` | Processing timeout per message batch (ms). |
-| `TB_IE_MSG_ACK_STRATEGY_TYPE` | `SKIP_ALL` | Strategy: `SKIP_ALL` or `RETRY_ALL`. |
-| `TB_IE_MSG_ACK_STRATEGY_RETRIES` | `5` | Number of retries (0 = unlimited). Used with `RETRY_ALL`. |
-| `TB_IE_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES` | `1` | Pause between retries (seconds). |
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_MSG_POLL_INTERVAL</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
+    <p class="config-def-desc">Poll interval for `tbmq.msg.ie` topics (ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_MSG_PACK_PROCESSING_TIMEOUT</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
+    <p class="config-def-desc">Processing timeout per message batch (ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_MSG_ACK_STRATEGY_TYPE</code> · <span class="config-def-label">Default</span> <code>SKIP_ALL</code></p>
+    <p class="config-def-desc">Strategy: `SKIP_ALL` or `RETRY_ALL`.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_MSG_ACK_STRATEGY_RETRIES</code> · <span class="config-def-label">Default</span> <code>5</code></p>
+    <p class="config-def-desc">Number of retries (`0` = unlimited). Used with `RETRY_ALL`.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES</code> · <span class="config-def-label">Default</span> <code>1</code></p>
+    <p class="config-def-desc">Pause between retries (seconds).</p>
+  </div>
+</div>
 
 - **`SKIP_ALL`** (default) — failed messages are logged and skipped. High throughput, no delivery guarantee to external systems.
 - **`RETRY_ALL`** — failed messages are retried up to the configured limit with a pause between attempts. Set `retries` to `0` for unlimited retries.
@@ -385,14 +466,43 @@ When a message fails to be processed, the Integration Executor handles it based 
 Each batch of messages has a processing timeout (`TB_IE_MSG_PACK_PROCESSING_TIMEOUT`) to prevent long-running tasks from blocking the consumer thread.
 This ensures system responsiveness even under high load or with slow external targets.
 
+Both strategies advance past the batch in the end — neither one blocks the stream forever. The difference is how many attempts a message gets before it is abandoned.
+
+### Error events and rate limiting
+
+Every processing failure is also recorded as an **error event** on the integration, which is what the **Errors** tab in the UI shows. Because a broken target can fail on every single message, error-event persistence is rate-limited across all integrations:
+
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">EVENT_ERROR_RATE_LIMITS_ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Enables error-event rate limiting.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">EVENT_ERROR_RATE_LIMITS_INTEGRATION</code> · <span class="config-def-label">Default</span> <code>5000:3600,100:60</code></p>
+    <p class="config-def-desc">Limits as `count:seconds` pairs — 5000 events per hour and 100 per minute, for all integrations combined.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">EVENT_ERROR_RATE_LIMITS_TTL</code> · <span class="config-def-label">Default</span> <code>60</code></p>
+    <p class="config-def-desc">How long (minutes) to suppress duplicate rate-limit notices once a limit is hit.</p>
+  </div>
+</div>
+
+An integration failing in a tight loop therefore shows a **sample** of its errors, not one row per message. The `failedMsgs` and `tmpFailed` counters in the [message processing stats](#message-processing-stats) are not rate-limited and remain the accurate measure of how much is failing.
+
 ## Hot reinitialization
 
 If an integration enters the `FAILED` state, the Integration Executor periodically attempts to reinitialize it:
 
-| Environment variable | Default | Description |
-|---|---|---|
-| `INTEGRATIONS_REINIT_ENABLED` | `true` | Enable/disable hot reinitialization. |
-| `INTEGRATIONS_REINIT_FREQUENCY_MS` | `300000` | Check interval (ms). Default: 5 minutes. |
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_REINIT_ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Enable/disable hot reinitialization.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_REINIT_FREQUENCY_MS</code> · <span class="config-def-label">Default</span> <code>300000</code></p>
+    <p class="config-def-desc">Check interval (ms) — every 5 minutes.</p>
+  </div>
+</div>
 
 If the underlying issue is resolved (e.g., the remote system becomes reachable), the integration is restored automatically without manual intervention.
 
@@ -400,6 +510,29 @@ If the underlying issue is resolved (e.g., the remote system becomes reachable),
 
 The Integration Executor collects and reports detailed metrics that give visibility into the health, performance, and behavior of all configured integrations.
 These metrics are logged periodically and can be exported to external monitoring systems like Prometheus or Grafana for alerting, dashboards, and historical analysis.
+
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">STATS_IE_ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Whether the executor prints the statistics below to its log.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">STATS_IE_PRINT_INTERVAL_MS</code> · <span class="config-def-label">Default</span> <code>60000</code></p>
+    <p class="config-def-desc">How often they are printed (ms) — every minute.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_STATISTICS_ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Whether per-integration statistics are reported to TBMQ as events, making them visible on the **Statistics** tab.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_STATISTICS_PERSIST_FREQUENCY</code> · <span class="config-def-label">Default</span> <code>3600000</code></p>
+    <p class="config-def-desc">How often those statistics events are sent (ms) — every hour.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">METRICS_ENDPOINTS_EXPOSE</code> · <span class="config-def-label">Default</span> <code>health,info,prometheus</code></p>
+    <p class="config-def-desc">Actuator endpoints exposed over HTTP. Keep `prometheus` in the list to scrape the executor.</p>
+  </div>
+</div>
 
 ### Current integration activity
 
@@ -469,9 +602,27 @@ failedIterations = [0]
 - `successfulIterations` — successful message batch executions.
 - `failedIterations` — message batch executions that resulted in one or more processing failures.
 
+### Client event processing stats
+
+An integration that opted in to [client lifecycle events](#client-lifecycle-events) consumes them on a separate stream, and the executor reports that stream on its own, with the same counters under a different stem:
+
+```text
+[integrationEventProcessor][f6e82897-dd18-4c6f-ac31-5f19ce75e2db]
+totalMsgs = [6]
+successfulMsgs = [6]
+tmpTimeout = [0]
+tmpFailed = [0]
+timeoutMsgs = [0]
+failedMsgs = [0]
+successfulIterations = [6]
+failedIterations = [0]
+```
+
+Reading the two blocks side by side tells you which stream is in trouble: an unreachable target fails both, while numbers that only move under `integrationEventProcessor` point at the events topic or the event payload rather than at message delivery. Because that stream defaults to `SKIP_ALL`, its `failedMsgs` accumulates instead of being retried. An integration with no event types configured never prints this block.
+
 ## Scalability and fault tolerance
 
-- **Executor scaling** — multiple `tbmq-ie` instances can run in parallel; Kafka distributes integration messages across executors automatically.
+- **Executor scaling** — multiple `tbmq-ie` instances can run in parallel. Kafka spreads the [downlink partitions](#downlink-topics) across them, so each integration is owned by exactly one executor and adding or losing an instance rebalances that ownership without duplicating or dropping work.
 - **Fault isolation** — issues in external systems affect only the Integration Executor; the TBMQ broker continues operating normally.
 - **Backpressure management** — Kafka buffers messages when executors are slow or overloaded.
 - **Resilience** — executor instances restart independently; integrations are restored from compacted configuration topics.

@@ -79,19 +79,47 @@ tbmq/devices/gateway-01/status
 
 ## Configuration
 
-| Field | Description |
-|---|---|
-| **Send only message payload** | If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and additional properties is sent. |
-| **Endpoint URL** | The external service URL where HTTP requests are sent. |
-| **Request Method** | Supported: `GET`, `POST`, `PUT`, `DELETE`. |
-| **Credentials** | **Anonymous**, **Basic Authentication** (username + password), or **PEM-based authentication**. |
-| **Headers** | Key-value pairs added to the HTTP request headers. |
-| **Payload Content Type** | Format of the request body: `JSON`, `Text`, `Binary (Base64)`. |
-| **Send as binary on parsing error** | If enabled, messages failing JSON or Text parsing are sent as binary. If disabled, they are not sent. |
-| **Read Timeout** | Maximum time to wait for a response before timing out. |
-| **Max Parallel Requests** | Limits the number of concurrent HTTP requests. |
-| **Max Response Size** | Maximum allowed size for incoming responses. |
-| **Metadata** | Custom metadata attached to forwarded messages. |
+| Field | Default | Description |
+|---|---|---|
+| **Send only message payload** | off | If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and additional properties is sent. |
+| **Endpoint URL** | — | The external service URL where HTTP requests are sent. Required. |
+| **Request method** | `POST` | One of `POST`, `PUT`, `GET`, `DELETE`. Only `POST` and `PUT` carry a request body — with `GET` or `DELETE` the request is sent without the message. |
+| **Credentials type** | `Anonymous` | `Anonymous`, `Basic` (username + password), or `PEM` (certificate-based). |
+| **Headers** | `Content-Type: application/json` | Key-value pairs added to the HTTP request headers. At least one header is required. |
+| **Payload content type** | `Binary` | How the message payload is formatted: `JSON`, `Text`, or `Binary`. Binary means the payload is Base64-encoded. |
+| **Send as binary on parsing error** | on | If enabled, a payload that fails `JSON` or `Text` parsing is sent as binary instead. If disabled, such a message is not sent at all and is counted as a failure. |
+| **Read timeout in millis** | `0` | Maximum time to wait for a response. `0` means no timeout. |
+| **Max number of parallel requests** | `0` | Caps in-flight HTTP requests. `0` means no limit. |
+| **Max response size (in KB)** | `256` | Memory used to buffer the response body before it is handed to the integration. |
+| **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
+
+<Aside type="caution">
+  **Max number of parallel requests** and **Read timeout in millis** interact: the read timeout is also how long a message waits for a free slot. If you cap parallel requests while leaving the read timeout at `0`, a message that arrives when all slots are busy fails immediately instead of queueing. Set a non-zero read timeout whenever you set a parallel limit.
+</Aside>
+
+### Request body
+
+**Send only message payload** decides whether the endpoint receives the bare payload or the full envelope, and **Payload content type** decides how the payload itself is encoded:
+
+```text
+  raw payload {"temperature":25}
+        │
+        ▼  encoded per Payload content type
+     JSON   → {"temperature":25}
+     Text   → "{\"temperature\":25}"
+     Binary → "eyJ0ZW1wZXJhdHVyZSI6MjV9"
+        │
+        ▼  placed per Send only message payload
+      ON  → body = the encoded payload
+      OFF → body = { "payload": <encoded>, "topicName": …, "clientId": …,
+                     "eventType": "PUBLISH_MSG", … }
+
+  if encoding fails (payload is not valid JSON, or not text)
+      Send as binary on parsing error  ON  → fall back to Base64 binary
+                                       OFF → not sent, counted as failed
+```
+
+A [client lifecycle event](#client-lifecycle-events) never goes through this: it has no MQTT payload to encode and is always sent as its own JSON object.
 
 ## Client lifecycle events
 
