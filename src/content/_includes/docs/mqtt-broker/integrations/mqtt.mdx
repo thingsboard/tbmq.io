@@ -29,7 +29,7 @@ TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, 
 <Steps>
 1. Go to the **Integrations** page and click the **"+"** button.
 2. Select **MQTT** as the integration type and click **Next**.
-3. On the **Topic Filters** step, subscribe to `tbmq/mqtt-integration` and click **Next**.
+3. On the **Filters and events** step, set **Topic filters** to `tbmq/mqtt-integration`, leave **Lifecycle events** empty, and click **Next**.
 4. In the **Configuration** step:
    - Enter the **Host** (e.g., `localhost`).
    - Enter the **Port** (e.g., `1883`).
@@ -57,6 +57,8 @@ TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, 
 
 Topic filters define **MQTT-based subscriptions** that trigger the integration. When TBMQ receives a message matching a configured topic filter, the integration processes it and forwards the data to the external system.
 
+Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two.
+
 For example, with the topic filter `tbmq/devices/+/status`, any of the following messages will trigger the integration:
 
 ```plaintext
@@ -83,9 +85,28 @@ tbmq/devices/gateway-01/status
 | **QoS** | Used when **Dynamic QoS** is disabled. |
 | **Dynamic retain** | If enabled, messages are forwarded with the Retain flag from the incoming message. |
 | **Retain** | Used when **Dynamic retain** is disabled (`true` or `false`). |
+| **Events topic name** | Topic on the external broker that [client lifecycle events](#client-lifecycle-events) are published to. Shown once at least one event type is selected, and required in that case. Cannot contain the `+` or `#` wildcards. |
 | **Metadata** | Custom metadata attached to forwarded messages. |
 
-## Events
+## Client lifecycle events
+
+Besides the messages matched by topic filters, this integration can deliver <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>client lifecycle events</DocLink> — a client connecting, disconnecting, changing its subscriptions, or failing authentication or authorization.
+
+Pick the event types on the **Filters and events** step while creating the integration, or add them later:
+
+<Steps>
+1. Open the integration on the **Integrations** page and click the **Toggle edit mode** button (pencil icon).
+2. Click the **Lifecycle events** field to list the available event types, then select the ones you need: **Client connected**, **Client disconnected**, **Client subscribed**, **Client unsubscribed**, **Client authentication failed**, **Client authorization failed**, **Client connection failed**. Each one is added as a chip; remove it with its **x**.
+3. Set **Events topic name** to the topic on the external broker that should receive the events, for example `tbmq/events`. The field appears under **Lifecycle events** as soon as the first event type is selected, and a value is required.
+4. Click **Apply changes**.
+</Steps>
+
+A lifecycle event has no originating MQTT message to take a topic, QoS, or retain flag from, so this integration type handles them separately from messages:
+
+- Events go to the dedicated **Events topic name**, never to **Topic name**, and **Dynamic topic name** does not apply to them.
+- Events are always published with **QoS 1** and the **retain flag off**, regardless of the **Dynamic QoS**, **QoS**, **Dynamic retain**, and **Retain** settings.
+
+## Integration events
 
 TBMQ logs integration-related events for debugging and troubleshooting:
 
@@ -143,7 +164,7 @@ If successful, two new messages should appear in the **Messages** table:
 | `payload` | Base64-encoded content of the MQTT message (e.g., `"eyJ0ZW1wZXJhdHVyZSI6MjV9"` decodes to `{"temperature": 25}`). |
 | `topicName` | MQTT topic to which the message was published. |
 | `clientId` | ID of the MQTT client that published the message. |
-| `eventType` | Type of MQTT event. `PUBLISH_MSG` is the only supported type. |
+| `eventType` | Type of event. `PUBLISH_MSG` for a forwarded message; a [client lifecycle event](#client-lifecycle-events) carries its own type instead. |
 | `qos` | Quality of Service level of the incoming message. |
 | `retain` | Whether the message has the Retain flag set. |
 | `tbmqIeNode` | Node ID of the Integration Executor that handled the message. |

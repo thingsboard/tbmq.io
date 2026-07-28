@@ -5,6 +5,8 @@ import DocLink from '@components/DocLink.astro';
 **Integrations** in TBMQ forward MQTT messages from connected clients to external systems such as HTTP endpoints, Kafka brokers, or other MQTT brokers.
 They connect IoT devices with the broader data infrastructure, allowing the MQTT broker to act as a central integration point in your architecture.
 
+Besides messages, an integration can receive [client lifecycle events](#client-lifecycle-events) — clients connecting and disconnecting, subscription changes, and authentication or authorization failures.
+
 ## Why use integrations
 
 - Bridge MQTT messages to external systems for processing, storage, or analytics.
@@ -18,7 +20,8 @@ At a high level, the integration flow in TBMQ works as follows:
 
 1. **MQTT clients** connect to TBMQ and publish messages.
 2. When a message matches an integration [topic filter](#integration-entity) (MQTT subscription), TBMQ forwards the message to the [TBMQ Integration Executor](#tbmq-integration-executor) via Kafka.
-3. The **Integration Executor** receives the message, processes it, and forwards it to the configured external system:
+3. When a client connects, disconnects, changes its subscriptions, or fails authentication or authorization, TBMQ forwards that [lifecycle event](#client-lifecycle-events) to every integration subscribed to the event type — over a separate Kafka stream.
+4. The **Integration Executor** receives the message or event, processes it, and forwards it to the configured external system:
    - An **HTTP endpoint** over HTTP or HTTPS.
    - Another **MQTT broker** over MQTT or MQTTS.
    - A **Kafka broker** using the Kafka binary protocol over TCP or TLS.
@@ -65,6 +68,9 @@ Integration entities are stored in TBMQ's PostgreSQL database and are used for m
   - `Pending` — waiting for validation and activation.
 - **Configuration** — connection details and parameters for the external system.
 - **Topic filters** — MQTT-based subscriptions that trigger the integration when a matching message is received.
+- **Lifecycle event types** — [client lifecycle events](#client-lifecycle-events) the integration receives.
+
+Topic filters and lifecycle event types are independent, and each one is optional — but an integration must have at least one of the two, otherwise it would have nothing to deliver.
 
 Multiple integrations with different types, topic filters, and targets can be configured and managed independently.
 
@@ -78,6 +84,7 @@ TBMQ and its Integration Executor microservices communicate asynchronously over 
 | `tbmq.ie.uplink` | Sends lifecycle events, statistics, and errors from IE back to TBMQ. |
 | `tbmq.ie.uplink.notifications.$serviceId` | Routes validation responses to the correct TBMQ node. |
 | `tbmq.msg.ie.$integrationId` | Per-integration topic for forwarding MQTT messages from TBMQ to IE. |
+| `tbmq.ie.event.$integrationId` | Per-integration topic for forwarding [client lifecycle events](#client-lifecycle-events) from TBMQ to IE. Created only for integrations that subscribe to at least one event type. |
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-communication.png', alt: 'TBMQ Integration Executor internal communication diagram', caption: 'TBMQ Integration Executor internal communication diagram' },
@@ -159,6 +166,168 @@ To avoid unused topics consuming storage indefinitely, TBMQ automatically delete
 | `INTEGRATIONS_CLEANUP_TTL_SEC` | `604800` | Inactivity TTL before topic deletion (seconds). Default: 1 week. |
 
 Kafka topic retention settings can be customized to fine-tune storage limits and control how long messages are retained per topic.
+
+## Client lifecycle events
+
+An integration can also be notified about what MQTT clients are doing: connecting, disconnecting, changing their subscriptions, or failing authentication or authorization.
+These are **client** lifecycle events, delivered to the same external system as the messages. Do not confuse them with the integration's own lifecycle events (`Started`, `Updated`, `Stopped`), which describe the integration itself, are reported over the [uplink topic](#uplink-topics), and never leave TBMQ.
+
+Delivery is opt-in per event type, so an integration ends up in one of three modes:
+
+| Topic filters | Lifecycle event types | The integration receives |
+|---|---|---|
+| Set | Empty | Published messages only. |
+| Empty | Set | Lifecycle events only. |
+| Set | Set | Both, over separate Kafka streams. |
+
+### Event types
+
+| Event type | Emitted when | Type-specific fields |
+|---|---|---|
+| `CLIENT_CONNECTED` | A client connection is accepted. | `cleanStart`, `keepAlive`, `protocolVersion`, `sessionExpiryInterval` |
+| `CLIENT_DISCONNECTED` | A client session ends, including a take-over by a session on another node. | `disconnectReason` |
+| `CLIENT_SUBSCRIBED` | Subscriptions are granted. | `subscriptions` |
+| `CLIENT_UNSUBSCRIBED` | Subscriptions are actually removed. | `subscriptions` |
+| `CLIENT_AUTHENTICATION_FAILED` | Authentication fails. | `protocolVersion`, `reason` |
+| `CLIENT_AUTHORIZATION_FAILED` | A publish or subscribe is denied by an authorization rule. | `action`, `topic` |
+| `CLIENT_CONNECTION_FAILED` | The broker refuses the connection for a reason other than authentication, for example an exceeded quota or an unavailable server. | `reason` |
+
+### Event payload
+
+Every event is delivered as a JSON object. These fields are common to all event types:
+
+| Field | Description |
+|---|---|
+| `eventType` | One of the event types above. Always present. |
+| `clientId` | ID of the MQTT client the event is about. |
+| `sessionId` | ID of the client session. |
+| `ipAddress` | IP address the client connected from. |
+| `ts` | Timestamp (milliseconds) when the event was created. |
+| `tbmqNode` | Node ID of the TBMQ broker that produced the event. |
+| `username` | Username the client authenticated with. |
+| `clientCertCn` | Common Name of the client's X.509 certificate. |
+| `metadata` | Additional metadata from the integration configuration (e.g., integration name). |
+
+Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when authentication is disabled, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
+
+The type-specific fields are added on top:
+
+| Field | Description |
+|---|---|
+| `cleanStart` | Whether the client requested a clean session start. |
+| `keepAlive` | Keep-alive interval (seconds) in effect for the session. |
+| `protocolVersion` | MQTT protocol level: `3` for MQTT 3.1, `4` for 3.1.1, `5` for 5.0. `0` when the version is not yet known. |
+| `sessionExpiryInterval` | Session expiry interval (seconds) for the session. |
+| `disconnectReason` | Name of the MQTT reason code for the disconnect, e.g. `NORMAL_DISCONNECT` or `SESSION_TAKEN_OVER`. |
+| `subscriptions` | Array of the granted or removed subscriptions. For `CLIENT_SUBSCRIBED` each entry has `topicFilter`, `qos`, and `options` (`noLocal`, `retainAsPublish`, and `retainHandling` — one of `SEND`, `SEND_IF_NOT_EXISTS`, `DONT_SEND`), plus `shareName` and `subscriptionId` when the subscription has them. For `CLIENT_UNSUBSCRIBED` an entry carries only `topicFilter`, plus `shareName` for a shared subscription, since an `UNSUBSCRIBE` names filters only. |
+| `reason` | Why authentication or the connection failed. |
+| `action` | The denied operation: `publish` or `subscribe`. |
+| `topic` | The topic or topic filter that was denied. |
+
+A client connecting with MQTT 5.0:
+
+```json
+{
+  "eventType": "CLIENT_CONNECTED",
+  "clientId": "sensor-01",
+  "sessionId": "b2f1c4de-8a35-4f6b-9d0e-7c1a5b3e2f40",
+  "ipAddress": "10.7.0.42",
+  "ts": 1767225600000,
+  "tbmqNode": "tbmq-node-1",
+  "username": "sensor-01",
+  "cleanStart": true,
+  "keepAlive": 60,
+  "protocolVersion": 5,
+  "sessionExpiryInterval": 3600,
+  "metadata": {
+    "integrationName": "Audit trail"
+  }
+}
+```
+
+A client subscribing to two topic filters, the second one shared:
+
+```json
+{
+  "eventType": "CLIENT_SUBSCRIBED",
+  "clientId": "backend-consumer-1",
+  "sessionId": "9d54e0a7-6b12-4c8e-8f3a-1e7b9c2d4a68",
+  "ipAddress": "10.7.0.51",
+  "ts": 1767225601500,
+  "tbmqNode": "tbmq-node-2",
+  "username": "backend",
+  "subscriptions": [
+    {
+      "topicFilter": "tbmq/devices/+/status",
+      "qos": 1,
+      "options": {
+        "noLocal": false,
+        "retainAsPublish": false,
+        "retainHandling": "SEND"
+      }
+    },
+    {
+      "topicFilter": "tbmq/telemetry",
+      "qos": 1,
+      "shareName": "workers",
+      "subscriptionId": 7,
+      "options": {
+        "noLocal": false,
+        "retainAsPublish": true,
+        "retainHandling": "DONT_SEND"
+      }
+    }
+  ],
+  "metadata": {
+    "integrationName": "Audit trail"
+  }
+}
+```
+
+A publish denied by an authorization rule:
+
+```json
+{
+  "eventType": "CLIENT_AUTHORIZATION_FAILED",
+  "clientId": "sensor-01",
+  "sessionId": "b2f1c4de-8a35-4f6b-9d0e-7c1a5b3e2f40",
+  "ipAddress": "10.7.0.42",
+  "ts": 1767225603000,
+  "tbmqNode": "tbmq-node-1",
+  "username": "sensor-01",
+  "action": "publish",
+  "topic": "admin/commands",
+  "metadata": {
+    "integrationName": "Audit trail"
+  }
+}
+```
+
+### Delivery per integration type
+
+Each integration type reuses the connection it already has, but the destination differs:
+
+| Type | Where events go |
+|---|---|
+| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. |
+| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers — the same destination as messages. |
+| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated **Events topic name** on the external broker, always with QoS 1 and the retain flag off. |
+
+### Delivery guarantees
+
+Lifecycle events are **best-effort hints**, deliberately weaker than message delivery:
+
+- Events are produced on the MQTT processing thread, so the broker never lets them delay a client. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried.
+- Events travel on their own per-integration topic (`tbmq.ie.event.$integrationId`) with a shorter retention than the message topic, so an event backlog never holds up message delivery.
+- On the Integration Executor side the events stream has its own acknowledgment strategy, defaulting to `SKIP_ALL` so that a failing target does not cause stale events to be redelivered out of order:
+
+| Environment variable | Default | Description |
+|---|---|---|
+| `TB_IE_EVENT_MSG_POLL_INTERVAL` | `1000` | Poll interval for `tbmq.ie.event` topics (ms). |
+| `TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT` | `30000` | Processing timeout per event batch (ms). |
+| `TB_IE_EVENT_MSG_ACK_STRATEGY_TYPE` | `SKIP_ALL` | Strategy: `SKIP_ALL` or `RETRY_ALL`. |
+| `TB_IE_EVENT_MSG_ACK_STRATEGY_RETRIES` | `5` | Number of retries (0 = unlimited). Used with `RETRY_ALL`. |
+| `TB_IE_EVENT_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES` | `1` | Pause between retries (seconds). |
 
 ## Integration lifecycle
 
