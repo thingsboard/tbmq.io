@@ -23,11 +23,13 @@ const { platformQuery = '' } = Astro.props;
 							id={
 								item.submenuId === 'nav-cases'
 									? 'use-cases-link'
-									: item.label === 'Device Library'
-										? 'devices-link'
-										: item.label === 'Blog'
-											? 'blog-link'
-											: undefined
+									: item.submenuId === 'nav-learn'
+										? 'learn-link'
+										: item.label === 'Device Library'
+											? 'devices-link'
+											: item.label === 'Blog'
+												? 'blog-link'
+												: undefined
 							}
 							href={
 								item.label === 'Device Library' ? `/device-library/${platformQuery}` : item.href
@@ -475,18 +477,23 @@ const { platformQuery = '' } = Astro.props;
 			initMobileSubmenu();
 		}
 
-		// Use Cases is the only top-level item that has BOTH an `href` AND a
-		// submenu. On desktop the hover/`mouseenter` handler above shows the
-		// submenu fine and the click navigates to /use-cases/ — but on mobile
-		// there is no hover, so the tap just navigates away without ever
+		// Use Cases and Learn are the top-level items that have BOTH an `href`
+		// AND a submenu. On desktop the hover/`mouseenter` handler above shows
+		// the submenu fine and the click navigates to the hub page — but on
+		// mobile there is no hover, so the tap just navigates away without ever
 		// expanding the sub-list. Intercept the tap on mobile and route it
-		// through listburg() so the use-case items reveal inline like every
-		// other section.
-		const useCasesLink = document.getElementById('use-cases-link');
-		useCasesLink?.addEventListener('click', (e) => {
-			if (!isMobile) return;
-			e.preventDefault();
-			listburg('nav-cases');
+		// through listburg() so the sub-items reveal inline like every other
+		// section.
+		const hubLinks: Array<[string, string]> = [
+			['use-cases-link', 'nav-cases'],
+			['learn-link', 'nav-learn'],
+		];
+		hubLinks.forEach(([linkId, submenuId]) => {
+			document.getElementById(linkId)?.addEventListener('click', (e) => {
+				if (!isMobile) return;
+				e.preventDefault();
+				listburg(submenuId);
+			});
 		});
 
 		window.addEventListener('resize', () => {
