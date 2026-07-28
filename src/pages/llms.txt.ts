@@ -1,143 +1,205 @@
 import type { APIRoute } from 'astro';
+import { PROD_ORIGIN } from '~/consts';
+import { learnNavTopics, mqttTopics, topicHref } from '~/data/mqttLearn';
+import { TBMQ_PE_VER, TBMQ_VER } from '~/data/versions';
 
 export const prerender = true;
 
-const SITE_URL = 'https://thingsboard.io';
+const SITE_URL = PROD_ORIGIN;
 
-const HEADER = `# ThingsBoard
+const HEADER = `# TBMQ
 
-> ThingsBoard is an open-source IoT platform for device management, data collection, processing, and visualization.
+> TBMQ is an open-source MQTT broker by ThingsBoard, engineered for high-throughput, fault-tolerant MQTT messaging at IoT scale.
 
-- ThingsBoard supports device connectivity via MQTT, CoAP, HTTP, LwM2M, SNMP, OPC-UA, and Modbus protocols.
-- The platform provides a powerful rule engine for real-time data processing, transformation, and automated actions on IoT telemetry.
-- ThingsBoard dashboards offer rich interactive widgets for data visualization, alarm management, and device control.
-- Multi-tenancy architecture supports isolated customer and tenant hierarchies with role-based access control.
-- ThingsBoard Professional Edition (PE) extends CE with white-labeling, solution templates, reporting, advanced RBAC, and integrations.
-- ThingsBoard Cloud (PaaS) is a fully managed cloud offering; ThingsBoard Edge extends the platform to on-premises edge nodes.
-- Additional products: IoT Gateway (protocol bridge for industrial devices), MQTT Broker (TBMQ), Trendz Analytics (AI-driven analytics), Mobile SDK, License Server.`;
+- TBMQ implements MQTT 3.1, 3.1.1, and 5.0 over TCP (1883) and WebSocket (8084) listeners, with TLS (8883) and secure WebSocket (8085) available.
+- Published benchmarks: 100M concurrent connections on a single cluster, 3M+ messages/sec on a single node, and 1M msg/sec point-to-point with persistent clients.
+- Architecture: symmetric, masterless nodes that coordinate exclusively through Apache Kafka — the durability backbone. Redis/Valkey stores messages for persistent DEVICE clients and PostgreSQL holds metadata.
+- A publish is acknowledged only after Kafka has persisted it, so an acknowledged QoS 1/2 message survives the loss of a broker node.
+- Clients are modelled as DEVICE (many low-throughput connections) or APPLICATION (backend consumers with dedicated Kafka topics); the type decides how persistent messages are stored and delivered.
+- Authentication providers: Basic, SCRAM (MQTT 5.0), X.509 certificate chain, JWT, and external HTTP — combined with topic-level authorization rules (ACL).
+- Integrations forward MQTT traffic to external HTTP endpoints, MQTT brokers, and Kafka topics, executed by a separate Integration Executor service.
+- Two editions share one documentation tree: Community Edition (open source) and Professional Edition, which adds SSO/OAuth 2.0, RBAC, audit logs, white-labeling, and a managed private cloud option.`;
 
-interface KeyPage {
-	slug: string;
+interface LinkEntry {
+	/** Docs-collection slug ("docs/…") or a site-absolute path ("/pricing/"). */
+	path: string;
 	title: string;
 	description: string;
 }
 
-const KEY_PAGES: KeyPage[] = [
+const DOC_PAGES: LinkEntry[] = [
 	{
-		slug: 'docs/pe',
-		title: 'ThingsBoard PE — Documentation home',
-		description: 'Top-level entry point for ThingsBoard Professional Edition documentation.',
+		path: 'docs/mqtt-broker/pe',
+		title: 'TBMQ documentation — home',
+		description: 'Top-level entry point for the TBMQ documentation.',
 	},
 	{
-		slug: 'docs/pe/why-thingsboard',
-		title: 'Why ThingsBoard?',
-		description: 'Core design principles, architecture, and platform highlights.',
+		path: 'docs/mqtt-broker/pe/why-tbmq',
+		title: 'Why TBMQ?',
+		description: 'Design goals, guarantees, and how TBMQ compares to other MQTT brokers.',
 	},
 	{
-		slug: 'docs/pe/getting-started',
-		title: 'Getting Started with ThingsBoard PE',
-		description: 'End-to-end setup: install, connect a device, build a dashboard.',
+		path: 'docs/mqtt-broker/pe/getting-started',
+		title: 'Getting started',
+		description: 'Connect an MQTT client, publish and subscribe, and set up client credentials end to end.',
 	},
 	{
-		slug: 'docs/pe/connect-iot-devices',
-		title: 'Connect IoT Devices',
-		description:
-			'Connectivity guide across MQTT, HTTP, CoAP, LwM2M, SNMP, OPC-UA, and Modbus protocols.',
+		path: 'docs/mqtt-broker/pe/architecture',
+		title: 'Architecture',
+		description: 'Components, Kafka topics, PUBLISH lifecycle, and the durability guarantees of a TBMQ cluster.',
 	},
 	{
-		slug: 'docs/pe/concepts/digital-twin-model',
-		title: 'Digital Twin Model',
-		description:
-			'Devices, assets, customers, entity views, and relations — the platform entity model.',
+		path: 'docs/mqtt-broker/pe/concepts/client-types',
+		title: 'Client types',
+		description: 'DEVICE vs APPLICATION clients — persistence model, throughput, and when to use each.',
 	},
 	{
-		slug: 'docs/pe/concepts/data-processing',
-		title: 'Data Processing',
-		description: 'Rule engine concepts: nodes, chains, message routing, and transformations.',
+		path: 'docs/mqtt-broker/pe/concepts/sessions',
+		title: 'Sessions',
+		description: 'Clean and persistent MQTT sessions, session expiry, and the state TBMQ keeps per client.',
 	},
 	{
-		slug: 'docs/pe/concepts/data-visualization',
-		title: 'Data Visualization',
-		description: 'Dashboards, widgets, and the visualization model.',
+		path: 'docs/mqtt-broker/pe/concepts/qos',
+		title: 'Delivery guarantees',
+		description: 'QoS 0, 1, and 2 handshakes as TBMQ implements them, and how to pick a level.',
 	},
 	{
-		slug: 'docs/pe/concepts/multi-tenancy',
-		title: 'Multi-tenancy and Hierarchy',
-		description: 'Tenant isolation, customer hierarchies, and role-based access.',
+		path: 'docs/mqtt-broker/pe/concepts/topics',
+		title: 'Topics and wildcards',
+		description: 'Topic structure, single- and multi-level wildcards, and topic design guidelines.',
 	},
 	{
-		slug: 'docs/pe/concepts/alarms-and-notifications',
-		title: 'Alarms and Notifications',
-		description: 'Alarm lifecycle, severity, propagation, and notification delivery.',
+		path: 'docs/mqtt-broker/pe/concepts/clustering',
+		title: 'Clustering',
+		description: 'Masterless nodes, Kafka-based coordination, and horizontal scaling.',
 	},
 	{
-		slug: 'docs/pe/installation',
+		path: 'docs/mqtt-broker/pe/installation',
 		title: 'Installation options',
-		description: 'Deployment topologies and installation paths for ThingsBoard PE.',
+		description: 'Docker, Docker Compose, Kubernetes, Helm, and managed cloud deployment paths.',
 	},
 	{
-		slug: 'docs/pe/reference/rest-api',
-		title: 'REST API reference',
-		description: 'HTTP API surface for platform automation and integration.',
+		path: 'docs/mqtt-broker/pe/installation/config',
+		title: 'Configuration reference',
+		description: 'Broker configuration parameters, environment variables, and tuning options.',
 	},
 	{
-		slug: 'docs/pe/reference/rule-engine',
-		title: 'Rule Engine reference',
-		description: 'Catalog of rule engine nodes and chain configuration.',
+		path: 'docs/mqtt-broker/pe/security/overview',
+		title: 'Security model',
+		description: 'Authentication providers and their execution order, authorization rules, and TLS/mTLS listeners.',
 	},
 	{
-		slug: 'docs/edge/pe',
-		title: 'ThingsBoard Edge PE',
-		description: 'On-premises edge nodes that synchronize with a central ThingsBoard server.',
+		path: 'docs/mqtt-broker/pe/user-guide',
+		title: 'User guide',
+		description: 'Protocol features, client management, and the admin UI, task by task.',
 	},
 	{
-		slug: 'docs/mqtt-broker/pe',
-		title: 'TBMQ PE — MQTT Broker',
-		description: 'Standalone MQTT broker engineered for millions of concurrent connections.',
+		path: 'docs/mqtt-broker/pe/integrations',
+		title: 'Integrations',
+		description: 'Forward MQTT traffic to external systems over HTTP, MQTT, and Kafka.',
 	},
 	{
-		slug: 'docs/mobile/pe',
-		title: 'ThingsBoard Mobile PE',
-		description: 'Customizable mobile application for end-user IoT solutions.',
+		path: 'docs/mqtt-broker/pe/rest-api',
+		title: 'REST API',
+		description: 'HTTP API surface for automating broker administration and monitoring.',
 	},
 	{
-		slug: 'docs/trendz',
-		title: 'Trendz Analytics',
-		description: 'AI-driven analytics built on top of ThingsBoard telemetry.',
+		path: 'docs/mqtt-broker/pe/reference',
+		title: 'Reference',
+		description: 'Validated system design and high-load performance benchmarks for production sizing.',
 	},
 	{
-		slug: 'docs/iot-gateway',
-		title: 'IoT Gateway',
-		description: 'Protocol bridge for industrial devices (OPC-UA, Modbus, BACnet, BLE, and more).',
+		path: 'docs/mqtt-broker',
+		title: 'TBMQ Community Edition documentation',
+		description: 'Same documentation tree scoped to the open-source edition; PE-only pages are absent here.',
+	},
+];
+
+const PRODUCT_PAGES: LinkEntry[] = [
+	{
+		path: '/',
+		title: 'TBMQ — open-source MQTT broker',
+		description: 'Product overview, feature highlights, and the CE vs PE comparison table.',
+	},
+	{
+		path: '/product/',
+		title: 'Distributed MQTT broker architecture',
+		description:
+			'How the masterless cluster, Kafka-backed durability, and in-memory subscription matching fit together.',
+	},
+	{
+		path: '/performance/',
+		title: 'MQTT broker benchmarks',
+		description:
+			'100M connections, 3M+ msg/sec single node, and 1M msg/sec point-to-point — reproducible setups and results.',
+	},
+	{
+		path: '/installations/',
+		title: 'Installation options',
+		description: 'Pick a deployment path: Docker, Docker Compose, Kubernetes, Helm, or a cloud cluster.',
+	},
+	{
+		path: '/live-demo/',
+		title: 'Live demo',
+		description: 'Free public broker at demo.tbmq.io — connect any MQTT client without signing up.',
+	},
+	{
+		path: '/pricing/',
+		title: 'Pricing',
+		description: 'Community Edition, self-managed Professional Edition, and managed private cloud plans.',
+	},
+	{
+		path: '/blog/',
+		title: 'Blog',
+		description: 'Release announcements, benchmarks, and MQTT engineering write-ups.',
+	},
+	{
+		path: '/contact-us/',
+		title: 'Contact us',
+		description: 'Reach the TBMQ team about licensing, support, or a proof of concept.',
 	},
 ];
 
 const OPTIONAL_LINKS = [
 	{
-		label: 'ThingsBoard Blog',
-		url: 'https://thingsboard.io/blog/',
-		description: 'latest news, feature announcements, and use-case articles',
+		label: 'TBMQ on GitHub',
+		url: 'https://github.com/thingsboard/tbmq',
+		description: 'source code of the Community Edition (Apache 2.0)',
 	},
 	{
-		label: 'ThingsBoard GitHub',
-		url: 'https://github.com/thingsboard/thingsboard',
-		description: 'source code, issues, and community discussions',
+		label: 'TBMQ issue tracker',
+		url: 'https://github.com/thingsboard/tbmq/issues',
+		description: 'bug reports and feature requests',
 	},
 	{
-		label: 'ThingsBoard YouTube',
-		url: 'https://www.youtube.com/thingsboard',
-		description: 'video tutorials, webinars, and product demos',
+		label: 'TBMQ releases',
+		url: 'https://github.com/thingsboard/tbmq/releases',
+		description: 'release notes and downloadable artifacts',
 	},
 	{
-		label: 'ThingsBoard on Stack Overflow',
-		url: 'https://stackoverflow.com/questions/tagged/thingsboard',
-		description: 'community Q&A for ThingsBoard development questions',
+		label: 'TBMQ on Docker Hub',
+		url: 'https://hub.docker.com/r/thingsboard/tbmq',
+		description: 'official broker images',
+	},
+	{
+		label: 'TBMQ Slack community',
+		url: 'https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ',
+		description: 'questions and discussion with users and contributors',
+	},
+	{
+		label: 'MQTT performance test tool',
+		url: 'https://github.com/thingsboard/tb-mqtt-perf-tests',
+		description: 'load-generation tooling used for the published benchmarks',
 	},
 ];
 
-function slugToUrl(slug: string): string {
-	const cleaned = slug.replace(/\/index$/, '');
-	return `${SITE_URL}/${cleaned}/`;
+function toUrl(path: string): string {
+	if (path.startsWith('/')) return `${SITE_URL}${path}`;
+	return `${SITE_URL}/${path.replace(/\/index$/, '')}/`;
+}
+
+function formatLinks(entries: LinkEntry[]): string {
+	return entries.map((e) => `- [${e.title}](${toUrl(e.path)}): ${e.description}`).join('\n');
 }
 
 export const GET: APIRoute = () => {
@@ -145,26 +207,32 @@ export const GET: APIRoute = () => {
 		return new Response('', { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 	}
 
-	const keyPages = KEY_PAGES.map(
-		(p) => `- [${p.title}](${slugToUrl(p.slug)}): ${p.description}`,
-	).join('\n');
+	const learnHub = [
+		`- [MQTT learn hub](${SITE_URL}/mqtt/): ${mqttTopics.length} guides to the MQTT protocol itself — concepts, MQTT 5.0 features, security, and comparisons with other protocols.`,
+		...learnNavTopics.map((t) => `- [${t.title}](${SITE_URL}${topicHref(t.slug)}): ${t.cardSummary}`),
+	].join('\n');
 
-	const docSets = `- [Documentation catalog](${SITE_URL}/llms-small.txt): full index of every documentation page — title, description, canonical URL. Fetch a page URL directly to read its body.`;
+	const docSets = `- [Documentation catalog](${SITE_URL}/llms-small.txt): every documentation page and MQTT guide — title, description, canonical URL. Fetch a page URL directly to read its body.`;
 
 	const notes = [
-		'- This catalog is auto-generated from the same source as https://thingsboard.io/docs/.',
-		'- ThingsBoard Cloud (PaaS) pages share content with the Professional Edition pages listed here; the catalog points at PE URLs to avoid duplication.',
-		'- Community Edition pages are intentionally omitted; PE is the canonical reference and is a strict superset.',
+		`- Current releases: TBMQ Community Edition ${TBMQ_VER}, TBMQ Professional Edition ${TBMQ_PE_VER}.`,
+		'- Documentation links point at the Professional Edition tree. It is a superset of Community Edition and both editions share the same source content, so any CE page exists at the same path without the `/pe` segment (`/docs/mqtt-broker/pe/getting-started/` → `/docs/mqtt-broker/getting-started/`).',
+		'- Pages under `/docs/` are reference documentation for running TBMQ; pages under `/mqtt/` explain the MQTT protocol itself and are product-neutral.',
+		'- This file and the catalog are generated at build time from the same sources as the site.',
 	].join('\n');
 
 	const optional = OPTIONAL_LINKS.map(
-		(l) => `- [${l.label}](${l.url})${l.description ? `: ${l.description}` : ''}`,
+		(l) => `- [${l.label}](${l.url})${l.description ? `: ${l.description}` : ''}`
 	).join('\n');
 
 	const body = [
 		HEADER,
-		'## Key pages',
-		keyPages,
+		'## Documentation',
+		formatLinks(DOC_PAGES),
+		'## MQTT protocol guides',
+		learnHub,
+		'## Product',
+		formatLinks(PRODUCT_PAGES),
 		'## Documentation Sets',
 		docSets,
 		'## Notes',
