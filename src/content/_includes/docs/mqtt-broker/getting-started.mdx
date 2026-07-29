@@ -1,7 +1,9 @@
-import { Aside } from '@astrojs/starlight/components';
-import { Code } from '@astrojs/starlight/components';
+import { Aside, Code, Steps, CardGrid } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { Products } from '~/models/site.models';
 import { TBMQ_BRANCH } from '~/data/versions';
 import Tabs from '@components/Tabs.astro';
@@ -21,133 +23,172 @@ export const windowsPeInstall = `Invoke-WebRequest -Uri "https://raw.githubuserc
 
 ## Introduction
 
-This guide covers the basics of <a href="/" target="_blank" rel="noopener noreferrer">TBMQ</a>:
+By the end of this guide you will have a broker to talk to, a set of MQTT client credentials, and a message
+published by one client and received by another — with the client session visible in the TBMQ UI.
 
-- Connecting MQTT clients to the broker.
-- Publishing and subscribing to messages.
-- Configuring client authentication and authorization.
+Start by choosing where the broker runs:
 
-For details on the TBMQ architecture, see <DocLink product={props.product} path="architecture">Architecture</DocLink>.
+<CardGrid>
+  <Card title="Public demo broker" icon="tabler:cloud" headingLevel={3}>
+    Nothing to install. Connect to `demo.tbmq.io` and publish your first message in under a minute.
+    The UI is read-only. See [Try live demo](#try-live-demo).
+  </Card>
+
+  <Card title="Local installation" icon="tabler:server-2" headingLevel={3}>
+    Docker on your own machine, with administrative access to every setting. Takes a few minutes.
+    See [Install TBMQ locally](#install-tbmq-locally).
+  </Card>
+</CardGrid>
+
+For the components behind the broker and the path a message takes through them, see
+<DocLink product={props.product} path="architecture">Architecture</DocLink>.
 
 ## Try live demo
 
-The fastest way to get started with TBMQ is to use the free public MQTT broker at <a href="https://demo.tbmq.io" target="_blank" rel="noopener noreferrer">demo.tbmq.io</a>.
-This sandbox environment allows you to explore TBMQ features without any installation.
+The fastest way to try TBMQ is the free public broker at <a href="https://demo.tbmq.io" target="_blank" rel="noopener noreferrer">demo.tbmq.io</a> —
+a shared sandbox you can publish to right away.
 
-**MQTT connection details:**
+| Parameter          | Value           |
+| ------------------ | --------------- |
+| Host               | `demo.tbmq.io`  |
+| MQTT port          | `1883`          |
+| MQTT over TLS port | `8883`          |
+| Username           | `demo`          |
+| Password           | *(leave empty)* |
 
-| Parameter | Value           |
-|-----------|-----------------|
-| Host      | demo.tbmq.io    |
-| TCP Port  | 1883            |
-| TLS Port  | 8883            |
-| Username  | demo            |
-| Password  | *(leave empty)* |
-
-You can start publishing and subscribing to topics immediately using these credentials.
-<a href="https://demo.tbmq.io/signup" target="_blank" rel="noopener noreferrer">Sign up</a> for a free account to access the TBMQ UI and explore sessions, subscriptions, and other features.
+<a href="https://demo.tbmq.io/signup" target="_blank" rel="noopener noreferrer">Sign up</a> for a free account to open the TBMQ UI
+and watch your own sessions, subscriptions, and broker statistics as you go.
 
 <Aside type="note">
-  The demo instance provides read-only access to the UI. You can observe all sessions, subscriptions, and broker statistics, but cannot modify configurations.
-  If you prefer to run TBMQ locally with full administrative access, proceed to the [Install TBMQ locally](#install-tbmq-locally) section.
+  The demo UI is read-only: you can observe sessions, subscriptions, and statistics, but not change configuration.
+  Skip the [credentials step](#configure-client-authentication-and-authorization) — the `demo` user is already set up for you.
+  It is also a shared environment, so treat every topic as public and do not publish sensitive data.
+  For TLS connection examples, see the <a href="/live-demo/">Live demo</a> page;
+  for full administrative access, [install TBMQ locally](#install-tbmq-locally).
 </Aside>
 
 ## Install TBMQ locally
 
-For full control over your TBMQ instance, you can install it locally.
-For detailed instructions on different platforms, see <DocLink product={props.product} path="installation">Installation options</DocLink>.
+This section covers the quickest path to your own broker: Docker on a single host.
+For every other option — Docker Compose cluster, Kubernetes, cloud, Helm — see
+<DocLink product={props.product} path="installation">Installation options</DocLink>.
 
-Follow the instructions below for a quick local installation.
+### Prerequisites
+
+- <a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener noreferrer">Docker</a> installed and running.
+- At least 2 GB of free RAM.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+
+<ConditionalHeading level={3} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
+
+Have your license key ready before you install — the broker will not start without one.
+If you don't have a key yet, visit the <a href="/pricing/?section=tbmq-options" target="_blank" rel="noopener noreferrer">Pricing page</a>
+to compare subscription plans and perpetual licenses, and to size your deployment.
+
+</ShowFor>
+
+### Run the install script
 
 <Tabs>
 <TabItem label="Linux & Mac OS">
 
-If you have Docker installed on Linux or macOS, run the following commands:
+Run the following commands to download and start TBMQ:
 
 <Code code={props.product === Products.TBMQ_PE ? linuxPeInstall : linuxInstall} lang="shell" />
 
 </TabItem>
 <TabItem label="Windows">
 
-If you have Docker Desktop installed on Windows, follow the instructions below.
+With Docker Desktop installed, run the steps below in PowerShell.
 
-<Aside type="note">
-  Make sure the downloaded PowerShell scripts are allowed to run on your system.
-</Aside>
+<Steps>
 
-- **Open PowerShell** (Run as Administrator).
-- **(Optional) Get the current execution policy**.
-  It determines the level of security for running scripts on a system. For example, if `Restricted` is returned, it means PowerShell doesn't execute any scripts.
+1. **Open PowerShell as Administrator.**
 
-```powershell
-Get-ExecutionPolicy
-```
+2. **(Optional) Check the current execution policy.**
 
-- **(Optional) Change the current execution policy if required**.
-  Set it to the one that will allow you to run PowerShell scripts and the one that suits your security requirements.
-  For example, `Unrestricted` is the least restrictive setting that allows all scripts to be executed.
+   It determines whether PowerShell is allowed to run scripts. If it returns `Restricted`, PowerShell runs no scripts at all.
 
-```powershell
-Set-ExecutionPolicy Unrestricted
-```
+   ```powershell
+   Get-ExecutionPolicy
+   ```
 
-- **Install TBMQ**
+3. **(Optional) Change the execution policy.**
 
-<Code code={props.product === Products.TBMQ_PE ? windowsPeInstall : windowsInstall} lang="powershell" />
+   Choose the least permissive setting that lets the install script run and still meets your security requirements.
+   `Unrestricted` allows all scripts.
+
+   ```powershell
+   Set-ExecutionPolicy Unrestricted
+   ```
+
+4. **Download and start TBMQ.**
+
+   <Code code={props.product === Products.TBMQ_PE ? windowsPeInstall : windowsInstall} lang="powershell" />
+
+</Steps>
 
 </TabItem>
 </Tabs>
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <h2>Get the license key</h2>
+The script downloads `docker-compose.yml` into the current directory, creates the Docker volumes, installs the database,
+starts the broker, and then follows the container logs. Press `Ctrl+C` to stop following them — the broker keeps running in the background.
 
-    <p>Before proceeding, make sure you have selected a subscription plan or purchased a perpetual license.
-    If you haven't done this yet, visit the <a href="/pricing/?section=tbmq-options" target="_blank">Pricing page</a> to compare available options and obtain your license key.</p>
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 
-    <h2>Configure the license key</h2>
+<ConditionalHeading level={3} id="configure-the-license-key" showFor="mqtt-broker-pe">Configure the license key</ConditionalHeading>
 
-    <p>Open the <code>docker-compose.yml</code> file downloaded by the install script, find the <strong>TBMQ_LICENSE_SECRET</strong> environment variable, and replace <strong>YOUR_LICENSE_KEY_HERE</strong> with your actual license key.</p>
+The `docker-compose.yml` that the script downloaded ships with a placeholder key, so the broker will not start until you replace it.
+Open the file, find the `TBMQ_LICENSE_SECRET` environment variable, replace **YOUR_LICENSE_KEY_HERE** with your license key,
+then re-run the script to apply the change:
 
-    <Aside type="caution">
-      The broker will not start without a valid license key.
-    </Aside>
+<Code code="./tbmq-install-and-run.sh" lang="shell" />
 
-    <p>After updating the file, apply the changes by running:</p>
+</ShowFor>
 
-    <Code code="./tbmq-install-and-run.sh" lang="shell" />
-  </>
-)}
+### Log in to the TBMQ UI
 
-Once the installation process is complete for local deployment, you can access TBMQ UI by visiting the following URL: **http://localhost:8083**.
-Wait until the services are up and running. To log in, use the following default credentials.
+Open **http://localhost:8083** and wait until the services are up. Log in with the default system administrator account:
 
-**Username:**
-```text
-sysadmin@thingsboard.org
-```
+| Field    | Value                      |
+| -------- | -------------------------- |
+| Username | `sysadmin@thingsboard.org` |
+| Password | `sysadmin`                 |
 
-**Password:**
-```text
-sysadmin
-```
+TBMQ then prompts you to change this password. Set a new one, or click **Skip** to keep the default for now.
 
 ## Configure client authentication and authorization
 
 <Aside type="note">
-  If you are using the <a href="https://demo.tbmq.io" target="_blank" rel="noopener noreferrer">demo instance</a>, skip this section. Demo credentials are pre-configured and ready to use.
+  Using the <a href="https://demo.tbmq.io" target="_blank" rel="noopener noreferrer">demo instance</a>? Skip this section —
+  the `demo` credentials are already in place, and the demo UI does not allow changes.
 </Aside>
 
-To secure the connection to the broker, enable <DocLink product={props.product} path="security/authentication/basic">Basic authentication</DocLink>.
+A new installation has <DocLink product={props.product} path="security/authentication/basic">Basic authentication</DocLink> enabled,
+while X.509, JWT, SCRAM, and HTTP authentication are switched off. So the broker refuses every client that does not match a
+stored credentials record — create one before you connect a client:
 
-After you enable Basic authentication, create MQTT Client Credentials of type `Basic` to authenticate connecting clients:
+<Steps>
 
-- Go to **Authentication** → **Credentials** and click **Add** (+).
-- Enter a credentials name, for example, "Getting Started Credentials".
-- Enter "username" and "password" values of your choice, for example, `username` and `password`.
-- Click **Add**.
+1. **Open the credentials page.**
 
-By default, authorization rules allow publishing and subscribing to any topic.
+   Go to **Authentication** → **Credentials** and click **Add** (+).
+
+2. **Name the credentials.**
+
+   For example, `Getting Started Credentials`.
+
+3. **Set a username and password.**
+
+   Use values of your choice — this guide assumes `username` and `password`.
+   Leave the authorization rules untouched: both the publish and the subscribe pattern default to `.*`, which permits any topic.
+
+4. **Save.**
+
+   Click **Add**. The **Check connectivity** dialog opens with ready-made `mosquitto` commands for the credentials you just created.
+
+</Steps>
 
 <ImageGallery product={props.product} images={[
   {
@@ -172,54 +213,86 @@ By default, authorization rules allow publishing and subscribing to any topic.
   },
 ]} />
 
-For additional authentication methods, see <DocLink product={props.product} path="security/overview">Security overview</DocLink>.
+To review which providers are active, open **Authentication** → **Providers**, or use the **Broker Settings** card on the **Home** page.
+For the other authentication methods and for transport security, see <DocLink product={props.product} path="security/overview">Security overview</DocLink>.
 
 ## Publishing and subscribing to topics
 
-Publish messages and subscribe to topics to observe the flow of messages.
-This tutorial uses <a href="https://mosquitto.org/" target="_blank" rel="noopener noreferrer">Mosquitto</a> clients.
-For details, see the <a href="https://mosquitto.org/man/mosquitto_pub-1.html" target="_blank" rel="noopener noreferrer">mosquitto_pub</a> and
-<a href="https://mosquitto.org/man/mosquitto_sub-1.html" target="_blank" rel="noopener noreferrer">mosquitto_sub</a> documentation.
+Now move a message through the broker. You can do it entirely in the browser with the built-in WebSocket client,
+or from a terminal with a command-line client.
+
+### From the TBMQ UI
+
+A fresh installation already contains a **WebSocket Default Connection** that points at `ws://localhost:8084/mqtt`
+and carries one subscription to `sensors/#` with QoS 1 — enough to publish and receive without any setup:
+
+<Steps>
+
+1. **Connect.**
+
+   Go to the **WebSocket Client** page and click **Connect**. The connection status changes to **Connected**.
+
+2. **Publish a message.**
+
+   In the message composer, set **Topic** to `sensors/temperature`, enter `32` as the payload, and click the **Send** icon.
+
+3. **Check the result.**
+
+   The message shows up twice in the **Messages** table: once as **Published**, and once as **Received** — delivered back to
+   the same client through its `sensors/#` subscription.
+
+</Steps>
+
+For connection settings, subscription options, and MQTT 5 message properties, see
+<DocLink product={props.product} path="user-guide/ui/websocket-client">WebSocket client</DocLink>.
+
+### From the command line
+
+The examples below use <a href="https://mosquitto.org/" target="_blank" rel="noopener noreferrer">Mosquitto</a> clients — see the
+<a href="https://mosquitto.org/man/mosquitto_sub-1.html" target="_blank" rel="noopener noreferrer">mosquitto_sub</a> and
+<a href="https://mosquitto.org/man/mosquitto_pub-1.html" target="_blank" rel="noopener noreferrer">mosquitto_pub</a> documentation for the full option list.
+Run each command in its own terminal, the subscriber first.
 
 <Tabs>
-<TabItem label="Demo Instance">
+<TabItem label="Demo instance">
 
-##### Subscribe to a topic
-
-To subscribe to the **sensors/temperature** topic and start receiving messages, use the following command:
+Subscribe to the `sensors/temperature` topic:
 
 ```bash
 mosquitto_sub -d -h demo.tbmq.io -p 1883 -t sensors/temperature -q 1 -u demo
 ```
 
-After connecting, go to the **Sessions** page to view the session details.
-
-If you signed up for a demo account, log in to <a href="https://demo.tbmq.io" target="_blank" rel="noopener noreferrer">demo.tbmq.io</a> and go to the **Sessions** page to see all active sessions, including your new session.
-
-##### Publish a message
-
-To publish a message to the **sensors/temperature** topic, use the following command:
+Publish a message to the same topic:
 
 ```bash
 mosquitto_pub -d -h demo.tbmq.io -p 1883 -t sensors/temperature -m 32 -q 1 -u demo
 ```
 
+If you signed up for a demo account, log in to <a href="https://demo.tbmq.io" target="_blank" rel="noopener noreferrer">demo.tbmq.io</a>
+and open the **Sessions** page to find the session your subscriber just created.
+
 </TabItem>
-<TabItem label="Local Deployment">
+<TabItem label="Local deployment">
 
-##### Subscribe to a topic
-
-To subscribe to the **sensors/temperature** topic and start receiving messages, use the following command:
+Subscribe to the `sensors/temperature` topic:
 
 ```bash
 mosquitto_sub -d -h localhost -p 1883 -t sensors/temperature -q 1 -u username -P password
 ```
 
+Publish a message to the same topic:
+
+```bash
+mosquitto_pub -d -h localhost -p 1883 -t sensors/temperature -m 32 -q 1 -u username -P password
+```
+
 <Aside type="note">
-  Replace `username` and `password` with the credentials you created in the [authentication section](#configure-client-authentication-and-authorization).
+  Replace `username` and `password` with the credentials you created in the
+  [authentication section](#configure-client-authentication-and-authorization).
 </Aside>
 
-After connecting, go to the **Sessions** page to view the session details.
+While the subscriber is connected, open the **Sessions** page and click its row to inspect the session — client type,
+subscriptions, and connection details.
 
 <ImageGallery product={props.product} images={[
   {
@@ -234,24 +307,10 @@ After connecting, go to the **Sessions** page to view the session details.
   },
 ]} />
 
-##### Publish a message
-
-To publish a message to the **sensors/temperature** topic, use the following command:
-
-```bash
-mosquitto_pub -d -h localhost -p 1883 -t sensors/temperature -m 32 -q 1 -u username -P password
-```
-
-<Aside type="note">
-  Replace `username` and `password` with the credentials you created in the [authentication section](#configure-client-authentication-and-authorization).
-</Aside>
-
 </TabItem>
 </Tabs>
 
-##### Result
-
-You should see the published message received by the subscribed client:
+The subscriber prints the payload as soon as the publisher sends it:
 
 <ImageGallery images={[
   {
@@ -259,3 +318,33 @@ You should see the published message received by the subscribed client:
     alt: 'Published message received by the subscribed client', caption: 'Published message received by the subscribed client',
   },
 ]} />
+
+<Aside type="tip">
+  If a client cannot connect, open **Authentication** → **Unauthorized clients**. TBMQ records every rejected connection
+  attempt there, together with the reason — usually a credentials mismatch. See
+  <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized clients</DocLink>.
+</Aside>
+
+## Next steps
+
+<CardGrid>
+  <Card title="Learn the core concepts" icon="open-book" headingLevel={3}>
+    Client types, sessions, topics, and QoS — the model behind everything you just did.
+    Start with <DocLink product={props.product} path="concepts/client-types" bold={false}>Client types</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Add TLS listeners and choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="setting" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+
+  <Card title="Connect your systems" icon="rocket" headingLevel={3}>
+    Stream messages to Kafka, an HTTP endpoint, or another MQTT broker.
+    See <DocLink product={props.product} path="integrations" bold={false}>Integrations</DocLink>.
+  </Card>
+</CardGrid>
