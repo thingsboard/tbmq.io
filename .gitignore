@@ -52,3 +52,6 @@ reports/
 
 # Superpowers brainstorm visual-companion artifacts
 .superpowers/
+
+# Superpowers working docs (plans, specs, reports) — root folder only, not src/content/docs
+/docs/
