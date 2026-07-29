@@ -1,0 +1,137 @@
+<svg
+  id="tbmq-hero"
+  width="608"
+  height="316"
+  viewBox="0 0 662 344"
+  fill="none"
+  version="1.1"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="TBMQ broker interface: client sessions, credentials by client type, incoming message rate, a topic subscription and the WebSocket client"
+>
+  <!--
+    TBMQ docs hero collage.
+
+    Hand-authored (text is real <text>, not outlined paths) so it stays editable:
+    every label below is a string you can change. Rendered by
+    src/components/starlight/Hero/HeroImage.astro, which substitutes the link
+    placeholders with product-correct doc URLs and sets the accent through
+    `color` — so `currentColor` is the TBMQ green.
+
+    Panels mirror real TBMQ screens; the figures match the broker Home page
+    (20 000 sessions, 6 device + 6 application credentials).
+  -->
+  <defs>
+    <filter id="tbmq-card-shadow" x="-12%" y="-12%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#0B1220" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- ── A. Sessions ─────────────────────────────────────────── -->
+  <a id="tbmq-sessions" href="{{links.sessions}}">
+    <title>Client sessions</title>
+    <g>
+      <rect x="14" y="70" width="326" height="210" rx="10" fill="#fff" stroke="#E4E7EC" filter="url(#tbmq-card-shadow)" />
+      <text x="34" y="98" font-size="13" font-weight="600" fill="#17181C">Sessions</text>
+
+      <rect x="34" y="112" width="134" height="46" rx="8" fill="#F9FAFB" stroke="#EEF0F3" />
+      <text x="46" y="131" font-size="9" fill="#667085">Connected</text>
+      <text x="46" y="149" font-size="16" font-weight="600" fill="#17181C">20 000</text>
+
+      <rect x="180" y="112" width="140" height="46" rx="8" fill="#F9FAFB" stroke="#EEF0F3" />
+      <text x="192" y="131" font-size="9" fill="#667085">Total</text>
+      <text x="192" y="149" font-size="16" font-weight="600" fill="#17181C">20 000</text>
+
+      <text x="34" y="184" font-size="8" letter-spacing="0.06em" fill="#98A2B3">CLIENT ID</text>
+      <text x="186" y="184" font-size="8" letter-spacing="0.06em" fill="#98A2B3">TYPE</text>
+      <text x="320" y="184" font-size="8" letter-spacing="0.06em" fill="#98A2B3" text-anchor="end">STATUS</text>
+      <line x1="34" y1="192" x2="320" y2="192" stroke="#EEF0F3" />
+
+      <text x="34" y="212" font-size="9" fill="#17181C" style="font-family: var(--sl-font-mono, ui-monospace, monospace)">eventMonitoringApp</text>
+      <rect x="186" y="201" width="70" height="15" rx="7.5" fill="currentColor" opacity="0.12" />
+      <text x="221" y="212" font-size="7" font-weight="600" fill="currentColor" text-anchor="middle">APPLICATION</text>
+      <circle cx="314" cy="207" r="3.5" fill="#17B26A" />
+
+      <line x1="34" y1="220" x2="320" y2="220" stroke="#F2F4F7" />
+      <text x="34" y="240" font-size="9" fill="#17181C" style="font-family: var(--sl-font-mono, ui-monospace, monospace)">sensor-a1</text>
+      <rect x="186" y="229" width="48" height="15" rx="7.5" fill="#EEF2F6" />
+      <text x="210" y="240" font-size="7" font-weight="600" fill="#475467" text-anchor="middle">DEVICE</text>
+      <circle cx="314" cy="235" r="3.5" fill="#17B26A" />
+
+      <line x1="34" y1="248" x2="320" y2="248" stroke="#F2F4F7" />
+      <text x="34" y="268" font-size="9" fill="#17181C" style="font-family: var(--sl-font-mono, ui-monospace, monospace)">gateway-42</text>
+      <rect x="186" y="257" width="48" height="15" rx="7.5" fill="#EEF2F6" />
+      <text x="210" y="268" font-size="7" font-weight="600" fill="#475467" text-anchor="middle">DEVICE</text>
+      <circle cx="314" cy="263" r="3.5" fill="#17B26A" />
+    </g>
+  </a>
+
+  <!-- ── B. Credentials ──────────────────────────────────────── -->
+  <a id="tbmq-credentials" href="{{links.credentials}}">
+    <title>MQTT client credentials</title>
+    <g>
+      <rect x="300" y="28" width="176" height="92" rx="10" fill="#fff" stroke="#E4E7EC" filter="url(#tbmq-card-shadow)" />
+      <text x="318" y="52" font-size="12" font-weight="600" fill="#17181C">Credentials</text>
+      <text x="318" y="78" font-size="9.5" fill="#667085">Devices</text>
+      <text x="458" y="78" font-size="12" font-weight="600" fill="#17181C" text-anchor="end">6</text>
+      <line x1="318" y1="87" x2="458" y2="87" stroke="#F2F4F7" />
+      <text x="318" y="105" font-size="9.5" fill="#667085">Applications</text>
+      <text x="458" y="105" font-size="12" font-weight="600" fill="currentColor" text-anchor="end">6</text>
+    </g>
+  </a>
+
+  <!-- ── C. Incoming messages ────────────────────────────────── -->
+  <a id="tbmq-monitoring" href="{{links.monitoring}}">
+    <title>Broker monitoring</title>
+    <g>
+      <rect x="334" y="112" width="268" height="140" rx="10" fill="#fff" stroke="#E4E7EC" filter="url(#tbmq-card-shadow)" />
+      <text x="354" y="138" font-size="12" font-weight="600" fill="#17181C">Incoming messages</text>
+
+      <text x="354" y="161" font-size="7.5" fill="#98A2B3">4M</text>
+      <text x="354" y="195" font-size="7.5" fill="#98A2B3">2M</text>
+      <text x="354" y="229" font-size="7.5" fill="#98A2B3">0</text>
+      <line x1="376" y1="158" x2="578" y2="158" stroke="#F2F4F7" />
+      <line x1="376" y1="192" x2="578" y2="192" stroke="#F2F4F7" />
+      <line x1="376" y1="226" x2="578" y2="226" stroke="#EEF0F3" />
+
+      <path
+        d="M376 214 L394 208 L412 196 L430 200 L448 186 L466 178 L484 182 L502 170 L520 166 L538 172 L556 162 L574 160 L574 226 L376 226 Z"
+        fill="currentColor"
+        opacity="0.12"
+      />
+      <polyline
+        points="376,214 394,208 412,196 430,200 448,186 466,178 484,182 502,170 520,166 538,172 556,162 574,160"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <circle cx="574" cy="160" r="4.5" fill="#fff" stroke="currentColor" stroke-width="2" />
+    </g>
+  </a>
+
+  <!-- ── D. Subscriptions ────────────────────────────────────── -->
+  <a id="tbmq-subscriptions" href="{{links.subscriptions}}">
+    <title>Subscriptions</title>
+    <g>
+      <rect x="330" y="232" width="244" height="52" rx="10" fill="#fff" stroke="#E4E7EC" filter="url(#tbmq-card-shadow)" />
+      <text x="350" y="253" font-size="9" fill="#667085">Subscriptions</text>
+      <text x="350" y="271" font-size="9.5" fill="#17181C" style="font-family: var(--sl-font-mono, ui-monospace, monospace)">sensors/+/temperature</text>
+      <rect x="506" y="247" width="48" height="18" rx="9" fill="currentColor" opacity="0.12" />
+      <text x="530" y="259" font-size="8" font-weight="600" fill="currentColor" text-anchor="middle">QoS 1</text>
+    </g>
+  </a>
+
+  <!-- ── E. WebSocket client ─────────────────────────────────── -->
+  <a id="tbmq-websocket" href="{{links.websocket}}">
+    <title>WebSocket client</title>
+    <g>
+      <rect x="52" y="278" width="178" height="44" rx="10" fill="#fff" stroke="#E4E7EC" filter="url(#tbmq-card-shadow)" />
+      <rect x="70" y="292" width="17" height="17" rx="5" fill="currentColor" opacity="0.14" />
+      <path d="M76.5 296.5 L73 300.5 L76.5 304.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M80.5 296.5 L84 300.5 L80.5 304.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+      <text x="97" y="306" font-size="10.5" font-weight="600" fill="#17181C">WebSocket client</text>
+    </g>
+  </a>
+</svg>
