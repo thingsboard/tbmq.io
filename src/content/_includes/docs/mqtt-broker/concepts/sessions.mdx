@@ -1,102 +1,59 @@
 import { Aside } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
-import ImageGallery from '~/components/ImageGallery.astro';
-import { Products } from '~/models/site.models';
 
-An MQTT session is the server-side state TBMQ maintains for a connected client. It holds the client's active subscriptions,
-pending QoS 1 and QoS 2 message acknowledgements, and — for persistent sessions — messages queued while the client was offline.
-Understanding sessions is a prerequisite for reasoning about message delivery guarantees, reconnect behavior, and resource usage.
+A session is the state TBMQ keeps on behalf of one client, identified by its client ID: the subscriptions it holds, the
+QoS 1 and QoS 2 messages still being acknowledged in either direction, and — while the client is away — the messages that
+arrived for it in the meantime. Whether that state outlives the network connection is the most consequential thing a
+client declares in its `CONNECT` packet.
 
-Whether that state survives a disconnect is what separates a **persistent session** from a **non-persistent** (clean) one.
-Getting this choice right matters: persistent sessions guarantee no missed messages at the cost of broker-side storage,
-while non-persistent sessions are stateless and lightweight but lose undelivered messages on disconnect.
+A **persistent** session survives a disconnect, so the client resumes its subscriptions and collects what it missed. A
+**non-persistent** (clean) session lasts only as long as the connection: it costs the broker nothing in between, and
+anything published while the client is away is lost to it. For a protocol-level introduction, see the
+[MQTT persistent session](/mqtt/persistent-session/) guide.
 
-## Session state
+## What makes a session persistent
 
-Regardless of type, every session while active holds:
+The client decides, and the flags differ by protocol version:
 
-| State | What it contains |
-|-------|-----------------|
-| **Subscriptions** | All topic filters the client has subscribed to, with their QoS levels |
-| **In-flight messages** | QoS 1 and QoS 2 messages sent but not yet acknowledged |
-| **QoS 2 receive state** | Packet IDs of QoS 2 publishes received but not yet released (`PUBREL` pending) |
+| MQTT version | Non-persistent | Persistent |
+|---|---|---|
+| 3.1.1 | `Clean Session = 1` | `Clean Session = 0` |
+| 5.0 | `Clean Start = 1` and `Session Expiry Interval = 0` (or unset) | `Session Expiry Interval > 0` (whatever `Clean Start` says), or `Clean Start = 0` with `Session Expiry Interval = 0` |
 
-Persistent sessions additionally retain this state after the client disconnects, so it is restored on reconnect.
+Two consequences are worth internalizing. Because the state is stored under the client ID, a persistent session needs a
+**stable** one — a client that reconnects with a different identifier gets a new session, not its old one. And because
+the state belongs to the identifier rather than to the connection, the broker tells a reconnecting client through the
+**Session Present** flag in `CONNACK` whether it resumed an existing session or was given a fresh one, which is how a
+client knows whether it still has to subscribe.
 
-## Persistent vs non-persistent sessions
+## How long a session lives
 
-### Non-persistent session
-
-A session is non-persistent when the `CONNECT` packet meets any of these conditions:
-
-| MQTT version | Condition |
-|---|---|
-| MQTT 3.1.1 | `Clean Session = 1` |
-| MQTT 5.0 | `Clean Start = 1` and `Session Expiry Interval = 0` (or not set) |
-
-<ImageGallery images={[{ src: '/src/assets/schemas/non-persistent-session.svg', alt: 'Non-persistent session lifecycle: on connect the session is created with subscriptions set and messages delivered; on disconnect the session is destroyed, subscriptions are lost, and queued messages are discarded.', caption: 'A non-persistent session exists only for the duration of the connection: state is created on connect and destroyed on disconnect.' }]} />
-
-TBMQ creates session state for the duration of the connection and discards it immediately on disconnect.
-There is no server-side storage between connections. The next CONNECT creates a fresh session from scratch.
-
-**Use when:** the client always resubscribes on connect, does not need missed messages, and you want to minimize broker memory usage.
-Typical examples: dashboards, short-lived CLI tools, stateless microservices that always start clean.
-
-### Persistent session
-
-A session is persistent when the `CONNECT` packet meets any of these conditions:
-
-| MQTT version | Condition |
-|---|---|
-| MQTT 3.1.1 | `Clean Session = 0` |
-| MQTT 5.0 | `Session Expiry Interval > 0` (regardless of `Clean Start`) |
-| MQTT 5.0 | `Clean Start = 0` and `Session Expiry Interval = 0` (or not set) |
-
-<ImageGallery images={[{ src: '/src/assets/schemas/persistent-session.svg', alt: 'Persistent session lifecycle: on connect the session is created or resumed with subscriptions active; on disconnect the session is kept and subscriptions are preserved; on reconnect the session is restored and queued messages are delivered.', caption: 'A persistent session survives disconnects: subscriptions are preserved on the broker and any messages queued while the client was offline are delivered on reconnect.' }]} />
-
-TBMQ retains subscriptions and queued messages across the disconnect. On reconnect, the broker resumes the session —
-the client does not need to resubscribe, and any messages that arrived while it was offline are delivered in order.
-
-**Use when:** the client must not miss messages during outages or restarts. Typical examples: IoT devices on unreliable
-networks, backend services that process every event, rule engines that must consume a complete stream.
+An MQTT 5.0 client requests a lifetime with the **Session Expiry Interval**, but does not have the last word: TBMQ caps
+the value at a server maximum — **one week** by default — enforces the capped value, and returns it in `CONNACK`. Sessions
+that by protocol rules would never expire at all (MQTT 3.1.1 `Clean Session = 0`, or MQTT 5.0 `Clean Start = 0` with no
+expiry interval) are subject to an administrative TTL instead, also one week by default, so abandoned state cannot
+accumulate indefinitely. Both limits are configurable, and the housekeeping that applies them runs on a schedule rather
+than at the exact instant a session expires.
 
 <Aside type="note">
-  In MQTT 5.0, `Session Expiry Interval` controls how long the session survives after disconnect: set it to `0` for
-  immediate cleanup, to a number of seconds for timed expiry, or to `0xFFFFFFFF` for indefinite retention.
-  In MQTT 3.1.1, a persistent session lives until the client reconnects with `Clean Session = 1`.
+  A queued message can expire before the session does. When a publisher sets an MQTT 5.0 **Message Expiry Interval**,
+  TBMQ discards the message once it elapses even though the session is still there waiting for it.
 </Aside>
 
-## How TBMQ stores persistent session state
+## What persistence costs
 
-The storage backend for a persistent session depends on the <DocLink product={props.product} path="concepts/client-types">client type</DocLink>:
+Persistence is storage, and where it lives depends on the
+<DocLink product={props.product} path="concepts/client-types">client type</DocLink> — the DEVICE and APPLICATION paths are
+built for very different volumes. Only QoS 1 and QoS 2 messages are ever queued for an offline client, and only when
+both publisher and subscriber use them; see
+<DocLink product={props.product} path="concepts/qos">Delivery guarantees</DocLink>.
 
-| | **DEVICE client** | **APPLICATION client** |
-|---|---|---|
-| **Subscription state** | In-memory on the broker node, replicated via Kafka | In-memory on the broker node, replicated via Kafka |
-| **Offline message queue** | Redis | Dedicated Kafka topic (`tbmq.msg.app.$CLIENT_ID`) |
-| **Queue depth limit** | `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT` | Kafka topic retention settings |
-| **Delivery on reconnect** | From Redis on the reconnecting node | From the client's Kafka topic |
+Use a persistent session when a client must not miss messages across the outages it will inevitably have: a device on a
+cellular link, a backend consumer that has to see every event. Use a clean session for anything that subscribes afresh on
+connect and has no use for stale data — a dashboard, a test client, a short-lived tool.
 
-Redis gives DEVICE clients fast, low-latency queue reads suitable for moderate message volumes.
-APPLICATION clients get a durable Kafka log that scales to high throughput and long retention without memory pressure.
-
-## When to use persistent sessions
-
-| Situation | Recommendation |
-|-----------|---------------|
-| IoT device on a cellular or satellite link | Persistent — connections drop frequently |
-| Backend analytics service | Persistent — must consume every event |
-| Mobile app or browser dashboard | Non-persistent — always resubscribes; stale messages are not useful |
-| Load testing or benchmarking client | Non-persistent — no need for state between runs |
-| APPLICATION client (any) | Persistent — non-persistent APPLICATION sessions produce no Kafka topic and provide no offline buffer |
-
-<Aside type="caution">
-  An APPLICATION client with a non-persistent session receives messages only while connected. No Kafka topic is created,
-  so there is no offline buffer. TBMQ displays a warning on the session details page when this condition is detected.
-</Aside>
-
-## Session visibility in the UI
-
-Active and disconnected persistent sessions are visible on the **Sessions** page in the TBMQ UI.
-From there, you can inspect subscription lists and connection metadata, or manually clear a session if needed.
-For details, see <DocLink product={props.product} path="user-guide/ui/sessions">Sessions</DocLink>.
+Sessions of both kinds, connected and disconnected, are listed on the **Sessions** page of the UI, where you can inspect a
+session's subscriptions or clear it. See
+<DocLink product={props.product} path="user-guide/clean-persistent-sessions">Non-persistent and persistent sessions</DocLink>
+for the complete session state, the expiry parameters and a worked example, and
+<DocLink product={props.product} path="user-guide/ui/sessions">Sessions</DocLink> for the UI.
