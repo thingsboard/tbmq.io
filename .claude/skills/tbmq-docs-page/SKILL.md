@@ -1,29 +1,31 @@
 ---
 name: tbmq-docs-page
-description: Review, improve, or create a TBMQ reference doc under /docs/mqtt-broker/. Verifies technical correctness against BOTH the MQTT spec AND the TBMQ broker source (config defaults, listener ports, packet handling) at ~/projects/tbmq (CE) and ~/projects/tbmq-pe (PE), fills gaps with TBMQ-specific parameters/behaviors/instructions, and authors new pages for missing topics. The technical counterpart to the mqtt-learn-topic skill — docs are complementary to the /mqtt learn hub, never duplicating it. Use whenever someone wants to audit, correct, deepen, or extend the mqtt-broker docs, add a missing doc page, or verify a documented claim against TBMQ code.
+description: Review, improve, or create any TBMQ reference doc under /docs/mqtt-broker/ — user guide, installation and cluster setup, security, integrations, concepts, architecture, or performance reference. Verifies technical correctness against BOTH the MQTT spec AND the TBMQ broker source (config defaults, env vars, listener ports, packet handling) in the sibling tbmq / tbmq-pe checkouts, fills gaps with TBMQ-specific parameters, behaviors and instructions, and authors new pages for undocumented topics. Use whenever someone wants to audit, correct, deepen, or extend the mqtt-broker docs, add a missing doc page, document a config parameter or feature, or verify a documented claim against TBMQ code.
 ---
 
 # TBMQ Docs Page
 
-`/docs/mqtt-broker/` is TBMQ's **reference documentation** — the how-to/technical tree that a person *operating* TBMQ relies on. This skill governs three jobs on that tree: **review** an existing page for correctness, **improve** a thin one, or **create** a new page for a topic that has none. The bar is accuracy against two sources of truth at once: the **MQTT spec** and the **actual TBMQ source code**.
+`/docs/mqtt-broker/` is TBMQ's **reference documentation** — the how-to/technical tree that a person *operating* TBMQ relies on. This skill governs three jobs on that tree: **review** an existing page for correctness, **improve** a thin one, or **create** a new page for a topic that has none. The bar is accuracy against two sources of truth at once: the **MQTT spec** (where the page touches protocol behavior) and the **actual TBMQ source code** (always).
 
-**Companion skill — `mqtt-learn-topic`.** Each doc has (or should have) a marketing counterpart on the `/mqtt/` learn hub. The two are deliberately **complementary, never duplicative**:
+**Scope: the whole tree, not just protocol topics.** All 85-odd CE pages are in scope, and the sections differ in character — write to the one you're in:
 
-| | `/mqtt/` learn page (`mqtt-learn-topic`) | `/docs/mqtt-broker/` doc page (this skill) |
+| Section | Character | What "accurate" means here |
 |---|---|---|
-| Intent | informational ("what it is, why it matters") | how-to / reference (task intent) |
-| Audience | cold searcher, evaluating | someone deploying/operating TBMQ |
-| Content | the general MQTT concept, spec-level, vendor-neutral | **TBMQ-specific** params, defaults, behaviors, UI/config steps |
-| Framing | benefit-first, conversational | precise, technical, exhaustive |
+| `user-guide/` | operating the broker, UI paths, per-feature behavior | env var + default + UI path + edge cases |
+| `installation/` (incl. `cluster/`) | runnable setup — Docker, compose, k8s, helm, AWS/Azure/GCP, upgrades | commands and manifests that actually work, versions from `~/data/versions` |
+| `security/` | listeners, TLS, the auth providers | which listener/provider, its yml keys, its default enabled state |
+| `integrations/` | HTTP / Kafka / MQTT integrations (**in CE too**) | config fields, payload handling, failure behavior |
+| `concepts/`, `architecture*/` | how TBMQ is built — clustering, sessions, client types, persistence | the real components and data flow, not an idealized diagram |
+| `reference/`, `other/` | performance results, blocked clients, proxy protocol, health | the actual measured numbers and their conditions |
 
-When you touch a doc, keep the **concept explanation in the learn page** and the **TBMQ specifics in the doc**. If a doc starts re-teaching the generic concept, or a learn page starts listing config keys, they've drifted into duplication — the split exists precisely to prevent that. Cross-link them.
+Most of the tree has **no** `/mqtt/` learn-page counterpart (only 9 of 79 page names overlap), so treat pairing as the exception it is — see [If the page has a learn-hub counterpart](#if-the-page-has-a-learn-hub-counterpart), and skip that section entirely when it doesn't.
 
 ## Principles
 
-- **Accuracy is the product — verified against source, not memory.** Every default value, parameter name, port, and behavioral claim must match the current TBMQ source (see [Verify against the TBMQ source](#verify-against-the-tbmq-source)). Plausible-but-wrong is the failure mode; a doc that says "the default is X" when the code says Y is worse than no doc. If you can't verify it in source or the spec, don't write it.
-- **TBMQ-specific, not a concept re-explainer.** A doc's job is what TBMQ *does*: the env var that controls a behavior, its default, the UI path to change it, the edge cases, the CE-vs-PE difference. Hand the "what is this concept" job to the paired learn page and link to it.
+- **Accuracy is the product — verified against source, not memory.** Every default value, parameter name, port, command, and behavioral claim must match the current TBMQ source (see [Verify against the TBMQ source](#verify-against-the-tbmq-source)). Plausible-but-wrong is the failure mode; a doc that says "the default is X" when the code says Y is worse than no doc. If you can't verify it in source or the spec, don't write it.
+- **TBMQ-specific and task-shaped.** A doc's job is what TBMQ *does* and how to operate it: the env var that controls a behavior, its default, the UI path to change it, the commands to run, the edge cases, the CE-vs-PE difference. Explain the underlying concept only as far as the reader needs to complete the task — a paragraph of orientation is right, a tutorial on the concept is not. (When a `/mqtt/` learn page already owns that concept, link to it instead of restating it.)
 - **One include, two editions.** Content is written once in a shared `_includes` file and rendered for both CE and PE via thin stubs. Product differences are handled inline with `<ShowFor>` / `<ConditionalHeading>`, not by forking the content.
-- **Spec-precise.** MQTT 3.1.1 vs 5.0 differences, QoS semantics, packet names, reason codes, wildcard rules — state them exactly, and scope any claim to the version it applies to.
+- **Spec-precise where the spec applies.** For pages that touch protocol behavior — MQTT 3.1.1 vs 5.0 differences, QoS semantics, packet names, reason codes, wildcard rules — state them exactly and scope any claim to the version it applies to. Installation and performance pages have no spec dimension; their equivalent bar is that the commands and numbers are real.
 
 ## A doc page = 3 files + 1 sidebar entry
 
@@ -36,7 +38,14 @@ astro.sidebar.ts                                            ← one entry in tbm
 
 URL: `/docs/mqtt-broker/<path>/<page>/` (CE) and `/docs/mqtt-broker/pe/<path>/<page>/` (PE). `trailingSlash: 'always'`.
 
-Existing pages are the best reference. A model paired doc: `src/content/_includes/docs/mqtt-broker/user-guide/keep-alive.mdx` — note how it stays TBMQ-technical (the `MQTT_KEEP_ALIVE_MONITORING_DELAY_MS` env var, the `KEEP_ALIVE_TIMEOUT` reason, client-takeover + will-delay nuance) rather than re-explaining the ping concept the learn page owns.
+Existing pages are the best reference — read a neighbour in the same section before writing, since conventions differ by section. Models worth copying:
+
+- `_includes/docs/mqtt-broker/user-guide/keep-alive.mdx` — a feature page that stays TBMQ-technical (the `MQTT_KEEP_ALIVE_MONITORING_DELAY_MS` env var, the `KEEP_ALIVE_TIMEOUT` reason, client-takeover + will-delay nuance) instead of re-teaching the ping concept.
+- `_includes/docs/mqtt-broker/installation/docker.mdx` — the setup-page convention: multi-line commands are declared as `export const` template literals at the top of the include, interpolating `TBMQ_VER` / `TBMQ_BRANCH`, then rendered with `<Code code={theConst} lang="bash" />`. That is how versioned commands stay out of hardcoded strings — follow it rather than pasting a fenced block with a literal version in it. Short one-liners can go inline: `<Code code="./tbmq-install-and-run.sh" lang="bash" />`.
+- `_includes/docs/mqtt-broker/security/authentication/x509.mdx` — a provider page: yml keys, default enabled state, and `<Steps>` for the configuration walkthrough.
+- `_includes/docs/mqtt-broker/integrations/kafka.mdx` — an integration page (present in CE **and** PE; don't gate these).
+
+`<Steps>` is the convention for ordered walkthroughs in `user-guide/`, `security/`, `integrations/` and `concepts/` — but **not** in `installation/`, which sequences with headings and `<Code>` blocks instead. Match the section you're in.
 
 ### The stubs (nearly boilerplate)
 
@@ -106,8 +115,12 @@ Groups you'll usually target: **MQTT essentials** (protocol concepts), **Broker 
 
 Both repos share the Maven layout and package root `org.thingsboard.mqtt.broker`; the broker app is the `application/` module. **PE is a superset of CE — verify common behavior against the CE files, which PE inherits; verify PE-only features against the PE repo.**
 
-- CE: `/home/dlandiak/projects/tbmq`
-- PE: `/home/dlandiak/projects/tbmq-pe`
+The broker repos are checked out as **siblings of this repo**, so resolve them relative to the tbmq.io root instead of hardcoding a home directory:
+
+- CE: `../tbmq`
+- PE: `../tbmq-pe`
+
+Confirm before relying on either: `ls ../tbmq/application/src/main/resources/thingsboard-mqtt-broker.yml`. If a sibling is missing, **ask for the checkout path** — never fall back to stating a default you haven't read.
 
 **Audit for omissions, not only errors.** When reviewing or improving a page, read the relevant source (the yml defaults, the handler/service classes in the package map below) and check for important params, defaults, or behaviors the page *doesn't mention yet* — the completeness counterpart to verifying the claims it does make. (This is per-page; the tree-level "which page is missing" audit stays in the "Finding gaps" section.)
 
@@ -181,24 +194,43 @@ The **entire MQTT protocol core** (listeners, QoS, retained, LWT, shared subs, s
   - *Retain:* the `retain` flag stores the **last value**, not a replayable history/log.
 - When two phrasings compete, pick the one true under TBMQ's **default** configuration.
 
-## Complementarity with the learn hub (do this before writing)
+## If the page has a learn-hub counterpart
 
-1. Check for a paired learn page (`src/pages/mqtt/<slug>.astro` + `src/data/mqttLearn.ts`). If the learn page already explains the concept, the doc should **not** repeat it — open with a one-line concept recap that links back to the learn page (via a plain marketing link `/mqtt/<slug>/`), then go straight to TBMQ specifics.
-2. Ensure the learn page links **into** this doc (that's the `mqtt-learn-topic` "<Topic> in TBMQ" rule). If it points at the generic `/docs/mqtt-broker/` root because this page didn't exist yet, upgrade that link to the new specific page.
-3. Split by intent: concept/why → learn; parameters/defaults/behavior/steps/UI → doc. Overlap of a sentence is fine; overlap of whole sections is the duplication to avoid.
+**Optional — most pages don't.** Skip this section unless the page is about a general MQTT concept that the `/mqtt/` learn hub also covers (keep-alive, QoS, topics, retained messages, sessions, TLS, the auth methods, shared subscriptions…). Installation, cluster setup, integrations, performance reference and `other/` pages have no counterpart, and nothing here applies to them.
 
-## Finding gaps (what to create next)
+Check with `ls src/pages/mqtt/ | grep <topic>`. If a learn page exists:
 
-Don't hardcode a gap list — derive it. Compare the MQTT concepts covered on the learn hub (`src/data/mqttLearn.ts` slugs) against the docs inventory:
+1. **Don't re-teach the concept.** Open with a one-line recap that links back via a plain marketing link (`/mqtt/<slug>/`), then go straight to TBMQ specifics.
+2. **Split by intent** — concept/why → learn page; parameters/defaults/behavior/steps/UI → this doc. A sentence of overlap is fine; a whole duplicated section is not.
+3. **Point the learn page at this doc** if it currently links only the generic `/docs/mqtt-broker/` root because this page didn't exist yet. That's the `mqtt-learn-topic` skill's rule; use that skill if the learn page itself needs work.
+
+## Finding gaps (what to create or fix next)
+
+Don't hardcode a gap list — derive it. Several angles, in rough order of yield:
+
+**Undocumented config.** The highest-yield sweep: diff the yml's env vars against what the docs mention.
 
 ```bash
-# docs that exist under mqtt-broker (CE)
-find src/content/docs/docs/mqtt-broker -name '*.mdx' -not -path '*/pe/*' | sed -E 's#.*/mqtt-broker/##; s#\.mdx$##' | sort
-# learn topics (each ideally has a technical counterpart)
-grep -oE "slug: '[^']+'" src/data/mqttLearn.ts | sed "s/slug: //; s/'//g" | sort
+# env vars defined in the broker config
+grep -ohE '\$\{[A-Z0-9_]+' ../tbmq/application/src/main/resources/thingsboard-mqtt-broker.yml | tr -d '${' | sort -u
+# env vars the docs mention
+grep -rohE '[A-Z][A-Z0-9_]{6,}' src/content/_includes/docs/mqtt-broker | sort -u
+```
+`comm -23` the two lists to see the difference. Expect ~90 hits, most of them **intentional internal knobs** (thread-pool sizes, `ACTORS_*` dispatcher tuning) that should stay undocumented — so judge per parameter and only document what an operator would plausibly tune. A gap that matters looks like a rate limit, timeout, or feature toggle, not a pool size.
+
+**Thin or stale pages.** Short includes are candidates for deepening; a page whose defaults no longer match the yml is a correctness bug:
+```bash
+wc -l $(find src/content/_includes/docs/mqtt-broker -name '*.mdx') | sort -n | head -20
 ```
 
-MQTT-5-feature concepts that currently have a learn page but **no dedicated doc** (they fall back to `user-guide/mqtt-protocol` or `concepts/sessions`) are prime "create a new doc" candidates — e.g. reason codes, user properties, topic alias, flow control, message/session expiry, request/response. Confirm the gap before creating (the tree evolves).
+**Missing section coverage.** Compare the sidebar groups in `astro.sidebar.ts` against the actual tree — a feature with a UI page but no doc, a new integration, a cluster target with no setup guide.
+
+**Learn-hub topics with no technical doc** (only relevant to protocol concepts):
+```bash
+find src/content/docs/docs/mqtt-broker -name '*.mdx' -not -path '*/pe/*' | sed -E 's#.*/mqtt-broker/##; s#\.mdx$##' | sort
+grep -oE "slug: '[^']+'" src/data/mqttLearn.ts | sed "s/slug: //; s/'//g" | sort
+```
+MQTT-5 features that fall back to `user-guide/mqtt-protocol` — reason codes, user properties, topic alias, flow control, message/session expiry, request/response — are standing candidates. Confirm any gap before creating; the tree evolves.
 
 ## Verification
 
