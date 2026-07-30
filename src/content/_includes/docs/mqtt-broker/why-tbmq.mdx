@@ -1,33 +1,55 @@
+import { CardGrid } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import ListCard from '~/components/Landing/ListCard.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import Button from '~/components/Button.astro';
 import { Products, productDocsPrefix } from '~/models/site.models';
 
-**TBMQ** is an MQTT broker built by the ThingsBoard team based on years of operating IoT infrastructure at scale.
+**TBMQ** is an MQTT broker built by the ThingsBoard team, drawing on years of operating IoT infrastructure at scale.
 Its design starts from a single observation: IoT traffic is not uniform. Devices publish continuously, backend applications subscribe to high-volume streams, and commands must reach specific targets reliably.
-Most brokers treat all of these the same way. TBMQ handles each with a dedicated processing path — and the architecture to back it up.
+Most brokers treat all three the same way. TBMQ gives each its own processing path — and the architecture to back it up.
 
-On a single node, TBMQ delivers <DocLink product={props.product} path="reference/3m-throughput-single-node-performance-test" bold={false}>3 million messages per second</DocLink>.
-In cluster mode, it supports <DocLink product={props.product} path="reference/100m-connections-performance-test" bold={false}>100 million concurrent MQTT connections</DocLink> with consistent throughput and no data loss.
+## Measured at scale
+
+Each figure below comes from a published test, with the hardware and load profile documented.
+
+<CardGrid>
+  <Card title="3M msg/sec" icon="tabler:arrows-split-2" headingLevel={3}>
+    Fan-out delivery from a **single 32-vCPU node**, at 7.4 ms average latency and 54% CPU — with headroom left over.
+    <DocLink product={props.product} path="reference/3m-throughput-single-node-performance-test" bold={false}>Single-node fan-out test</DocLink>
+  </Card>
+
+  <Card title="100M connections" icon="tabler:plug-connected" headingLevel={3}>
+    Held on a **25-node cluster** across 100M unique topics, while moving 6M messages per second at QoS 1.
+    <DocLink product={props.product} path="reference/100m-connections-performance-test" bold={false}>100M connections test</DocLink>
+  </Card>
+
+  <Card title="1M msg/sec point-to-point" icon="tabler:arrows-right-left" headingLevel={3}>
+    500k publishers to 500k persistent device subscribers at QoS 1, on **five nodes**.
+    <DocLink product={props.product} path="reference/1m-throughput-p2p-performance-test" bold={false}>Point-to-point test</DocLink>
+  </Card>
+</CardGrid>
 
 ## Three traffic patterns, one broker
 
 IoT deployments generate three fundamentally different kinds of traffic. TBMQ is designed around all three.
 
-**Fan-in:** Thousands or millions of devices continuously publish telemetry, events, and sensor readings. A small set of backend applications must consume every message in order — even during spikes or partial outages. Dropping or reordering messages is not acceptable.
+**Fan-in:** Thousands or millions of devices continuously publish telemetry, events, and sensor readings. A small set of backend applications must consume every message in order — even during spikes or partial outages. Dropping or reordering messages is not acceptable. TBMQ gives each of those applications its own Kafka topic, so a backlog accumulates in Kafka instead of in broker memory.
 
-**Fan-out:** A single update or command must reach a large number of subscribed devices simultaneously. One incoming message produces many outgoing deliveries. Every subscriber must receive it.
+**Fan-out:** A single update or command must reach a large number of subscribed devices simultaneously. One incoming message produces many outgoing deliveries. Every subscriber must receive it, which makes the cost of topic matching the deciding factor.
 
-**Point-to-point:** A publisher targets a specific subscriber through a uniquely defined topic. Command-response interactions, remote control flows, and device-to-device messaging all require low-latency, targeted delivery.
+**Point-to-point:** A publisher targets a specific subscriber through a uniquely defined topic. Command-response interactions, remote control flows, and device-to-device messaging all require low-latency, targeted delivery — including when the target is briefly offline and its messages have to wait for it.
 
 ## Architecture
 
 TBMQ is built on [Kafka](https://kafka.apache.org/) for message durability and distribution, [Netty](https://netty.io/) for non-blocking network transport, an Actor system for per-client concurrency, and a Trie data structure for subscription matching in memory. These are not incidental technology choices — each directly determines how the broker behaves under load, during failures, and as the cluster grows.
 
-### No message loss by design
+### Acknowledged means stored
 
-TBMQ does not send a PUBACK or PUBREC to the publisher until Kafka has confirmed the message is durably stored. This means that once the publisher receives an acknowledgment, the message is safe — regardless of what happens to the processing node afterward. If that node crashes before delivery completes, another node picks up from Kafka and continues. No message is lost between acknowledgment and delivery.
+TBMQ does not send a PUBACK or PUBREC to the publisher until Kafka has confirmed the message is stored. Once the publisher holds that acknowledgment, the message no longer depends on the node that received it: if that node crashes before delivery completes, another node picks up from Kafka and continues. Nothing is lost between acknowledgment and delivery.
 
-This guarantee holds at full throughput. Kafka's replication factor ensures the message survives even if the broker node that received it becomes unavailable.
+That guarantee holds at full throughput. How far it extends past a TBMQ node is a matter of how you run Kafka — the shipped defaults keep a single copy of each message (`acks=1`, replication factor `1`), so surviving the loss of a Kafka broker means running a replicated Kafka cluster with matching producer acknowledgments.
 
 ### Subscription matching at any scale
 
@@ -37,8 +59,8 @@ All active client subscriptions are loaded from Kafka and stored in a [Trie](htt
 
 TBMQ classifies persistent clients into two categories based on observed IoT traffic patterns:
 
-- **DEVICE clients** publish frequently and subscribe to few topics at low message rates. Messages destined for offline DEVICE clients are persisted in Redis, which handles high write throughput and returns messages quickly on reconnect.
-- **APPLICATION clients** subscribe to high-volume topics and require messages to be buffered while offline. Each APPLICATION client gets a dedicated Kafka topic and a dedicated consumer thread. Messages accumulate safely in Kafka while the client is offline and are delivered in order when it reconnects. APPLICATION clients can handle millions of incoming messages per second.
+- **DEVICE clients** publish frequently and subscribe to few topics at low message rates. While such a client is offline, its messages wait in a per-client queue in Redis (or Valkey), which absorbs high write rates and hands the queue back quickly on reconnect. Kafka still holds the durable record.
+- **APPLICATION clients** subscribe to high-volume topics and need messages buffered while offline. Each one gets a dedicated Kafka topic and its own consumer, so messages accumulate safely in Kafka and are delivered in order when the client returns — replayed from the client's committed offset rather than re-queued one by one.
 
 This separation means that a spike in device publishing does not delay delivery to application subscribers, and a slow application subscriber does not affect device-to-device or broker-to-device flows.
 
@@ -54,43 +76,69 @@ For details, see the <DocLink product={props.product} path="architecture" bold={
 
 ## MQTT specification support
 
-TBMQ is fully compliant with the MQTT protocol in both single-node and cluster deployments. It supports:
+TBMQ speaks every published version of the protocol, in both single-node and cluster deployments:
 
 - [MQTT 3.1](https://public.dhe.ibm.com/software/dw/webservices/ws-mqtt/mqtt-v3r1.html)
 - [MQTT 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html)
 - [MQTT 5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html)
 
+MQTT 5.0 support is not a subset: shared subscriptions, topic aliases, flow control, enhanced authentication, session and message expiry, will delay, user properties, subscription identifiers, and reason codes on every acknowledgement.
+For the per-feature behavior in TBMQ, see <DocLink product={props.product} path="user-guide/mqtt-protocol#mqtt-50-features-in-tbmq" bold={false}>MQTT 5.0 features in TBMQ</DocLink>.
+
 ## Features
 
-<ul>
-  <li>All MQTT v3.x and v5.0 features</li>
-  <li>Multi-node cluster support</li>
-  <li>X.509 certificate chain authentication</li>
-  <li>JWT authentication</li>
-  <li>HTTP authentication</li>
-  <li>Access control (ACL) by client ID, username, or X.509 certificate chain</li>
-  <li>REST API for querying sessions and subscriptions</li>
-  <li>Rate limiting for message processing</li>
-  <li>Cluster and client metrics monitoring</li>
-  <li>MQTT WebSocket client</li>
-  <li>Integrations with HTTP, MQTT, and Kafka</li>
-  <li>Kafka topic and consumer group monitoring</li>
-  <li>Proxy protocol support</li>
-  <li>Blocked client management</li>
-  <li>Unauthorized clients monitoring</li>
-  <li>MQTT channel backpressure</li>
-  {props.product === Products.TBMQ_PE && (
-    <>
-      <li>Single Sign-On (SSO)</li>
-      <li>Role-Based Access Control (RBAC)</li>
-      <li>White labeling</li>
-    </>
-  )}
-</ul>
+<CardGrid>
+  <ListCard title="Messaging" icon="tabler:arrows-shuffle" headingLevel={3}>
+    - <DocLink product={props.product} path="user-guide/mqtt-protocol" bold={false}>All MQTT 3.x and 5.0 features</DocLink>
+    - <DocLink product={props.product} path="user-guide/shared-subscriptions" bold={false}>Shared subscriptions</DocLink>
+    - <DocLink product={props.product} path="user-guide/retained-messages" bold={false}>Retained messages</DocLink>
+    - <DocLink product={props.product} path="user-guide/last-will" bold={false}>Last Will and Testament</DocLink>
+    - <DocLink product={props.product} path="user-guide/mqtt-over-ws" bold={false}>MQTT over WebSocket</DocLink>
+    - <DocLink product={props.product} path="user-guide/backpressure" bold={false}>MQTT channel backpressure</DocLink>
+  </ListCard>
+
+  <ListCard title="Security" icon="tabler:shield-lock" headingLevel={3}>
+    - <DocLink product={props.product} path="security/authentication/basic" bold={false}>Basic authentication</DocLink>
+    - <DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509 certificate chain</DocLink>
+    - <DocLink product={props.product} path="security/authentication/jwt" bold={false}>JWT authentication</DocLink>
+    - <DocLink product={props.product} path="security/authentication/http" bold={false}>HTTP authentication</DocLink>
+    - <DocLink product={props.product} path="security/authentication/scram" bold={false}>SCRAM authentication</DocLink>
+    - <DocLink product={props.product} path="security/overview#authorization" bold={false}>Topic authorization rules</DocLink>
+    - <DocLink product={props.product} path="security/mqtts" bold={false}>TLS for MQTT and WebSocket</DocLink>
+  </ListCard>
+
+  <ListCard title="Operations" icon="tabler:gauge" headingLevel={3}>
+    - <DocLink product={props.product} path="installation/cluster/docker-compose-setup" bold={false}>Multi-node cluster</DocLink>
+    - <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Cluster and client metrics</DocLink>
+    - <DocLink product={props.product} path="user-guide/ui/unauthorized-clients" bold={false}>Unauthorized client tracking</DocLink>
+    - <DocLink product={props.product} path="other/blocked-client" bold={false}>Blocked clients</DocLink>
+    - <DocLink product={props.product} path="user-guide/mqtt-protocol#protocol-limits-and-settings" bold={false}>Rate limits and protocol tuning</DocLink>
+    - <DocLink product={props.product} path="other/proxy-protocol" bold={false}>Proxy protocol</DocLink>
+    - <DocLink product={props.product} path="other/health" bold={false}>Health checks</DocLink>
+  </ListCard>
+
+  <ListCard title="Tooling and integrations" icon="tabler:plug-connected" headingLevel={3}>
+    - <DocLink product={props.product} path="integrations" bold={false}>HTTP, MQTT, and Kafka integrations</DocLink>
+    - <DocLink product={props.product} path="user-guide/integrations/how-to-connect-thingsboard-to-tbmq" bold={false}>ThingsBoard connectivity</DocLink>
+    - <DocLink product={props.product} path="user-guide/ui/websocket-client" bold={false}>Built-in WebSocket client</DocLink>
+    - <DocLink product={props.product} path="rest-api" bold={false}>REST API</DocLink>
+    - <DocLink product={props.product} path="other/bulk-provisioning" bold={false}>Bulk credential provisioning</DocLink>
+  </ListCard>
+
+  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+    <ListCard title="Professional Edition" icon="tabler:building-community" headingLevel={3}>
+      - <DocLink product={props.product} path="security/oauth-2-support" bold={false}>OAuth 2.0 and single sign-on</DocLink>
+      - <DocLink product={props.product} path="security/rbac" bold={false}>Role-based access control</DocLink>
+      - <DocLink product={props.product} path="security/audit-log" bold={false}>Audit logs</DocLink>
+      - <DocLink product={props.product} path="security/domains" bold={false}>Domain management</DocLink>
+      - <DocLink product={props.product} path="white-labeling" bold={false}>White labeling</DocLink>
+    </ListCard>
+  </ShowFor>
+</CardGrid>
 
 ## Start building with TBMQ
 
 <div class="sl-flex" style="gap: 1rem; flex-wrap: wrap;">
-  <Button variant="primary" link="https://demo.tbmq.io" icon={{ type: 'icon', name: 'right-arrow' }} target="_blank">Explore live demo</Button>
+  <Button variant="primary" link="/live-demo/" icon={{ type: 'icon', name: 'right-arrow' }}>Explore live demo</Button>
   <Button variant="secondary" link={`/docs/${productDocsPrefix[props.product]}getting-started/`} icon={{ type: 'icon', name: 'right-arrow' }}>Quickstart guide</Button>
 </div>
