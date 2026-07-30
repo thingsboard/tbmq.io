@@ -1,7 +1,16 @@
+import { Aside } from '@astrojs/starlight/components';
+
 TBMQ exposes health checks through the Spring Boot Actuator framework.
 Health checks let monitoring systems assess the state of TBMQ and its dependencies, and alerting can be configured based on the reported status.
-The primary endpoint is `/actuator/health` on port **8083**, and it can be configured to include
-detailed status for **PostgreSQL**, **Kafka**, and **Redis**.
+The primary endpoint is `/actuator/health` on the HTTP port (`HTTP_BIND_PORT`, default **8083** — the same port that
+serves the web UI and REST API), and it can be configured to include detailed status for **PostgreSQL**, **Kafka**,
+**Redis**, and the broker's own MQTT listeners.
+
+<Aside type="caution">
+  Actuator endpoints are **not** covered by TBMQ's authentication — only `/api/**` requires a token. Anything that can
+  reach the HTTP port can read `/actuator/health`. Keep that port off the public internet, and see
+  [show-details](#configuration) below before exposing component-level details.
+</Aside>
 
 ## Response status codes
 
@@ -40,10 +49,20 @@ management:
 When enabled, TBMQ reports low disk space on the container.
 
 **`endpoint.health.show-details`** — controls the visibility of component-level details in the response.
-It defaults to `never`. Set to `always` or `when-authorized` to expose individual component status.
+It defaults to `never`, so out of the box `/actuator/health` returns only the aggregate `{"status":"UP"}` — enough for a
+liveness probe, but not enough to tell *which* dependency is down. Set it to `always` to include the per-component
+breakdown shown below.
+
+<Aside type="caution">
+  Because Actuator is not behind TBMQ's authentication, `when-authorized` does not have its usual effect here: requests
+  to `/actuator/health` are anonymous, so details stay hidden. In practice the meaningful choice is `never` or `always` —
+  and `always` publishes component details, including raw exception messages such as connection errors, to any caller
+  that can reach the port. Prefer `never` on an exposed port and rely on Prometheus metrics for diagnostics.
+</Aside>
 
 **`endpoints.web.exposure.include`** — comma-separated list of Actuator endpoints exposed over HTTP.
-Include `prometheus` to enable metrics scraping.
+The default `health,info,prometheus` also serves `/actuator/prometheus` for metrics scraping and `/actuator/info`.
+Remove `prometheus` if you do not scrape metrics from this port.
 
 ## Health endpoint responses
 
@@ -86,7 +105,7 @@ When `show-details` is not `never`, the response also includes the status of eac
     },
     "kafka": {
       "status": "UP",
-      "details": { "brokerCount": 1 }
+      "details": { "brokerCount": 3 }
     },
     "ping": { "status": "UP" },
     "redis": {
@@ -103,6 +122,23 @@ When `show-details` is not `never`, the response also includes the status of eac
 When all components are `UP`, all dependencies are healthy and TBMQ is running normally.
 When a component fails, its status changes to `DOWN` and the response includes an error message describing the failure, like a Redis connection timeout or an unreachable Kafka broker.
 If any component reports `DOWN`, the overall status becomes `DOWN` and the HTTP response code changes to `503`.
+
+### What each component checks
+
+| Component | Check | Notes |
+|---|---|---|
+| `tbmq` | Every **enabled** MQTT listener's server channel is open and active | TBMQ's own indicator. Covers the TCP, TLS, WS, and WSS listeners; a listener that is disabled by configuration counts as healthy. This is what tells you the broker is actually accepting MQTT connections, not merely serving HTTP. |
+| `kafka` | Kafka Admin API `describeCluster` succeeds; reports `brokerCount` | TBMQ's own indicator. The request goes to a single broker, and `brokerCount` is the number of brokers *that* broker reports as cluster members — so the check is `UP` as soon as any one broker is reachable. It does **not** validate replication, partition health, or per-topic state. Alert on `brokerCount` dropping below your expected node count separately. |
+| `redis` | Redis responds to the connectivity check; reports the server `version` | Fails on command timeout — see [Timeout configuration](#timeout-configuration). |
+| `db` | PostgreSQL connection validated via `isValid()` | Standard Spring Boot datasource indicator. |
+| `ping` | Always `UP` | Spring Boot's trivial liveness indicator; carries no TBMQ-specific meaning. |
+| `diskSpace` | Free space above the threshold | Present only when `HEALTH_DISKSPACE_ENABLED=true`. |
+
+<Aside>
+  A `DOWN` on `db`, `kafka`, or `redis` means the dependency is unreachable **from this node**. Since the overall status
+  aggregates every component, `/actuator/health` reports `DOWN` during a dependency outage even though the broker process
+  itself is fine — which matters when choosing probes, see [Kubernetes](#kubernetes) below.
+</Aside>
 
 ## Timeout configuration
 
@@ -158,18 +194,34 @@ healthcheck:
 
 ### Kubernetes
 
-Configure liveness and readiness probes in your pod, StatefulSet, or Deployment:
+The reference TBMQ manifests probe the **MQTT port** rather than the health endpoint, because a TCP check on 1883 proves
+the broker is accepting MQTT connections and does not restart the pod when a shared dependency such as Kafka or Redis has
+a hiccup:
 
 ```yaml collapsible
-livenessProbe:
-  httpGet:
-    path: /actuator/health
-    port: 8083
+readinessProbe:
+  tcpSocket:
+    port: 1883
   initialDelaySeconds: 30
-  periodSeconds: 30
+  periodSeconds: 20
   timeoutSeconds: 10
-  failureThreshold: 3
+  successThreshold: 1
+  failureThreshold: 5
 
+livenessProbe:
+  tcpSocket:
+    port: 1883
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 10
+  successThreshold: 1
+  failureThreshold: 10
+```
+
+Use `/actuator/health` for **readiness** when you want a node to be pulled out of the load balancer while its
+dependencies are unreachable:
+
+```yaml collapsible
 readinessProbe:
   httpGet:
     path: /actuator/health
@@ -179,6 +231,12 @@ readinessProbe:
   timeoutSeconds: 10
   failureThreshold: 3
 ```
+
+<Aside type="caution">
+  Do not point **liveness** at `/actuator/health`. A Kafka, Redis, or PostgreSQL outage turns the aggregate status `DOWN`
+  on every node at once, so a liveness probe on that endpoint would restart the whole cluster in a rolling loop during an
+  outage that restarting cannot fix. Keep liveness on the MQTT port or another process-local check.
+</Aside>
 
 For details, see the <a href="https://docs.docker.com/reference/dockerfile/#healthcheck" target="_blank" rel="noopener noreferrer">Docker health check documentation</a> and
 <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/" target="_blank" rel="noopener noreferrer">Kubernetes probes documentation</a>.
