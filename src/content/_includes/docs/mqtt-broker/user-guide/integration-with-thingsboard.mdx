@@ -4,7 +4,7 @@ import TabItem from '@components/TabItem.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 
-This guide shows how to connect <a href="/" target="_blank" rel="noopener noreferrer">ThingsBoard</a> to TBMQ using the
+This guide shows how to connect <a href="https://thingsboard.io/" target="_blank" rel="noopener noreferrer">ThingsBoard</a> to TBMQ using the
 ThingsBoard MQTT Integration, so that data published by MQTT clients to TBMQ becomes device telemetry in ThingsBoard.
 
 The ThingsBoard MQTT Integration acts as an ordinary MQTT client: it connects to TBMQ, subscribes to a topic filter,
@@ -28,7 +28,7 @@ with a persistent session, so messages published while ThingsBoard is offline ar
 ## Prerequisites
 
 - A running <a href="https://thingsboard.io/docs/pe/installation/" target="_blank" rel="noopener noreferrer">ThingsBoard PE</a>
-  instance, or a <a href="/installations/?product=thingsboard-cloud" target="_blank" rel="noopener noreferrer">ThingsBoard Cloud</a>
+  instance, or a <a href="https://thingsboard.io/installations/?product=thingsboard-cloud" target="_blank" rel="noopener noreferrer">ThingsBoard Cloud</a>
   tenant with integrations enabled
 - A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance reachable from ThingsBoard
 - The `mosquitto_pub` MQTT client, to publish a test message
