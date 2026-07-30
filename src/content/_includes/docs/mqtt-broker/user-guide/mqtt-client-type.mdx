@@ -21,7 +21,13 @@ service subscribing to data from thousands of sensors is an APPLICATION client.
 TBMQ resolves the client type during MQTT CONNECT packet processing, based on the credentials used:
 
 - When **all** authentication providers are disabled, every client is assigned the DEVICE type.
-- When any provider is **enabled**, TBMQ reads the client type from the matched credential's `clientType` field — for <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink> and <DocLink product={props.product} path="security/authentication/x509">X.509 Certificate Chain</DocLink> authentication — or from the authentication result: a JWT claim, or the HTTP authentication provider's response.
+- When any provider is **enabled**, TBMQ takes the client type from whichever provider authenticated the client:
+  - <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink>, <DocLink product={props.product} path="security/authentication/x509">X.509 Certificate Chain</DocLink>, and <DocLink product={props.product} path="security/authentication/scram">SCRAM</DocLink> — the `clientType` field of the matched credentials.
+  - <DocLink product={props.product} path="security/authentication/jwt">JWT</DocLink> — resolved from the token claims: if every configured client type claim matches, the type is the opposite of the provider's default client type; otherwise the default is used.
+  - <DocLink product={props.product} path="security/authentication/http">HTTP</DocLink> — the client type returned by the external authentication service.
+
+Client credentials accept only `DEVICE` and `APPLICATION`. A third internal type, `INTEGRATION`, is reserved for
+<DocLink product={props.product} path="integrations">integrations</DocLink> and is rejected if set on MQTT credentials.
 
 For details on client authentication, see the <DocLink product={props.product} path="security/overview">Security overview</DocLink>.
 For instructions on creating credentials with a specific client type, see the
@@ -58,11 +64,27 @@ For persistent DEVICE clients, matching messages are forwarded to the `tbmq.msg.
 A dedicated Kafka consumer reads this topic and persists the messages in **Redis** before delivering them to
 online subscribers. When an offline DEVICE client reconnects, it receives the messages stored in Redis.
 
-The maximum number of persisted messages delivered on reconnect is controlled by:
+Redis holds one queue per client, bounded by both a message count and a TTL:
 
 ```yaml
-MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT
+persistent-session:
+  device:
+    persisted-messages:
+      # Maximum number of PUBLISH messages stored for each persisted DEVICE client.
+      limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:10000}"
+      # TTL of persisted DEVICE messages (in s). Defaults to one week.
+      ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
 ```
+
+- When a client's queue exceeds `limit`, TBMQ trims it by removing the **oldest** messages first, so a client that
+  stays offline for a long time keeps the most recent messages and loses the earliest ones.
+- Each stored message expires independently after `ttl` seconds. For MQTT 5 publishers, the message's
+  **Message Expiry Interval** property overrides this default for that message.
+
+<Aside type="caution">
+  `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT` must not exceed **65535**, the size of the MQTT packet
+  identifier space. The broker fails to start if a larger value is configured.
+</Aside>
 
 ## Application client
 
@@ -89,19 +111,34 @@ For persistent APPLICATION clients, TBMQ creates a **dedicated Kafka topic** per
 tbmq.msg.app.$CLIENT_ID
 ```
 
-TBMQ creates this topic automatically when the client authenticates as APPLICATION type with a persistent session.
-A dedicated Kafka consumer per client polls this topic and delivers messages to the client in its own thread,
-providing isolated, high-throughput delivery.
+TBMQ creates the topic when the client connects as APPLICATION type with a persistent session and the broker starts
+processing its persisted messages. A dedicated Kafka consumer per client polls this topic and delivers messages to the
+client in its own thread, providing isolated, high-throughput delivery.
 
-**Client IDs with special characters** — if the client ID contains characters outside the alphanumeric range,
-a hash of the client ID is used instead:
+<Aside>
+  The topic outlives the session. Clearing a session — on expiry, or when the client reconnects with a clean session —
+  removes the client's Kafka **consumer group** and unacknowledged-message context, but keeps the topic. TBMQ deletes
+  the topic only when the client stops being an APPLICATION client, that is, when it reconnects as DEVICE after its
+  credentials were changed. Until then, how long data lives in the topic is governed by Kafka retention, controlled by
+  `TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES` (default `retention.ms:604800000` — seven days,
+  `retention.bytes:1048576000` — 1 GB per partition).
+</Aside>
+
+**Client IDs with special characters** — Kafka topic names allow only `[a-zA-Z0-9._-]`, which is narrower than what
+MQTT allows in a client ID. If the client ID is not purely alphanumeric, TBMQ substitutes its SHA-256 hash:
 
 ```text
 tbmq.msg.app.$CLIENT_ID_HASH
 ```
 
-This behavior is controlled by the `TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION` environment variable (enabled by default).
-Disabling it means Kafka topics will not be created for clients with special characters in their ID.
+This substitution is controlled by the `TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION` environment variable
+(`true` by default). Setting it to `false` makes TBMQ use the client ID verbatim as the topic name — only safe when
+every APPLICATION client ID is already a valid Kafka topic name, otherwise topic creation fails for that client.
+
+APPLICATION <DocLink product={props.product} path="user-guide/shared-subscriptions">shared subscriptions</DocLink> get
+their own topic per topic filter, named `tbmq.msg.app.shared.$TOPIC_FILTER` with `/` replaced by `.` and the `+` / `#`
+wildcards replaced by `slw` / `mlw`. The equivalent hashing fallback is controlled by
+`TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION`, and retention by `TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES`.
 
 ## Comparison
 
