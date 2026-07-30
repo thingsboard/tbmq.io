@@ -1,17 +1,21 @@
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Steps } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 
 The **Blocked Clients** feature lets administrators restrict broker access based on client identifiers or pattern-based rules.
 It strengthens security, conserves system resources, and provides fine-grained control over who can initiate and maintain connections.
 
-TBMQ stores blocked client entries in memory for fast matching and synchronizes them across all broker nodes in a cluster using Kafka,
-ensuring consistent enforcement in distributed deployments.
+TBMQ stores blocked client entries in memory for fast matching and synchronizes them across all broker nodes in a cluster
+through the `tbmq.client.blocked` Kafka topic (`TB_KAFKA_BLOCKED_CLIENT_TOPIC`), ensuring consistent enforcement in
+distributed deployments. Entries are keyed by type and value, so each node replays the topic on startup to rebuild the
+in-memory set. A new or deleted entry takes effect on the node that made the change immediately, and on the other nodes
+as soon as they consume the update.
 
 Each entry supports an optional expiration timestamp. Once expired, the entry is treated as inactive and cleaned up automatically.
 
 <Aside type="caution">
-  TBMQ performs blocked client checks **before** the authentication phase.
+  TBMQ performs blocked client checks **before** the authentication phase, on both the standard CONNECT path and the
+  MQTT 5 <DocLink product={props.product} path="security/authentication/scram">enhanced authentication (SCRAM)</DocLink> path.
   Disallowed connections are rejected early, before any credentials are evaluated, reducing system load.
 </Aside>
 
@@ -30,6 +34,28 @@ Each entry supports an optional expiration timestamp. Once expired, the entry is
     caption: 'Blocked clients management page in TBMQ.',
   },
 ]} />
+
+## Adding a blocked client
+
+Blocked clients are managed by the system administrator.
+
+<Steps>
+1. Open **Authentication** → **Blocked clients** and click the **+** button (**Add blocked client**).
+
+2. Choose **Block by** — `Client ID`, `Username`, `IP address`, or `Regex`.
+
+3. For `Regex`, choose **Match by** — `Client ID`, `Username`, or `IP address` — to select which connection attribute
+   the pattern is tested against.
+
+4. Enter the **Value**: the exact identifier for the first three types, or the regular expression for `Regex`.
+
+5. Optionally set an **Expiration time**. Leave it as `Never` for a permanent block, or pick a **Date** and **Time**
+   after which the entry stops being enforced. The expiration time cannot be in the past.
+
+6. Optionally add a **Description**, then click **Add**.
+</Steps>
+
+The same operations are available over REST at `/api/blockedClient`.
 
 ## Block types
 
@@ -71,8 +97,28 @@ During the connection phase, each client is evaluated in the following order:
 3. Exact match on `IP_ADDRESS`
 4. Regex-based match (if any exist)
 
-If a match is found and the entry is not expired, the connection is rejected.
-Blocked client events are also visible in the <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized Clients</DocLink> view.
+The first three are single hash-map lookups keyed by type and value, so their cost does not grow with the number of
+entries. Regex entries are only evaluated if no exact match was found, and each one is tested in turn.
+A check is skipped when the corresponding connection attribute is absent — a client that connects without a username,
+for example, can never be caught by a `USERNAME` or `BY_USERNAME` entry.
+
+If a match is found and the entry is not expired, the connection is rejected before authentication and the channel is
+closed. The CONNACK reason code depends on the protocol version:
+
+| MQTT version | CONNACK reason code |
+|---|---|
+| 5.0 | `0x8A` Banned |
+| 3.1.1 / 3.1 | `0x05` Connection Refused, not authorized |
+
+Every rejection is recorded in the <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized Clients</DocLink> view
+with a reason that names the entry that matched — useful for confirming that a regex is catching what you intended:
+
+```text
+Blocked client by clientId:attack-bot-23
+Blocked client by regex:^test-\d+$:byID
+```
+
+The key is `<type>:<value>`, plus `:byID`, `:byUN`, or `:byIP` for regex entries to show which attribute was tested.
 
 ## Automatic cleanup
 
