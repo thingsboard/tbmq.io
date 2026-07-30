@@ -183,9 +183,15 @@ This design provides the following benefits:
 
 #### Disabled integrations and cleanup
 
-Even when an integration is disabled, TBMQ continues publishing matching messages to its Kafka topic, ensuring no message loss when the integration is re-enabled.
+Even when an integration is disabled, TBMQ keeps producing for it: matching messages go to its message topic, and, if it opted in, [client lifecycle events](#client-lifecycle-events) go to its events topic. Nothing is lost when the integration is re-enabled — provided that happens within the topic retention and before the cleanup TTL below expires.
 
-To avoid unused topics consuming storage indefinitely, TBMQ automatically deletes the Kafka topic for integrations that remain disabled beyond a configurable TTL. The topic is recreated automatically when the integration is re-enabled.
+To keep unused topics from consuming storage indefinitely, a periodic sweep reclaims integrations that have stayed disabled beyond a configurable TTL. For each expired integration it:
+
+- deletes **both** of its topics — the message topic and the events topic — along with their consumer groups;
+- clears its topic subscriptions, so no further messages are matched to it;
+- evicts its lifecycle event types on every node in the cluster, so no further events are produced for it.
+
+Detaching it from both streams is what makes the reclaim stick: deleting the topics alone would achieve nothing, because either producer recreates its topic on the next send. So an expired integration **stops producing altogether** rather than merely losing topics that would immediately refill, and a broker restart does not resume it. The integration itself is not removed — saving it re-registers its subscriptions and repopulates its event types cluster-wide, and each topic is recreated on the next send.
 
 <div class="config-def-list">
   <div class="config-def-item">
@@ -194,7 +200,7 @@ To avoid unused topics consuming storage indefinitely, TBMQ automatically delete
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS_CLEANUP_TTL_SEC</code> · <span class="config-def-label">Default</span> <code>604800</code></p>
-    <p class="config-def-desc">Inactivity TTL before topic deletion (seconds) — 1 week. Set to `0` to disable the cleanup entirely.</p>
+    <p class="config-def-desc">How long an integration may stay disabled before it is reclaimed (seconds) — 1 week. Set to `0` to disable the sweep entirely, in which case no integration ever expires.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_ENABLE_TOPIC_DELETION</code> · <span class="config-def-label">Default</span> <code>true</code></p>
@@ -204,7 +210,7 @@ To avoid unused topics consuming storage indefinitely, TBMQ automatically delete
 
 The TTL is measured from the moment the integration was disabled, so re-enabling it resets the clock.
 
-**Deleting** an integration is different from disabling it: the message topic and the events topic are both removed a few seconds after the entity is deleted, along with the consumer group.
+**Deleting** an integration is different from disabling it: both topics and their consumer groups are removed either way, a few seconds after the entity is deleted for an integration that was enabled — its executor detaches its consumers first — and right away for one that was already disabled, since no executor instance is running it.
 
 Kafka topic retention settings can be customized to fine-tune storage limits and control how long messages are retained per topic.
 
@@ -358,7 +364,7 @@ Each integration type reuses the connection it already has, but the destination 
 
 Lifecycle events are **best-effort hints**, deliberately weaker than message delivery:
 
-- Events are produced on the MQTT processing thread, the same path as a regular publish. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried. That send is synchronous, so an unavailable Kafka briefly holds the thread — bounded by the low `max.block.ms=5000` TBMQ ships for these topics — and then the event is dropped.
+- Events are produced on the MQTT processing thread, the same path as a regular publish. If Kafka cannot accept the record, the event is dropped and counted in the broker's `droppedLifecycleEvents` statistic instead of being retried. That send is synchronous, so an unavailable Kafka holds the thread until the send fails, and then the event is dropped.
 - Events travel on their own topic per integration (`tbmq.ie.event.$integrationId`) with a shorter retention than the message topic — 1 day by default against the message topic's 7 days — so an event backlog never holds up message delivery.
 - On the Integration Executor side the events stream has its own acknowledgment strategy, defaulting to `SKIP_ALL` so that a failing target does not cause stale events to be redelivered out of order:
 
