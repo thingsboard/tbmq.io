@@ -20,18 +20,21 @@ service subscribing to data from thousands of sensors is an APPLICATION client.
 
 TBMQ resolves the client type during MQTT CONNECT packet processing, based on the credentials used:
 
-- When **all** authentication providers are disabled, every client is assigned the DEVICE type.
+- When the Basic, X.509, JWT, and HTTP providers are **all** disabled, every client is accepted without authentication and
+  assigned the DEVICE type. SCRAM does not take part in this check, because it runs on the separate MQTT 5 enhanced
+  authentication path.
 - When any provider is **enabled**, TBMQ takes the client type from whichever provider authenticated the client:
   - <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink>, <DocLink product={props.product} path="security/authentication/x509">X.509 Certificate Chain</DocLink>, and <DocLink product={props.product} path="security/authentication/scram">SCRAM</DocLink> — the `clientType` field of the matched credentials.
-  - <DocLink product={props.product} path="security/authentication/jwt">JWT</DocLink> — resolved from the token claims: if every configured client type claim matches, the type is the opposite of the provider's default client type; otherwise the default is used.
-  - <DocLink product={props.product} path="security/authentication/http">HTTP</DocLink> — the client type returned by the external authentication service.
+  - <DocLink product={props.product} path="security/authentication/jwt">JWT</DocLink> — resolved from the token claims: if at least one client type claim is configured and every one of them matches, the type is the opposite of the provider's default client type. In every other case, including when no client type claims are configured at all, the default is used.
+  - <DocLink product={props.product} path="security/authentication/http">HTTP</DocLink> — the `clientType` field of the response returned by the external authentication service, falling back to the provider's default client type when that field is missing, empty, or not a recognized type.
 
-Client credentials accept only `DEVICE` and `APPLICATION`. A third internal type, `INTEGRATION`, is reserved for
-<DocLink product={props.product} path="integrations">integrations</DocLink> and is rejected if set on MQTT credentials.
+The client type of new credentials defaults to `DEVICE`, and the UI offers only `DEVICE` and `APPLICATION`.
 
 For details on client authentication, see the <DocLink product={props.product} path="security/overview">Security overview</DocLink>.
 For instructions on creating credentials with a specific client type, see the
 <DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials">MQTT client credentials</DocLink> guide.
+Changing the client type on existing credentials does not affect a connected session — the new type applies from the
+client's next CONNECT.
 
 ## Client persistence
 
@@ -95,7 +98,8 @@ persistent-session:
 If an APPLICATION client connects with a non-persistent session, messages are still delivered while connected,
 but no persistence mechanism is applied — messages can be lost if the client disconnects.
 
-TBMQ displays a warning on the session details page when it detects this configuration:
+TBMQ displays an **Application client should be persistent** warning on the session details page when it detects this
+configuration:
 
 <ImageGallery product={props.product} images={[
   {
@@ -113,19 +117,32 @@ tbmq.msg.app.$CLIENT_ID
 
 TBMQ creates the topic when the client connects as APPLICATION type with a persistent session and the broker starts
 processing its persisted messages. A dedicated Kafka consumer per client polls this topic and delivers messages to the
-client in its own thread, providing isolated, high-throughput delivery.
+client in its own thread, providing isolated, high-throughput delivery. Because every connected persistent APPLICATION
+client costs a Kafka topic, a Kafka consumer, and a thread, this type is meant for a limited number of backend consumers
+rather than for devices.
+
+`MQTT_APPLICATION_CLIENTS_LIMIT` caps how many persistent APPLICATION clients and
+<DocLink product={props.product} path="integrations">integrations</DocLink> the cluster may hold in total — the count is
+shared across nodes, not per node. It defaults to `0`, which disables the limit. Once the limit is reached, TBMQ refuses
+further CONNECT requests: MQTT 5 clients get CONNACK reason code `0x97` Quota exceeded, MQTT 3.x clients get `0x03`
+Server unavailable.
 
 <Aside>
   The topic outlives the session. Clearing a session — on expiry, or when the client reconnects with a clean session —
-  removes the client's Kafka **consumer group** and unacknowledged-message context, but keeps the topic. TBMQ deletes
-  the topic only when the client stops being an APPLICATION client, that is, when it reconnects as DEVICE after its
-  credentials were changed. Until then, how long data lives in the topic is governed by Kafka retention, controlled by
-  `TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES` (default `retention.ms:604800000` — seven days,
-  `retention.bytes:1048576000` — 1 GB per partition).
+  removes the client's Kafka **consumer group** and unacknowledged-message context, but keeps the topic. Whatever is
+  still retained there is not redelivered: these consumers run with `auto.offset.reset=latest`, so a session that starts
+  with a new consumer group reads from the end of the topic. TBMQ deletes the topic only when the client stops being an
+  APPLICATION client, that is, when it reconnects as DEVICE after its credentials were changed — and only while
+  `TB_KAFKA_ENABLE_TOPIC_DELETION` is `true`, which is the default. Until then, how long data lives in the topic is
+  governed by Kafka retention, controlled by `TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES` (default
+  `retention.ms:604800000` — seven days, `retention.bytes:1048576000` — 1 GB). TBMQ always creates these topics with a
+  single partition and overrides any `partitions` value set in that variable, so the byte limit bounds the whole
+  per-client topic.
 </Aside>
 
-**Client IDs with special characters** — Kafka topic names allow only `[a-zA-Z0-9._-]`, which is narrower than what
-MQTT allows in a client ID. If the client ID is not purely alphanumeric, TBMQ substitutes its SHA-256 hash:
+**Client IDs with special characters** — MQTT allows characters in a client ID that Kafka does not accept in a topic
+name. TBMQ therefore requires the client ID to be **purely alphanumeric** to use it verbatim, which is stricter than
+Kafka's own `[a-zA-Z0-9._-]`: even a Kafka-legal ID such as `my-app.1` is replaced by its SHA-256 hash:
 
 ```text
 tbmq.msg.app.$CLIENT_ID_HASH
