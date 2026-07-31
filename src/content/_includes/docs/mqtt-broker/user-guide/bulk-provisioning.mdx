@@ -20,8 +20,15 @@ Bulk import is available to the system administrator at **Authentication** → *
 ## CSV file format
 
 Each line in the CSV file corresponds to one credential record.
-The file must contain at least two columns and at least one data row. **Name** is always required, along with
-**Client ID** or **Username** (or both) — Basic credentials with neither are rejected.
+The file must contain at least two columns and at least one data row, and every line must have the same number of
+columns as the first one — a ragged line aborts the import with `Invalid file format. Line: '<n>'` before anything is
+saved. **Name** is always required, along with **Client ID** or **Username** (or both) — Basic credentials with neither
+are rejected.
+
+The resulting **Client ID** / **Username** combination must also be unique across all client credentials, even though
+the upsert key is **Name**. A row that would duplicate a combination already in use fails with
+`Such MQTT Client credentials are already created!` when it would create a credential, or
+`New MQTT Client credentials are already created!` when it would update one.
 
 **Example CSV:**
 
@@ -63,9 +70,15 @@ invalid expression fails. Client type values are case-insensitive, so `device` a
 
    Configure how the system reads the file:
 
-   - **CSV delimiter** — the character separating values (`,`, `;`, `|`, or `TAB`).
-   - **Auth rule patterns delimiter** — the delimiter used to split multiple topic patterns within a single cell. Must differ from the CSV delimiter.
-   - **First line contains column names** — when enabled, the first row is used for automatic column mapping in the next step.
+   - **CSV delimiter** — the character separating values (`,`, `;`, `|`, or `Tab`). Defaults to `,`.
+   - **Auth rule patterns delimiter** — the delimiter used to split multiple topic patterns within a single cell. Defaults to `;`. Must differ from the CSV delimiter: whichever character one dropdown holds is greyed out in the other.
+   - **First line contains column names** — enabled by default; when enabled, the first row is used for automatic column mapping in the next step.
+
+   Automatic mapping matches a header cell, case-insensitively, against the internal column name — `NAME`,
+   `CLIENT_TYPE`, `CLIENT_ID`, `USERNAME`, `PASSWORD`, `SUB_AUTH_RULE_PATTERNS`, `PUB_AUTH_RULE_PATTERNS`,
+   `DESCRIPTION`. A friendly heading such as `Client ID` does not match and arrives as **Not assigned**, so map it by
+   hand in the next step. With the option disabled, the first column defaults to **Name**, the second to
+   **Client ID**, and the rest to **Not assigned**.
 
    <ImageGallery product={props.product} images={[
      {
@@ -107,11 +120,11 @@ invalid expression fails. Client type values are case-insensitive, so `device` a
    The broker processes rows using your column mapping. Rows are independent and imported in parallel, so a failing row
    does not roll back or block the others.
 
-5. **Results**
+5. **Done**
 
-   A summary shows how many entries were created, how many were updated, and how many failed. Failures are listed as
-   `Line <n>: <reason>`, so you can fix those rows and re-run the import — successfully imported rows will simply be
-   updated in place on the second pass.
+   A summary shows how many entries were created, how many were updated, and how many failed. Expand **Details** to see
+   the failures, listed as `Line <n>: <reason>`, so you can fix those rows and re-run the import — successfully imported
+   rows will simply be updated in place on the second pass.
 
    <ImageGallery product={props.product} images={[
      {
@@ -145,7 +158,7 @@ Existing passwords are protected during bulk import:
 
 <Aside type="caution">
   An attempt to change an existing password does not silently do nothing — it **fails that row** with
-  `It is not allowed to change the credentials' password`, and the row is counted in the errors total.
+  `['<name>'] It is not allowed to change the credentials' password`, and the row is counted in the errors total.
   Rows that do not touch a password are unaffected, since each row is imported independently.
 </Aside>
 
