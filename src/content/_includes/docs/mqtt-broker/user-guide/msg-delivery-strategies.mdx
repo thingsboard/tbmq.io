@@ -16,7 +16,7 @@ The strategy is chosen independently for each of the three outbound delivery pat
 
 | Delivery path | Setting | Default |
 |---|---|---|
-| **Direct** — any non-persistent subscriber, regardless of <DocLink product={props.product} path="user-guide/mqtt-client-type">client type</DocLink> | `MQTT_MSG_WRITE_AND_FLUSH` | `true` — flush per message |
+| **Direct** — non-persistent sessions, plus persistent sessions receiving at QoS 0, regardless of <DocLink product={props.product} path="user-guide/mqtt-client-type">client type</DocLink> | `MQTT_MSG_WRITE_AND_FLUSH` | `true` — flush per message |
 | **Persistent DEVICE** — served from Redis | `MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH` | `true` — flush per message |
 | **Persistent APPLICATION** — served from the client's own Kafka topic | `MQTT_APP_MSG_WRITE_AND_FLUSH` | `false` — buffered |
 
@@ -95,7 +95,9 @@ Buffered delivery on these paths works as follows:
 
 1. **Session buffer creation** — TBMQ stores a flush-state entry in the cache, keyed by session ID, holding the buffered
    message count, the last flush timestamp, and the client's Netty channel context.
-2. **Write without flush** — each outgoing message is written with `channel.write()` and increments the buffer count.
+2. **Write without flush** — each outgoing PUBLISH is written with `channel.write()` and increments the buffer count.
+   Only PUBLISH packets are buffered on these two paths: PUBREL, the second phase of a QoS 2 delivery, and retained
+   messages sent in response to a SUBSCRIBE are always flushed immediately.
 3. **Count-based flush** — a flush is triggered once the count reaches `buffered-msg-count`, after which the counter resets.
 4. **Time-based flush** — the background scheduler runs every `scheduler-execution-interval-ms` and flushes any session
    whose buffer is non-empty and whose **last flush** was more than `idle-session-flush-timeout-ms` ago.
@@ -109,9 +111,9 @@ Buffered delivery on these paths works as follows:
   Lower `MQTT_BUFFERED_IDLE_FLUSH_MS` if that is too high for your workload.
 </Aside>
 
-If sessions are evicted because the cache is full, the broker logs a warning naming
-`MQTT_BUFFERED_CACHE_MAX_SIZE`. Seeing it often means the value is below your concurrent subscriber count and should be
-raised.
+If sessions are evicted because the cache is full, the broker logs an `INFO` message —
+`Client session was evicted due to cache size limit` — followed by the configured limit. Seeing it often means
+`MQTT_BUFFERED_CACHE_MAX_SIZE` is below your concurrent subscriber count and should be raised.
 
 ### Persistent APPLICATION subscribers
 
@@ -132,7 +134,9 @@ thread that polls a batch of messages from the client's own Kafka topic, so flus
 the batch:
 
 1. Each message in the batch — both PUBLISH and PUBREL packets — is written to the Netty channel without an immediate flush.
-2. A flush is triggered every `buffered-msg-count` messages (default: 10).
+2. A flush is triggered every `buffered-msg-count` messages (default: 10). The counter is local to the batch and
+   restarts at zero on every poll, so a value larger than the batch — polls are capped by the consumer's
+   `max.poll.records`, **200** by default for a client's own topic — never fires a flush of its own.
 3. When the batch finishes, any remaining unflushed messages are flushed explicitly.
 
 Because a flush always happens at the end of every batch, there is no idle-timeout mechanism here: a message is never
