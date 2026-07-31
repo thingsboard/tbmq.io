@@ -40,7 +40,7 @@ PROXY TCP4 192.0.2.1 198.51.100.1 12345 1883\r\n
 
 **PROXY Protocol v2** uses a compact binary format suitable for high-performance environments.
 
-This means TBMQ treats the very first bytes of every incoming connection as PROXY Protocol data, before interpreting it as MQTT or TLS.
+This means TBMQ treats the very first bytes of every connection on a proxy-enabled listener as PROXY Protocol data, before interpreting them as MQTT or TLS.
 
 ## When to enable it
 
@@ -165,7 +165,7 @@ Enable PROXY Protocol on your load balancer according to its documentation, then
 
 ## Considerations
 
-- If PROXY Protocol is enabled in TBMQ but not on the proxy, TBMQ fails to parse the initial bytes and may reject connections.
-- If PROXY Protocol is enabled on the proxy but not in TBMQ, the header is misinterpreted as MQTT or TLS data, causing connection errors.
+- If PROXY Protocol is enabled in TBMQ but not on the proxy, TBMQ cannot parse the initial bytes: the connection is closed before any CONNECT is processed, and the parse failure is logged at `ERROR`.
+- If PROXY Protocol is enabled on the proxy but not in TBMQ, the header is misinterpreted as MQTT or TLS data, causing connection errors. On a TLS listener this surfaces in the broker log as `NotSslRecordException`.
 - All connections to TBMQ must pass through a properly configured proxy when PROXY Protocol is enabled.
 - PROXY Protocol must only be configured when TBMQ is behind a trusted proxy, as the proxy defines the reported client IP.
