@@ -46,7 +46,9 @@ management:
 ```
 
 **`health.diskspace.enabled`** — enables the disk space health check. It is disabled by default.
-When enabled, TBMQ reports low disk space on the container.
+When enabled, TBMQ reports low disk space on the container. The threshold is not surfaced in TBMQ's configuration
+file, so Spring Boot's default of **10 MB** free space applies — treat the check as a disk-full signal rather than an
+early warning.
 
 **`endpoint.health.show-details`** — controls the visibility of component-level details in the response.
 It defaults to `never`, so out of the box `/actuator/health` returns only the aggregate `{"status":"UP"}` — enough for a
@@ -62,7 +64,8 @@ breakdown shown below.
 
 **`endpoints.web.exposure.include`** — comma-separated list of Actuator endpoints exposed over HTTP.
 The default `health,info,prometheus` also serves `/actuator/prometheus` for metrics scraping and `/actuator/info`.
-Remove `prometheus` if you do not scrape metrics from this port.
+Remove `prometheus` if you do not scrape metrics from this port. Keep `health` in the list — an endpoint that is not
+named there is not exposed, and `/actuator/health` then returns `404`.
 
 ## Health endpoint responses
 
@@ -146,23 +149,33 @@ Health checks verify connectivity to Kafka, Redis, and PostgreSQL by executing c
 Each command has a configurable timeout — if the command does not complete within that time, the connectivity check is considered failed.
 
 ```yaml collapsible
-# Kafka Admin client command timeout in seconds (describeCluster, listTopics, etc.)
-queue.command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
+queue:
+  kafka:
+    admin:
+      # Kafka Admin client command timeout in seconds (describeCluster, listTopics, etc.)
+      command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
 
-# Maximum time in seconds to wait for a Lettuce (Redis) command to complete.
-# This applies to health checks and all command execution (e.g., GET, SET, PING).
-# Reduce to fail fast when Redis is unresponsive.
-lettuce.command-timeout: "${REDIS_LETTUCE_COMMAND_TIMEOUT_SEC:30}"
+lettuce:
+  config:
+    # Maximum time in seconds to wait for a Lettuce (Redis) command to complete.
+    # This applies to health checks and all command execution (e.g., GET, SET, PING).
+    # Reduce to fail fast when Redis is unresponsive.
+    command-timeout: "${REDIS_LETTUCE_COMMAND_TIMEOUT_SEC:30}"
 
-# Maximum time in milliseconds HikariCP waits to acquire a connection from the pool.
-# If exceeded, an exception is thrown.
-spring.connectionTimeout: "${SPRING_DATASOURCE_CONNECTION_TIMEOUT_MS:30000}"
+spring:
+  datasource:
+    hikari:
+      # Maximum time in milliseconds HikariCP waits to acquire a connection from the pool.
+      # If exceeded, an exception is thrown.
+      connectionTimeout: "${SPRING_DATASOURCE_CONNECTION_TIMEOUT_MS:30000}"
 ```
 
 ## Integration Executor health check
 
-The TBMQ Integration Executor (IE) exposes its own health check at `/actuator/health` on port **8082**.
-It monitors connectivity to Kafka only.
+The TBMQ Integration Executor (IE) exposes its own health check at `/actuator/health` on its HTTP port
+(`HTTP_BIND_PORT`, default **8082** — the same variable name the broker uses, with a different default).
+It monitors connectivity to Kafka only: the IE has no PostgreSQL or Redis connection, so no `db` or `redis`
+component appears.
 
 **Healthy response:**
 
