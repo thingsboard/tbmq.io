@@ -76,17 +76,26 @@ The `total` limit is cluster-wide: the token bucket lives in Redis, so all broke
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 Cluster-wide throughput is enforced by the TBMQ subscription plan — the **Throughput (msg/sec)** tier you purchase caps
-the total incoming message rate across the cluster, so there is no `total` rate-limit section to configure.
+the total incoming and outgoing message rate across the cluster, so there is no `total` rate-limit section to configure.
 Per-client publish rate limits remain configurable:
 
 <Code code={rateLimitsPe} lang="yaml" />
 </ShowFor>
 
+The cluster-wide budget is charged at several stages — when the PUBLISH arrives, when the broker processes it, once per
+extra subscriber it fans out to, and for retained messages sent on SUBSCRIBE. Only the first of those reports back to the
+publisher; once the bucket is empty the other stages drop copies silently, so a message can reach some subscribers and
+not others.
+
 Both limits are configured as a comma-separated list of `limit:seconds` pairs, and **all** pairs must be satisfied.
 The default `10:1,300:60` means at most 10 messages in any second **and** at most 300 in any minute — so a client cannot
 burst at 10 msg/sec for a whole minute.
 
-Rate limits are disabled by default. When a limit is hit, the PUBLISH is dropped, the `droppedMsgs` counter is
+While the cluster-wide limit is active, every incoming PUBLISH also goes through a batching queue, drained when it reaches
+`MQTT_RATE_LIMITS_BATCH_SIZE` (50) messages or every `MQTT_RATE_LIMITS_PERIOD_MS` (50 ms), whichever comes first — at low
+message rates that adds up to one period of latency.
+
+Rate limits are disabled by default. When an incoming limit is hit, the PUBLISH is dropped, the `droppedMsgs` counter is
 incremented, and the broker's response to the publisher depends on the protocol version:
 
 | MQTT version | Broker response |
@@ -140,6 +149,10 @@ never loses anything: the message is already in durable storage before the broke
 "skip the delivery" means "leave it where it is" rather than "drop it". Messages are only lost if storage limits are
 exceeded while the client stays behind — the bounds described below.
 
+This protection covers only what TBMQ stores, which means QoS 1 and 2 publishes delivered to a subscription of QoS 1 or 2.
+A message **published at QoS 0** is never stored, even for a persistent session, so it takes the non-persistent path above
+and is skipped and counted while the channel is congested. The same applies to a persistent client that subscribed at QoS 0.
+
 **Device clients** use Redis as the buffer.
 
 The order of operations is what makes the pause safe. A Kafka consumer reads the `tbmq.msg.persisted` topic and
@@ -153,8 +166,9 @@ What happens across a backpressure episode:
    not written to the socket, so the outbound buffer is given a chance to drain.
 2. **Channel becomes writable again.** The broker does not immediately resume at full rate. The actor first checks how
    many messages it has sent but not yet had acknowledged. While that count is above zero it reschedules itself using an
-   exponential backoff — roughly 2, 3, 5, 9, then 10 seconds, for at most 5 attempts — giving the client time to work
-   through its PUBACK/PUBREC backlog instead of being flooded the instant its buffer clears.
+   exponential backoff — roughly 1, 2, 3, 5, 9 and 10 seconds, each with up to a second of jitter, so about half a minute
+   of grace in total — giving the client time to work through its PUBACK/PUBREC backlog instead of being flooded the
+   instant its buffer clears.
 3. **Delivery resumes from Redis.** Once the in-flight count reaches zero, or the retry budget is exhausted, the actor
    **re-reads the client's queue from Redis** and continues from there. Recovery is driven by durable state, so it is
    unaffected by whatever was in memory when congestion began — and it works the same way whether the client was merely
@@ -237,9 +251,10 @@ load before that happens:
 
 <Code code={rateLimitsOutgoing} lang="yaml" />
 
-**`outgoing-publish`** is a per-subscriber limit that applies **only to non-persistent subscribers receiving at QoS 0**.
-Messages over the limit are dropped and counted in `droppedMsgs`. Persistent subscribers and QoS 1/2 delivery are
-unaffected, since dropping their messages would violate the delivery guarantee.
+**`outgoing-publish`** is a per-subscriber limit that applies **only to messages published at QoS 0**, the ones TBMQ never
+stores. Messages over the limit are dropped and counted in `droppedMsgs`. QoS 1 and 2 publishes are unaffected, since
+dropping them would violate the delivery guarantee — but a *persistent* subscriber is not exempt: its QoS 0 traffic goes
+through the same non-persistent path and is subject to this limit.
 
 **`device-persisted-messages`** is a cluster-wide limit on how many messages TBMQ writes into persistent DEVICE storage
 per interval, sharing one Redis-backed bucket across all nodes. When a publish matches more persistent DEVICE
