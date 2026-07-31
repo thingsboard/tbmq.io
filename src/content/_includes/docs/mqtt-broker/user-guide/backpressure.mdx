@@ -273,7 +273,7 @@ Both are disabled by default.
   `number of persistent DEVICE clients × MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT × average message size`.
 - Ensure sufficient Kafka capacity and appropriate retention settings for APPLICATION client topics — retention, not the
   session, is what bounds how long a disconnected APPLICATION client can fall behind before losing messages.
-- Enable the rate limits that match your risk: `incoming-publish` against a misbehaving publisher, `total` (CE) against
-  cluster overload, `device-persisted-messages` against Redis saturation.
+- Enable the rate limits that match your risk: `incoming-publish` against a misbehaving publisher,
+  `device-persisted-messages` against Redis saturation.
 - Use horizontal scaling to distribute load across multiple TBMQ nodes.
 - Test your deployment under realistic peak load before going to production.
