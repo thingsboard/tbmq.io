@@ -35,7 +35,7 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Company', submenuId: 'nav-company' },
 	{ label: 'Learn', href: '/mqtt/', submenuId: 'nav-learn' },
 	{ label: 'Docs', href: '/docs/pe/' },
-	{ label: 'Blog', href: '/blog/' },
+	{ label: 'Blog', href: 'https://thingsboard.io/blog/', target: '_blank' },
 ];
 
 // Company submenu
