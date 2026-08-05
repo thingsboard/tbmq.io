@@ -10,12 +10,25 @@ If a match is found, the entry is updated; otherwise, a new one is created.
 
 <Aside>
   Bulk provisioning supports only <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink> client credentials.
+  Importing a row whose **Name** matches existing credentials of another type — X.509 or SCRAM — fails that row with
+  `Credentials with name '<name>' already exists and it's not MQTT Basic credentials`.
 </Aside>
+
+Bulk import is available to the system administrator at **Authentication** → **Client credentials** →
+**Import Basic credentials**, or over REST at `POST /api/mqtt/client/credentials/bulk_import`.
 
 ## CSV file format
 
 Each line in the CSV file corresponds to one credential record.
-The file must contain at least two columns: **Name** and either **Username** or **Client ID**.
+The file must contain at least two columns and at least one data row, and every line must have the same number of
+columns as the first one — a ragged line aborts the import with `Invalid file format. Line: '<n>'` before anything is
+saved. **Name** is always required, along with **Client ID** or **Username** (or both) — Basic credentials with neither
+are rejected.
+
+The resulting **Client ID** / **Username** combination must also be unique across all client credentials, even though
+the upsert key is **Name**. A row that would duplicate a combination already in use fails with
+`Such MQTT Client credentials are already created!` when it would create a credential, or
+`New MQTT Client credentials are already created!` when it would update one.
 
 **Example CSV:**
 
@@ -33,6 +46,10 @@ The plain-text password is encoded on import. Subscribe and publish topic patter
 Username, password, and description are `null` because those cells are empty.
 The subscribe auth rule pattern is `null`, which forbids all subscriptions.
 The publish auth rule is set to `alerts/.*`.
+
+Authorization rule patterns are **regular expressions**, not MQTT topic filters — `alerts/.*` matches any topic starting
+with `alerts/`, whereas `alerts/#` would be read as a literal `#`. Each pattern is compiled on import, so a row with an
+invalid expression fails. Client type values are case-insensitive, so `device` and `DEVICE` are equivalent.
 
 ## Import steps
 
@@ -53,9 +70,15 @@ The publish auth rule is set to `alerts/.*`.
 
    Configure how the system reads the file:
 
-   - **CSV delimiter** — the character separating values (`,`, `;`, `|`, or `TAB`).
-   - **Auth rule patterns delimiter** — the delimiter used to split multiple topic patterns within a single cell. Must differ from the CSV delimiter.
-   - **First line contains column names** — when enabled, the first row is used for automatic column mapping in the next step.
+   - **CSV delimiter** — the character separating values (`,`, `;`, `|`, or `Tab`). Defaults to `,`.
+   - **Auth rule patterns delimiter** — the delimiter used to split multiple topic patterns within a single cell. Defaults to `;`. Must differ from the CSV delimiter: whichever character one dropdown holds is greyed out in the other.
+   - **First line contains column names** — enabled by default; when enabled, the first row is used for automatic column mapping in the next step.
+
+   Automatic mapping matches a header cell, case-insensitively, against the internal column name — `NAME`,
+   `CLIENT_TYPE`, `CLIENT_ID`, `USERNAME`, `PASSWORD`, `SUB_AUTH_RULE_PATTERNS`, `PUB_AUTH_RULE_PATTERNS`,
+   `DESCRIPTION`. A friendly heading such as `Client ID` does not match and arrives as **Not assigned**, so map it by
+   hand in the next step. With the option disabled, the first column defaults to **Name**, the second to
+   **Client ID**, and the rest to **Not assigned**.
 
    <ImageGallery product={props.product} images={[
      {
@@ -65,18 +88,24 @@ The publish auth rule is set to `alerts/.*`.
      },
    ]} />
 
-3. **Map columns**
+3. **Select columns type**
 
-   Map each CSV column to a credential field:
+   Assign a **Column type** to each CSV column:
 
    - **Name** — required for identification and upsert logic.
-   - **Client type** — `DEVICE` or `APPLICATION`. Defaults to `DEVICE` if not mapped.
+   - **Client type** — `DEVICE` or `APPLICATION`. Defaults to `DEVICE` when the column is absent.
    - **Client ID** — the unique MQTT client identifier.
    - **Username** — the MQTT username.
    - **Password** — the MQTT password, encoded during import.
-   - **Subscribe auth rule patterns** — list of allowed subscribe topics.
-   - **Publish auth rule patterns** — list of allowed publish topics.
+   - **Subscribe auth rule patterns** — regular expressions for allowed subscribe topics.
+   - **Publish auth rule patterns** — regular expressions for allowed publish topics.
    - **Description** — optional description.
+
+   **Every** column must be assigned a type — a column left as `Not assigned` blocks the step. Each type can be used
+   only once; once assigned, it is greyed out in the remaining dropdowns. The step also requires **Name** plus
+   **Client ID** or **Username**, and reports *Columns Name and Client ID/Username are required* until both are set.
+   Because of this, the way to leave a field untouched is to **omit its column from the file**, not to leave it
+   unassigned in the UI — see [Data handling rules](#data-handling-rules).
 
    <ImageGallery product={props.product} images={[
      {
@@ -86,13 +115,16 @@ The publish auth rule is set to `alerts/.*`.
      },
    ]} />
 
-4. **Processing**
+4. **Creating new entities**
 
-   The system processes the file line by line using your column mapping.
+   The broker processes rows using your column mapping. Rows are independent and imported in parallel, so a failing row
+   does not roll back or block the others.
 
-5. **Results**
+5. **Done**
 
-   A summary shows the number of created entries, updated entries, and errors.
+   A summary shows how many entries were created, how many were updated, and how many failed. Expand **Details** to see
+   the failures, listed as `Line <n>: <reason>`, so you can fix those rows and re-run the import — successfully imported
+   rows will simply be updated in place on the second pass.
 
    <ImageGallery product={props.product} images={[
      {
@@ -111,7 +143,11 @@ The publish auth rule is set to `alerts/.*`.
 ## Data handling rules
 
 - **To update a field:** Provide a new value in the corresponding CSV column — see the password policy below for exceptions.
-- **To preserve existing data:** Do not map the column, or leave the cell empty — with the exception of authorization rule patterns, which follow their own policy below.
+- **To preserve existing data:** Omit the column from the file, or leave the cell empty — with the exception of
+  authorization rule patterns, which follow their own policy below.
+
+Empty cells are simply skipped: the field keeps whatever value it already had. Authorization rule columns are the one
+exception — for them, an empty cell is a meaningful instruction.
 
 ### Password policy
 
@@ -120,20 +156,33 @@ Existing passwords are protected during bulk import:
 - If a credential already has a password, it **cannot be changed or cleared** via bulk import.
 - A password can only be set if the credential is newly created or if the existing credential has no password.
 
+<Aside type="caution">
+  An attempt to change an existing password does not silently do nothing — it **fails that row** with
+  `['<name>'] It is not allowed to change the credentials' password`, and the row is counted in the errors total.
+  Rows that do not touch a password are unaffected, since each row is imported independently.
+</Aside>
+
 ### Authorization rule patterns policy
 
-The system interprets mapped versus unmapped authorization columns differently:
+For authorization rule columns, a column that is present with an empty cell means something different from a column
+that is absent from the file:
 
 **New credentials:**
 
 | Column state | Result |
 |---|---|
-| Column mapped, cell empty | Authorization rule set to `null` — forbids all topics |
-| Column not mapped | Authorization rule set to `.*` — allows all topics |
+| Column present, cell empty | Authorization rule set to `null` — forbids all topics |
+| Column absent from the file | Authorization rule set to `.*` — allows all topics |
 
 **Existing credentials:**
 
 | Column state | Result |
 |---|---|
-| Column mapped, cell empty | Authorization rule updated to `null` — revokes all permissions |
-| Column not mapped | Authorization rule preserved — existing permissions unchanged |
+| Column present, cell empty | Authorization rule updated to `null` — revokes all permissions |
+| Column absent from the file | Authorization rule preserved — existing permissions unchanged |
+
+<Aside type="caution">
+  Note the asymmetry: a **new** credential imported with no authorization columns at all is created with `.*` for both
+  publish and subscribe — that is, unrestricted access to every topic. Include both columns and fill them in if your
+  clients should be restricted.
+</Aside>
