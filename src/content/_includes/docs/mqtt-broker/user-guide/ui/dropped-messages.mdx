@@ -50,7 +50,7 @@ Click a row to open its details, grouped into three sections:
 - **Client** — client ID, client type, username, and certificate CN.
 - **Message** — topic and QoS.
 
-**Username** and **Certificate CN** identify the client only where the drop happened on that client's own connection. Drops that occur on an internal queue or on a cross-node delivery path carry no session context, so both fields stay empty there. **Certificate CN** is also empty for a TLS client authenticated through the <DocLink product={props.product} path="security/authentication/http">HTTP authentication provider</DocLink>.
+**Username** and **Certificate CN** identify the client only where the drop happened on that client's own connection. Drops that occur on an internal queue or on a cross-node delivery path carry no session context, so both fields stay empty there. **Certificate CN** is filled in only for a client that authenticated with <DocLink product={props.product} path="security/authentication/x509">X.509 certificate chain credentials</DocLink>, so it stays empty for every other authentication method.
 
 Clicking the direction, reason, client ID, or topic inside the dialog opens **Analytics** filtered by that value.
 
