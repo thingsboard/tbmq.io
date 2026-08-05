@@ -93,6 +93,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 					slug: `${prefix}/user-guide/ui/mqtt-client-credentials`,
 				},
 				{ label: 'Unauthorized clients', slug: `${prefix}/user-guide/ui/unauthorized-clients` },
+				...(isPE ? [{ label: 'Dropped messages', slug: `${prefix}/user-guide/ui/dropped-messages` }] : []),
 				{ label: 'WebSocket client', slug: `${prefix}/user-guide/ui/websocket-client` },
 				{
 					label: 'Application shared subscriptions',

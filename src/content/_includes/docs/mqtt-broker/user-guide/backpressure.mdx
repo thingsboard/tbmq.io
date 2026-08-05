@@ -277,3 +277,8 @@ Both are disabled by default.
   `device-persisted-messages` against Redis saturation.
 - Use horizontal scaling to distribute load across multiple TBMQ nodes.
 - Test your deployment under realistic peak load before going to production.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+When a drop counter does move, the <DocLink product={props.product} path="user-guide/ui/dropped-messages">Dropped messages</DocLink>
+page breaks the total down by reason, client, and topic, so you can tell which limit fired and for which client.
+</ShowFor>

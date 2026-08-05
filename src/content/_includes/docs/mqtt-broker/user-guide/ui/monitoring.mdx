@@ -1,5 +1,7 @@
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
 
 TBMQ provides user-friendly tools to monitor broker activity through the **Home** and **Monitoring** pages.
 
@@ -19,6 +21,10 @@ The **Monitoring > State & Health** page contains four charts focused on broker 
 - **Subscriptions** — tracks the aggregate count of all topic filter entries maintained by the broker for both connected and disconnected persistent clients.
 - **Retained message count** — tracks the total count of retained messages currently stored by the broker. This metric represents the number of unique topics holding a "last known state" value, which consumes persistent storage and is delivered immediately to new matching subscribers.
 - **Message drop count** — counts the total number of messages the broker fails to process or deliver. Reasons include lack of subscriber interest (no matching subscriptions), resource limitations (full queues, storage limits), or rate limiting enforcement.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+To see which clients and topics those drops belong to, and why each message was lost, open the <DocLink product={props.product} path="user-guide/ui/dropped-messages">Dropped messages</DocLink> page.
+</ShowFor>
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/monitoring-state-health.png', alt: 'TBMQ Monitoring State and Health page', caption: 'TBMQ Monitoring — State & Health page.' },
