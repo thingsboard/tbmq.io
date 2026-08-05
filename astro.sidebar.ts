@@ -65,7 +65,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'TBMQ client type', slug: `${prefix}/user-guide/mqtt-client-type` },
 				{ label: 'Blocked clients', slug: `${prefix}/other/blocked-client` },
 				{ label: 'Backpressure', slug: `${prefix}/user-guide/backpressure` },
-				...(isPE ? [{ label: 'Dropped messages', slug: `${prefix}/user-guide/ui/dropped-messages` }] : []),
+				...(isPE ? [{ label: 'Dropped messages', slug: `${prefix}/user-guide/dropped-messages` }] : []),
 				{ label: 'Msg delivery strategies', slug: `${prefix}/other/msg-delivery-strategy` },
 				{ label: 'PROXY protocol', slug: `${prefix}/other/proxy-protocol` },
 				{ label: 'Health API', slug: `${prefix}/other/health` },

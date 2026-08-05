@@ -23,7 +23,7 @@ The **Monitoring > State & Health** page contains four charts focused on broker 
 - **Message drop count** — counts the total number of messages the broker fails to process or deliver. Reasons include lack of subscriber interest (no matching subscriptions), resource limitations (full queues, storage limits), or rate limiting enforcement.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-To see which clients and topics those drops belong to, and why each message was lost, open the <DocLink product={props.product} path="user-guide/ui/dropped-messages">Dropped messages</DocLink> page.
+To see which clients and topics those drops belong to, and why each message was lost, open the <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page.
 </ShowFor>
 
 <ImageGallery product={props.product} images={[
