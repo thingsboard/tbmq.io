@@ -1,17 +1,23 @@
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Steps } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
+import ShowFor from '~/components/ShowFor.astro';
 import DocLink from '@components/DocLink.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 
 The **Blocked Clients** feature lets administrators restrict broker access based on client identifiers or pattern-based rules.
-It strengthens security, conserves system resources, and provides fine-grained control over who can initiate and maintain connections.
+It strengthens security, conserves system resources, and provides fine-grained control over who can establish a connection.
 
-TBMQ stores blocked client entries in memory for fast matching and synchronizes them across all broker nodes in a cluster using Kafka,
-ensuring consistent enforcement in distributed deployments.
+TBMQ stores blocked client entries in memory for fast matching and synchronizes them across all broker nodes in a cluster
+through the log-compacted `tbmq.client.blocked` Kafka topic (`TB_KAFKA_BLOCKED_CLIENT_TOPIC`), ensuring consistent enforcement in
+distributed deployments. Entries are keyed by type and value (plus the match target for regex entries), so compaction keeps the
+latest state of each one and each node replays the topic on startup to rebuild the in-memory set. A new or deleted entry takes
+effect on the node that made the change immediately, and on the other nodes as soon as they consume the update.
 
 Each entry supports an optional expiration timestamp. Once expired, the entry is treated as inactive and cleaned up automatically.
 
 <Aside type="caution">
-  TBMQ performs blocked client checks **before** the authentication phase.
+  TBMQ performs blocked client checks **before** the authentication phase, on both the standard CONNECT path and the
+  MQTT 5 <DocLink product={props.product} path="security/authentication/scram">enhanced authentication (SCRAM)</DocLink> path.
   Disallowed connections are rejected early, before any credentials are evaluated, reducing system load.
 </Aside>
 
@@ -31,6 +37,37 @@ Each entry supports an optional expiration timestamp. Once expired, the entry is
   },
 ]} />
 
+## Adding a blocked client
+
+Blocked clients are managed by the system administrator.
+
+<Steps>
+1. Open **Authentication** → **Blocked clients** and click the **+** button (**Add blocked client**).
+
+2. Choose **Block by** — `Client ID`, `Username`, `IP address`, or `Regex`.
+
+3. For `Regex`, choose **Match by** — `Client ID`, `Username`, or `IP address` — to select which connection attribute
+   the pattern is tested against.
+
+4. Enter the **Value**: the exact identifier for the first three types, or the regular expression for `Regex`.
+
+5. Leave the **Never expires** toggle on for a permanent block. Switch it off to reveal the **Date** and **Time** fields —
+   prefilled one month ahead — and set the moment after which the entry stops being enforced. The form rejects a time in the past.
+
+6. Optionally add a **Description**, then click **Add**.
+</Steps>
+
+An entry is identified by its type and value, plus **Match by** for regex entries. Adding the same combination twice fails with
+`Such blocked client already exists!`, and there is no edit action — delete the entry and re-create it to change its expiration
+time or description.
+
+The same operations are available over REST at `/api/blockedClient`; every endpoint requires the system administrator role.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Blocking and unblocking a client are recorded in the <DocLink product={props.product} path="security/audit-log">audit logs</DocLink>
+as the **Blocked** and **Unblocked** actions on the **Blocked client** entity type.
+</ShowFor>
+
 ## Block types
 
 You can block a client using any of the following identifiers:
@@ -41,6 +78,11 @@ You can block a client using any of the following identifiers:
 | `USERNAME` | Username | Block by MQTT username |
 | `IP_ADDRESS` | IP address | Block by the client's IP address |
 | `REGEX` | Regex | Pattern-based blocking using a regular expression |
+
+`CLIENT_ID`, `USERNAME`, and `IP_ADDRESS` entries are compared as exact, case-sensitive strings. `IP_ADDRESS` is tested against
+the address TBMQ resolved for the connection, so behind a load balancer it is the balancer's address unless
+<DocLink product={props.product} path="other/proxy-protocol">PROXY protocol</DocLink> is enabled. Subnets and CIDR notation are
+not supported — use a `REGEX` entry with **Match by** = `IP address` to cover an address range.
 
 The `REGEX` type matches against one of: `BY_CLIENT_ID` — labeled **Client ID** in the UI, `BY_USERNAME` — labeled **Username**, or `BY_IP_ADDRESS` — labeled **IP address**.
 
@@ -53,6 +95,8 @@ Match by:            BY_CLIENT_ID
 ```
 
 This matches `test-001`, `test-42`, and `test-9999`, but not `demo-test-1`, `test-user`, or `test-`.
+A pattern is always matched against the value in full, so `test-\d+` behaves exactly like the anchored form above.
+A pattern that does not compile is rejected when the entry is saved.
 
 ### Entry statuses
 
@@ -71,8 +115,35 @@ During the connection phase, each client is evaluated in the following order:
 3. Exact match on `IP_ADDRESS`
 4. Regex-based match (if any exist)
 
-If a match is found and the entry is not expired, the connection is rejected.
-Blocked client events are also visible in the <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized Clients</DocLink> view.
+The first three are single hash-map lookups keyed by type and value, so their cost does not grow with the number of
+entries. Regex entries are only evaluated if no exact match was found, and each one is tested in turn.
+A check is skipped when the corresponding connection attribute is absent — a client that connects without a username,
+for example, can never be caught by a `USERNAME` or `BY_USERNAME` entry.
+
+If a match is found and the entry is not expired, the connection is rejected before authentication and the channel is
+closed. The CONNACK reason code depends on the protocol version:
+
+| MQTT version | CONNACK reason code |
+|---|---|
+| 5.0 | `0x8A` Banned |
+| 3.1.1 / 3.1 | `0x05` Connection Refused, not authorized |
+
+The check runs only while a connection is being established. Blocking a client that is already connected does not close its
+session — the entry applies the next time it connects, so disconnect the live session from the
+<DocLink product={props.product} path="user-guide/ui/sessions">Sessions</DocLink> page if you need the client gone immediately.
+
+Every rejection is recorded in the <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized Clients</DocLink> view
+(unless you disable that persistence with `SECURITY_UNAUTH_CLIENTS_ENABLED=false`) with a reason that names the entry that
+matched — useful for confirming that a regex is catching what you intended:
+
+```text
+Blocked client by clientId:attack-bot-23
+Blocked client by regex:^test-\d+$:byID
+Enhanced auth blocked client by ipAddress:10.7.0.15
+```
+
+The key is `<type>:<value>`, plus `:byID`, `:byUN`, or `:byIP` for regex entries to show which attribute was tested.
+Rejections on the enhanced authentication path use the `Enhanced auth blocked client by` prefix.
 
 ## Automatic cleanup
 
@@ -88,10 +159,12 @@ blocked-client:
     ttl: "${BLOCKED_CLIENT_CLEANUP_TTL_MINUTES:10080}"
 ```
 
-Cleanup runs only after both the expiration timestamp and the TTL period have passed.
+The TTL is counted from the entry's expiration time: an entry is removed on the first cleanup run at or after
+`expiration time + ttl`, and that removal is propagated to the other nodes like any other change. Expired entries stop being
+enforced the moment they expire, well before they are swept.
 
 ## Recommendations
 
-- **Prefer exact matches over regex.** Regex rules are evaluated for every connection; they add overhead that scales with the number of blocked entries. Use them only when `CLIENT_ID`, `USERNAME`, or `IP_ADDRESS` matching is insufficient.
+- **Prefer exact matches over regex.** Regex rules are evaluated on every connection that no exact entry matched; they add overhead that scales with the number of regex entries. Use them only when `CLIENT_ID`, `USERNAME`, or `IP_ADDRESS` matching is insufficient.
 - **Use authentication as the primary rejection mechanism.** Blocked clients should serve as an additional control layer, not the main one.
-- **Keep the list small.** A large number of entries, especially regex-based ones, increases memory usage and slows down lookups.
+- **Keep the list small.** A large number of entries increases memory usage, and each extra regex entry adds work to the regex pass.

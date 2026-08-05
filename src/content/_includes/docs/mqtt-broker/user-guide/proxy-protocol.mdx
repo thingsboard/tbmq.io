@@ -40,7 +40,7 @@ PROXY TCP4 192.0.2.1 198.51.100.1 12345 1883\r\n
 
 **PROXY Protocol v2** uses a compact binary format suitable for high-performance environments.
 
-This means TBMQ treats the very first bytes of every incoming connection as PROXY Protocol data, before interpreting it as MQTT or TLS.
+This means TBMQ treats the very first bytes of every connection on a proxy-enabled listener as PROXY Protocol data, before interpreting them as MQTT or TLS.
 
 ## When to enable it
 
@@ -49,11 +49,15 @@ Enable PROXY Protocol in TBMQ when:
 - TBMQ is deployed behind a load balancer or reverse proxy (e.g., HAProxy, AWS NLB, NGINX) that supports PROXY Protocol.
 - You need the real client IP for logging, IP-based security policies, rate limiting, or auditing.
 
-TBMQ stores the client IP as part of session information and uses it in the
-<DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized Clients</DocLink> feature,
-where it tracks connection attempts from clients that fail authentication.
-Having the correct IP address helps identify the source of unauthorized access attempts and improves security monitoring.
-Without PROXY Protocol, TBMQ sees only the proxy's IP, making it impossible to distinguish individual clients.
+TBMQ resolves the client address once per connection, before authentication, and then uses it throughout the session:
+
+- **Session details** — the **Client IP** shown for each connected session in the UI and returned by the REST API.
+- **<DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized Clients</DocLink>** — the source address recorded for every connection attempt that fails authentication or is blocked.
+- **<DocLink product={props.product} path="other/blocked-client">Blocked clients</DocLink>** — `IP_ADDRESS` entries and regex entries with **Match by** = `IP address` are tested against this address, so IP-based blocking is only meaningful when the address is the real client's.
+- **Broker logs** — connection and disconnection entries.
+
+Without PROXY Protocol, all of the above see only the proxy's IP, making it impossible to distinguish individual clients —
+and an `IP_ADDRESS` block would either match nothing or match every client behind that proxy.
 
 <Aside type="caution">
   Do not enable PROXY Protocol unless your proxy is configured to send PROXY Protocol headers.
@@ -63,36 +67,34 @@ Without PROXY Protocol, TBMQ sees only the proxy's IP, making it impossible to d
 
 ## Configuration
 
-### Before TBMQ v2.3 — global setting only
+### Global setting
 
-PROXY Protocol applies to all MQTT listeners globally:
+`listener.proxy_enabled` turns PROXY Protocol on for all MQTT listeners. It is disabled by default:
 
 ```yaml
 listener:
-  # Enable PROXY Protocol support. Disabled by default. Supports both v1 and v2 when enabled.
+  # Enables or disables proxy protocol support as a global setting for all listeners.
+  # If enabled, supports both v1 and v2.
   proxy_enabled: "${MQTT_PROXY_PROTOCOL_ENABLED:false}"
 ```
 
-Set `MQTT_PROXY_PROTOCOL_ENABLED` to `true` to enable PROXY Protocol for all listeners.
-
 <Aside type="tip">
-  When `proxy_enabled` is set to `true`, TBMQ automatically supports both PROXY Protocol v1 and v2.
-  The header is always read before any MQTT or TLS-specific data.
+  There is no version switch. When `proxy_enabled` is `true`, TBMQ installs Netty's PROXY Protocol decoder, which
+  detects v1 and v2 headers automatically. The header is always read before any MQTT or TLS-specific data.
 </Aside>
 
-### Since TBMQ v2.3 — per-listener overrides
+### Per-listener overrides
 
-In addition to the global setting, each listener can be configured independently.
-Per-listener values default to unset and inherit the global value.
-If explicitly set, the per-listener value overrides the global one.
+Since TBMQ v2.3, each listener can also be configured independently. Per-listener values are **unset** by default and
+inherit the global value; an explicitly set value overrides it.
 
 ```yaml
 listener:
-  # Global PROXY Protocol setting for all listeners
+  # Global PROXY Protocol setting for all listeners.
   proxy_enabled: "${MQTT_PROXY_PROTOCOL_ENABLED:false}"
 
   tcp:
-    # Inherits global value if unset. Overrides global if explicitly set.
+    # Inherits the global value if unset. Overrides the global value if explicitly set.
     proxy_enabled: "${MQTT_TCP_PROXY_PROTOCOL_ENABLED:}"
   ssl:
     proxy_enabled: "${MQTT_SSL_PROXY_PROTOCOL_ENABLED:}"
@@ -109,6 +111,10 @@ MQTT_PROXY_PROTOCOL_ENABLED=true       # globally enabled
 MQTT_TCP_PROXY_PROTOCOL_ENABLED=false  # TCP listener explicitly disabled
 MQTT_SSL_PROXY_PROTOCOL_ENABLED=       # TLS listener unset → inherits global → enabled
 ```
+
+This is the setting to reach for when only part of your traffic arrives through a PROXY Protocol-aware load balancer —
+for example, external clients terminating on a TLS listener behind an NLB, while in-cluster clients connect to the plain
+TCP listener directly.
 
 ## Load balancer configuration
 
@@ -159,7 +165,7 @@ Enable PROXY Protocol on your load balancer according to its documentation, then
 
 ## Considerations
 
-- If PROXY Protocol is enabled in TBMQ but not on the proxy, TBMQ fails to parse the initial bytes and may reject connections.
-- If PROXY Protocol is enabled on the proxy but not in TBMQ, the header is misinterpreted as MQTT or TLS data, causing connection errors.
+- If PROXY Protocol is enabled in TBMQ but not on the proxy, TBMQ cannot parse the initial bytes: the connection is closed before any CONNECT is processed, and the parse failure is logged at `ERROR`.
+- If PROXY Protocol is enabled on the proxy but not in TBMQ, the header is misinterpreted as MQTT or TLS data, causing connection errors. On a TLS listener this surfaces in the broker log as `NotSslRecordException`.
 - All connections to TBMQ must pass through a properly configured proxy when PROXY Protocol is enabled.
 - PROXY Protocol must only be configured when TBMQ is behind a trusted proxy, as the proxy defines the reported client IP.
