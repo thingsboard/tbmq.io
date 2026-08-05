@@ -35,7 +35,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 			],
 		},
 		{
-			label: 'MQTT essentials',
+			label: 'MQTT features',
 			collapsed: true,
 			items: [
 				{ label: 'MQTT protocol', slug: `${prefix}/user-guide/mqtt-protocol` },
@@ -59,12 +59,13 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 			slug: `${prefix}/user-guide/integrations/how-to-connect-thingsboard-to-tbmq`,
 		},
 		{
-			label: 'Broker operations',
+			label: 'Operating TBMQ',
 			collapsed: true,
 			items: [
 				{ label: 'TBMQ client type', slug: `${prefix}/user-guide/mqtt-client-type` },
 				{ label: 'Blocked clients', slug: `${prefix}/other/blocked-client` },
 				{ label: 'Backpressure', slug: `${prefix}/user-guide/backpressure` },
+				...(isPE ? [{ label: 'Dropped messages', slug: `${prefix}/user-guide/dropped-messages` }] : []),
 				{ label: 'Msg delivery strategies', slug: `${prefix}/other/msg-delivery-strategy` },
 				{ label: 'PROXY protocol', slug: `${prefix}/other/proxy-protocol` },
 				{ label: 'Health API', slug: `${prefix}/other/health` },
