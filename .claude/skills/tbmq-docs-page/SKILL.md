@@ -38,6 +38,10 @@ astro.sidebar.ts                                            ← one entry in tbm
 
 URL: `/docs/mqtt-broker/<path>/<page>/` (CE) and `/docs/mqtt-broker/pe/<path>/<page>/` (PE). `trailingSlash: 'always'`.
 
+**Exception — a wholly PE-only page** (the feature does not exist in CE at all): create the include and the **PE stub only**, *no* CE stub, and gate the sidebar entry with `isPE`. That is 2 files + 1 gated entry. Existing examples: `white-labeling`, `image-gallery`, `subscription`, `security/rbac`, `security/audit-log`, `user-guide/dropped-messages`. Adding a CE stub for one of these publishes a PE feature to CE readers — the error the edition split exists to prevent.
+
+Choosing between the two shapes: use `<ShowFor>` inside a **shared** page when only *part* of the content is PE-only; use a **PE-only page** when the whole topic is. Check the PE-only list in [CE vs PE](#ce-vs-pe--whats-actually-pe-only) before deciding, and ask if it isn't clear-cut.
+
 Existing pages are the best reference — read a neighbour in the same section before writing, since conventions differ by section. Models worth copying:
 
 - `_includes/docs/mqtt-broker/user-guide/keep-alive.mdx` — a feature page that stays TBMQ-technical (the `MQTT_KEEP_ALIVE_MONITORING_DELAY_MS` env var, the `KEEP_ALIVE_TIMEOUT` reason, client-takeover + will-delay nuance) instead of re-teaching the ping concept.
@@ -63,7 +67,7 @@ import { Products } from '~/models/site.models'
 <PageContent product={Products.TBMQ}/>
 ```
 
-PE stub (`.../docs/mqtt-broker/pe/<path>/<page>.mdx`): **identical**, except the last line passes `Products.TBMQ_PE`. Both stubs are required for the page to exist in both editions' sidebars. Frontmatter is the `base` schema (`title` + `description`; `type` defaults to `base`). `description` is the meta description — benefit-framed, ~150–160 chars, includes the key term.
+PE stub (`.../docs/mqtt-broker/pe/<path>/<page>.mdx`): **identical**, except the last line passes `Products.TBMQ_PE`. For a page that ships in **both** editions, both stubs are required — each edition resolves its own. A wholly PE-only page has the PE stub only (see the exception above). Frontmatter is the `base` schema (`title` + `description`; `type` defaults to `base`). `description` is the meta description — benefit-framed, ~150–160 chars, includes the key term.
 
 ### The shared include (where the work is)
 
@@ -109,7 +113,7 @@ Add one entry to the right group in `tbmqGuideItems` (or `tbmqInstallItems` / `t
 { label: 'Keep alive', slug: `${prefix}/user-guide/keep-alive` },
 ```
 
-Groups you'll usually target: **MQTT essentials** (protocol concepts), **Broker operations**, **Security**, **Integrations**. Put PE-only pages behind the `isPE` conditional already used in that file.
+Groups you'll usually target: **MQTT features** (protocol concepts), **Operating TBMQ** (tuning, health, provisioning), **Management console** (UI pages), **Security**, **Integrations**. Put PE-only pages behind the `isPE` conditional already used in that file.
 
 ## Verify against the TBMQ source
 
@@ -251,7 +255,7 @@ Ask the user before running `pnpm build:fast` (repo build policy: always ask "ru
 ## Gotchas
 
 - **Indentation flips vs the learn skill: MDX/YAML use SPACES**, not tabs. (Tabs are only for `.ts`/`.astro` in this repo; `.mdx`, `.json`, `.yaml` use spaces — prettier enforces it.)
-- **Both CE and PE stubs are required.** A missing PE stub means the page 404s under `/docs/mqtt-broker/pe/…` and breaks its sidebar entry. The sidebar entry itself is added once (via `${prefix}`) and serves both.
+- **Both CE and PE stubs are required** for a page that ships in both editions. A missing PE stub means the page 404s under `/docs/mqtt-broker/pe/…` and breaks its sidebar entry. The sidebar entry itself is added once (via `${prefix}`) and serves both. **A wholly PE-only page is the exception:** PE stub only, no CE stub, sidebar entry gated with `isPE`.
 - **`<ShowFor>` for product-conditional prose, not JSX `{props.product === …}`** — the latter disables Markdown parsing and forces raw HTML. Conditional headings use `<ConditionalHeading>`, not `##`.
 - **`<DocLink>` for internal doc links**, never bare Markdown links — it resolves the correct CE/PE prefix from `props.product`.
 - **Never hardcode versions / image tags** — import from `~/data/versions`.
