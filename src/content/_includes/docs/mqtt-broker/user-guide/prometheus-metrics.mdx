@@ -68,7 +68,7 @@ sum(rate(incomingPublishMsg_consumed_total{statsName="failedMsgs"}[5m]))
 | `deviceProcessor_processing_time_seconds` | timer | `consumerId` | Per-client async persist latency |
 | `deviceProcessor_pack_processing_time_seconds` | timer | `consumerId` | Whole-poll-batch latency |
 
-This is the consumer pool that asynchronously persists messages for persistent **DEVICE** clients reading off the `tbmq.msg.persisted` topic. The `tmp*` vs. plain split from [Ingest pipeline](#ingest-pipeline) above applies here unchanged. `failedMsgs` specifically means the message could not be written to the database and was discarded — not merely delayed for a later attempt.
+This is the consumer pool that asynchronously persists messages for persistent **DEVICE** clients reading off the `tbmq.msg.persisted` topic. The `tmp*` vs. plain split from [Ingest pipeline](#ingest-pipeline) above applies here unchanged. `failedMsgs` specifically means the message could not be written to Redis (the persistent DEVICE message store, distinct from the SQL write queues below) and was discarded — not merely delayed for a later attempt.
 
 ## Persistent APPLICATION clients
 

@@ -319,7 +319,7 @@ A publisher gets its PUBLISH acknowledged (or sends QoS 0 without expecting one)
 | `flowControl_total{statsName="dropsOverflow"}` | Both the subscriber's in-flight window and the delay queue behind it are full — the subscriber has fallen behind long enough to exhaust the buffer, not just hit a receive-maximum ceiling. |
 | `flowControl_total{statsName="dropsTtl"}` | A delayed message's TTL expired before it could be sent. |
 | `incomingPublishMsg_consumed_total{statsName="failedMsgs"}` | A message was discarded on the main ingest pipeline after processing gave up on it — not merely retried. |
-| `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be written to the database and was discarded. |
+| `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be written to Redis (the persistent DEVICE message store) and was discarded. |
 | Monitoring page's message drop chart | A per-interval delta of the same drop events, reset to zero after each report — compare it against `rate(droppedMsgs_total[5m])`, not the raw counter. |
 
 **Interpret**
@@ -329,7 +329,7 @@ Several different things collapse into "a drop," and telling them apart matters:
 - **No matching subscription** — nobody is subscribed to a topic a client just published to. This still counts toward `droppedMsgs_total`, but it's a normal, often expected outcome rather than a problem to chase.
 - **`dropsOverflow`** — a subscriber's in-flight window **and** its delay queue behind it are both full, almost always because that subscriber has fallen behind the publisher for a while, not just momentarily. See the [Slow subscribers](#slow-subscribers) playbook. This only adds to `droppedMsgs_total` for a non-persistent, non-retained message — a persistent subscriber's copy stays recoverable from Kafka or Redis, so it isn't counted as lost.
 - **`dropsTtl`** — the message aged out of the delay queue before TBMQ could send it. This isn't an independent cause: a message only lands in the delay queue in the first place because the in-flight window was already full, so `dropsTtl` is usually the same slow-subscriber situation as `dropsOverflow`, just showing up on a longer delay — see [Slow subscribers](#slow-subscribers) here too.
-- **`failedMsgs` on the device processor** — persistence failed, not delivery. That points at the database, not at the messaging path — see the [Dependency failures](#dependency-failures) playbook.
+- **`failedMsgs` on the device processor** — persistence failed, not delivery. That points at Redis (the persistent DEVICE message store), not at the messaging path — see the [Dependency failures](#dependency-failures) playbook.
 - **Rate limiting** — a client's incoming messages, or the broker's total-message budget, hit a configured limit and the PUBLISH is dropped at ingest before it is ever dispatched to a subscriber.
 
 **Act**
@@ -383,7 +383,7 @@ Publishes succeed and subscribers eventually get them, but end-to-end latency is
 |---|---|
 | Kafka consumer lag on `msg-all-consumer-group` (see [Kafka consumer group lag](#kafka-consumer-group-lag)) | Whether the main ingest pipeline is falling behind — often the first symptom to show up, ahead of anything that implies loss. |
 | `incomingPublishMsg_consumed_pack_processing_time_seconds` | Per-poll-batch latency on the main ingest consumers. |
-| `incomingPublishMsg_consumed_total{statsName="tmpFailed"}` | Messages retried on the main ingest pipeline — not lost yet. |
+| `incomingPublishMsg_consumed_total{statsName="tmpFailed"}` | Messages retried on the main ingest pipeline — not lost yet. Only moves under `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so this stays at zero regardless of load. |
 | `incomingPublishMsg_consumed_total{statsName="timeoutMsgs"}` | Messages the main ingest pipeline gave up on and discarded. |
 | `deviceProcessor_pack_processing_time_seconds` | Whole-poll-batch latency for persisting persistent DEVICE client messages. |
 | `appProcessor_total{statsName="tmpTimeoutPublish"}` | PUBLISH messages a persistent APPLICATION client has not yet acknowledged within a processing pass. |
@@ -397,7 +397,7 @@ Growing lag on `msg-all-consumer-group` means the broker is ingesting PUBLISH me
 
 **Act**
 
-- Scale broker nodes horizontally, or increase the relevant consumer count (`queue.msg-all.consumers-count`, `queue.device-persisted-msg.consumers-count`, and the equivalents for the other pipelines).
+- Scale broker nodes horizontally, or increase the consumer count for the pipeline that's behind (`queue.msg-all.consumers-count`, `queue.device-persisted-msg.consumers-count`) — each is capped by its topic's partition count, so raising it past that point is a silent no-op. Persistent APPLICATION clients have no equivalent setting to raise; each gets its own per-client consumer instead — see [Kafka consumer group lag](#kafka-consumer-group-lag).
 - If the slowdown traces to one specific downstream — a subscriber, Kafka, or the database — follow through to that playbook instead of tuning consumer counts here.
 - See <DocLink product={props.product} path="architecture">Architecture</DocLink> for how the consumer pools relate to broker nodes, and <DocLink product={props.product} path="installation/config">MQTT broker configuration</DocLink> for the consumer-count parameters.
 
@@ -458,10 +458,11 @@ A node is pegged on CPU or memory, threads pile up, or the process restarts unde
 - Raise the file descriptor limit before raising the connection target per node.
 - See <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink> and <DocLink product={props.product} path="reference/1m-throughput-p2p-performance-test">Scaling P2P messaging to 1M msg/sec</DocLink> for sizing guidance.
 
-Heap usage as a fraction of the ceiling:
+Heap usage as a fraction of the ceiling, summed across the per-pool series (G1's Eden and Survivor pools report no fixed max, so the `> 0` filter keeps only the pool that does):
 
 ```promql
-jvm_memory_used_bytes{area="heap"} / ignoring(id) group_left jvm_memory_max_bytes{area="heap"}
+sum by (instance) (jvm_memory_used_bytes{area="heap"})
+  / sum by (instance) (jvm_memory_max_bytes{area="heap"} > 0)
 ```
 
 ## Dependency failures
@@ -474,11 +475,11 @@ The broker itself is up and accepting connections, but something behind it — K
 |---|---|
 | `kafkaProducer_send_seconds`, `kafkaConsumer_commit_seconds` | Kafka `send()` / `commitSync()` latency, per `producerId` / `consumerId` — a rise here points at Kafka itself. |
 | `sqlQueue_queueSize` | Current depth of a database write queue, by `queueName`/`queueIndex` — the backpressure signal for PostgreSQL writes. |
-| `sqlQueue_total{statsName="failedMsgs"}` | Batches that failed to write to the database. |
+| `sqlQueue_total{statsName="failedMsgs"}` | Messages that failed to write to the database — the counter adds the whole failed batch's size, not one per batch. |
 | `hikaricp_connections_pending` | Threads currently waiting for a database connection from the pool. |
 | `hikaricp_connections_timeout_total` | Connection acquisitions that gave up waiting. |
 | `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be persisted and was discarded — DEVICE message persistence is Redis- (or Valkey-) backed, distinct from the SQL queues above. |
-| Health API (`/actuator/health`) | Whether `db`, `kafka`, and `redis` are each reachable from this node, right now. |
+| Health API (`/actuator/health`) | Whether `db`, `kafka`, and `redis` are each reachable from this node, right now — only visible once `HEALTH_SHOW_DETAILS=always` is set; the default `never` returns just the aggregate status with no per-component breakdown. See <DocLink product={props.product} path="other/health#configuration">Health API configuration</DocLink>. |
 
 **Interpret**
 
@@ -486,7 +487,7 @@ The broker itself is up and accepting connections, but something behind it — K
 
 **Act**
 
-- Check the dependency's own health first — <DocLink product={props.product} path="other/health">Health API</DocLink> reports `db`, `kafka`, and `redis` as separate components, so a `DOWN` there tells you which one to chase before looking anywhere else.
+- Check the dependency's own health first — <DocLink product={props.product} path="other/health">Health API</DocLink> reports `db`, `kafka`, and `redis` as separate components once `HEALTH_SHOW_DETAILS=always` is set, so a `DOWN` there tells you which one to chase before looking anywhere else.
 - Review connection-pool sizing against real concurrency — the HikariCP pool, and the Kafka producer/consumer counts.
 - Verify TLS and credentials for Redis or Valkey specifically when the persistent DEVICE path is the one failing.
 - See <DocLink product={props.product} path="installation/config">MQTT broker configuration</DocLink> for the pool-size and connection parameters.
