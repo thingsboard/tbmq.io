@@ -1,1 +1,44 @@
-Placeholder — replaced in Task 2.
+import { Aside, Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
+
+TBMQ exposes its internal state as Prometheus metrics through Spring Boot Actuator. This page is the complete reference: what each series means, which labels it carries, when it is present, and how to query it.
+
+For the charts in the management console, see <DocLink product={props.product} path="user-guide/ui/monitoring">Monitoring</DocLink>. For using these metrics to diagnose a specific problem, see <DocLink product={props.product} path="troubleshooting">Troubleshooting</DocLink>.
+
+## Enabling and scraping
+
+Prometheus is exposed by default; no configuration is required. TBMQ serves metrics at `/actuator/prometheus` on the HTTP port, and, like the rest of the Actuator surface, the endpoint requires no authentication.
+
+```yaml
+scrape_configs:
+  - job_name: tbmq
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['tbmq-node-1:8083', 'tbmq-node-2:8083']
+```
+
+The behavior is governed by a handful of tunables, all on by default:
+
+- **`STATS_ENABLED`** (default `true`) — enables the broker's internal stats collectors, not just the periodic log summary the name suggests. When set to `false`, TBMQ registers none of the counters, timers, or gauges behind the tables below — `/actuator/prometheus` still responds, but only with generic framework-level series (JVM, HTTP server, and similar); every TBMQ-specific series on this page disappears.
+- **`METRICS_ENDPOINTS_EXPOSE`** (default `health,info,prometheus`) — the list of Actuator endpoints exposed over HTTP. `prometheus` is in the list by default, so `/actuator/prometheus` is reachable out of the box.
+- **`STATS_PRINT_INTERVAL_MS`** (default `60000`) — how often stats are printed to the logs, in milliseconds. It does not affect scrape freshness — Prometheus can scrape at any interval you configure regardless of this value.
+- **`STATS_TIMER_PERCENTILES`** (default `0.5`) — which quantiles TBMQ's timers report, as a comma-separated list of doubles. See [How to read the metric names](#how-to-read-the-metric-names) below for how this shapes the scraped series.
+- **`APPLICATION_PROCESSOR_STATS_ENABLED`** (default `true`) — enables per-**APPLICATION**-client processing stats. See the `appProcessor` table below for the metrics this controls.
+
+<Aside type="caution">
+  `METRICS_ENDPOINTS_EXPOSE` replaces the whole list rather than adding to it. Setting it to `prometheus` alone also
+  removes `health`, taking down the endpoint that the <DocLink product={props.product} path="other/health">Health
+  API</DocLink> and Kubernetes probes depend on. Keep `health` in the list alongside `prometheus`.
+</Aside>
+
+## How to read the metric names
+
+The tables below list the names as Prometheus scrapes them. TBMQ's source instruments meters through Micrometer using dotted names, and Micrometer's Prometheus registry rewrites them into the Prometheus naming convention before they reach `/actuator/prometheus`. Knowing the mapping makes it possible to go from a series you see in Prometheus back to the meter that produced it, and vice versa:
+
+- A `.` in a meter name becomes `_` in the scraped series.
+- Counters gain a `_total` suffix — the meter `droppedMsgs` scrapes as `droppedMsgs_total`.
+- Timers expand into four series: `_seconds` (carrying a `quantile` label), `_seconds_count`, `_seconds_sum`, and `_seconds_max`. Which quantiles appear on the `_seconds` series is controlled by `STATS_TIMER_PERCENTILES`, default `0.5`.
+- Gauges keep their name unchanged.
+- Where a meter has several possible outcomes, TBMQ puts the outcome in a `statsName` label rather than minting a separate metric name per outcome. For example, `deviceProcessor_total` is a single counter that covers all eight outcomes, and a query selects one of them with `{statsName="failedMsgs"}`.
