@@ -1,4 +1,4 @@
-# ThingsBoard Docs
+# TBMQ Docs
 
 Source for the documentation site at [thingsboard.io/docs](https://thingsboard.io/docs/), built with [Astro](https://astro.build/) and [Starlight](https://starlight.astro.build/).
 
