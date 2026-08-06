@@ -24,7 +24,7 @@ Each playbook name links to its own heading anchor on this page.
 
 ## Reading logs
 
-TBMQ writes to `thingsboard-mqtt-broker.log` in `/var/log/thingsboard-mqtt-broker`, plus stdout — both by default.
+TBMQ writes to `thingsboard-mqtt-broker.log` in `/var/log/thingsboard-mqtt-broker`, plus stdout — both by default. On Kubernetes, each pod logs into its own subdirectory under that path instead, named after the pod (`TB_SERVICE_ID` is set to the pod's own name) — see the Kubernetes tab below.
 
 <Tabs>
 <TabItem label="Docker Compose">
@@ -48,10 +48,10 @@ kubectl logs -f tbmq-0
 kubectl logs -f tbmq-0 | grep ERROR
 kubectl logs -f tbmq-0 > tbmq-0.log
 kubectl exec -it tbmq-0 -- bash
-cat /var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.log
+cat /var/log/thingsboard-mqtt-broker/tbmq-0/thingsboard-mqtt-broker.log
 ```
 
-`tbmq-0` is the first pod of the `tbmq` StatefulSet — `kubectl get pods` lists the actual pod names in your cluster.
+`tbmq-0` is the first pod of the `tbmq` StatefulSet — `kubectl get pods` lists the actual pod names in your cluster. Kubernetes sets each pod's `TB_SERVICE_ID` to that same pod name (via a `fieldRef` on `metadata.name`), which is why the log file sits in a subdirectory named after the pod instead of directly in `/var/log/thingsboard-mqtt-broker`.
 
 </TabItem>
 </Tabs>
@@ -60,7 +60,7 @@ Use `docker compose`, not `docker-compose`.
 
 ## Enabling component logs
 
-`logback.xml` lives at `/usr/share/thingsboard-mqtt-broker/conf` inside the broker container. It has `scan="true"` and `scanPeriod="10 seconds"`, so an edit takes effect within ten seconds — no restart required. This is different from the environment-variable parameters covered in <DocLink product={props.product} path="installation/how-to-change-config">how to change configuration</DocLink>: `logback.xml` is its own file, and Docker and Kubernetes each ship their own copy of it.
+TBMQ looks for `logback.xml` at `/config/logback.xml` first, falling back to the packaged copy at `/usr/share/thingsboard-mqtt-broker/conf/logback.xml` only if nothing is mounted at `/config`. The cluster Docker Compose setup and every Kubernetes manifest both mount something at `/config`, so `/config/logback.xml` is the file actually in effect there — the packaged path only matters for a single-node Docker install, which doesn't mount `/config` by default. Either way, `scan="true"` and `scanPeriod="10 seconds"` mean an edit takes effect within ten seconds once it's in the right place — no restart required. This is different from the environment-variable parameters covered in <DocLink product={props.product} path="installation/how-to-change-config">how to change configuration</DocLink>: `logback.xml` is its own file, and Docker and Kubernetes each ship their own copy of it.
 
 The shipped configuration:
 
@@ -110,8 +110,9 @@ To turn on a specific component, add one or more `<logger>` elements between the
 
 | Area | Logger | Turn this on when |
 |---|---|---|
-| Connect / CONNACK | `org.thingsboard.mqtt.broker.actors.client.service.connect` (package) | You want everything the CONNECT-handling code logs — CONNACK results, authentication failures, malformed CONNECT packets — in one place |
-| Connect service | `org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl` | Same information, scoped to just this class rather than the whole package — today it's the package's only logger, so the output is identical either way |
+| Connect / CONNACK | `org.thingsboard.mqtt.broker.actors.client.service.connect` (package) | You want visibility into the CONNECT-handling flow itself — CONNACK send failures, connection-validation failures, topic-alias/keep-alive adjustments. It does **not** cover authentication failures or malformed packets — see the Authentication and Channel / TLS errors rows for those |
+| Connect service | `org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl` | Same as above, scoped to just this class rather than the whole package — today it's the package's only logger, so the output is identical either way |
+| Authentication | `org.thingsboard.mqtt.broker.service.auth` (package) | CONNECT attempts are being rejected and you need to know why — bad credentials, an invalid JWT, an untrusted certificate, or a failed HTTP auth call. Covers every built-in provider (Basic, JWT, SSL, HTTP) and is the most useful logger for [Clients cannot connect](#clients-cannot-connect) |
 | Disconnect | `org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl` | You need the reason behind a specific client's disconnect |
 | Channel / TLS errors | `org.thingsboard.mqtt.broker.server.MqttSessionHandler` | You're chasing TLS handshake failures or other channel-level errors — protocol violations, malformed packets, connections dropped mid-handshake |
 | Subscriptions | `org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumerImpl` | A subscription made on one node doesn't seem to reach another — this is the consumer that replicates subscription state across the cluster |
@@ -123,7 +124,7 @@ To turn on a specific component, add one or more `<logger>` elements between the
 <Tabs>
 <TabItem label="Docker Compose">
 
-On the <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink>, `logback.xml` lives on the host at `docker/tbmq/conf/logback.xml` and is copied into the running configuration volume by:
+On the <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink>, `logback.xml` lives on the host at `tbmq/conf/logback.xml`, relative to wherever you cloned the cluster scripts into (`docker/` for TBMQ, `cluster/` for TBMQ PE) — and is copied into the running configuration volume by:
 
 ```bash
 ./scripts/docker-refresh-config.sh
@@ -131,14 +132,30 @@ On the <DocLink product={props.product} path="installation/cluster/docker-compos
 
 Both nodes pick up the change automatically within the ten-second scan period — no restart.
 
-The single-node <DocLink product={props.product} path="installation/docker">Docker install</DocLink> doesn't expose a separate config volume, so edit the file directly inside the running container instead:
+The single-node <DocLink product={props.product} path="installation/docker">Docker install</DocLink> doesn't mount `/config` by default, and the running container ships no text editor and isn't writable by its own user — there's no way to edit the packaged file in place. Mount your own file at `/config/logback.xml` instead, which `start-tbmq.sh` prefers over the packaged copy:
 
-```bash
-docker exec -it tbmq bash
-vi /usr/share/thingsboard-mqtt-broker/conf/logback.xml
-```
+<Steps>
 
-The ten-second scan still applies; the edit is lost if the container is recreated.
+1. **Save the configuration** (with your `<logger>` additions) to a file on the host, e.g. `./logback.xml`.
+
+2. **Add a bind mount** to the `tbmq` service in `docker-compose.yml`:
+
+   ```yaml
+   volumes:
+     - ./logback.xml:/config/logback.xml
+     - tbmq-logs:/var/log/thingsboard-mqtt-broker
+     - tbmq-data:/data
+   ```
+
+3. **Recreate the container:**
+
+   ```bash
+   docker compose up -d tbmq
+   ```
+
+</Steps>
+
+From then on the mount is live — further edits to `./logback.xml` on the host reach the container directly, and the ten-second scan still applies. Only the first bind-mount change needs step 3.
 
 </TabItem>
 <TabItem label="Kubernetes">
@@ -189,6 +206,8 @@ Each consumer group belongs to one subsystem, so a lag line points you straight 
 |---|---|
 | `msg-all-consumer-group` | Main incoming PUBLISH pipeline |
 | `device-persisted-msg-consumer-group` | Persistent DEVICE client message persistence |
+| `application-persisted-msg-consumer-group-<clientId>` | Persistent APPLICATION client message delivery |
+| `application-shared-msg-consumer-group-<shareName>-<sharedTopic>` | Shared-subscription APPLICATION client message delivery |
 | `client-session-event-consumer-group` | Session connect/disconnect events |
 | `client-session-event-response-consumer-group-<serviceId>` | Session event responses |
 | `client-session-consumer-group-<id>` | Client session cache replication |
@@ -204,9 +223,18 @@ Each consumer group belongs to one subsystem, so a lag line points you straight 
 | `ie-uplink-consumer-group`, `ie-uplink-notifications-consumer-group-<serviceId>` | Integration uplink |
 | `http-ie-downlink-consumer-group`, `mqtt-ie-downlink-consumer-group`, `kafka-ie-downlink-consumer-group` | Integration downlink per type |
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+PE adds one more monitored group:
+
+| Group | Subsystem |
+|---|---|
+| `dropped-msg-consumer-group-drain` | Dropped-message record delivery — see <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> |
+</ShowFor>
+
 Every group name is prefixed with the Kafka prefix from configuration (`TB_KAFKA_PREFIX`, empty by default — see <DocLink product={props.product} path="installation/config#kafka-parameters">Kafka parameters</DocLink>), so on a broker with a prefix configured, look for `<prefix>msg-all-consumer-group` rather than the bare name above.
 
-Most groups also carry a trailing id, and the two placeholders above mean different things:
+Most groups also carry a trailing id, and the placeholders above mean different things depending on the group:
 
 - **`<serviceId>`** — just that node's `TB_SERVICE_ID`, stable across restarts.
 - **`<id>`** — that node's `TB_SERVICE_ID` plus a suffix generated fresh each time the node starts. The exact group name for these six changes on every restart, so don't expect to find the same name in an old log after a node has restarted — search for the group's name **prefix** instead.
+- **`<clientId>` / `<shareName>-<sharedTopic>`** — the two APPLICATION-client rows aren't per-node at all: each persistent APPLICATION client, and each shared-subscription group, gets its own dedicated consumer group identified by its own client ID or share name and topic.
