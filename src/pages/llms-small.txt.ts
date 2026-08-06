@@ -8,45 +8,44 @@ export const prerender = true;
 const SITE_URL = PROD_ORIGIN;
 
 // Astro 6 docsLoader id format: index pages drop the `/index` suffix
-// (e.g., src/content/docs/docs/mqtt-broker/index.mdx → id "docs/mqtt-broker",
-// not "docs/mqtt-broker/index"). Subtree patterns end in `/**` and also
+// (e.g., src/content/docs/docs/index.mdx → id "docs",
+// not "docs/index"). Subtree patterns end in `/**` and also
 // auto-exclude their bare prefix below.
 const EXCLUDE_PATTERNS = [
 	// Utility pages with no prose worth cataloguing.
 	'docs/search',
 	'docs/newsletter-thanks',
-	'docs/mqtt-broker/search',
-	'docs/mqtt-broker/pe/search',
+	'docs/pe/search',
 
 	// Release churn — these go stale between builds, and GitHub releases are
 	// the canonical source (linked from llms.txt).
-	'docs/mqtt-broker/changelog',
-	'docs/mqtt-broker/releases',
-	'docs/mqtt-broker/roadmap',
-	'docs/mqtt-broker/pe/changelog',
-	'docs/mqtt-broker/pe/releases',
-	'docs/mqtt-broker/pe/roadmap',
+	'docs/changelog',
+	'docs/releases',
+	'docs/roadmap',
+	'docs/pe/changelog',
+	'docs/pe/releases',
+	'docs/pe/roadmap',
 ];
 
 // The PE tree is a superset of the CE tree — both editions render the same
 // shared `_includes` content, so cataloguing both would duplicate nearly every
 // entry. PE is canonical here; only CE pages with no PE counterpart are kept.
-const PE_PREFIX = 'docs/mqtt-broker/pe';
-const CE_ONLY_PAGES = ['docs/mqtt-broker/installation/building-from-source'];
+const PE_PREFIX = 'docs/pe';
+const CE_ONLY_PAGES = ['docs/installation/building-from-source'];
 
 // Entry points first, so a consumer reading top-down meets the overview pages
 // before the leaf pages. Everything else falls back to id order.
 const PROMOTE = [
-	'docs/mqtt-broker/pe',
-	'docs/mqtt-broker/pe/why-tbmq',
-	'docs/mqtt-broker/pe/getting-started',
-	'docs/mqtt-broker/pe/architecture',
-	'docs/mqtt-broker/pe/installation',
-	'docs/mqtt-broker/pe/security/overview',
-	'docs/mqtt-broker/pe/user-guide',
-	'docs/mqtt-broker/pe/integrations',
-	'docs/mqtt-broker/pe/rest-api',
-	'docs/mqtt-broker/pe/reference',
+	'docs/pe',
+	'docs/pe/why-tbmq',
+	'docs/pe/getting-started',
+	'docs/pe/architecture',
+	'docs/pe/installation',
+	'docs/pe/security/overview',
+	'docs/pe/user-guide',
+	'docs/pe/integrations',
+	'docs/pe/rest-api',
+	'docs/pe/reference',
 ];
 
 function globToRegExp(glob: string): RegExp {
@@ -62,8 +61,8 @@ function globToRegExp(glob: string): RegExp {
 }
 
 // For patterns ending in `/**`, also exclude the bare prefix so a subtree
-// exclusion ("docs/mqtt-broker/other/**") also drops the section's index entry
-// ("docs/mqtt-broker/other"). Standard glob semantics require ≥1 trailing segment.
+// exclusion ("docs/other/**") also drops the section's index entry
+// ("docs/other"). Standard glob semantics require ≥1 trailing segment.
 const EXCLUDE_REGEXPS = EXCLUDE_PATTERNS.flatMap((p) =>
 	p.endsWith('/**') ? [globToRegExp(p), globToRegExp(p.slice(0, -3))] : [globToRegExp(p)]
 );
@@ -78,7 +77,7 @@ function isProfessionalEdition(slug: string): boolean {
 
 function isCommunityEdition(slug: string): boolean {
 	if (isProfessionalEdition(slug)) return false;
-	return slug === 'docs/mqtt-broker' || slug.startsWith('docs/mqtt-broker/');
+	return slug === 'docs' || slug.startsWith('docs/');
 }
 
 function slugToUrl(slug: string): string {

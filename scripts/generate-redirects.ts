@@ -56,6 +56,12 @@ function findMdxSlugs(dir: string, base: string = ''): string[] {
 	return slugs;
 }
 
+/** Joins /docs/ with possibly-empty path segments, normalizing `//` away. */
+function docsUrl(...segments: string[]): string {
+	const path = segments.filter(Boolean).join('/');
+	return path ? `/docs/${path}/` : '/docs/';
+}
+
 // ---------------------------------------------------------------------------
 // 1. Generate public/redirects.json
 // ---------------------------------------------------------------------------
@@ -65,14 +71,14 @@ const flatMap = getAllRedirectsFlat();
 // Add entries for PREFIX_RENAME groups with empty entries by scanning content.
 // Source of truth for prefix renames: CATCH_ALL_REDIRECTS[].newPrefix.
 for (const group of CATCH_ALL_REDIRECTS) {
-	if (group.entries.length > 0 || !group.newPrefix) continue;
+	if (group.entries.length > 0 || group.newPrefix === undefined) continue;
 	const contentDir = resolve(ROOT, 'src/content/docs/docs', group.newPrefix);
 	const slugs = findMdxSlugs(contentDir);
 	const excluded = new Set(group.excludeSlugs ?? []);
 	for (const slug of slugs) {
 		if (excluded.has(slug)) continue;
-		const oldPath = slug ? `/docs/${group.oldPrefix}/${slug}/` : `/docs/${group.oldPrefix}/`;
-		const newPath = slug ? `/docs/${group.newPrefix}/${slug}/` : `/docs/${group.newPrefix}/`;
+		const oldPath = docsUrl(group.oldPrefix, slug);
+		const newPath = docsUrl(group.newPrefix, slug);
 		flatMap[oldPath] = newPath;
 	}
 }
@@ -131,11 +137,11 @@ for (const group of CATCH_ALL_REDIRECTS) {
 	// but not in _redirects.
 	const overrides = singlesByPrefix.get(group.oldPrefix);
 	if (overrides?.length) {
-		const splatNewPrefix = group.entries.length === 0 ? group.newPrefix : null;
+		const splatNewPrefix = group.entries.length === 0 ? (group.newPrefix ?? null) : null;
 		for (const entry of overrides) {
-			if (splatNewPrefix) {
+			if (splatNewPrefix !== null) {
 				const rest = entry.oldPath.slice(group.oldPrefix.length + 1);
-				if (entry.target === `/docs/${splatNewPrefix}/${rest}/`) continue;
+				if (entry.target === docsUrl(splatNewPrefix, rest)) continue;
 			}
 			staticLines.push(`/docs/${entry.oldPath}/ ${entry.target} 301`);
 		}
@@ -143,9 +149,9 @@ for (const group of CATCH_ALL_REDIRECTS) {
 
 	// Empty-entry PREFIX_RENAME group — one splat rule drives the whole tree.
 	if (group.entries.length === 0) {
-		if (group.newPrefix) {
+		if (group.newPrefix !== undefined) {
 			autoDynamicGroups.push({
-				rules: [`/docs/${group.oldPrefix}/* /docs/${group.newPrefix}/:splat 301`],
+				rules: [`/docs/${group.oldPrefix}/* ${docsUrl(group.newPrefix)}:splat 301`],
 			});
 		}
 		continue;

@@ -401,15 +401,15 @@ PAGES = {
     ],
     'tbmq': [
         ('yml', 'application/src/main/resources/thingsboard-mqtt-broker.yml',
-         'src/content/docs/docs/mqtt-broker/installation/config.mdx', 'TBMQ'),
+         'src/content/docs/docs/installation/config.mdx', 'TBMQ'),
         ('yml', 'integration/executor/src/main/resources/tbmq-integration-executor.yml',
-         'src/content/docs/docs/mqtt-broker/installation/ie-config.mdx', 'Integration Executor'),
+         'src/content/docs/docs/installation/ie-config.mdx', 'Integration Executor'),
     ],
     'tbmq-pe': [
         ('yml', 'application/src/main/resources/thingsboard-mqtt-broker.yml',
-         'src/content/docs/docs/mqtt-broker/pe/installation/config.mdx', 'TBMQ'),
+         'src/content/docs/docs/pe/installation/config.mdx', 'TBMQ'),
         ('yml', 'integration/executor/src/main/resources/tbmq-integration-executor.yml',
-         'src/content/docs/docs/mqtt-broker/pe/installation/ie-config.mdx', 'Integration Executor'),
+         'src/content/docs/docs/pe/installation/ie-config.mdx', 'Integration Executor'),
     ],
     'edge': [
         ('yml', 'application/src/main/resources/tb-edge.yml',

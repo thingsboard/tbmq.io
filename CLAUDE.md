@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **TBMQ website** — the documentation and marketing site for **TBMQ**, the open-source MQTT broker by ThingsBoard. It is built with **Astro + Starlight**.
 
-**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the `mqtt-broker/` docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed. To keep those cherry-picks clean, some multi-product scaffolding inherited from upstream is still **kept intact on purpose**: the `Products` enum, `versions.ts`, the redirect tables, and the content schemas. `astro.sidebar.ts` is the exception — it has been **trimmed to the TBMQ sidebars only** (the unused upstream product sidebars were removed). When editing the remaining shared files, prefer trimming/deploying content over restructuring them.
+**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the TBMQ docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed. To keep those cherry-picks clean, some multi-product scaffolding inherited from upstream is still **kept intact on purpose**: the `Products` enum, `versions.ts`, the redirect tables, and the content schemas. `astro.sidebar.ts` is the exception — it has been **trimmed to the TBMQ sidebars only** (the unused upstream product sidebars were removed). When editing the remaining shared files, prefer trimming/deploying content over restructuring them.
 
 The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking.
 
@@ -38,10 +38,10 @@ pnpm generate:redirects      # Regenerate public/_redirects + public/redirects.j
 
 ### Content System
 
-TBMQ documentation lives in `src/content/docs/docs/mqtt-broker/` as `.mdx` files with YAML frontmatter:
+TBMQ documentation lives in `src/content/docs/docs/` as `.mdx` files with YAML frontmatter:
 
-- `src/content/docs/docs/mqtt-broker/` → TBMQ Community Edition pages
-- `src/content/docs/docs/mqtt-broker/pe/` → TBMQ Professional Edition pages
+- `src/content/docs/docs/` → TBMQ Community Edition pages
+- `src/content/docs/docs/pe/` → TBMQ Professional Edition pages
 
 Content uses Astro's Content Collections with type-safe Zod schemas defined in `src/content.config.ts`.
 
@@ -90,12 +90,12 @@ All product identifiers live in `src/models/site.models.ts` as the `Products` en
 
 | Enum value | URL prefix | Content directory |
 |------------|------------|-------------------|
-| `TBMQ` | `mqtt-broker/` | `src/content/docs/docs/mqtt-broker/` |
-| `TBMQ_PE` | `mqtt-broker/pe/` | `src/content/docs/docs/mqtt-broker/pe/` |
+| `TBMQ` | `''` (empty) | `src/content/docs/docs/` |
+| `TBMQ_PE` | `pe/` | `src/content/docs/docs/pe/` |
 
 Other enum values (`CE`, `PE`, `PAAS`, `EDGE`, `GW`, `LICENSE`, `TRENDZ`, `MOBILE`, …) exist in the model but have **no content** in this repo. Don't add non-TBMQ product content — this is a TBMQ-only site.
 
-**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/mqtt-broker/getting-started/` (CE), `/docs/mqtt-broker/pe/...` (PE).
+**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/getting-started/` (CE), `/docs/pe/...` (PE).
 
 ### Shared Content via _includes
 
@@ -103,9 +103,11 @@ Documentation pages are thin wrappers that import a shared **include file** and 
 
 ```
 src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx   ← actual content (shared)
-src/content/docs/docs/mqtt-broker/{path}/{page}.mdx         ← CE stub (passes Products.TBMQ)
-src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx      ← PE stub (passes Products.TBMQ_PE)
+src/content/docs/docs/{path}/{page}.mdx                     ← CE stub (passes Products.TBMQ)
+src/content/docs/docs/pe/{path}/{page}.mdx                  ← PE stub (passes Products.TBMQ_PE)
 ```
+
+The include path keeps the `mqtt-broker` segment on purpose — it's a filesystem-only location (never routed to a URL), and leaving its name alone keeps upstream cherry-picks clean since the full ThingsBoard site's include tree uses the same path.
 
 **Product-conditional content:** wrap it in `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>…</ShowFor>` and write **normal Markdown** inside (`**bold**`, `-`/`1.` lists, `` `code` ``, `<Tabs>`/`<Aside>`/`<Code>` components). Do **not** use `{props.product === … && (<>…</>)}` with hand-written `<p>`/`<ul>`/`<li>`/`<code>` HTML — a JSX `{…}` expression disables Markdown parsing, forcing ugly raw HTML; `<ShowFor>` does not. The one exception: headings inside still use `<ConditionalHeading … showFor="…">` (not `##`), because the TOC plugin needs that metadata to add them conditionally.
 
@@ -138,7 +140,7 @@ Registered in `astro.config.ts` (`rehypePlugins`):
 
 ### Pages vs Content
 
-- `src/content/docs/` — documentation pages rendered by Starlight (the `mqtt-broker` tree)
+- `src/content/docs/` — documentation pages rendered by Starlight (the TBMQ docs tree)
 - `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `products/`, `pricing/`, `installations/`, `partners/`, `company/`, `community/`, `contact-us`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt`, plus use-case landing pages (`energy-management`, `smart-farming-demo`, `monitoring-dashboard`, `asset-management`, `device-management`, `iot-data-visualization`, `google-iot-core-alternative`, `ce-vs-pe-diff`)
 
 ### Typography & Design System
@@ -153,7 +155,7 @@ Key rules: **Never hardcode font values** — use the mixins. **Never use compil
 
 | Export | Use for | Example |
 |---|---|---|
-| `SINGLE_REDIRECTS` | one-off `/docs/*` page rename | `{ oldPath: '...', target: '/docs/mqtt-broker/...' }` |
+| `SINGLE_REDIRECTS` | one-off `/docs/*` page rename | `{ oldPath: '...', target: '/docs/...' }` |
 | `CATCH_ALL_REDIRECTS` | `/docs/*` prefix rename (whole tree renamed 1:1) | prefix → `:splat` |
 | `DYNAMIC_REDIRECTS` | splat / `:placeholder` patterns that aren't a simple prefix rename | `/blog/category/:category/page/* → /blog/?category=:category` |
 | `NON_DOCS_REDIRECTS` | everything outside `/docs/*` (marketing, external targets) | `/iot-use-cases/` → `/use-cases/` |

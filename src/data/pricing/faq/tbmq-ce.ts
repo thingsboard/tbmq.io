@@ -43,7 +43,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-clustering',
 				question: 'Does the Community Edition support clustering?',
-				answer: '<p>Yes, clustering is fully supported in the Community Edition. You can find more details about deployment scenarios <a target="_blank" href="/docs/mqtt-broker/installation/" rel="noopener noreferrer">in the deployment options guide</a>.</p>',
+				answer: '<p>Yes, clustering is fully supported in the Community Edition. You can find more details about deployment scenarios <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">in the deployment options guide</a>.</p>',
 			},
 			{
 				id: 'tbmq-ce-customize',
@@ -64,7 +64,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-install-guide',
 				question: 'How do I install TBMQ Community Edition?',
-				answer: '<p>Installation guides are available in the <a target="_blank" href="/docs/mqtt-broker/installation/" rel="noopener noreferrer">documentation</a>. The Community Edition can be installed in monolith or cluster mode, and supports deployment on Docker and Kubernetes.</p>',
+				answer: '<p>Installation guides are available in the <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">documentation</a>. The Community Edition can be installed in monolith or cluster mode, and supports deployment on Docker and Kubernetes.</p>',
 			},
 			{
 				id: 'tbmq-ce-install-location',
@@ -74,7 +74,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-db-support',
 				question: 'What databases does the Community Edition support?',
-				answer: '<p>The Community Edition supports Kafka, Redis/Valkey, and PostgreSQL. For more details on database options, you can check <a target="_blank" href="/docs/mqtt-broker/architecture/" rel="noopener noreferrer">the TBMQ architecture page</a>.</p>',
+				answer: '<p>The Community Edition supports Kafka, Redis/Valkey, and PostgreSQL. For more details on database options, you can check <a target="_blank" href="/docs/architecture/" rel="noopener noreferrer">the TBMQ architecture page</a>.</p>',
 			},
 			{
 				id: 'tbmq-ce-docker',
@@ -100,7 +100,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-features-list',
 				question: 'What features are included in TBMQ Community Edition?',
-				answer: '<p>The Community Edition includes all essential MQTT broker features with full support for MQTT 3.x and MQTT 5.0. You can find all features and descriptions <a target="_blank" href="/docs/mqtt-broker/" rel="noopener noreferrer">in the TBMQ documentation</a>.</p>',
+				answer: '<p>The Community Edition includes all essential MQTT broker features with full support for MQTT 3.x and MQTT 5.0. You can find all features and descriptions <a target="_blank" href="/docs/" rel="noopener noreferrer">in the TBMQ documentation</a>.</p>',
 			},
 			{
 				id: 'tbmq-ce-pe-exclusive',
@@ -120,7 +120,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-integrations',
 				question: 'Can I integrate third-party systems with Community Edition?',
-				answer: '<p>Yes, you can integrate the TBMQ Community Edition with third-party systems through <a target="_blank" href="/docs/mqtt-broker/integrations/" rel="noopener noreferrer">platform integrations</a>.</p>',
+				answer: '<p>Yes, you can integrate the TBMQ Community Edition with third-party systems through <a target="_blank" href="/docs/integrations/" rel="noopener noreferrer">platform integrations</a>.</p>',
 			},
 		],
 	},
@@ -131,7 +131,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-support',
 				question: 'Is there out-of-the-box support from TBMQ team for Community Edition users?',
-				answer: '<p>The TBMQ team does not provide dedicated support for Community Edition users. However, users can access community-driven resources such as <a target="_blank" href="https://github.com/thingsboard/tbmq/issues" rel="noopener noreferrer">GitHub Issues</a>, <a target="_blank" href="/docs/mqtt-broker/" rel="noopener noreferrer">documentation</a>, and <a target="_blank" href="https://github.com/thingsboard/tbmq" rel="noopener noreferrer">GitHub</a> for assistance.</p>',
+				answer: '<p>The TBMQ team does not provide dedicated support for Community Edition users. However, users can access community-driven resources such as <a target="_blank" href="https://github.com/thingsboard/tbmq/issues" rel="noopener noreferrer">GitHub Issues</a>, <a target="_blank" href="/docs/" rel="noopener noreferrer">documentation</a>, and <a target="_blank" href="https://github.com/thingsboard/tbmq" rel="noopener noreferrer">GitHub</a> for assistance.</p>',
 			},
 			{
 				id: 'tbmq-ce-paid-support',
@@ -141,7 +141,7 @@ export const tbmqCeFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-ce-help',
 				question: 'Where can I get help if I run into issues?',
-				answer: '<p><a target="_blank" href="https://github.com/thingsboard/tbmq/issues" rel="noopener noreferrer">GitHub</a> (report issues, contribute)<br><a target="_blank" href="https://stackoverflow.com/questions/tagged/thingsboard" rel="noopener noreferrer">Stack Overflow</a> (for developer-related questions)<br><a target="_blank" href="/docs/mqtt-broker/" rel="noopener noreferrer">Documentation & Tutorials</a></p>',
+				answer: '<p><a target="_blank" href="https://github.com/thingsboard/tbmq/issues" rel="noopener noreferrer">GitHub</a> (report issues, contribute)<br><a target="_blank" href="https://stackoverflow.com/questions/tagged/thingsboard" rel="noopener noreferrer">Stack Overflow</a> (for developer-related questions)<br><a target="_blank" href="/docs/" rel="noopener noreferrer">Documentation & Tutorials</a></p>',
 			},
 			{
 				id: 'tbmq-ce-feature-request',

@@ -23,26 +23,11 @@ interface HeadingInfo {
 function getProductFromFilePath(filePath: string): string {
 	const normalized = filePath.replace(/\\/g, '/');
 	const idx = normalized.indexOf(DOCS_CONTENT_DIR);
-	if (idx === -1) return 'ce';
+	if (idx === -1) return 'mqtt-broker';
 
 	const relative = normalized.slice(idx + DOCS_CONTENT_DIR.length);
-
-	// Check more-specific prefixes first
-	if (relative.startsWith('mqtt-broker/pe/')) return 'mqtt-broker-pe';
-	if (relative.startsWith('mobile/pe/')) return 'mobile-pe';
-	if (relative.startsWith('edge/pe/')) return 'edge-pe';
-	if (relative.startsWith('paas/eu/')) return 'paas-eu';
-	if (relative.startsWith('mqtt-broker/')) return 'mqtt-broker';
-	if (relative.startsWith('mobile/')) return 'mobile';
-	if (relative.startsWith('edge/')) return 'edge';
-	if (relative.startsWith('paas/')) return 'paas';
-	if (relative.startsWith('pe/')) return 'pe';
-	if (relative.startsWith('trendz/')) return 'trendz';
-	if (relative.startsWith('iot-gateway/')) return 'iot-gateway';
-	if (relative.startsWith('license-server/')) return 'license-server';
-	if (relative.startsWith('iot-hub/')) return 'iot-hub';
-
-	return 'ce';
+	if (relative.startsWith('pe/')) return 'mqtt-broker-pe';
+	return 'mqtt-broker';
 }
 
 /** Edge upgrade step component pattern — all three platform components share this suffix */

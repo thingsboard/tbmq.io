@@ -123,19 +123,19 @@ const faq: FaqItem[] = [
 	<p>
 		TBMQ implements all three layers. Its listeners support TCP, TLS, and WebSocket (including secure WSS), and it ships
 		five pluggable authentication providers —
-		<a href="/docs/mqtt-broker/security/authentication/basic/">Basic</a>,
-		<a href="/docs/mqtt-broker/security/authentication/x509/">X.509</a>,
-		<a href="/docs/mqtt-broker/security/authentication/jwt/">JWT</a>,
-		<a href="/docs/mqtt-broker/security/authentication/scram/">SCRAM</a>, and
-		<a href="/docs/mqtt-broker/security/authentication/http/">HTTP</a> — that you can enable, disable, and order from the
+		<a href="/docs/security/authentication/basic/">Basic</a>,
+		<a href="/docs/security/authentication/x509/">X.509</a>,
+		<a href="/docs/security/authentication/jwt/">JWT</a>,
+		<a href="/docs/security/authentication/scram/">SCRAM</a>, and
+		<a href="/docs/security/authentication/http/">HTTP</a> — that you can enable, disable, and order from the
 		UI without restarting the broker. SCRAM is the exception — the broker handles it automatically per the MQTT 5.0 spec,
 		so it isn’t part of that configurable order.
 	</p>
 	<p>
 		For authorization, TBMQ applies regular-expression topic patterns per client credentials, so you scope each client
 		to exactly the topics it needs. Start with the
-		<a href="/docs/mqtt-broker/concepts/security/">security concepts guide</a> — the same three-layer model, mapped to TBMQ
-		— then the <a href="/docs/mqtt-broker/security/overview/">security overview</a> and the
-		<a href="/docs/mqtt-broker/security/mqtts/">MQTTS setup guide</a> for configuration details.
+		<a href="/docs/concepts/security/">security concepts guide</a> — the same three-layer model, mapped to TBMQ
+		— then the <a href="/docs/security/overview/">security overview</a> and the
+		<a href="/docs/security/mqtts/">MQTTS setup guide</a> for configuration details.
 	</p>
 </MqttTopicLayout>

@@ -12,10 +12,8 @@ import docsRedirects from './public/redirects.json' with { type: 'json' };
 // from 404-ing, without bloating public/_redirects with duplicate static rules.
 //
 // Exported separately so the link checker can skip existence checks on these
-// entries — their targets (search pages, paginated views) are not in the sitemap.
-export const devFallbackRedirects: Record<string, string> = {
-	'/docs/pe/mqtt-broker/search/': '/docs/mqtt-broker/pe/search/',
-};
+// entries — their targets (paginated views) are not in the sitemap.
+export const devFallbackRedirects: Record<string, string> = {};
 for (const cat of BLOG_CATEGORIES) {
 	devFallbackRedirects[`/blog/category/${cat}/`] = `/blog/?category=${cat}`;
 	for (let page = 2; page <= 5; page++) {

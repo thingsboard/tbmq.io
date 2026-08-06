@@ -236,7 +236,7 @@ const tbmqReferenceItems = (prefix: string): SidebarConfig => [
 	},
 ];
 
-/** TBMQ Community Broker sidebar (pages at /docs/mqtt-broker/) */
+/** TBMQ Community Broker sidebar (pages at /docs/) */
 export const tbmqSidebar: SidebarConfig = [
 	{
 		label: 'Getting Started',
@@ -246,19 +246,19 @@ export const tbmqSidebar: SidebarConfig = [
 				label: 'Welcome to MQTT!',
 				translations: { uk: 'Новий проєкт' },
 				items: [
-					{ label: 'Why TBMQ?', slug: 'docs/mqtt-broker/why-tbmq' },
-					{ label: 'Getting Started', slug: 'docs/mqtt-broker/getting-started' },
+					{ label: 'Why TBMQ?', slug: 'docs/why-tbmq' },
+					{ label: 'Getting Started', slug: 'docs/getting-started' },
 				],
 			},
 			{
 				label: 'Core concepts',
 				items: [
-					{ label: 'Client types', slug: 'docs/mqtt-broker/concepts/client-types' },
-					{ label: 'Sessions', slug: 'docs/mqtt-broker/concepts/sessions' },
-					{ label: 'Topics and wildcards', slug: 'docs/mqtt-broker/concepts/topics' },
-					{ label: 'Delivery guarantees', slug: 'docs/mqtt-broker/concepts/qos' },
-					{ label: 'Security model', slug: 'docs/mqtt-broker/concepts/security' },
-					{ label: 'Clustering', slug: 'docs/mqtt-broker/concepts/clustering' },
+					{ label: 'Client types', slug: 'docs/concepts/client-types' },
+					{ label: 'Sessions', slug: 'docs/concepts/sessions' },
+					{ label: 'Topics and wildcards', slug: 'docs/concepts/topics' },
+					{ label: 'Delivery guarantees', slug: 'docs/concepts/qos' },
+					{ label: 'Security model', slug: 'docs/concepts/security' },
+					{ label: 'Clustering', slug: 'docs/concepts/clustering' },
 				],
 			},
 		],
@@ -266,29 +266,29 @@ export const tbmqSidebar: SidebarConfig = [
 	{
 		label: 'Guides',
 		collapsed: true,
-		items: tbmqGuideItems('docs/mqtt-broker'),
+		items: tbmqGuideItems('docs'),
 	},
 	{
 		label: 'Installation',
 		collapsed: true,
-		items: tbmqInstallItems('docs/mqtt-broker'),
+		items: tbmqInstallItems('docs'),
 	},
 	{
 		label: 'Reference',
 		collapsed: true,
-		items: tbmqReferenceItems('docs/mqtt-broker'),
+		items: tbmqReferenceItems('docs'),
 	},
 	{
 		label: 'Releases',
 		items: [
-			{ label: 'Release notes', slug: 'docs/mqtt-broker/releases' },
-			{ label: 'Roadmap', slug: 'docs/mqtt-broker/roadmap' },
-			{ label: 'Getting support', slug: 'docs/mqtt-broker/help' },
+			{ label: 'Release notes', slug: 'docs/releases' },
+			{ label: 'Roadmap', slug: 'docs/roadmap' },
+			{ label: 'Getting support', slug: 'docs/help' },
 		],
 	},
 ];
 
-/** TBMQ PE Broker sidebar (pages at /docs/mqtt-broker/pe/) */
+/** TBMQ PE Broker sidebar (pages at /docs/pe/) */
 export const tbmqPeSidebar: SidebarConfig = [
 	{
 		label: 'Getting Started',
@@ -298,19 +298,19 @@ export const tbmqPeSidebar: SidebarConfig = [
 				label: 'Welcome to MQTT!',
 				translations: { uk: 'Новий проєкт' },
 				items: [
-					{ label: 'Why TBMQ?', slug: 'docs/mqtt-broker/pe/why-tbmq' },
-					{ label: 'Getting Started', slug: 'docs/mqtt-broker/pe/getting-started' },
+					{ label: 'Why TBMQ?', slug: 'docs/pe/why-tbmq' },
+					{ label: 'Getting Started', slug: 'docs/pe/getting-started' },
 				],
 			},
 			{
 				label: 'Core concepts',
 				items: [
-					{ label: 'Client types', slug: 'docs/mqtt-broker/pe/concepts/client-types' },
-					{ label: 'Sessions', slug: 'docs/mqtt-broker/pe/concepts/sessions' },
-					{ label: 'Topics and wildcards', slug: 'docs/mqtt-broker/pe/concepts/topics' },
-					{ label: 'Delivery guarantees', slug: 'docs/mqtt-broker/pe/concepts/qos' },
-					{ label: 'Security model', slug: 'docs/mqtt-broker/pe/concepts/security' },
-					{ label: 'Clustering', slug: 'docs/mqtt-broker/pe/concepts/clustering' },
+					{ label: 'Client types', slug: 'docs/pe/concepts/client-types' },
+					{ label: 'Sessions', slug: 'docs/pe/concepts/sessions' },
+					{ label: 'Topics and wildcards', slug: 'docs/pe/concepts/topics' },
+					{ label: 'Delivery guarantees', slug: 'docs/pe/concepts/qos' },
+					{ label: 'Security model', slug: 'docs/pe/concepts/security' },
+					{ label: 'Clustering', slug: 'docs/pe/concepts/clustering' },
 				],
 			},
 		],
@@ -318,24 +318,24 @@ export const tbmqPeSidebar: SidebarConfig = [
 	{
 		label: 'Guides',
 		collapsed: true,
-		items: tbmqGuideItems('docs/mqtt-broker/pe'),
+		items: tbmqGuideItems('docs/pe'),
 	},
 	{
 		label: 'Installation',
 		collapsed: true,
-		items: tbmqInstallItems('docs/mqtt-broker/pe'),
+		items: tbmqInstallItems('docs/pe'),
 	},
 	{
 		label: 'Reference',
 		collapsed: true,
-		items: tbmqReferenceItems('docs/mqtt-broker/pe'),
+		items: tbmqReferenceItems('docs/pe'),
 	},
 	{
 		label: 'Releases',
 		items: [
-			{ label: 'Release notes', slug: 'docs/mqtt-broker/pe/releases' },
-			{ label: 'Roadmap', slug: 'docs/mqtt-broker/pe/roadmap' },
-			{ label: 'Getting support', slug: 'docs/mqtt-broker/pe/help' },
+			{ label: 'Release notes', slug: 'docs/pe/releases' },
+			{ label: 'Roadmap', slug: 'docs/pe/roadmap' },
+			{ label: 'Getting support', slug: 'docs/pe/help' },
 		],
 	},
 ];
@@ -343,18 +343,18 @@ export const tbmqPeSidebar: SidebarConfig = [
 /** Maps tab group label → URL to navigate when the tab is clicked (optional per-group). */
 export type SidebarTabLinks = Partial<Record<string, string>>;
 export const tbmqSidebarTabLinks: SidebarTabLinks = {
-	'Getting Started': '/docs/mqtt-broker/',
-	Guides: '/docs/mqtt-broker/user-guide/',
-	Installation: '/docs/mqtt-broker/installation/',
-	Reference: '/docs/mqtt-broker/reference/',
-	Releases: '/docs/mqtt-broker/changelog/',
+	'Getting Started': '/docs/',
+	Guides: '/docs/user-guide/',
+	Installation: '/docs/installation/',
+	Reference: '/docs/reference/',
+	Releases: '/docs/changelog/',
 };
 export const tbmqPeSidebarTabLinks: SidebarTabLinks = {
-	'Getting Started': '/docs/mqtt-broker/pe/',
-	Guides: '/docs/mqtt-broker/pe/user-guide/',
-	Installation: '/docs/mqtt-broker/pe/installation/',
-	Reference: '/docs/mqtt-broker/pe/reference/',
-	Releases: '/docs/mqtt-broker/pe/changelog/',
+	'Getting Started': '/docs/pe/',
+	Guides: '/docs/pe/user-guide/',
+	Installation: '/docs/pe/installation/',
+	Reference: '/docs/pe/reference/',
+	Releases: '/docs/pe/changelog/',
 };
 
 /**
@@ -362,8 +362,8 @@ export const tbmqPeSidebarTabLinks: SidebarTabLinks = {
  * Order matters: more specific prefixes must come before less specific ones.
  */
 export const sidebarTabLinksByPrefix: ReadonlyArray<[string, SidebarTabLinks]> = [
-	['/docs/mqtt-broker/pe/', tbmqPeSidebarTabLinks],
-	['/docs/mqtt-broker/', tbmqSidebarTabLinks],
+	['/docs/pe/', tbmqPeSidebarTabLinks],
+	['/docs/', tbmqSidebarTabLinks],
 ];
 
 /**

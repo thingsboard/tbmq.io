@@ -199,9 +199,8 @@ function linkMatchesVersion(href: string, version: Products): boolean {
 	if (version === Products.EDGE) return path.startsWith('edge/') && !path.startsWith('edge/pe/');
 	if (version === Products.TRENDZ) return path.startsWith('trendz/');
 	if (version === Products.GW) return path.startsWith('iot-gateway/');
-	if (version === Products.TBMQ_PE) return path.startsWith('mqtt-broker/pe/');
-	if (version === Products.TBMQ)
-		return path.startsWith('mqtt-broker/') && !path.startsWith('mqtt-broker/pe/');
+	if (version === Products.TBMQ_PE) return path.startsWith('pe/');
+	if (version === Products.TBMQ) return !path.startsWith('pe/');
 	if (version === Products.MOBILE_PE) return path.startsWith('mobile/pe/');
 	if (version === Products.MOBILE)
 		return path.startsWith('mobile/') && !path.startsWith('mobile/pe/');
