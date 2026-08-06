@@ -248,18 +248,16 @@ A client's CONNECT either comes back with a failure CONNACK, or the connection e
 | Signal | What it tells you |
 |---|---|
 | `connectionRefused_total` | CONNECT attempts that got a non-success CONNACK back — bad credentials, an invalid client identifier, or a broker-side quota (a session-count limit or an APPLICATION-client limit). |
-| `connectionError_total` | Failures below the MQTT layer, before any CONNACK — a TLS handshake failure, or a plaintext client hitting a TLS-only listener. It is counted only while the connecting client's id is still unknown to TBMQ; see the note on malformed packets below. |
+| `connectionError_total` | Failures below the MQTT layer, before any CONNACK — a TLS handshake problem, or non-MQTT traffic arriving on the port. It is counted only while the connecting client's id is still unknown to TBMQ. |
 | `connectionAccepted_total` | The success baseline. Read the other two counters' rate against this one rather than in isolation. |
 | `MqttSessionHandler` logs | Carry the session id and, once known, the client id and remote address. A connection-reset (`IOException`) line also tags `closed-by=TBMQ` or `closed-by=peer-or-network`, telling you which side ended the connection. |
 | <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized clients</DocLink> page | Every CONNECT rejected on authentication or authorization, with the client id and reason. |
 
 **Interpret**
 
-`connectionRefused_total` rising while `connectionAccepted_total` stays flat means the CONNECT is reaching TBMQ and getting a CONNACK back — just not a successful one. Bad credentials and failed authorization both send this CONNACK, and so do a handful of validation failures decided before authentication even runs: an empty client identifier on a non-clean-start session, an invalid last-will topic, an MQTT 5 receive-maximum of `0`. It's also how a broker-side quota shows up — TBMQ enforces a configurable limit on total sessions and on APPLICATION clients, and refuses new connections with a `QUOTA_EXCEEDED` reason once either is hit.
+`connectionRefused_total` rising while `connectionAccepted_total` stays flat means the CONNECT is reaching TBMQ and getting a CONNACK back — just not a successful one. Bad credentials and failed authorization both send this CONNACK. So does a handful of validation failures that TBMQ only runs *after* authentication has already succeeded — an empty client identifier on a non-clean-start session, an invalid last-will topic, an MQTT 5 receive-maximum of `0`. Seeing one of these specifically is a useful signal in its own right: it confirms the client's credentials were accepted, and the connection failed on a protocol/session detail instead. It's also how a broker-side quota shows up — TBMQ enforces a configurable limit on total sessions and on APPLICATION clients, and refuses new connections with a `QUOTA_EXCEEDED` reason once either is hit.
 
-`connectionError_total` rising instead means the failure sits below the MQTT layer, before a CONNACK is even possible: a TLS handshake failure, or a plaintext client connecting to a TLS-only listener (surfaces internally as a `NotSslRecordException`). This counter is deliberately narrow — it only fires while the connection has no client id yet, so an error on an already-established session shows up as a disconnect instead (see [Unexpected disconnects](#unexpected-disconnects)).
-
-A malformed or undecodable packet is a separate, quieter case worth knowing about: TBMQ's codec catches it directly, logs a `WARN` "Message decoding failed" line in `MqttSessionHandler`, and closes the channel — without incrementing `connectionError_total`, `connectionRefused_total`, or `clientDisconnects_total`. If your connection-attempt count doesn't reconcile against accepted + refused + error, a run of these is a common reason why.
+`connectionError_total` rising instead means the failure sits below the MQTT layer, before a CONNACK is even possible. It counts pre-CONNECT failures — a TLS handshake problem, non-MQTT traffic arriving on the port, or a protocol violation caught before a session exists — and it is deliberately narrow: it only fires while the connection has no client id yet, so an error on an already-established session is counted as a disconnect instead, not a connection error (see [Unexpected disconnects](#unexpected-disconnects)).
 
 **Act**
 
@@ -295,13 +293,13 @@ The counter alone can't tell reasons apart, so the logged `DisconnectReasonType`
 
 - **`ON_KEEP_ALIVE`** — the client stopped sending anything within its keep-alive window.
 - **`ON_CONFLICTING_SESSIONS`** / **`ON_CLUSTER_CONFLICTING_SESSIONS`** — another connection using the same client id took over the session, on this node or elsewhere in the cluster.
-- **`ON_RATE_LIMITS`** — an MQTT 3.x client exceeded a configured incoming-message rate limit (an MQTT 5 client hitting the same limit gets a PUBACK/PUBREC reporting "Quota exceeded" instead, and stays connected).
+- **`ON_RATE_LIMITS`** — an MQTT 3.x client exceeded a configured incoming-message rate limit. An MQTT 5 client hitting the same limit stays connected instead: a QoS 1 or QoS 2 publish gets a PUBACK/PUBREC reporting "Quota exceeded"; a QoS 0 publish is silently dropped with no ack at all.
 - **`ON_QUOTA_EXCEEDED`** — an internal limit was exceeded, for example too many messages queued while a CONNECT was still being processed.
 - **`ON_CHANNEL_CLOSED`** — the client's TCP connection went away.
 - **`ON_ADMINISTRATIVE_ACTION`** — an operator or API call disconnected the client.
 - **`ON_SERVER_SHUTTING_DOWN`** — the node is shutting down and is closing every session on it.
 
-The takeover case is worth calling out on its own: two clients sharing one client id will keep disconnecting each other as each new CONNECT kicks off the previous session, and each kicked-off client's own reconnect logic kicks the other one straight back off. The signature is a `clientDisconnects_total` rate that stays high while `connectedSessions` barely moves — sessions are churning, not draining.
+The takeover case is worth calling out on its own: two clients sharing one client id will keep disconnecting each other, as long as both reconnect automatically, as each new CONNECT kicks off the previous session and each kicked-off client's own reconnect logic kicks the other one straight back off. The signature is a `clientDisconnects_total` rate that stays high while `connectedSessions` barely moves — sessions are churning, not draining. That reading holds cleanly for a same-node takeover (`ON_CONFLICTING_SESSIONS`), where the old and new session are on the same node. For the cross-node case (`ON_CLUSTER_CONFLICTING_SESSIONS`), each node's own `connectedSessions` does move — one node loses the old session while another gains the new one — so look at whether the cluster-wide sum stays flat rather than at any single node's gauge.
 
 **Act**
 
@@ -318,7 +316,7 @@ A publisher gets its PUBLISH acknowledged (or sends QoS 0 without expecting one)
 | Signal | What it tells you |
 |---|---|
 | `droppedMsgs_total` | PUBLISH messages permanently lost, broker-wide. Untagged — it tells you a rate, not a client, topic, or cause. |
-| `flowControl_total{statsName="dropsOverflow"}` | A subscriber's in-flight window filled up before it could keep up. |
+| `flowControl_total{statsName="dropsOverflow"}` | Both the subscriber's in-flight window and the delay queue behind it are full — the subscriber has fallen behind long enough to exhaust the buffer, not just hit a receive-maximum ceiling. |
 | `flowControl_total{statsName="dropsTtl"}` | A delayed message's TTL expired before it could be sent. |
 | `incomingPublishMsg_consumed_total{statsName="failedMsgs"}` | A message was discarded on the main ingest pipeline after processing gave up on it — not merely retried. |
 | `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be written to the database and was discarded. |
@@ -329,8 +327,8 @@ A publisher gets its PUBLISH acknowledged (or sends QoS 0 without expecting one)
 Several different things collapse into "a drop," and telling them apart matters:
 
 - **No matching subscription** — nobody is subscribed to a topic a client just published to. This still counts toward `droppedMsgs_total`, but it's a normal, often expected outcome rather than a problem to chase.
-- **`dropsOverflow`** — a subscriber's in-flight window is full, almost always because that subscriber is processing more slowly than the publisher is sending. See the [Slow subscribers](#slow-subscribers) playbook. This only adds to `droppedMsgs_total` for a non-persistent, non-retained message — a persistent subscriber's copy stays recoverable from Kafka or Redis, so it isn't counted as lost.
-- **`dropsTtl`** — the message aged out of the delayed queue before TBMQ could send it, independent of the subscriber's own behavior.
+- **`dropsOverflow`** — a subscriber's in-flight window **and** its delay queue behind it are both full, almost always because that subscriber has fallen behind the publisher for a while, not just momentarily. See the [Slow subscribers](#slow-subscribers) playbook. This only adds to `droppedMsgs_total` for a non-persistent, non-retained message — a persistent subscriber's copy stays recoverable from Kafka or Redis, so it isn't counted as lost.
+- **`dropsTtl`** — the message aged out of the delay queue before TBMQ could send it. This isn't an independent cause: a message only lands in the delay queue in the first place because the in-flight window was already full, so `dropsTtl` is usually the same slow-subscriber situation as `dropsOverflow`, just showing up on a longer delay — see [Slow subscribers](#slow-subscribers) here too.
 - **`failedMsgs` on the device processor** — persistence failed, not delivery. That points at the database, not at the messaging path — see the [Dependency failures](#dependency-failures) playbook.
 - **Rate limiting** — a client's incoming messages, or the broker's total-message budget, hit a configured limit and the PUBLISH is dropped at ingest before it is ever dispatched to a subscriber.
 
@@ -338,7 +336,7 @@ Several different things collapse into "a drop," and telling them apart matters:
 
 - Confirm a subscription actually exists on the topic and that its filter matches what was published — see <DocLink product={props.product} path="user-guide/topics">Topics and wildcards</DocLink>.
 - Check the configured rate limits against the client's or the broker's real traffic.
-- For a slow subscriber or a failing dependency, follow through to the corresponding playbook above rather than treating the drop counter itself as the fix.
+- For a slow subscriber or a failing dependency, follow through to the corresponding playbook below rather than treating the drop counter itself as the fix.
 - See <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> for how TBMQ handles a subscriber that can't keep up.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>

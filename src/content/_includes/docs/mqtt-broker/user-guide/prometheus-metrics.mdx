@@ -128,7 +128,7 @@ Both counters are untagged in Community Edition and Professional Edition alike: 
 | `connectionError_total` | counter | — | Connections that failed before or outside the CONNACK path |
 | `clientDisconnects_total` | counter | — | Client sessions disconnected, all reasons |
 
-`connectionAccepted_total` and `connectionRefused_total` both correspond to a CONNACK being sent back to the client — the difference is the reason code inside it. `connectionError_total` covers failures that never reach that point at all, for example a TLS handshake failure or a malformed CONNECT packet.
+`connectionAccepted_total` and `connectionRefused_total` both correspond to a CONNACK being sent back to the client — the difference is the reason code inside it. `connectionError_total` covers failures that never reach that point at all, for example a TLS handshake failure or non-MQTT traffic arriving on the port.
 
 `clientDisconnects_total` carries **no reason label** in either edition — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
 
