@@ -77,11 +77,12 @@ This is the consumer pool that asynchronously persists messages for persistent *
 | `appProcessor_total` | counter | `clientId`, `statsName` = `successfulPublishMsgs`, `successfulPubRelMsgs`, `tmpTimeoutPublish`, `tmpTimeoutPubRel`, `timeoutPublishMsgs`, `timeoutPubRelMsgs`, `successfulIterations`, `failedIterations` | One set per APPLICATION client and per shared-subscription compound id |
 | `appProcessor_latency_seconds` | timer | `packetType` = `puback`, `pubrec`, `pubcomp` | Global across all clients — carries no `clientId` |
 
-`appProcessor_total` and `appProcessor_latency_seconds` track persistent **APPLICATION** client delivery — the PUBLISH-out / PUBACK-or-PUBREL-in acknowledgment cycle. Three behaviors are worth knowing before you build a dashboard on top of this family:
+`appProcessor_total` and `appProcessor_latency_seconds` track persistent **APPLICATION** client delivery — the PUBLISH-out / PUBACK-or-PUBREL-in acknowledgment cycle. A few behaviors are worth knowing before you build a dashboard on top of this family:
 
 - The whole family is gated by `APPLICATION_PROCESSOR_STATS_ENABLED` (default `true`; see [Enabling and scraping](#enabling-and-scraping) above).
+- It is also created **lazily**: both series are registered only once the first persistent APPLICATION client (or shared-subscription group) connects. On a broker that has never had one, `appProcessor_total` and `appProcessor_latency_seconds` are simply absent from the scrape — that means no APPLICATION traffic yet, not a problem.
 - The eight per-client counters that make up `appProcessor_total` are **deregistered when the client disconnects** (`StatsManagerImpl.printAndRemoveApplicationStatsOnClear`), so they do not pile up stale series as APPLICATION clients come and go.
-- `appProcessor_latency_seconds` is deliberately global: it carries only a `packetType` label, never `clientId`, and is **not** deregistered on disconnect — each of the three packet types keeps a single running series for the life of the broker process.
+- `appProcessor_latency_seconds` is deliberately global: it carries only a `packetType` label, never `clientId`, and is **not** deregistered on disconnect — once created, each of the three packet types keeps a single running series for as long as the broker keeps running.
 
 <Aside>
   Even with per-client counters deregistered on disconnect, a broker serving very many APPLICATION clients at once can still carry substantial `clientId` label cardinality on `appProcessor_total` at any given moment. Turn `APPLICATION_PROCESSOR_STATS_ENABLED` off if per-client granularity is not something you act on.
@@ -99,9 +100,9 @@ This is the consumer pool that asynchronously persists messages for persistent *
 | `flowControl_delayedQueueSize` | gauge | — | Messages currently delayed |
 | `nonWritableClients` | gauge | — | Clients whose channel is not currently writable |
 
-`delivery_seconds` measures the hand-off to the network layer, not end-to-end delivery confirmation — a message can show up here and still never be acknowledged by the client. `notPersistentMessagesProcessing_seconds` and `persistentMessagesProcessing_seconds` split that same processing span by whether the target session is persistent.
+`delivery_seconds` measures the hand-off to the network layer, not end-to-end delivery confirmation — a message can show up here and still never be acknowledged by the client. `notPersistentMessagesProcessing_seconds` and `persistentMessagesProcessing_seconds` are a separate measurement taken earlier in the pipeline, timing the dispatcher's fan-out to persistent vs. non-persistent subscribers — they do not decompose `delivery_seconds` into two parts; each times different work at a different stage, so don't expect `delivery_seconds` to equal their sum.
 
-The `flowControl` series instrument the broker-wide QoS 1/2 in-flight window: `flowControl_inflightCount` is how many unacknowledged messages are outstanding right now, `flowControl_delayedQueueSize` is how many are queued behind a full in-flight window, and `flowControl_total` counts what happens when both are exhausted (`dropsOverflow`), when a delayed message's TTL expires before it can be sent (`dropsTtl`), and when an acknowledgment arrives for a packet ID that is not currently in flight (`unknownAcks`). A `dropsOverflow` event is also counted in `droppedMsgs_total`, below.
+The `flowControl` series instrument the broker-wide QoS 1/2 in-flight window: `flowControl_inflightCount` is how many unacknowledged messages are outstanding right now, `flowControl_delayedQueueSize` is how many are queued behind a full in-flight window, and `flowControl_total` counts what happens when both are exhausted (`dropsOverflow`), when a delayed message's TTL expires before it can be sent (`dropsTtl`), and when an acknowledgment arrives for a packet ID that is not currently in flight (`unknownAcks`). A `dropsOverflow` event also counts toward `droppedMsgs_total` below, but only for a non-persistent, non-retained message — a persistent session's copy stays recoverable from Kafka or Redis, so it is not counted as lost there.
 
 `nonWritableClients` and the whole `flowControl` family are the Prometheus side of the mechanisms described in <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> — watch them alongside `droppedMsgs_total` to tell a slow-consumer episode apart from steady-state loss.
 
@@ -132,7 +133,7 @@ Both counters are untagged in Community Edition and Professional Edition alike: 
 `clientDisconnects_total` carries **no reason label** in either edition — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-  Some disconnects are the direct consequence of a dropped message — for example a client disconnected for exceeding its pre-connect queue or in-flight window. For those, <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> gives you the client, topic, and reason without grepping logs.
+  See <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> for a queryable record of the drops behind some of these disconnects.
 </ShowFor>
 
 ## Sessions, subscriptions, and retained messages
@@ -182,7 +183,7 @@ TBMQ's client-facing and DEVICE-persistence work runs inside actors, one per cli
 | `retainedMsgConsumer_total` | counter | `statsName` = `totalRetainedMsgs`, `newRetainedMsgs`, `clearedRetainedMsgs` | `clearedRetainedMsgs` counts tombstones |
 | `clientSessionEvent_pack_processing_time_seconds` | timer | `consumerId` | Session event batch processing; count set by `queue.client-session-event.consumers-count` (default 2) |
 
-These series watch the Kafka consumers that keep cluster-wide subscription and retained-message state synchronized across nodes, plus session-event batch processing. Both counters advance per Kafka **record** consumed, not per logical subscription or retained-message change — a single re-subscribe or retain update can span more than one record, and each is counted individually. `ignoredRecords` is not an error signal by itself: it counts records this node had already applied, which is ordinary cross-node replication traffic. `clearedRetainedMsgs` counts tombstones — a retained message being cleared, not one being created.
+These series watch the Kafka consumers that keep cluster-wide subscription and retained-message state synchronized across nodes, plus session-event batch processing. Both counters advance per Kafka **record** consumed, not per subscription or retained-message change — one `clientSubscriptionsConsumer_total` record carries a client's *entire* current subscription set, and one `retainedMsgConsumer_total` record carries a single retained-topic update, so a subscription or retain change itself never spans more than one record. `ignoredRecords` is not an error signal by itself: it counts records this node had already applied, which is ordinary cross-node replication traffic. `clearedRetainedMsgs` counts tombstones — a retained message being cleared, not one being created.
 
 ## Kafka producers and consumers
 
@@ -214,7 +215,7 @@ TBMQ batches writes to the relational database — events, timeseries, and the u
 | `integrationProcessor_total` | counter | `integrationId`, `statsName` = `totalMsgs`, `successfulMsgs`, `tmpTimeout`, `tmpFailed`, `timeoutMsgs`, `failedMsgs`, `successfulIterations`, `failedIterations` |
 | `integrationEventProcessor_total` | counter | `integrationId`, same eight `statsName` values |
 
-`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` and `integration_stats_gauge` report integration start/stop activity and current state, tagged by integration `name`, `type`, and `state` (`success` or `failed`).
+`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` and `integration_stats_gauge` report integration lifecycle and uplink-message activity: `name` is *which* metric is being reported — `start`, `stop`, or `msgUplink` — not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`.
 
 <Aside type="note">
   This family is gated by `stats.ie.enabled`, which defaults to `true` on the integration executor but is **not defined in the broker configuration**. On a broker node these series are absent unless `STATS_IE_ENABLED` is set explicitly.
