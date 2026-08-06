@@ -1,4 +1,4 @@
-import { Aside, Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
@@ -50,11 +50,11 @@ Every PUBLISH TBMQ accepts from a client is produced onto the `tbmq.msg.all` Kaf
 | Series | Type | Labels | Notes |
 |---|---|---|---|
 | `incomingPublishMsg_published_total` | counter | `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs` | PUBLISH messages produced to the main Kafka topic |
-| `incomingPublishMsg_consumed_total` | counter | `consumerId`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs`, `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations`, `failedIterations` | One series set per consumer; count set by `queue.msg-all.consumers-count` |
+| `incomingPublishMsg_consumed_total` | counter | `consumerId`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs`, `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations`, `failedIterations` | One series set per consumer; count set by `queue.msg-all.consumers-count` (default 4) |
 | `incomingPublishMsg_consumed_processing_time_seconds` | timer | `consumerId` | Per-message dispatch latency |
 | `incomingPublishMsg_consumed_pack_processing_time_seconds` | timer | `consumerId` | Per-poll-batch latency |
 
-`tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
+`tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. On the main ingest pipeline this only happens under the non-default `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so both stay at zero here regardless of load. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
 
 ```promql
 sum(rate(incomingPublishMsg_consumed_total{statsName="failedMsgs"}[5m]))
@@ -95,14 +95,14 @@ This is the consumer pool that asynchronously persists messages for persistent *
 | `delivery_seconds` | timer | — | Time to hand a PUBLISH to the network layer |
 | `notPersistentMessagesProcessing_seconds` | timer | — | Delivery processing for non-persistent clients |
 | `persistentMessagesProcessing_seconds` | timer | — | Delivery processing for persistent clients |
-| `flowControl_total` | counter | `statsName` = `dropsOverflow`, `dropsTtl`, `unknownAcks` | Broker-wide |
+| `flowControl_total` | counter | `statsName` = `dropsOverflow`, `dropsTtl`, `unknownAcks` | Per node |
 | `flowControl_inflightCount` | gauge | — | Messages currently in flight |
 | `flowControl_delayedQueueSize` | gauge | — | Messages currently delayed |
 | `nonWritableClients` | gauge | — | Clients whose channel is not currently writable |
 
 `delivery_seconds` measures the hand-off to the network layer, not end-to-end delivery confirmation — a message can show up here and still never be acknowledged by the client. `notPersistentMessagesProcessing_seconds` and `persistentMessagesProcessing_seconds` are a separate measurement taken earlier in the pipeline, timing the dispatcher's fan-out to persistent vs. non-persistent subscribers — they do not decompose `delivery_seconds` into two parts; each times different work at a different stage, so don't expect `delivery_seconds` to equal their sum.
 
-The `flowControl` series instrument the broker-wide QoS 1/2 in-flight window: `flowControl_inflightCount` is how many unacknowledged messages are outstanding right now, `flowControl_delayedQueueSize` is how many are queued behind a full in-flight window, and `flowControl_total` counts what happens when both are exhausted (`dropsOverflow`), when a delayed message's TTL expires before it can be sent (`dropsTtl`), and when an acknowledgment arrives for a packet ID that is not currently in flight (`unknownAcks`). A `dropsOverflow` event also counts toward `droppedMsgs_total` below, but only for a non-persistent, non-retained message — a persistent session's copy stays recoverable from Kafka or Redis, so it is not counted as lost there.
+The `flowControl` series instrument the per-node QoS 1/2 in-flight window: `flowControl_inflightCount` is how many unacknowledged messages are outstanding right now, `flowControl_delayedQueueSize` is how many are queued behind a full in-flight window, and `flowControl_total` counts what happens when both are exhausted (`dropsOverflow`), when a delayed message's TTL expires before it can be sent (`dropsTtl`), and when an acknowledgment arrives for a packet ID that is not currently in flight (`unknownAcks`). A `dropsOverflow` event also counts toward `droppedMsgs_total` below, but only for a non-persistent, non-retained message — a persistent session's copy stays recoverable from Kafka or Redis, so it is not counted as lost there.
 
 `nonWritableClients` and the whole `flowControl` family are the Prometheus side of the mechanisms described in <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> — watch them alongside `droppedMsgs_total` to tell a slow-consumer episode apart from steady-state loss.
 
@@ -149,7 +149,7 @@ Gauges:
 | `allClientSessions` | gauge | **Cluster-wide** sessions, including offline persistent ones |
 | `subscriptions` | gauge | **Cluster-wide** total subscription count across all clients |
 | `retainedMessages` | gauge | **Cluster-wide** retained message count |
-| `lastWillClients` | gauge | Clients with a registered last will |
+| `lastWillClients` | gauge | Clients with a registered last will, **on this node** |
 | `subscriptionTopicTrieSize` | gauge | **Cluster-wide** — subscriptions held in the topic trie |
 | `subscriptionTrieNodes` | gauge | **Cluster-wide** — nodes in the subscription trie |
 | `retainMsgTrieSize` | gauge | **Cluster-wide** — retained messages held in the trie |
@@ -183,7 +183,7 @@ TBMQ's client-facing and DEVICE-persistence work runs inside actors, one per cli
 | `retainedMsgConsumer_total` | counter | `statsName` = `totalRetainedMsgs`, `newRetainedMsgs`, `clearedRetainedMsgs` | `clearedRetainedMsgs` counts tombstones |
 | `clientSessionEvent_pack_processing_time_seconds` | timer | `consumerId` | Session event batch processing; count set by `queue.client-session-event.consumers-count` (default 2) |
 
-These series watch the Kafka consumers that keep cluster-wide subscription and retained-message state synchronized across nodes, plus session-event batch processing. Both counters advance per Kafka **record** consumed, not per subscription or retained-message change — one `clientSubscriptionsConsumer_total` record carries a client's *entire* current subscription set, and one `retainedMsgConsumer_total` record carries a single retained-topic update, so a subscription or retain change itself never spans more than one record. `ignoredRecords` is not an error signal by itself: it counts records this node had already applied, which is ordinary cross-node replication traffic. `clearedRetainedMsgs` counts tombstones — a retained message being cleared, not one being created.
+These series watch the Kafka consumers that keep cluster-wide subscription and retained-message state synchronized across nodes, plus session-event batch processing. Both counters advance per Kafka **record** consumed, not per subscription change — one `clientSubscriptionsConsumer_total` record carries a client's *entire* current subscription set, and one `retainedMsgConsumer_total` record carries a single retained-topic update, so a subscription or retain change itself never spans more than one record. `ignoredRecords` is not an error signal by itself: it counts records this node had already applied, which is ordinary cross-node replication traffic. `clearedRetainedMsgs` counts tombstones — a retained message being cleared, not one being created.
 
 ## Kafka producers and consumers
 
@@ -215,10 +215,10 @@ TBMQ batches writes to the relational database — events, timeseries, and the u
 | `integrationProcessor_total` | counter | `integrationId`, `statsName` = `totalMsgs`, `successfulMsgs`, `tmpTimeout`, `tmpFailed`, `timeoutMsgs`, `failedMsgs`, `successfulIterations`, `failedIterations` |
 | `integrationEventProcessor_total` | counter | `integrationId`, same eight `statsName` values |
 
-`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` and `integration_stats_gauge` report integration lifecycle and uplink-message activity: `name` is *which* metric is being reported — `start`, `stop`, or `msgUplink` — not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`.
+`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` reports integration lifecycle and uplink-message activity: `name` is *which* metric is being reported — `start`, `stop`, or `msgUplink` — not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`. `integration_stats_gauge` only ever carries `name="start"`: it reports the current count of integrations of each `type` that are running (`state="success"`) versus failed (`state="failed"`), not a per-event start/stop/uplink breakdown.
 
 <Aside type="note">
-  This family is gated by `stats.ie.enabled`, which defaults to `true` on the integration executor but is **not defined in the broker configuration**. On a broker node these series are absent unless `STATS_IE_ENABLED` is set explicitly.
+  This family is gated by `stats.ie.enabled`, which defaults to `true` on the integration executor but is **not defined in the broker configuration**. On a broker node these series are absent unless `STATS_IE_ENABLED` is set explicitly. To scrape them, add the Integration Executor as its own Prometheus target — it serves the same `/actuator/prometheus` path on its own HTTP port (`HTTP_BIND_PORT`, default `8082`), separate from the broker nodes in the example above.
 </Aside>
 
 ## JVM and system metrics

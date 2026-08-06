@@ -1817,7 +1817,7 @@ import Banner from '~/components/Banner.astro';
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">STATS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Enables or disables stats printing to the logs.</p>
+    <p class="config-def-desc">Enables or disables the broker's internal stats collection — not just the periodic log summary the name suggests. When disabled, no TBMQ counters, timers, or gauges are registered, and `/actuator/prometheus` exposes only generic framework metrics.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">STATS&#95;PRINT&#95;INTERVAL&#95;MS</code> · <span class="config-def-label">Default</span> <code>60000</code></p>

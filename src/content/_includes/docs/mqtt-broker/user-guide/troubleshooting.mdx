@@ -1,4 +1,4 @@
-import { Aside, Code, Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+import { Aside, Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
@@ -315,12 +315,12 @@ A publisher gets its PUBLISH acknowledged (or sends QoS 0 without expecting one)
 
 | Signal | What it tells you |
 |---|---|
-| `droppedMsgs_total` | PUBLISH messages permanently lost, broker-wide. Untagged — it tells you a rate, not a client, topic, or cause. |
+| `droppedMsgs_total` | PUBLISH messages permanently lost, per node. Untagged — it tells you a rate, not a client, topic, or cause. |
 | `flowControl_total{statsName="dropsOverflow"}` | Both the subscriber's in-flight window and the delay queue behind it are full — the subscriber has fallen behind long enough to exhaust the buffer, not just hit a receive-maximum ceiling. |
 | `flowControl_total{statsName="dropsTtl"}` | A delayed message's TTL expired before it could be sent. |
 | `incomingPublishMsg_consumed_total{statsName="failedMsgs"}` | A message was discarded on the main ingest pipeline after processing gave up on it — not merely retried. |
 | `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be written to Redis (the persistent DEVICE message store) and was discarded. |
-| Monitoring page's message drop chart | A per-interval delta of the same drop events, reset to zero after each report — compare it against `rate(droppedMsgs_total[5m])`, not the raw counter. |
+| <DocLink product={props.product} path="user-guide/ui/monitoring">Monitoring</DocLink> page's message drop chart | A per-interval delta of the same drop events, reset to zero after each report — compare it against `rate(droppedMsgs_total[5m])`, not the raw counter. |
 
 **Interpret**
 
