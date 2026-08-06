@@ -70,6 +70,8 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'PROXY protocol', slug: `${prefix}/other/proxy-protocol` },
 				{ label: 'Health API', slug: `${prefix}/other/health` },
 				{ label: 'Bulk provisioning', slug: `${prefix}/other/bulk-provisioning` },
+				{ label: 'Troubleshooting', slug: `${prefix}/troubleshooting` },
+				{ label: 'Prometheus metrics', slug: `${prefix}/prometheus-metrics` },
 			],
 		},
 		{

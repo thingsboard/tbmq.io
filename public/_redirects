@@ -21,14 +21,12 @@
 /docs/pe/mqtt-broker/api/ /docs/pe/rest-api/ 301
 /docs/pe/mqtt-broker/faq/ /docs/pe/why-tbmq/ 301
 /docs/pe/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/ /docs/pe/why-tbmq/ 301
-/docs/pe/mqtt-broker/troubleshooting/ /docs/pe/help/ 301
 /docs/pe/mqtt-broker/user-guide/ui/mail-server/ /docs/pe/user-guide/ui/settings/ 301
 /docs/mqtt-broker/api/ /docs/rest-api/ 301
 /docs/mqtt-broker/faq/ /docs/why-tbmq/ 301
 /docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/ /docs/why-tbmq/ 301
 /docs/mqtt-broker/image-gallery/ /docs/pe/image-gallery/ 301
 /docs/mqtt-broker/subscription/ /docs/pe/subscription/ 301
-/docs/mqtt-broker/troubleshooting/ /docs/help/ 301
 /docs/mqtt-broker/user-guide/ui/mail-server/ /docs/user-guide/ui/settings/ 301
 /docs/mqtt-broker/white-labeling/ /docs/pe/white-labeling/ 301
 /docs/mqtt-broker/security/ /docs/security/overview/ 301

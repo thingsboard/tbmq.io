@@ -113,7 +113,7 @@ export const SINGLE_REDIRECTS: SingleRedirect[] = [
 		target: '/docs/installation/upgrade-instructions/',
 	},
 	{ oldPath: 'mqtt-broker/subscription', target: '/docs/pe/subscription/' },
-	{ oldPath: 'mqtt-broker/troubleshooting', target: '/docs/help/' },
+	{ oldPath: 'mqtt-broker/troubleshooting', target: '/docs/troubleshooting/' },
 	{ oldPath: 'mqtt-broker/user-guide/ui/mail-server', target: '/docs/user-guide/ui/settings/' },
 	{ oldPath: 'mqtt-broker/white-labeling', target: '/docs/pe/white-labeling/' },
 	{ oldPath: 'pe/mqtt-broker/api', target: '/docs/pe/rest-api/' },
@@ -145,7 +145,7 @@ export const SINGLE_REDIRECTS: SingleRedirect[] = [
 		oldPath: 'pe/mqtt-broker/install/cluster/resources/upgrade-options/k8s-upgrade-tbmq-with-from-version',
 		target: '/docs/pe/installation/upgrade-instructions/',
 	},
-	{ oldPath: 'pe/mqtt-broker/troubleshooting', target: '/docs/pe/help/' },
+	{ oldPath: 'pe/mqtt-broker/troubleshooting', target: '/docs/pe/troubleshooting/' },
 	{ oldPath: 'pe/mqtt-broker/user-guide/ui/mail-server', target: '/docs/pe/user-guide/ui/settings/' },
 	{ oldPath: 'mqtt-broker/security', target: '/docs/security/overview/' },
 ];
