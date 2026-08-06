@@ -42,3 +42,200 @@ The tables below list the names as Prometheus scrapes them. TBMQ's source instru
 - Timers expand into four series: `_seconds` (carrying a `quantile` label), `_seconds_count`, `_seconds_sum`, and `_seconds_max`. Which quantiles appear on the `_seconds` series is controlled by `STATS_TIMER_PERCENTILES`, default `0.5`.
 - Gauges keep their name unchanged.
 - Where a meter has several possible outcomes, TBMQ puts the outcome in a `statsName` label rather than minting a separate metric name per outcome. For example, `deviceProcessor_total` is a single counter that covers all eight outcomes, and a query selects one of them with `{statsName="failedMsgs"}`.
+
+## Ingest pipeline
+
+Every PUBLISH TBMQ accepts from a client is produced onto the `tbmq.msg.all` Kafka topic before any further processing, then read back and dispatched by a pool of consumer threads. This family covers both sides of that hand-off: producing onto the topic, and consuming off it.
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `incomingPublishMsg_published_total` | counter | `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs` | PUBLISH messages produced to the main Kafka topic |
+| `incomingPublishMsg_consumed_total` | counter | `consumerId`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs`, `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations`, `failedIterations` | One series set per consumer; count set by `queue.msg-all.consumers-count` |
+| `incomingPublishMsg_consumed_processing_time_seconds` | timer | `consumerId` | Per-message dispatch latency |
+| `incomingPublishMsg_consumed_pack_processing_time_seconds` | timer | `consumerId` | Per-poll-batch latency |
+
+`tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
+
+```promql
+sum(rate(incomingPublishMsg_consumed_total{statsName="failedMsgs"}[5m]))
+```
+
+## Persistent DEVICE clients
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `deviceProcessor_total` | counter | `consumerId`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs`, `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations`, `failedIterations` | Count set by `queue.device-persisted-msg.consumers-count` (default 3) |
+| `deviceProcessor_processing_time_seconds` | timer | `consumerId` | Per-client async persist latency |
+| `deviceProcessor_pack_processing_time_seconds` | timer | `consumerId` | Whole-poll-batch latency |
+
+This is the consumer pool that asynchronously persists messages for persistent **DEVICE** clients reading off the `tbmq.msg.persisted` topic. The `tmp*` vs. plain split from [Ingest pipeline](#ingest-pipeline) above applies here unchanged. `failedMsgs` specifically means the message could not be written to the database and was discarded — not merely delayed for a later attempt.
+
+## Persistent APPLICATION clients
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `appProcessor_total` | counter | `clientId`, `statsName` = `successfulPublishMsgs`, `successfulPubRelMsgs`, `tmpTimeoutPublish`, `tmpTimeoutPubRel`, `timeoutPublishMsgs`, `timeoutPubRelMsgs`, `successfulIterations`, `failedIterations` | One set per APPLICATION client and per shared-subscription compound id |
+| `appProcessor_latency_seconds` | timer | `packetType` = `puback`, `pubrec`, `pubcomp` | Global across all clients — carries no `clientId` |
+
+`appProcessor_total` and `appProcessor_latency_seconds` track persistent **APPLICATION** client delivery — the PUBLISH-out / PUBACK-or-PUBREL-in acknowledgment cycle. Three behaviors are worth knowing before you build a dashboard on top of this family:
+
+- The whole family is gated by `APPLICATION_PROCESSOR_STATS_ENABLED` (default `true`; see [Enabling and scraping](#enabling-and-scraping) above).
+- The eight per-client counters that make up `appProcessor_total` are **deregistered when the client disconnects** (`StatsManagerImpl.printAndRemoveApplicationStatsOnClear`), so they do not pile up stale series as APPLICATION clients come and go.
+- `appProcessor_latency_seconds` is deliberately global: it carries only a `packetType` label, never `clientId`, and is **not** deregistered on disconnect — each of the three packet types keeps a single running series for the life of the broker process.
+
+<Aside>
+  Even with per-client counters deregistered on disconnect, a broker serving very many APPLICATION clients at once can still carry substantial `clientId` label cardinality on `appProcessor_total` at any given moment. Turn `APPLICATION_PROCESSOR_STATS_ENABLED` off if per-client granularity is not something you act on.
+</Aside>
+
+## Delivery and flow control
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `delivery_seconds` | timer | — | Time to hand a PUBLISH to the network layer |
+| `notPersistentMessagesProcessing_seconds` | timer | — | Delivery processing for non-persistent clients |
+| `persistentMessagesProcessing_seconds` | timer | — | Delivery processing for persistent clients |
+| `flowControl_total` | counter | `statsName` = `dropsOverflow`, `dropsTtl`, `unknownAcks` | Broker-wide |
+| `flowControl_inflightCount` | gauge | — | Messages currently in flight |
+| `flowControl_delayedQueueSize` | gauge | — | Messages currently delayed |
+| `nonWritableClients` | gauge | — | Clients whose channel is not currently writable |
+
+`delivery_seconds` measures the hand-off to the network layer, not end-to-end delivery confirmation — a message can show up here and still never be acknowledged by the client. `notPersistentMessagesProcessing_seconds` and `persistentMessagesProcessing_seconds` split that same processing span by whether the target session is persistent.
+
+The `flowControl` series instrument the broker-wide QoS 1/2 in-flight window: `flowControl_inflightCount` is how many unacknowledged messages are outstanding right now, `flowControl_delayedQueueSize` is how many are queued behind a full in-flight window, and `flowControl_total` counts what happens when both are exhausted (`dropsOverflow`), when a delayed message's TTL expires before it can be sent (`dropsTtl`), and when an acknowledgment arrives for a packet ID that is not currently in flight (`unknownAcks`). A `dropsOverflow` event is also counted in `droppedMsgs_total`, below.
+
+`nonWritableClients` and the whole `flowControl` family are the Prometheus side of the mechanisms described in <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> — watch them alongside `droppedMsgs_total` to tell a slow-consumer episode apart from steady-state loss.
+
+## Message loss
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `droppedMsgs_total` | counter | — | PUBLISH messages permanently lost, across the whole pipeline |
+| `droppedLifecycleEvents_total` | counter | — | Client lifecycle events that could not be published to an integration queue |
+
+Both counters are untagged in Community Edition and Professional Edition alike: `droppedMsgs_total` tells you *that* messages were lost and at what rate, not which client, which topic, or why. `droppedLifecycleEvents_total` covers a narrower case — a client CONNECT/DISCONNECT lifecycle event that could not be published onward to an integration queue.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+  `droppedMsgs_total` gives you the rate but not the cause. For the client, topic, and reason behind each drop, see <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink>.
+</ShowFor>
+
+## Connection lifecycle
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `connectionAccepted_total` | counter | — | CONNECT attempts that produced a successful CONNACK |
+| `connectionRefused_total` | counter | — | CONNECT attempts refused with a non-success CONNACK |
+| `connectionError_total` | counter | — | Connections that failed before or outside the CONNACK path |
+| `clientDisconnects_total` | counter | — | Client sessions disconnected, all reasons |
+
+`connectionAccepted_total` and `connectionRefused_total` both correspond to a CONNACK being sent back to the client — the difference is the reason code inside it. `connectionError_total` covers failures that never reach that point at all, for example a TLS handshake failure or a malformed CONNECT packet.
+
+`clientDisconnects_total` carries **no reason label** in either edition — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+  Some disconnects are the direct consequence of a dropped message — for example a client disconnected for exceeding its pre-connect queue or in-flight window. For those, <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> gives you the client, topic, and reason without grepping logs.
+</ShowFor>
+
+## Sessions, subscriptions, and retained messages
+
+These gauges and timers describe live session, subscription, and retained-message state. Some are scoped to the node that answers the scrape; others aggregate the whole cluster — confusing the two is the most common misreading of this page.
+
+Gauges:
+
+| Series | Type | Notes |
+|---|---|---|
+| `connectedSessions` | gauge | Live MQTT channels **on this node** |
+| `connectedSslSessions` | gauge | Of those, the ones over TLS |
+| `allClientSessions` | gauge | **Cluster-wide** sessions, including offline persistent ones |
+| `subscriptions` | gauge | **Cluster-wide** total subscription count across all clients |
+| `retainedMessages` | gauge | **Cluster-wide** retained message count |
+| `lastWillClients` | gauge | Clients with a registered last will |
+| `subscriptionTopicTrieSize` | gauge | Subscriptions held in the topic trie |
+| `subscriptionTrieNodes` | gauge | Nodes in the subscription trie |
+| `retainMsgTrieSize` | gauge | Retained messages held in the trie |
+| `retainMsgTrieNodes` | gauge | Nodes in the retained-message trie |
+
+Timers: `subscriptionLookup_seconds`, `retainedMsgLookup_seconds`, and `clientSessionsLookup_seconds`, timing the corresponding trie or store lookups.
+
+The per-node vs. cluster-wide split above is not cosmetic: `connectedSessions` can read low on one node while `allClientSessions` stays high cluster-wide, simply because a persistent client's session outlives its live connection. See the dedicated per-node vs. cluster-wide comparison further down this page for how to read the two together.
+
+## Actors
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `clientActor_msgInQueueTime_seconds` | timer | — | Time a message waited in a client actor mailbox |
+| `clientActor_processing_time_seconds` | timer | `msgType` | Client actor processing span, nanosecond resolution |
+| `deviceActor_msgInQueueTime_seconds` | timer | — | Time a message waited in a persistent DEVICE actor mailbox |
+| `deviceActor_processing_time_seconds` | timer | `msgType` | DEVICE actor processing span, nanosecond resolution |
+| `runningActors` | gauge | — | Actors currently alive |
+| `activeAppProcessors` | gauge | — | Active APPLICATION client processors |
+| `activeSharedAppProcessors` | gauge | — | Active shared-subscription APPLICATION processors |
+
+TBMQ's client-facing and DEVICE-persistence work runs inside actors, one per client (or per persistent DEVICE session). The mailbox-time timers above measure how long a message waited before the actor picked it up; the processing-time timers measure how long the actor spent handling it once it started.
+
+`clientActor_processing_time_seconds` and `deviceActor_processing_time_seconds` are created **lazily**, per `msgType` — there is no reserved series for a message type the broker has not processed yet. A `msgType` missing from a scrape means no traffic of that type has occurred since startup, not that anything is broken.
+
+## Queue consumers
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `clientSubscriptionsConsumer_total` | counter | `statsName` = `totalRecords`, `acceptedRecords`, `ignoredRecords` | Kafka records read from the subscriptions topic. `ignoredRecords` are records this node had already applied |
+| `retainedMsgConsumer_total` | counter | `statsName` = `totalRetainedMsgs`, `newRetainedMsgs`, `clearedRetainedMsgs` | `clearedRetainedMsgs` counts tombstones |
+| `clientSessionEvent_pack_processing_time_seconds` | timer | `consumerId` | Session event batch processing; count set by `queue.client-session-event.consumers-count` (default 2) |
+
+These series watch the Kafka consumers that keep cluster-wide subscription and retained-message state synchronized across nodes, plus session-event batch processing. Both counters advance per Kafka **record** consumed, not per logical subscription or retained-message change — a single re-subscribe or retain update can span more than one record, and each is counted individually. `ignoredRecords` is not an error signal by itself: it counts records this node had already applied, which is ordinary cross-node replication traffic. `clearedRetainedMsgs` counts tombstones — a retained message being cleared, not one being created.
+
+## Kafka producers and consumers
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `kafkaProducer_send_seconds` | timer | `producerId` | Kafka `send()` latency |
+| `kafkaConsumer_commit_seconds` | timer | `consumerId` | Kafka `commitSync()` latency |
+
+These two timers sit underneath every other family on this page that touches Kafka: they measure the raw client calls — `send()` on the producer side, `commitSync()` on the consumer side — broken out per `producerId` / `consumerId`. A rise here points at Kafka itself (broker load, network, replication lag) rather than at TBMQ's own message processing.
+
+## SQL write queues
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `sqlQueue_total` | counter | `queueName`, `queueIndex`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs` | Database write queues |
+| `sqlQueue_queueSize` | gauge | `queueName`, `queueIndex` | Current queue depth — the backpressure signal for database writes |
+
+TBMQ batches writes to the relational database — events, timeseries, and the unauthorized-client audit trail — through a small set of named, in-memory queues. Observed `queueName` values: `Events`, `TimeseriesQueue`, `LatestTimeseriesQueue`, `InsertUnauthorizedClientQueue`, `DeleteUnauthorizedClientQueue`. TBMQ runs several parallel queues (threads) per logical queue for throughput, which is what `queueIndex` distinguishes between.
+
+`sqlQueue_queueSize` is the backpressure signal for database writes: a queue that keeps growing instead of draining means TBMQ is producing SQL writes faster than the database can absorb them.
+
+## Integrations
+
+| Series | Type | Labels |
+|---|---|---|
+| `ie_uplink_published_total` | counter | `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs` |
+| `integration_stats_counter_total` | counter | `name`, `state`, `type` |
+| `integration_stats_gauge` | gauge | `name`, `state`, `type` |
+| `integrationProcessor_total` | counter | `integrationId`, `statsName` = `totalMsgs`, `successfulMsgs`, `tmpTimeout`, `tmpFailed`, `timeoutMsgs`, `failedMsgs`, `successfulIterations`, `failedIterations` |
+| `integrationEventProcessor_total` | counter | `integrationId`, same eight `statsName` values |
+
+`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` and `integration_stats_gauge` report integration start/stop activity and current state, tagged by integration `name`, `type`, and `state` (`success` or `failed`).
+
+<Aside type="note">
+  This family is gated by `stats.ie.enabled`, which defaults to `true` on the integration executor but is **not defined in the broker configuration**. On a broker node these series are absent unless `STATS_IE_ENABLED` is set explicitly.
+</Aside>
+
+## JVM and system metrics
+
+The remaining series referenced elsewhere on this site are standard Spring Boot Actuator / Micrometer metrics, not TBMQ-specific instrumentation — they are listed here only because the troubleshooting playbooks link to them. For the full set Actuator exposes and how each is computed, see the [Micrometer](https://docs.micrometer.io/micrometer/reference/) and [Spring Boot Actuator](https://docs.spring.io/spring-boot/reference/actuator/index.html) documentation.
+
+- `process_cpu_usage` — process CPU utilization, `0`–`1`.
+- `system_cpu_usage` — CPU utilization of the whole host, `0`–`1`.
+- `system_load_average_1m` — host load average over the last minute.
+- `jvm_memory_used_bytes` — bytes currently used, per memory pool.
+- `jvm_memory_max_bytes` — the maximum bytes that pool can reach; `-1` where the JVM enforces no fixed limit.
+- `jvm_gc_overhead` — approximate share of CPU time spent in garbage collection.
+- `jvm_gc_pause_seconds` — GC pause duration histogram, reported when the collector in use exposes pause-time histograms (the default G1 collector does).
+- `jvm_threads_live_threads` — live JVM thread count.
+- `process_files_open_files` — open file descriptors held by the process.
+- `process_files_max_files` — the file descriptor limit.
+- `process_uptime_seconds` — time since the JVM process started.
+- `hikaricp_connections_active` — database connections currently checked out of the pool.
+- `hikaricp_connections_pending` — threads currently waiting for a connection.
+- `hikaricp_connections_timeout_total` — connection acquisitions that gave up waiting.
+- `logback_events_total` — log events emitted, by level.
