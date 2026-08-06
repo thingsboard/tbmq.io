@@ -150,10 +150,10 @@ Gauges:
 | `subscriptions` | gauge | **Cluster-wide** total subscription count across all clients |
 | `retainedMessages` | gauge | **Cluster-wide** retained message count |
 | `lastWillClients` | gauge | Clients with a registered last will |
-| `subscriptionTopicTrieSize` | gauge | Subscriptions held in the topic trie |
-| `subscriptionTrieNodes` | gauge | Nodes in the subscription trie |
-| `retainMsgTrieSize` | gauge | Retained messages held in the trie |
-| `retainMsgTrieNodes` | gauge | Nodes in the retained-message trie |
+| `subscriptionTopicTrieSize` | gauge | **Cluster-wide** — subscriptions held in the topic trie |
+| `subscriptionTrieNodes` | gauge | **Cluster-wide** — nodes in the subscription trie |
+| `retainMsgTrieSize` | gauge | **Cluster-wide** — retained messages held in the trie |
+| `retainMsgTrieNodes` | gauge | **Cluster-wide** — nodes in the retained-message trie |
 
 Timers: `subscriptionLookup_seconds`, `retainedMsgLookup_seconds`, and `clientSessionsLookup_seconds`, timing the corresponding trie or store lookups.
 
@@ -301,7 +301,7 @@ Upgrading from 2.3 renames a handful of series and reshapes a couple of label se
 | `sqlQueue_<QueueName>_total{queueIndex,statsName}` | `sqlQueue_total{queueName,queueIndex,statsName}` — the queue name moved from the metric name into a label |
 | `clientSubscriptions` gauge — number of clients with at least one subscription | `subscriptions` gauge — total subscription count. Renamed **and** redefined; the new value is greater whenever any client holds more than one subscription |
 | `clientSubscriptionsConsumer_total{statsName="totalSubscriptions"\|"acceptedSubscriptions"\|"ignoredSubscriptions"}` | `clientSubscriptionsConsumer_total{statsName="totalRecords"\|"acceptedRecords"\|"ignoredRecords"}` |
-| `integration_stats_counter{name="msgDownlink"}` | Removed — the series was never emitted |
+| `integration_stats_counter_total{name="msgDownlink"}` | Removed — the series was never emitted |
 | `processedBytes` historical key | Removed — was never incremented |
 
 <Aside type="caution">
