@@ -372,3 +372,140 @@ Ordinary causes, roughly in order of how often they turn out to be it:
 - Confirm the session type and clean-start behavior match what you expect — see <DocLink product={props.product} path="user-guide/clean-persistent-sessions">Non-persistent and persistent sessions</DocLink>.
 - Review shared-subscription group membership if other members are receiving messages the one you're testing isn't — see <DocLink product={props.product} path="user-guide/shared-subscriptions">Shared subscriptions</DocLink>.
 - See <DocLink product={props.product} path="user-guide/topics">Topics and wildcards</DocLink> for filter syntax.
+
+## Latency and backlog
+
+Publishes succeed and subscribers eventually get them, but end-to-end latency is high or climbing — the broker is falling behind rather than failing outright.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| Kafka consumer lag on `msg-all-consumer-group` (see [Kafka consumer group lag](#kafka-consumer-group-lag)) | Whether the main ingest pipeline is falling behind — often the first symptom to show up, ahead of anything that implies loss. |
+| `incomingPublishMsg_consumed_pack_processing_time_seconds` | Per-poll-batch latency on the main ingest consumers. |
+| `incomingPublishMsg_consumed_total{statsName="tmpFailed"}` | Messages retried on the main ingest pipeline — not lost yet. |
+| `incomingPublishMsg_consumed_total{statsName="timeoutMsgs"}` | Messages the main ingest pipeline gave up on and discarded. |
+| `deviceProcessor_pack_processing_time_seconds` | Whole-poll-batch latency for persisting persistent DEVICE client messages. |
+| `appProcessor_total{statsName="tmpTimeoutPublish"}` | PUBLISH messages a persistent APPLICATION client has not yet acknowledged within a processing pass. |
+| `kafkaProducer_send_seconds` | Kafka `send()` latency, per `producerId`. |
+| `delivery_seconds` | Time to hand a PUBLISH to the network layer — the last leg of the delivery path. |
+| `clientActor_msgInQueueTime_seconds`, `deviceActor_msgInQueueTime_seconds` | How long a message waited in an actor's mailbox before being picked up. |
+
+**Interpret**
+
+Growing lag on `msg-all-consumer-group` means the broker is ingesting PUBLISH messages faster than the consumer pool behind it can process them — usually the first sign of trouble, ahead of anything that implies loss. Rising `msgInQueueTime` on either actor family means the actor thread pool doing that work is behind, not just the Kafka consumers feeding it. Rising `kafkaProducer_send_seconds` points at Kafka itself — broker load, network, or replication — rather than at TBMQ's own processing. Timeouts on the app processor (`tmpTimeoutPublish` climbing) mean persistent APPLICATION clients are not acknowledging fast enough to keep the pipeline draining.
+
+**Act**
+
+- Scale broker nodes horizontally, or increase the relevant consumer count (`queue.msg-all.consumers-count`, `queue.device-persisted-msg.consumers-count`, and the equivalents for the other pipelines).
+- If the slowdown traces to one specific downstream — a subscriber, Kafka, or the database — follow through to that playbook instead of tuning consumer counts here.
+- See <DocLink product={props.product} path="architecture">Architecture</DocLink> for how the consumer pools relate to broker nodes, and <DocLink product={props.product} path="installation/config">MQTT broker configuration</DocLink> for the consumer-count parameters.
+
+PromQL for the pack-latency p50 per consumer:
+
+```promql
+max by (consumerId) (incomingPublishMsg_consumed_pack_processing_time_seconds{quantile="0.5"})
+```
+
+## Slow subscribers
+
+A publish reaches the broker fine and most subscribers get it promptly, but one subscriber consistently lags — or starts losing messages under load.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `nonWritableClients` | Clients whose channel has crossed the outbound high watermark, right now — a per-node gauge; sum across nodes for a cluster-wide count. |
+| `flowControl_delayedQueueSize` | Messages queued behind a full QoS 1/2 in-flight window — the early warning, before anything is lost. |
+| `flowControl_inflightCount` | Messages currently in that in-flight window, on this node. |
+| `flowControl_total{statsName="dropsOverflow"}` | The in-flight window **and** the delay queue behind it are both full — the buffer has already overflowed. |
+| `flowControl_total{statsName="dropsTtl"}` | A delayed message aged out before it could be sent — the same slow-subscriber condition as `dropsOverflow`, showing up on a longer delay. |
+
+**Interpret**
+
+`nonWritableClients` above zero for a sustained period means at least one subscriber's channel cannot drain as fast as the broker is writing to it. `delayedQueueSize` climbing is the early warning; `dropsOverflow` climbing means the buffer already overflowed and messages were lost — see [Messages are dropped](#messages-are-dropped) above for what counts as lost and what doesn't. A brief spike during a reconnect burst is ordinary; a level that stays elevated is not.
+
+**Act**
+
+- Fix the slow consumer, or reduce its subscription fan-out.
+- Reconsider the client's type: persistent APPLICATION clients absorb backpressure in Kafka, sized in days/GB of retention, while persistent DEVICE clients are bounded by a much smaller per-client Redis-backed queue. See <DocLink product={props.product} path="user-guide/mqtt-client-type">TBMQ client type</DocLink>.
+- See <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> for the full mechanism — how TBMQ buffers, pauses, and eventually drops for a subscriber that can't keep up. This playbook only points at the symptoms; that page is the full treatment.
+
+## Resource exhaustion
+
+A node is pegged on CPU or memory, threads pile up, or the process restarts under load — the broker is resource-bound rather than waiting on a downstream dependency.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `process_cpu_usage` | Process CPU utilization, `0`–`1`, on this node. |
+| `system_load_average_1m` | Host load average — catches load from other processes sharing the same host, not just TBMQ. |
+| `jvm_memory_used_bytes{area="heap"}` vs. `jvm_memory_max_bytes{area="heap"}` | Heap usage against the heap ceiling. |
+| `jvm_gc_overhead` | Approximate share of CPU time spent collecting garbage. |
+| `jvm_threads_live_threads` | Live JVM thread count. |
+| `process_files_open_files` vs. `process_files_max_files` | Open file descriptors against the process limit. |
+| `runningActors`, `subscriptionTrieNodes`, `retainMsgTrieNodes`, `retainedMessages` | TBMQ-side growth drivers — whether pressure tracks connection/actor count or accumulated subscription and retained-message state. |
+
+**Interpret**
+
+`jvm_gc_overhead` approaching `1` means the JVM is spending nearly all its CPU time collecting rather than doing broker work — the node is effectively down even though the process is still running. Open file descriptors approaching `process_files_max_files` cap how many more connections the node can accept, since every MQTT connection holds a socket descriptor open. Growing `subscriptionTrieNodes` or `retainMsgTrieNodes` while message traffic stays flat points at subscription or retained-message accumulation, not at load. `retainedMessages` and those two trie gauges are cluster-wide replicated, while `runningActors` is per node — read them accordingly rather than summing what's already cluster-wide; see <DocLink product={props.product} path="prometheus-metrics#aggregating-across-a-cluster">Aggregating across a cluster</DocLink> on the metrics page for the full breakdown.
+
+**Act**
+
+- When Prometheus isn't reachable, `top` gives a fast read on whether a node is CPU- or memory-bound — a stand-in for a quick check, not a replacement for watching these series over time.
+- Sustained high CPU across every node calls for horizontal scaling — add broker nodes. Memory pressure on a single node with a modest connection count usually calls for vertical scaling — raise the heap — instead.
+- Raise the file descriptor limit before raising the connection target per node.
+- See <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink> and <DocLink product={props.product} path="reference/1m-throughput-p2p-performance-test">Scaling P2P messaging to 1M msg/sec</DocLink> for sizing guidance.
+
+Heap usage as a fraction of the ceiling:
+
+```promql
+jvm_memory_used_bytes{area="heap"} / ignoring(id) group_left jvm_memory_max_bytes{area="heap"}
+```
+
+## Dependency failures
+
+The broker itself is up and accepting connections, but something behind it — Kafka, PostgreSQL, or the Redis-backed store — is slow or unreachable, and TBMQ is stalling on it.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `kafkaProducer_send_seconds`, `kafkaConsumer_commit_seconds` | Kafka `send()` / `commitSync()` latency, per `producerId` / `consumerId` — a rise here points at Kafka itself. |
+| `sqlQueue_queueSize` | Current depth of a database write queue, by `queueName`/`queueIndex` — the backpressure signal for PostgreSQL writes. |
+| `sqlQueue_total{statsName="failedMsgs"}` | Batches that failed to write to the database. |
+| `hikaricp_connections_pending` | Threads currently waiting for a database connection from the pool. |
+| `hikaricp_connections_timeout_total` | Connection acquisitions that gave up waiting. |
+| `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be persisted and was discarded — DEVICE message persistence is Redis- (or Valkey-) backed, distinct from the SQL queues above. |
+| Health API (`/actuator/health`) | Whether `db`, `kafka`, and `redis` are each reachable from this node, right now. |
+
+**Interpret**
+
+`sqlQueue_queueSize` climbing while `sqlQueue_total{statsName="successfulMsgs"}` stays flat means TBMQ is producing SQL writes faster than PostgreSQL is draining them. `hikaricp_connections_pending` above zero means threads are waiting for a connection — the pool is undersized for the load, or queries themselves are slow. Rising `kafkaProducer_send_seconds` or `kafkaConsumer_commit_seconds` with no matching rise in TBMQ's own CPU usage points outside the broker, at Kafka. `deviceProcessor_total{statsName="failedMsgs"}` climbing on its own, with the SQL queues above flat, narrows the problem to the Redis (or Valkey) side specifically — that's what persistent DEVICE messages are stored in, not PostgreSQL.
+
+**Act**
+
+- Check the dependency's own health first — <DocLink product={props.product} path="other/health">Health API</DocLink> reports `db`, `kafka`, and `redis` as separate components, so a `DOWN` there tells you which one to chase before looking anywhere else.
+- Review connection-pool sizing against real concurrency — the HikariCP pool, and the Kafka producer/consumer counts.
+- Verify TLS and credentials for Redis or Valkey specifically when the persistent DEVICE path is the one failing.
+- See <DocLink product={props.product} path="installation/config">MQTT broker configuration</DocLink> for the pool-size and connection parameters.
+
+## Getting help
+
+If none of the playbooks above resolve the issue, the logs and the relevant metric series above are what the team needs in order to help — have them ready before reaching out.
+
+<CardGrid>
+  <Card title="Slack community" icon="slack">
+    Ask questions and get quick tips from other users and contributors in the
+    [TBMQ Slack workspace](https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ).
+  </Card>
+  <Card title="GitHub issues" icon="github">
+    Found a bug or have a feature request?
+    [Open an issue](https://github.com/thingsboard/tbmq/issues) on the TBMQ GitHub repository.
+  </Card>
+  <Card title="Contact us" icon="email">
+    For direct assistance, [fill out the contact form](/contact-us/?subject=TBMQ)
+    and the team will get back to you.
+  </Card>
+</CardGrid>
