@@ -157,7 +157,7 @@ Gauges:
 
 Timers: `subscriptionLookup_seconds`, `retainedMsgLookup_seconds`, and `clientSessionsLookup_seconds`, timing the corresponding trie or store lookups.
 
-The per-node vs. cluster-wide split above is not cosmetic: `connectedSessions` can read low on one node while `allClientSessions` stays high cluster-wide, simply because a persistent client's session outlives its live connection. See the dedicated per-node vs. cluster-wide comparison further down this page for how to read the two together.
+The per-node vs. cluster-wide split above is not cosmetic: `connectedSessions` can read low on one node while `allClientSessions` stays high cluster-wide, simply because a persistent client's session outlives its live connection. See [Aggregating across a cluster](#aggregating-across-a-cluster) further down this page for how to read the two together.
 
 ## Actors
 
@@ -240,3 +240,70 @@ The remaining series referenced elsewhere on this site are standard Spring Boot 
 - `hikaricp_connections_pending` — threads currently waiting for a connection.
 - `hikaricp_connections_timeout_total` — connection acquisitions that gave up waiting.
 - `logback_events_total` — log events emitted, by level.
+
+## Aggregating across a cluster
+
+On a multi-node cluster, the same series name scrapes identically from every node — but not every series *means* the same thing once you start comparing nodes. Two different backing mechanisms produce what looks like the same kind of gauge, and conflating them is the most common way to misread this page on a cluster.
+
+**Cluster-wide replicated caches.** `allClientSessions`, `subscriptions`, `retainedMessages`, and the four trie gauges — `subscriptionTopicTrieSize`, `subscriptionTrieNodes`, `retainMsgTrieSize`, `retainMsgTrieNodes` — are backed by state that every node keeps fully synchronized with every other node: loaded in full from the persisted store at startup, then kept current by a Kafka consumer that applies *every* node's changes, not only its own. Each node runs its own uniquely named consumer group rather than sharing one, so every node reads the entire topic instead of a partitioned slice of it — the subscription and retained-message tries have to hold the whole cluster's data anyway, since any node may need to route a PUBLISH to a subscriber connected somewhere else. Because the same complete dataset lives on every node, **every node reports the same value** for these series. Summing them across nodes just multiplies the true number by the node count; query them with `max()` — safest against a node that is momentarily a step behind on replication — or read any single node.
+
+**Per-node live state.** `connectedSessions` and `connectedSslSessions` are the opposite: each is a plain, un-replicated map of the Netty channels actually open on that one node, populated only when that node's own actor handles a client's CONNECT and cleared again on DISCONNECT — there is no cross-node replication behind them. `runningActors`, `nonWritableClients`, and the `flowControl_*` gauges describe this node's own actor system and this node's own client channels the same way. These are the ones to `sum()` to get a cluster-wide total.
+
+All `*_total` counters (`droppedMsgs_total`, `incomingPublishMsg_consumed_total`, and the rest) are per-node too — each node only counts what passed through it — so the usual `sum(rate(...))` pattern applies to them exactly as it would to any other Prometheus counter.
+
+| Series | Scope | How to aggregate |
+|---|---|---|
+| `connectedSessions`, `connectedSslSessions` | Per node — live channels on that node | `sum()` |
+| `allClientSessions` | Cluster-wide replicated | `max()` or pick one node |
+| `subscriptions` | Cluster-wide replicated | `max()` or pick one node |
+| `retainedMessages` | Cluster-wide replicated | `max()` or pick one node |
+| `subscriptionTopicTrieSize`, `subscriptionTrieNodes`, `retainMsgTrieSize`, `retainMsgTrieNodes` | Cluster-wide replicated | `max()` or pick one node |
+| All `*_total` counters | Per node | `sum(rate(...))` |
+| `runningActors`, `nonWritableClients`, `flowControl_*` | Per node | `sum()` |
+
+```promql
+# correct — per-node gauge, sum it
+sum(connectedSessions)
+
+# correct — cluster-wide gauge, do NOT sum it
+max(allClientSessions)
+```
+
+## Prometheus metrics and the Monitoring charts
+
+The <DocLink product={props.product} path="user-guide/ui/monitoring">Monitoring</DocLink> page's **State & Health** charts come from a separate reporting pipeline, not from Prometheus — so it's worth knowing exactly which series backs each chart, and where the two genuinely diverge.
+
+| Monitoring chart | Closest Prometheus series | Do they match? |
+|---|---|---|
+| Sessions | `allClientSessions` | Yes. **Not** `connectedSessions`, which is per-node and excludes offline persistent sessions |
+| Subscriptions | `subscriptions` | Yes — same underlying counter |
+| Retained message count | `retainedMessages` | Yes — same underlying map |
+| Message drop count | `droppedMsgs_total` | Same events, different shape — see below |
+
+The first three rows match because the chart and the gauge read the same field: the **Sessions** chart is the size of the very same cluster-wide session map that `allClientSessions` exposes, not `connectedSessions`, which only counts live channels on whichever node happens to answer the scrape and misses every persistent client that is currently offline. **Subscriptions** and **Retained message count** are the same story — the chart persists the identical running subscription-count and retained-message-map-size values that the `subscriptions` and `retainedMessages` gauges report.
+
+**Message drop count** is the one row where the raw numbers genuinely disagree, by design: the chart persists a *delta* — drops since the last reporting interval, reset to zero after every report — while `droppedMsgs_total` is a Micrometer counter that only ever increases, for as long as the node keeps running. The same drop events feed both; only the shape differs, so compare them like for like with `rate()`:
+
+```promql
+sum(rate(droppedMsgs_total[5m]))
+```
+
+Historical reporting also has its own on/off switch, independent of `STATS_ENABLED`: `HISTORICAL_DATA_REPORT_ENABLED` (default `true`) governs this whole chart pipeline — **Sessions**, **Subscriptions**, **Retained message count**, **Message drop count**, and the **Traffic & Performance** charts alike. Turn it off and every one of those charts goes flat, while the Prometheus series they're compared against above keep advancing untouched — the two pipelines share the same underlying events, not the same on/off switch.
+
+## Renamed and removed in 2.4
+
+Upgrading from 2.3 renames a handful of series and reshapes a couple of label sets. If a 2.3 dashboard or alert rule goes quiet after the upgrade, check it against this table before assuming something broke.
+
+| Before 2.4 | 2.4 |
+|---|---|
+| `producer_seconds*{producerId}` | `kafkaProducer_send_seconds*{producerId}` |
+| `consumer_seconds*{consumerId,operation="syncCommit"}` | `kafkaConsumer_commit_seconds*{consumerId}` — the constant `operation` label is gone |
+| `sqlQueue_<QueueName>_total{queueIndex,statsName}` | `sqlQueue_total{queueName,queueIndex,statsName}` — the queue name moved from the metric name into a label |
+| `clientSubscriptions` gauge — number of clients with at least one subscription | `subscriptions` gauge — total subscription count. Renamed **and** redefined; the new value is greater whenever any client holds more than one subscription |
+| `clientSubscriptionsConsumer_total{statsName="totalSubscriptions"\|"acceptedSubscriptions"\|"ignoredSubscriptions"}` | `clientSubscriptionsConsumer_total{statsName="totalRecords"\|"acceptedRecords"\|"ignoredRecords"}` |
+| `integration_stats_counter{name="msgDownlink"}` | Removed — the series was never emitted |
+| `processedBytes` historical key | Removed — was never incremented |
+
+<Aside type="caution">
+  The `clientSubscriptions` → `subscriptions` row is the one change where renaming the selector in a query isn't enough: the quantity itself changed. A 2.3 dashboard reading `clientSubscriptions` was showing *how many clients have at least one subscription*; pointing that same panel at `subscriptions` after the upgrade shows *the total number of subscriptions* instead, which is equal or higher for the same fleet — often much higher, wherever clients typically hold more than one subscription each.
+</Aside>
