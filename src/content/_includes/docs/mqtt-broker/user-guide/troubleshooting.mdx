@@ -265,7 +265,7 @@ A client's CONNECT either comes back with a failure CONNACK, or the connection e
 - Review the <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized clients</DocLink> page for the specific client id and rejection reason.
 - See <DocLink product={props.product} path="security/overview">Security</DocLink> for how authentication and authorization are configured end to end.
 
-```promql
+```text
 sum(rate(connectionRefused_total[5m])) / sum(rate(connectionAccepted_total[5m]))
 ```
 
@@ -402,7 +402,7 @@ Growing lag on `msg-all-consumer-group` means the broker is ingesting PUBLISH me
 
 PromQL for the pack-latency p50 per consumer:
 
-```promql
+```text
 max by (consumerId) (incomingPublishMsg_consumed_pack_processing_time_seconds{quantile="0.5"})
 ```
 
@@ -459,7 +459,7 @@ A node is pegged on CPU or memory, threads pile up, or the process restarts unde
 
 Heap usage as a fraction of the ceiling, summed across the per-pool series (G1's Eden and Survivor pools report no fixed max, so the `> 0` filter keeps only the pool that does):
 
-```promql
+```text
 sum by (instance) (jvm_memory_used_bytes{area="heap"})
   / sum by (instance) (jvm_memory_max_bytes{area="heap"} > 0)
 ```
