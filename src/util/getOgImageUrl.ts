@@ -32,7 +32,7 @@ const routeIndex = new Map<string, string>([
  * Walks up the URL tree if no exact match is found, so version-table sub-pages
  * (`/docs/foo/v3-X-x/`) inherit the parent docs card without needing their own
  * PNG. Returns undefined when no ancestor matches → caller falls back to
- * /thingsboard-og.png.
+ * /tbmq-og.png.
  *
  * UK pages reuse the EN card via path normalization (the /uk/ prefix is stripped).
  */

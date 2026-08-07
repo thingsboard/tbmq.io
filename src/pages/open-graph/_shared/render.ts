@@ -7,7 +7,7 @@ import { Resvg } from '@resvg/resvg-js';
 import { Card, type CardProps } from './Card';
 
 /** Bump when the template, fonts, or rendering pipeline changes — invalidates cache. */
-const TEMPLATE_VERSION = 3;
+const TEMPLATE_VERSION = 5;
 
 const CACHE_DIR = path.resolve('node_modules/.og-cache');
 const FONT_DIR = path.resolve('src/pages/open-graph/_fonts');
@@ -102,7 +102,7 @@ function ensureCacheDir(): Promise<void> {
  */
 export async function renderCard(props: CardProps): Promise<Buffer> {
 	if (process.env.SKIP_OG) {
-		return readFile(path.resolve('public/thingsboard-og.png'));
+		return readFile(path.resolve('public/tbmq-og.png'));
 	}
 
 	await ensureCacheDir();

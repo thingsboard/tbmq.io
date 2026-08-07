@@ -1,8 +1,9 @@
 // src/pages/open-graph/_shared/colors.ts
 //
 // Three-stop gradient per slab class. Top → middle → bottom (vertical).
-// `brand` is the default ThingsBoard core colour, reused by CE docs and by all
-// logo-card slabs (blog, marketing, case studies, use cases, device library).
+// `brand` is the ThingsBoard core colour (kept for upstream compatibility);
+// TBMQ docs cards and all logo-card slabs (blog, marketing, collection
+// indexes) use `tbmq`.
 
 export type SlabClass =
 	| 'brand'

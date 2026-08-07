@@ -362,11 +362,11 @@ function updateHead(context: APIContext, isTutorial: boolean) {
 	// when none is present, else BaseLayout pages get a duplicate `og:image`.
 	if (!ogImage) {
 		const ogImageUrl = getOgImageUrl(pathname);
-		let imageSrc = ogImageUrl ?? '/thingsboard-og.png';
+		let imageSrc = ogImageUrl ?? '/tbmq-og.png';
 		// Astro dev with `trailingSlash: 'always'` requires dynamic-route URLs to end with '/'
 		// even when they have a file extension. Production (Cloudflare Pages serving static files)
 		// needs the clean .png URL with no trailing slash.
-		if (import.meta.env.DEV && /\.png$/.test(imageSrc) && imageSrc !== '/thingsboard-og.png') {
+		if (import.meta.env.DEV && /\.png$/.test(imageSrc) && imageSrc !== '/tbmq-og.png') {
 			imageSrc = imageSrc + '/';
 		}
 		// Use request origin so dev shows localhost; in static build it equals context.site origin.

@@ -133,7 +133,7 @@ export default defineConfig({
             // Override Starlight defaults: site_name uses Starlight `title:` ("Docs") and og:type
             // is hard-coded to "article" — neither is correct for our docs. Starlight's mergeHead
             // replaces same-property defaults with these.
-            { tag: 'meta', attrs: { property: 'og:site_name', content: 'ThingsBoard' } },
+            { tag: 'meta', attrs: { property: 'og:site_name', content: 'TBMQ' } },
             { tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
             // Starlight only emits twitter:site if a twitter/x.com entry is set in `social:`.
             // We can't use `social:` here without also rendering a duplicate icon in the header
