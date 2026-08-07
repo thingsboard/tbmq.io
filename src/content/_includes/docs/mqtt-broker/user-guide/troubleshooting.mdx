@@ -108,17 +108,17 @@ To turn on a specific component, add one or more `<logger>` elements between the
 
 **Loggers worth enabling.** Every name below is relative to `org.thingsboard.mqtt.broker.` — prepend that prefix when you write the `<logger name="…">` entry. Rows marked *(package)* cover every class beneath them.
 
-| Area | Logger | Turn this on when |
-|---|---|---|
-| Connect / CONNACK | `actors.client.service.connect` *(package)* | CONNACK send or connection-validation failures, topic-alias and keep-alive adjustments. Does **not** cover auth failures or malformed packets — see the next two rows |
-| Authentication | `service.auth` *(package)* | CONNECTs are rejected and you need the reason: bad credentials, invalid JWT, untrusted certificate, failed HTTP auth. Covers all providers, and is the key logger for [Clients cannot connect](#clients-cannot-connect) |
-| Channel / TLS errors | `server.MqttSessionHandler` | TLS handshake failures, protocol violations, malformed packets, connections dropped mid-handshake |
-| Disconnect | `actors.client.service.disconnect.DisconnectServiceImpl` | You need the reason behind a specific client's disconnect |
-| Subscriptions | `service.subscription.ClientSubscriptionConsumerImpl` | A subscription made on one node isn't reaching another — this consumer replicates subscription state across the cluster |
-| Retained messages | `service.mqtt.retain.RetainedMsgConsumerImpl` | Retained messages aren't propagating to, or clearing from, other nodes |
-| Kafka consumer lag | `queue.kafka.stats.TbKafkaConsumerStatsService` | You raised the root level to cut noise but still want the [lag line](#kafka-consumer-group-lag) — this logger's level controls it independently of root |
-| Actor system | `actors.DefaultTbActorSystem` | Client actor and session lifecycle — actors being created and stopped, not message content |
-| Stats printing | `service.stats` *(package)* | Keeps the periodic stats dump visible if you've turned the root level below INFO |
+| Area | Logger, and what it covers |
+|---|---|
+| Connect / CONNACK | `actors.client.service.connect` *(package)*<br/>CONNACK send and connection-validation failures, topic-alias and keep-alive adjustments. Does **not** cover auth failures or malformed packets — see the next two rows. |
+| Authentication | `service.auth` *(package)*<br/>Why CONNECTs are rejected: bad credentials, invalid JWT, untrusted certificate, failed HTTP auth. Covers every provider, and is the key logger for [Clients cannot connect](#clients-cannot-connect). |
+| Channel / TLS errors | `server.MqttSessionHandler`<br/>TLS handshake failures, protocol violations, malformed packets, connections dropped mid-handshake. |
+| Disconnect | `actors.client.service.disconnect.DisconnectServiceImpl`<br/>The reason behind a specific client's disconnect. |
+| Subscriptions | `service.subscription.ClientSubscriptionConsumerImpl`<br/>The consumer that replicates subscription state across the cluster — enable it when a subscription made on one node isn't reaching another. |
+| Retained messages | `service.mqtt.retain.RetainedMsgConsumerImpl`<br/>Retained messages not propagating to, or clearing from, other nodes. |
+| Kafka consumer lag | `queue.kafka.stats.TbKafkaConsumerStatsService`<br/>Keeps the [lag line](#kafka-consumer-group-lag) visible after you raise the root level to cut noise; this logger's level controls it independently of root. |
+| Actor system | `actors.DefaultTbActorSystem`<br/>Client actor and session lifecycle — actors created and stopped, not message content. |
+| Stats printing | `service.stats` *(package)*<br/>Keeps the periodic stats dump visible if you turn the root level below INFO. |
 
 <Tabs>
 <TabItem label="Docker Compose">
