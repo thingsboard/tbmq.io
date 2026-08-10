@@ -28,9 +28,8 @@ The behavior is governed by a handful of tunables, all on by default:
 - **`APPLICATION_PROCESSOR_STATS_ENABLED`** (default `true`) — enables per-**APPLICATION**-client processing stats. See the `appProcessor` table below for the metrics this controls.
 
 <Aside type="caution">
-  `METRICS_ENDPOINTS_EXPOSE` replaces the whole list rather than adding to it. Setting it to `prometheus` alone also
-  removes `health`, taking down the endpoint that the <DocLink product={props.product} path="other/health">Health
-  API</DocLink> and Kubernetes probes depend on. Keep `health` in the list alongside `prometheus`.
+  `METRICS_ENDPOINTS_EXPOSE` replaces the whole list rather than adding to it, so setting it to `prometheus` alone takes
+  `/actuator/health` down with it — see <DocLink product={props.product} path="other/health">Health API</DocLink>.
 </Aside>
 
 ## How to read the metric names
@@ -55,10 +54,6 @@ Every PUBLISH TBMQ accepts from a client is produced onto the `tbmq.msg.all` Kaf
 | `incomingPublishMsg_consumed_pack_processing_time_seconds` | timer | `consumerId` | Per-poll-batch latency |
 
 `tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. On the main ingest pipeline this only happens under the non-default `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so both stay at zero here regardless of load. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
-
-```text
-sum(rate(incomingPublishMsg_consumed_total{statsName="failedMsgs"}[5m]))
-```
 
 ## Persistent DEVICE clients
 
@@ -113,7 +108,7 @@ The `flowControl` series instrument the per-node QoS 1/2 in-flight window: `flow
 | `droppedMsgs_total` | counter | — | PUBLISH messages permanently lost, across the whole pipeline |
 | `droppedLifecycleEvents_total` | counter | — | Client lifecycle events that could not be published to an integration queue |
 
-Both counters are untagged in Community Edition and Professional Edition alike: `droppedMsgs_total` tells you *that* messages were lost and at what rate, not which client, which topic, or why. `droppedLifecycleEvents_total` covers a narrower case — a client CONNECT/DISCONNECT lifecycle event that could not be published onward to an integration queue.
+Both counters are untagged: `droppedMsgs_total` tells you *that* messages were lost and at what rate, not which client, which topic, or why. `droppedLifecycleEvents_total` covers a narrower case — a client CONNECT/DISCONNECT lifecycle event that could not be published onward to an integration queue.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
   `droppedMsgs_total` gives you the rate but not the cause. For the client, topic, and reason behind each drop, see <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink>.
@@ -130,7 +125,7 @@ Both counters are untagged in Community Edition and Professional Edition alike: 
 
 `connectionAccepted_total` and `connectionRefused_total` both correspond to a CONNACK being sent back to the client — the difference is the reason code inside it. `connectionError_total` covers failures that never reach that point at all, for example a TLS handshake failure or non-MQTT traffic arriving on the port.
 
-`clientDisconnects_total` carries **no reason label** in either edition — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
+`clientDisconnects_total` carries **no reason label** — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
   See <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> for a queryable record of the drops behind some of these disconnects.
@@ -243,13 +238,7 @@ The remaining series referenced elsewhere on this site are standard Spring Boot 
 
 ## Aggregating across a cluster
 
-On a multi-node cluster, the same series name scrapes identically from every node — but not every series *means* the same thing once you start comparing nodes. Two different backing mechanisms produce what looks like the same kind of gauge, and conflating them is the most common way to misread this page on a cluster.
-
-**Cluster-wide replicated caches.** `allClientSessions`, `subscriptions`, `retainedMessages`, and the four trie gauges — `subscriptionTopicTrieSize`, `subscriptionTrieNodes`, `retainMsgTrieSize`, `retainMsgTrieNodes` — are backed by state that every node keeps fully synchronized with every other node: loaded in full from the persisted store at startup, then kept current by a Kafka consumer that applies *every* node's changes, not only its own. Each node runs its own uniquely named consumer group rather than sharing one, so every node reads the entire topic instead of a partitioned slice of it — the subscription and retained-message tries have to hold the whole cluster's data anyway, since any node may need to route a PUBLISH to a subscriber connected somewhere else. Because the same complete dataset lives on every node, **every node reports the same value** for these series. Summing them across nodes just multiplies the true number by the node count; query them with `max()` — safest against a node that is momentarily a step behind on replication — or read any single node.
-
-**Per-node live state.** `connectedSessions` and `connectedSslSessions` are the opposite: each is a plain, un-replicated map of the Netty channels actually open on that one node, populated only when that node's own actor handles a client's CONNECT and cleared again on DISCONNECT — there is no cross-node replication behind them. `runningActors`, `nonWritableClients`, and the `flowControl_*` gauges describe this node's own actor system and this node's own client channels the same way. These are the ones to `sum()` to get a cluster-wide total.
-
-All `*_total` counters (`droppedMsgs_total`, `incomingPublishMsg_consumed_total`, and the rest) are per-node too — each node only counts what passed through it — so the usual `sum(rate(...))` pattern applies to them exactly as it would to any other Prometheus counter.
+On a multi-node cluster, the same series name scrapes identically from every node — but two different backing mechanisms sit behind what looks like the same kind of gauge, and conflating them is the most common way to misread this page on a cluster.
 
 | Series | Scope | How to aggregate |
 |---|---|---|
@@ -260,6 +249,10 @@ All `*_total` counters (`droppedMsgs_total`, `incomingPublishMsg_consumed_total`
 | `subscriptionTopicTrieSize`, `subscriptionTrieNodes`, `retainMsgTrieSize`, `retainMsgTrieNodes` | Cluster-wide replicated | `max()` or pick one node |
 | All `*_total` counters | Per node | `sum(rate(...))` |
 | `runningActors`, `nonWritableClients`, `flowControl_*` | Per node | `sum()` |
+
+**Cluster-wide replicated caches** are loaded in full from the persisted store at startup, then kept current by a Kafka consumer that applies *every* node's changes, not only its own. Each node runs its own uniquely named consumer group rather than sharing one, so every node reads the entire topic instead of a partitioned slice of it — the subscription and retained-message tries have to hold the whole cluster's data anyway, since any node may need to route a PUBLISH to a subscriber connected somewhere else. Because the same complete dataset lives on every node, every node reports the same value, and summing across nodes just multiplies the true number by the node count. Prefer `max()` over reading one node: it is the safest against a node that is momentarily a step behind on replication.
+
+**Per-node live state** has no cross-node replication behind it at all. `connectedSessions` and `connectedSslSessions` are plain maps of the Netty channels actually open on that one node, populated only when that node's own actor handles a client's CONNECT and cleared again on DISCONNECT; `runningActors`, `nonWritableClients`, and the `flowControl_*` gauges describe that node's own actor system and client channels the same way. Each node holds a distinct slice of the total, which is what makes these the ones to `sum()`.
 
 ```text
 # correct — per-node gauge, sum it
@@ -290,7 +283,7 @@ sum(rate(droppedMsgs_total[5m]))
 
 Historical reporting also has its own on/off switch, independent of `STATS_ENABLED`: `HISTORICAL_DATA_REPORT_ENABLED` (default `true`) governs this whole chart pipeline — **Sessions**, **Subscriptions**, **Retained message count**, **Message drop count**, and the **Traffic & Performance** charts alike. Turn it off and every one of those charts goes flat, while the Prometheus series they're compared against above keep advancing untouched — the two pipelines share the same underlying events, not the same on/off switch.
 
-## Renamed and removed in 2.4
+## Renamed and removed series
 
 Upgrading from 2.3 renames a handful of series and reshapes a couple of label sets. If a 2.3 dashboard or alert rule goes quiet after the upgrade, check it against this table before assuming something broke.
 
