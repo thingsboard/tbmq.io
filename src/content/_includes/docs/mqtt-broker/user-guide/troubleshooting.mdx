@@ -307,10 +307,10 @@ A publisher gets its PUBLISH acknowledged (or sends QoS 0 without expecting one)
 | Signal | What it tells you |
 |---|---|
 | `droppedMsgs_total` | PUBLISH messages permanently lost, per node. Untagged — it tells you a rate, not a client, topic, or cause. |
-| `flowControl_total{statsName="dropsOverflow"}` | Both the subscriber's in-flight window and the delay queue behind it are full — the subscriber has fallen behind long enough to exhaust the buffer, not just hit a receive-maximum ceiling. |
-| `flowControl_total{statsName="dropsTtl"}` | A delayed message's TTL expired before it could be sent. |
+| `flowControl_total{statsName="dropsOverflow"}` | Drops from a subscriber's send buffer overflowing — see **Interpret** below. |
+| `flowControl_total{statsName="dropsTtl"}` | Drops from a delayed message aging out before it could be sent — see **Interpret** below. |
 | `incomingPublishMsg_consumed_total{statsName="failedMsgs"}` | A message was discarded on the main ingest pipeline after processing gave up on it — not merely retried. |
-| `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be written to Redis (the persistent DEVICE message store) and was discarded. |
+| `deviceProcessor_total{statsName="failedMsgs"}` | Drops from a failed write to the persistent DEVICE message store — persistence failing, not delivery. |
 | <DocLink product={props.product} path="user-guide/ui/monitoring">Monitoring</DocLink> page's message drop chart | A per-interval delta of the same drop events, reset to zero after each report — compare it against `rate(droppedMsgs_total[5m])`, not the raw counter. |
 
 **Interpret**
@@ -403,8 +403,8 @@ A publish reaches the broker fine and most subscribers get it promptly, but one 
 | `nonWritableClients` | Clients whose channel has crossed the outbound high watermark, right now — a per-node gauge; sum across nodes for a cluster-wide count. |
 | `flowControl_delayedQueueSize` | Messages queued behind a full QoS 1/2 in-flight window — the early warning, before anything is lost. |
 | `flowControl_inflightCount` | Messages currently in that in-flight window, on this node. |
-| `flowControl_total{statsName="dropsOverflow"}` | The in-flight window **and** the delay queue behind it are both full — the buffer has already overflowed. |
-| `flowControl_total{statsName="dropsTtl"}` | A delayed message aged out before it could be sent — the same slow-subscriber condition as `dropsOverflow`, showing up on a longer delay. |
+| `flowControl_total{statsName="dropsOverflow"}` | Drops once both of the above are exhausted — where lag has become loss. |
+| `flowControl_total{statsName="dropsTtl"}` | Drops from a delayed message aging out first — the same condition on a longer delay. |
 
 **Interpret**
 
@@ -456,12 +456,12 @@ The broker itself is up and accepting connections, but something behind it — K
 | `sqlQueue_total{statsName="failedMsgs"}` | Messages that failed to write to the database — the counter adds the whole failed batch's size, not one per batch. |
 | `hikaricp_connections_pending` | Threads currently waiting for a database connection from the pool. |
 | `hikaricp_connections_timeout_total` | Connection acquisitions that gave up waiting. |
-| `deviceProcessor_total{statsName="failedMsgs"}` | A persistent DEVICE client's message could not be persisted and was discarded — DEVICE message persistence is Redis- (or Valkey-) backed, distinct from the SQL queues above. |
+| `deviceProcessor_total{statsName="failedMsgs"}` | Failed writes to the persistent DEVICE message store — Redis- (or Valkey-) backed, distinct from the SQL queues above. |
 | Health API (`/actuator/health`) | Whether `db`, `kafka`, and `redis` are each reachable from this node, right now — only visible once `HEALTH_SHOW_DETAILS=always` is set; the default `never` returns just the aggregate status with no per-component breakdown. See <DocLink product={props.product} path="other/health#configuration">Health API configuration</DocLink>. |
 
 **Interpret**
 
-`sqlQueue_queueSize` climbing while `sqlQueue_total{statsName="successfulMsgs"}` stays flat means TBMQ is producing SQL writes faster than PostgreSQL is draining them. `hikaricp_connections_pending` above zero means threads are waiting for a connection — the pool is undersized for the load, or queries themselves are slow. Rising `kafkaProducer_send_seconds` or `kafkaConsumer_commit_seconds` with no matching rise in TBMQ's own CPU usage points outside the broker, at Kafka. `deviceProcessor_total{statsName="failedMsgs"}` climbing on its own, with the SQL queues above flat, narrows the problem to the Redis (or Valkey) side specifically — that's what persistent DEVICE messages are stored in, not PostgreSQL.
+`sqlQueue_queueSize` climbing while `sqlQueue_total{statsName="successfulMsgs"}` stays flat means TBMQ is producing SQL writes faster than PostgreSQL is draining them. `hikaricp_connections_pending` above zero means threads are waiting for a connection — the pool is undersized for the load, or queries themselves are slow. Rising `kafkaProducer_send_seconds` or `kafkaConsumer_commit_seconds` with no matching rise in TBMQ's own CPU usage points outside the broker, at Kafka. `deviceProcessor_total{statsName="failedMsgs"}` climbing on its own, with the SQL queues above flat, narrows the problem to the Redis (or Valkey) side specifically.
 
 **Act**
 
