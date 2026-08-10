@@ -1,6 +1,7 @@
-import { Aside, Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ShowFor from '~/components/ShowFor.astro';
+import Help from '@includes/docs/mqtt-broker/help.mdx';
 import { Products } from '~/models/site.models';
 
 This guide walks through diagnosing a misbehaving TBMQ deployment: a playbook for each symptom you are likely to hit, followed by the reference those playbooks draw on — where the logs are, how to turn on a component logger, and what the Kafka lag line tells you.
@@ -472,19 +473,6 @@ Most groups also carry a trailing id, and the placeholders above mean different 
 
 ## Getting help
 
-If none of the playbooks above resolve the issue, the logs and the relevant metric series above are what the team needs in order to help — have them ready before reaching out.
+If none of the playbooks above resolve the issue, have the logs and the relevant metric series ready before reaching out.
 
-<CardGrid>
-  <Card title="Slack community" icon="slack">
-    Ask questions and get quick tips from other users and contributors in the
-    [TBMQ Slack workspace](https://join.slack.com/t/tbmq/shared_invite/zt-31kk3315e-5jtPw8YAKskq1KkUqTrTyQ).
-  </Card>
-  <Card title="GitHub issues" icon="github">
-    Found a bug or have a feature request?
-    [Open an issue](https://github.com/thingsboard/tbmq/issues) on the TBMQ GitHub repository.
-  </Card>
-  <Card title="Contact us" icon="email">
-    For direct assistance, [fill out the contact form](/contact-us/?subject=TBMQ)
-    and the team will get back to you.
-  </Card>
-</CardGrid>
+<Help />
