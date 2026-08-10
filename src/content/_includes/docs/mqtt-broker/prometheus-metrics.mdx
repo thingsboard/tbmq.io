@@ -125,7 +125,7 @@ Both counters are untagged: `droppedMsgs_total` tells you *that* messages were l
 
 `connectionAccepted_total` and `connectionRefused_total` both correspond to a CONNACK being sent back to the client — the difference is the reason code inside it. `connectionError_total` covers failures that never reach that point at all, for example a TLS handshake failure or non-MQTT traffic arriving on the port.
 
-`clientDisconnects_total` carries **no reason label** in either edition — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
+`clientDisconnects_total` carries **no reason label** — the reason breakdown is not exposed as a Micrometer tag. To find out why a specific client disconnected, check the broker logs, which record the reason per disconnect event.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
   See <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> for a queryable record of the drops behind some of these disconnects.
