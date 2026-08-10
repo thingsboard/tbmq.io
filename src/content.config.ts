@@ -14,6 +14,13 @@ export const baseSchema = z.object({
 	customDocsTitle: z.string().optional(),
 	githubURL: z.url().optional(),
 	hasREADME: z.boolean().optional(),
+	// Opt in to breaking long inline-code tokens mid-identifier inside this
+	// page's markdown tables (Prometheus selectors, env var names, consumer
+	// group ids). Off by default: without it a long token widens its column
+	// and the table scrolls horizontally, which is the better default for
+	// most pages. Set it only where a table's code column is unreadable
+	// otherwise. See DocMarkdownContent.astro for the rule.
+	wrapTableCode: z.boolean().optional(),
 	hero: z
 		.object({
 			gridVariant: z.enum(['lines', 'dots']).optional().default('lines'),

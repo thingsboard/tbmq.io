@@ -20,9 +20,10 @@ import { shouldShowFeedback } from '~/util/shouldShowFeedback';
 const { entry } = Astro.locals.starlightRoute;
 const hasToc = !!Astro.locals.starlightRoute.toc;
 const showFeedback = shouldShowFeedback(Astro.locals.starlightRoute);
+const wrapTableCode = entry.data.wrapTableCode === true;
 ---
 
-<div class="sl-markdown-content">
+<div class:list={['sl-markdown-content', { 'wrap-table-code': wrapTableCode }]}>
 	<slot />
 
 	{
@@ -124,6 +125,21 @@ const showFeedback = shouldShowFeedback(Astro.locals.starlightRoute);
 		display: block;
 		overflow-x: auto;
 		border-collapse: collapse;
+	}
+
+	/* Long inline-code tokens inside a docs table — Prometheus selectors like
+	   `flowControl_total{statsName="dropsOverflow"}`, fully-qualified logger
+	   names, Kafka consumer group ids — contain no spaces, so the browser has
+	   nowhere to break them. Inside a table cell that forces the column to the
+	   token's full width and starves the neighbouring prose column, which then
+	   wraps one or two words per line. `anywhere` (rather than `break-word`)
+	   also shrinks the column's min-content size, so the code column can
+	   actually narrow instead of just overflowing. Opt-in per page via
+	   `wrapTableCode` in frontmatter, since the default — a horizontal
+	   scrollbar from the rule above — reads better on most tables. `:not(pre)`
+	   keeps expressive-code blocks untouched. */
+	.wrap-table-code table:not(:where(.not-content *)) :not(pre) > code {
+		overflow-wrap: anywhere;
 	}
 
 	/* Config reference compact definition list */
