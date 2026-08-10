@@ -221,6 +221,8 @@ Each consumer group belongs to one subsystem, so a lag line points you straight 
 | `internode-notifications-consumer-group-<serviceId>` | Internode notifications |
 | `ie-uplink-consumer-group`, `ie-uplink-notifications-consumer-group-<serviceId>` | Integration uplink |
 | `http-ie-downlink-consumer-group`, `mqtt-ie-downlink-consumer-group`, `kafka-ie-downlink-consumer-group` | Integration downlink per type |
+| `ie-msg-consumer-group-<integrationId>` | Message delivery to one specific integration |
+| `ie-event-consumer-group-<integrationId>` | Client lifecycle event delivery to one specific integration — present only when that integration is subscribed to lifecycle events |
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 PE adds one more monitored group:
@@ -237,6 +239,7 @@ Most groups also carry a trailing id, and the placeholders above mean different 
 - **`<serviceId>`** — just that node's `TB_SERVICE_ID`, stable across restarts.
 - **`<id>`** — that node's `TB_SERVICE_ID` plus a suffix generated fresh each time the node starts. The exact group name for these six changes on every restart, so don't expect to find the same name in an old log after a node has restarted — search for the group's name **prefix** instead.
 - **`<clientId>` / `<shareName>-<sharedTopic>`** — the two APPLICATION-client rows aren't per-node at all: each persistent APPLICATION client, and each shared-subscription group, gets its own dedicated consumer group identified by its own client ID or share name and topic.
+- **`<integrationId>`** — the two `ie-…-consumer-group-…` rows are per integration rather than per node: each integration gets its own pair of groups, identified by that integration's ID written as a 32-character UUID with the hyphens stripped (for example, integration `1d2f5d40-1111-2222-3333-444455556666` lags as `ie-msg-consumer-group-1d2f5d40111122223333444455556666`). Lag on one of these points at a single integration falling behind, not at the integration subsystem as a whole.
 
 ## Clients cannot connect
 
