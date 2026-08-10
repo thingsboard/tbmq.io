@@ -32,7 +32,6 @@ docker compose logs -f tbmq1 tbmq2
 docker compose logs tbmq1 tbmq2 | grep ERROR
 docker compose logs -f tbmq1 tbmq2 > tbmq.log
 docker ps
-docker exec -it NAME_OF_THE_CONTAINER bash
 ```
 
 `tbmq1`/`tbmq2` are the two node service names from the <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink>; a single-node <DocLink product={props.product} path="installation/docker">Docker install</DocLink> uses just `tbmq`.
@@ -45,16 +44,12 @@ kubectl get pods
 kubectl logs -f tbmq-0
 kubectl logs -f tbmq-0 | grep ERROR
 kubectl logs -f tbmq-0 > tbmq-0.log
-kubectl exec -it tbmq-0 -- bash
-cat /var/log/thingsboard-mqtt-broker/tbmq-0/thingsboard-mqtt-broker.log
 ```
 
 `tbmq-0` is the first pod of the `tbmq` StatefulSet — `kubectl get pods` lists the actual pod names in your cluster. Kubernetes sets each pod's `TB_SERVICE_ID` to that same pod name (via a `fieldRef` on `metadata.name`), which is why the log file sits in a subdirectory named after the pod instead of directly in `/var/log/thingsboard-mqtt-broker`.
 
 </TabItem>
 </Tabs>
-
-Use `docker compose`, not `docker-compose`.
 
 ## Enabling component logs
 
