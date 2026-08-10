@@ -103,6 +103,8 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'Settings', slug: `${prefix}/user-guide/ui/settings` },
 			],
 		},
+		{ label: 'Troubleshooting', slug: `${prefix}/troubleshooting` },
+		{ label: 'Prometheus metrics', slug: `${prefix}/prometheus-metrics` },
 		...(isPE
 			? [
 					{
