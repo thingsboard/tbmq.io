@@ -56,10 +56,6 @@ Every PUBLISH TBMQ accepts from a client is produced onto the `tbmq.msg.all` Kaf
 
 `tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. On the main ingest pipeline this only happens under the non-default `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so both stay at zero here regardless of load. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
 
-```text
-sum(rate(incomingPublishMsg_consumed_total{statsName="failedMsgs"}[5m]))
-```
-
 ## Persistent DEVICE clients
 
 | Series | Type | Labels | Notes |
