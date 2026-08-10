@@ -283,7 +283,7 @@ sum(rate(droppedMsgs_total[5m]))
 
 Historical reporting also has its own on/off switch, independent of `STATS_ENABLED`: `HISTORICAL_DATA_REPORT_ENABLED` (default `true`) governs this whole chart pipeline — **Sessions**, **Subscriptions**, **Retained message count**, **Message drop count**, and the **Traffic & Performance** charts alike. Turn it off and every one of those charts goes flat, while the Prometheus series they're compared against above keep advancing untouched — the two pipelines share the same underlying events, not the same on/off switch.
 
-## Renamed and removed in 2.4
+## Renamed and removed series
 
 Upgrading from 2.3 renames a handful of series and reshapes a couple of label sets. If a 2.3 dashboard or alert rule goes quiet after the upgrade, check it against this table before assuming something broke.
 
