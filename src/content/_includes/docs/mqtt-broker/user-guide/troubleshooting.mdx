@@ -20,8 +20,6 @@ Every metric named here is documented in full on the <DocLink product={props.pro
 | Node is saturated or restarting | `process_cpu_usage`, `jvm_memory_used_bytes` | [Resource exhaustion](#resource-exhaustion) |
 | Broker is up but degraded | `sqlQueue_queueSize`, `kafkaProducer_send_seconds` | [Dependency failures](#dependency-failures) |
 
-Each playbook name links to its own heading anchor on this page.
-
 ## Reading logs
 
 TBMQ writes to `thingsboard-mqtt-broker.log` in `/var/log/thingsboard-mqtt-broker`, plus stdout — both by default. On Kubernetes, each pod logs into its own subdirectory under that path instead, named after the pod (`TB_SERVICE_ID` is set to the pod's own name) — see the Kubernetes tab below.
