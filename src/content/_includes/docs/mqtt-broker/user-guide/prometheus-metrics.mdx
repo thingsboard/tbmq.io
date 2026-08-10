@@ -239,13 +239,7 @@ The remaining series referenced elsewhere on this site are standard Spring Boot 
 
 ## Aggregating across a cluster
 
-On a multi-node cluster, the same series name scrapes identically from every node — but not every series *means* the same thing once you start comparing nodes. Two different backing mechanisms produce what looks like the same kind of gauge, and conflating them is the most common way to misread this page on a cluster.
-
-**Cluster-wide replicated caches.** `allClientSessions`, `subscriptions`, `retainedMessages`, and the four trie gauges — `subscriptionTopicTrieSize`, `subscriptionTrieNodes`, `retainMsgTrieSize`, `retainMsgTrieNodes` — are backed by state that every node keeps fully synchronized with every other node: loaded in full from the persisted store at startup, then kept current by a Kafka consumer that applies *every* node's changes, not only its own. Each node runs its own uniquely named consumer group rather than sharing one, so every node reads the entire topic instead of a partitioned slice of it — the subscription and retained-message tries have to hold the whole cluster's data anyway, since any node may need to route a PUBLISH to a subscriber connected somewhere else. Because the same complete dataset lives on every node, **every node reports the same value** for these series. Summing them across nodes just multiplies the true number by the node count; query them with `max()` — safest against a node that is momentarily a step behind on replication — or read any single node.
-
-**Per-node live state.** `connectedSessions` and `connectedSslSessions` are the opposite: each is a plain, un-replicated map of the Netty channels actually open on that one node, populated only when that node's own actor handles a client's CONNECT and cleared again on DISCONNECT — there is no cross-node replication behind them. `runningActors`, `nonWritableClients`, and the `flowControl_*` gauges describe this node's own actor system and this node's own client channels the same way. These are the ones to `sum()` to get a cluster-wide total.
-
-All `*_total` counters (`droppedMsgs_total`, `incomingPublishMsg_consumed_total`, and the rest) are per-node too — each node only counts what passed through it — so the usual `sum(rate(...))` pattern applies to them exactly as it would to any other Prometheus counter.
+On a multi-node cluster, the same series name scrapes identically from every node — but two different backing mechanisms sit behind what looks like the same kind of gauge, and conflating them is the most common way to misread this page on a cluster.
 
 | Series | Scope | How to aggregate |
 |---|---|---|
@@ -256,6 +250,10 @@ All `*_total` counters (`droppedMsgs_total`, `incomingPublishMsg_consumed_total`
 | `subscriptionTopicTrieSize`, `subscriptionTrieNodes`, `retainMsgTrieSize`, `retainMsgTrieNodes` | Cluster-wide replicated | `max()` or pick one node |
 | All `*_total` counters | Per node | `sum(rate(...))` |
 | `runningActors`, `nonWritableClients`, `flowControl_*` | Per node | `sum()` |
+
+**Cluster-wide replicated caches** are loaded in full from the persisted store at startup, then kept current by a Kafka consumer that applies *every* node's changes, not only its own. Each node runs its own uniquely named consumer group rather than sharing one, so every node reads the entire topic instead of a partitioned slice of it — the subscription and retained-message tries have to hold the whole cluster's data anyway, since any node may need to route a PUBLISH to a subscriber connected somewhere else. Because the same complete dataset lives on every node, every node reports the same value, and summing across nodes just multiplies the true number by the node count. Prefer `max()` over reading one node: it is the safest against a node that is momentarily a step behind on replication.
+
+**Per-node live state** has no cross-node replication behind it at all. `connectedSessions` and `connectedSslSessions` are plain maps of the Netty channels actually open on that one node, populated only when that node's own actor handles a client's CONNECT and cleared again on DISCONNECT; `runningActors`, `nonWritableClients`, and the `flowControl_*` gauges describe that node's own actor system and client channels the same way. Each node holds a distinct slice of the total, which is what makes these the ones to `sum()`.
 
 ```text
 # correct — per-node gauge, sum it
