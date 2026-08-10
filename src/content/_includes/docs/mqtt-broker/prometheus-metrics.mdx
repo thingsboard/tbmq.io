@@ -28,9 +28,8 @@ The behavior is governed by a handful of tunables, all on by default:
 - **`APPLICATION_PROCESSOR_STATS_ENABLED`** (default `true`) — enables per-**APPLICATION**-client processing stats. See the `appProcessor` table below for the metrics this controls.
 
 <Aside type="caution">
-  `METRICS_ENDPOINTS_EXPOSE` replaces the whole list rather than adding to it. Setting it to `prometheus` alone also
-  removes `health`, taking down the endpoint that the <DocLink product={props.product} path="other/health">Health
-  API</DocLink> and Kubernetes probes depend on. Keep `health` in the list alongside `prometheus`.
+  `METRICS_ENDPOINTS_EXPOSE` replaces the whole list rather than adding to it, so setting it to `prometheus` alone takes
+  `/actuator/health` down with it — see <DocLink product={props.product} path="other/health">Health API</DocLink>.
 </Aside>
 
 ## How to read the metric names
