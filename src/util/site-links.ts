@@ -12,7 +12,7 @@ import docsRedirects from '../../public/redirects.json';
 const REDIRECTS = docsRedirects as Record<string, string>;
 
 // Trailing slash is only added to paths without a real file extension so file
-// URLs (e.g. `/thingsboard-og.png`) stay untouched. The extension must contain
+// URLs (e.g. `/tbmq-og.png`) stay untouched. The extension must contain
 // at least one letter — an all-digit "extension" is a version-like page slug
 // (e.g. `/docs/mobile/release-before-v1.7`), not a file.
 const FILE_EXTENSION_RE = /\.[a-z0-9]*[a-z][a-z0-9]*$/i;

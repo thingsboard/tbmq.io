@@ -78,7 +78,7 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 			variant: 'logo' as const,
 			sectionName: 'Blog',
 			eyebrow: 'Latest articles',
-			title: 'ThingsBoard Blog',
+			title: 'TBMQ Blog',
 		},
 	});
 
@@ -128,7 +128,7 @@ export async function getMarketingCardInputs(): Promise<CardInput[]> {
 					variant: 'logo' as const,
 					sectionName: section.sectionName ?? undefined,
 					sectionTight: section.tight,
-					eyebrow: override?.eyebrow ?? (isHome ? 'Open-source IoT platform' : pathnameToSubtitle(pathname)),
+					eyebrow: override?.eyebrow ?? (isHome ? 'Open-source MQTT broker' : pathnameToSubtitle(pathname)),
 					title: override?.title ?? pathnameToTitle(pathname),
 				},
 			};
@@ -186,7 +186,7 @@ function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pa
 
 /** Fallback: derive a marketing-page title from the URL pathname. */
 function pathnameToTitle(pathname: string): string {
-	if (pathname === '/') return 'Open-source IoT platform for device data collection';
+	if (pathname === '/') return 'Scalable, fault-tolerant, and durable messaging for millions of MQTT clients';
 	const segs = pathname.split('/').filter(Boolean);
 	const last = segs[segs.length - 1] ?? '';
 	return last
@@ -198,7 +198,7 @@ function pathnameToTitle(pathname: string): string {
 /** Eyebrow for non-home marketing pages — usually the second-to-last URL segment, prettified. */
 function pathnameToSubtitle(pathname: string): string {
 	const segs = pathname.split('/').filter(Boolean);
-	if (segs.length <= 1) return 'ThingsBoard';
+	if (segs.length <= 1) return 'TBMQ';
 	const parent = segs[segs.length - 2]!;
 	return parent
 		.split('-')

@@ -1,5 +1,4 @@
 ---
-import { Icon } from 'astro-icon/components';
 import type { FaqCategory } from '@data/pricing/types.ts';
 
 // This `.faq-*` markup contract is driven by two separate scripts: the pricing
@@ -44,11 +43,9 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 						<div class="faq-item" id={item.id}>
 							<button type="button" class="faq-question" aria-expanded="false">
 								<h3 class="faq-question-text">{item.question}
-									<span class="faq-copy-link" data-faq-id={item.id} role="button" tabindex="0" aria-label={`Copy link to: ${item.question}`}>
-										<Icon name="tabler:link" class="faq-copy-icon" />
-									</span>
+									<span class="faq-copy-link" data-faq-id={item.id} role="button" tabindex="0" aria-label={`Copy link to: ${item.question}`}></span>
 								</h3>
-								<Icon name="tabler:chevron-down" class="faq-chevron" />
+								<span class="faq-chevron" aria-hidden="true"></span>
 							</button>
 							<div class="faq-answer">
 								<div class="faq-answer-overflow">
@@ -68,11 +65,9 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 						<div class="faq-item faq-item--hidden" id={item.id}>
 							<button type="button" class="faq-question" aria-expanded="false">
 								<h3 class="faq-question-text">{item.question}
-									<span class="faq-copy-link" data-faq-id={item.id} role="button" tabindex="0" aria-label={`Copy link to: ${item.question}`}>
-										<Icon name="tabler:link" class="faq-copy-icon" />
-									</span>
+									<span class="faq-copy-link" data-faq-id={item.id} role="button" tabindex="0" aria-label={`Copy link to: ${item.question}`}></span>
 								</h3>
-								<Icon name="tabler:chevron-down" class="faq-chevron" />
+								<span class="faq-chevron" aria-hidden="true"></span>
 							</button>
 							<div class="faq-answer">
 								<div class="faq-answer-overflow">
@@ -219,10 +214,20 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		transition: color 0.15s ease;
 	}
 
+	// Drawn as CSS masks so ~500 FAQ rows share one icon definition instead of
+	// one inline SVG each; `currentColor` keeps the existing theming. One
+	// variable per icon — mask and -webkit-mask must stay identical.
+	$faq-chevron-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 9l6 6l6-6'/></svg>");
+	$faq-link-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m9 15l6-6m-4-3l.463-.536a5 5 0 0 1 7.071 7.072L18 13m-5 5l-.397.534a5.07 5.07 0 0 1-7.127 0a4.97 4.97 0 0 1 0-7.071L6 11'/></svg>");
+
 	.faq-chevron {
+		display: block;
 		width: 18px;
 		height: 18px;
 		color: var(--color-text-secondary);
+		background-color: currentColor;
+		mask: $faq-chevron-icon no-repeat center / contain;
+		-webkit-mask: $faq-chevron-icon no-repeat center / contain;
 		flex-shrink: 0;
 		transition: transform 0.25s ease;
 	}
@@ -235,7 +240,22 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		margin-left: 6px;
 		cursor: pointer;
 		opacity: 0;
-		transition: opacity 0.15s ease;
+		color: var(--color-primary);
+		transition:
+			opacity 0.15s ease,
+			color 0.15s ease;
+
+		// The link glyph, masked from a shared definition (same reason as
+		// .faq-chevron). The tooltip already occupies ::after.
+		&::before {
+			content: '';
+			display: block;
+			width: 14px;
+			height: 14px;
+			background-color: currentColor;
+			mask: $faq-link-icon no-repeat center / contain;
+			-webkit-mask: $faq-link-icon no-repeat center / contain;
+		}
 
 		.faq-question:hover & {
 			opacity: 0.6;
@@ -271,10 +291,7 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		// Copied state
 		&.copied {
 			opacity: 1;
-
-			.faq-copy-icon {
-				color: var(--color-success);
-			}
+			color: var(--color-success);
 
 			&::after {
 				content: 'Copied!';
@@ -284,11 +301,14 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		}
 	}
 
-	.faq-copy-icon {
-		width: 14px;
-		height: 14px;
-		color: var(--color-primary);
-		transition: color 0.15s ease;
+	// Forced-colors palettes override background-color in ways that can blank
+	// mask-drawn glyphs (inline SVGs used to get forced stroke colors); pin
+	// the icons to the system text color so they stay visible.
+	@media (forced-colors: active) {
+		.faq-chevron,
+		.faq-copy-link::before {
+			background-color: CanvasText;
+		}
 	}
 
 	// ─── Answer (smooth expand via grid trick) ───

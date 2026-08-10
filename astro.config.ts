@@ -6,6 +6,7 @@ import { redirects } from './astro.redirects';
 import { sidebar } from './astro.sidebar';
 import { devServerFileWatcher } from './config/integrations/dev-server-file-watcher';
 import { sitemap } from './config/integrations/sitemap';
+import { rehypeBlogImages } from './config/plugins/rehype-blog-images';
 import { rehypeMdxIncludeHeadings } from './config/plugins/rehype-mdx-include-headings';
 import { rehypeTasklistEnhancer } from './config/plugins/rehype-tasklist-enhancer';
 import { PROD_ORIGIN } from './src/consts';
@@ -132,7 +133,7 @@ export default defineConfig({
             // Override Starlight defaults: site_name uses Starlight `title:` ("Docs") and og:type
             // is hard-coded to "article" — neither is correct for our docs. Starlight's mergeHead
             // replaces same-property defaults with these.
-            { tag: 'meta', attrs: { property: 'og:site_name', content: 'ThingsBoard' } },
+            { tag: 'meta', attrs: { property: 'og:site_name', content: 'TBMQ' } },
             { tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
             // Starlight only emits twitter:site if a twitter/x.com entry is set in `social:`.
             // We can't use `social:` here without also rendering a duplicate icon in the header
@@ -150,7 +151,7 @@ export default defineConfig({
             // @ts-expect-error — `remark-smartypants` type is not matching Astro's for some reason even though they both use unified's `Plugin` type
             [remarkSmartypants, { dashes: false }],
         ],
-        rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings()],
+        rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings(), rehypeBlogImages()],
     },
     image: {
         domains: ['avatars.githubusercontent.com'],
