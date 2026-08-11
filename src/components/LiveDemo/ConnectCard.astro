@@ -430,6 +430,15 @@ const tabs = [
 		overflow: hidden;
 	}
 
+	// Stretched by the grid to the height of the taller connection-details card,
+	// so lay it out as a column and let the active panel claim the leftover space
+	// — otherwise the panel stops at its command and the card's own white
+	// background shows below the terminal.
+	.tabs {
+		display: flex;
+		flex-direction: column;
+	}
+
 	.conn-head {
 		display: flex;
 		align-items: center;
@@ -553,8 +562,10 @@ const tabs = [
 		position: relative;
 		background: #0f1614;
 
+		// grow into the card, never shrink below the command it holds
 		&.active {
 			display: block;
+			flex: 1 0 auto;
 		}
 
 		pre {
