@@ -35,12 +35,27 @@ Each row of the table shows:
 - **Client ID** — the publisher for a reception drop, the subscriber for a delivery drop.
 - **Drops** — how many messages this row represents.
 
-Rows are sorted by **Last dropped time**, newest first, and the time window defaults to **for all time**. Use the search field to match a **topic** or a **client ID**, and the **Filter** panel to narrow the table by topic, client ID, QoS, reason, and direction.
+Rows are sorted by **Last dropped time**, newest first, and the time window defaults to **for all time**. Use the search field to match a **topic** or a **client ID**, and the **Filter** panel to narrow the table by topic, client ID, QoS, reason, direction, and client type.
 
 Two actions are available on every row:
 
 - **Dropped message details** — opens the full record.
 - **Client session** — opens the session of the client named in the row. If that client has no active session, TBMQ reports that instead.
+
+### Filtering
+
+The **Filter** panel is the same on the table and on [Analytics](#analytics), and the filter travels between the two: opening **Analytics** from the table keeps what you set, and drilling from Analytics back into the table keeps it as well.
+
+**Topic** and **Client ID** each carry a match mode:
+
+- **Contains** — the default. Matches every entry whose value contains the text, ignoring case.
+- **Exact** — matches only an entry whose value is exactly the text. It is **case-sensitive**, because MQTT topics and client IDs are.
+
+The difference matters in a topic tree: under **Contains**, `traffic/city/center` also matches `traffic/city/center/density`; under **Exact** it matches `traffic/city/center` and nothing else. Explore with **Contains**, isolate a single topic or client with **Exact**. Note that a value typed in the wrong case returns no rows under **Exact**, with nothing on screen explaining why.
+
+**Reason** has two shortcuts above the chips — **All** selects every reason, **Invert** replaces the current selection with everything it left out.
+
+**Client type** filters on the type stored with the entry, **Device** or **Application**. Selecting both is the same as selecting neither: no client-type filter is applied. That is deliberate, because the type is not always recorded — TBMQ takes it from the client's cached session at the moment the drop is written, so a drop recorded after that session has left the cache carries no type at all. Selecting a single type hides those entries; selecting both, or none, keeps them.
 
 ### Dropped message details
 
@@ -56,7 +71,7 @@ Clicking the direction, reason, client ID, or topic inside the dialog opens **An
 
 ## Analytics
 
-The **Analytics** view summarizes the same data instead of listing it. Open it with the **Analytics** button in the table header.
+The **Analytics** view summarizes the same data instead of listing it. Open it with the **Analytics** button in the table header; the filter set on the table comes with you.
 
 It shows three totals — **Total dropped**, **Reception**, and **Delivery** — a **Drops by reason** chart, and a **Detailed metrics** table with one row per reason and direction:
 
@@ -65,7 +80,32 @@ It shows three totals — **Total dropped**, **Reception**, and **Delivery** —
 - **Ratio** — that group's share of the total currently in view.
 - **Cause analysis** — a short explanation of what produces this reason and what to check.
 
-The view has its own time window and filter, and both apply to the summary, so the totals always describe what you are looking at rather than the whole table.
+The view has its own time window and filter, and both apply to everything on the page — the totals, the chart, the metrics table, and the two rollups below them — so the numbers always describe what you are looking at rather than the whole table.
+
+### Top topics and Top clients
+
+Two cards below the metrics table roll the same entries up by a single key.
+
+**Top topics** has one row per topic:
+
+- **Topic** — the topic being summarized.
+- **Clients** — how many distinct client IDs dropped messages on it.
+- **Drops** — how many messages were lost across the whole group.
+- **Last dropped time** — the most recent drop in the group.
+
+**Top clients** has one row per client ID, where **Topics** counts the distinct topics that client dropped messages on. Every column sorts in both cards, and the default order is **Drops**, highest first.
+
+Together they separate two failure shapes that the flat table cannot. A table row is a single client and topic pairing, so one dead topic published to by a thousand clients fills the list with a thousand near-identical rows. The same situation is one **Top topics** row with a **Clients** count of a thousand — a subscriber-side problem, a subscription never created or created on the wrong topic filter. The mirror image, one **Top clients** row with a high **Topics** count, is a publisher-side problem: one client publishing where nothing subscribes.
+
+Each card is queried on its own, so its controls affect only it:
+
+- **Search** matches the topic on **Top topics**, and the client ID on **Top clients**.
+- **Refresh** reloads that card; the refresh button in the toolbar reloads the whole page.
+- The header line reports how the rows are grouped, the filter in effect, how many of the matching rows are on screen, and the drops those rows account for. That drop count covers the current page only, not every matching group.
+
+Click a row to open the table filtered to that topic or client under an **Exact** match, with the Analytics time window carried across, so the row you clicked and the list you land on cover the same period.
+
+Both cards rank only the entries the broker still holds, not all traffic ever dropped — see [Retention](#retention).
 
 ## Reasons
 
