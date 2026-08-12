@@ -2,43 +2,22 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PricingHero from '../../components/Pricing/PricingHero.astro';
 import ProductSubTabs from '../../components/Pricing/ProductSubTabs.astro';
-import PlanCardGrid from '../../components/Pricing/PlanCardGrid.astro';
 import CommunityEditionCard from '../../components/Pricing/CommunityEditionCard.astro';
-import RegionToggle from '../../components/Pricing/RegionToggle.astro';
 import BillingToggle from '../../components/Pricing/BillingToggle.astro';
-import UpsellCard from '../../components/Pricing/UpsellCard.astro';
-import AddOnsSection from '../../components/Pricing/AddOnsSection.astro';
-import TopUpsSection from '../../components/Pricing/TopUpsSection.astro';
 import PerpetualBenefits from '../../components/Pricing/PerpetualBenefits.astro';
-import TbPaygCalculator from '../../components/Pricing/TbPaygCalculator.astro';
-import TbPrivateCloudCalculator from '../../components/Pricing/TbPrivateCloudCalculator.astro';
 import TbmqPaygCalculator from '../../components/Pricing/TbmqPaygCalculator.astro';
 import TbmqPerpetualCalculator from '../../components/Pricing/TbmqPerpetualCalculator.astro';
 import TbmqPrivateCloudCalculator from '../../components/Pricing/TbmqPrivateCloudCalculator.astro';
 import PricingBackground from '../../components/Pricing/PricingBackground.astro';
 import NButton from '../../components/Landing/NButton.astro';
-import ComparisonTable from '../../components/Pricing/ComparisonTable.astro';
 
-import { tbCeData } from '@data/pricing/tb-ce.ts';
-import { tbCloudData, tbCloudTopUps } from '@data/pricing/tb-cloud.ts';
-import { tbPrivateCloudData, tbPrivateCloudAddOns } from '@data/pricing/tb-private-cloud.ts';
-import {
-	tbSelfManagedData,
-	tbSelfManagedAddOns,
-	tbPerpetualHero,
-	tbPerpetualAddOns,
-} from '@data/pricing/tb-self-managed.ts';
 import { tbmqCeData } from '@data/pricing/tbmq-ce.ts';
 import { tbmqSelfManagedData } from '@data/pricing/tbmq-self-managed.ts';
 import { tbmqPrivateCloudData } from '@data/pricing/tbmq-private-cloud.ts';
-import { cloudAddOns } from '@data/pricing/add-ons.ts';
-import { pcFeatureHeaders, pcFeatureRows } from '@data/pricing/tb-private-cloud-features.ts';
-import type { PlanCard as PlanCardType } from '@data/pricing/types';
 import FaqSection from '../../components/Pricing/FaqSection.astro';
 import { pricingFaqData } from '@data/pricing/faq';
 
 import ceIcon from '../../assets/pricing/community-edition-icon.svg?raw';
-import cloudIcon from '../../assets/pricing/cloud-icon.svg?raw';
 import pcIcon from '../../assets/pricing/private-cloud-icon.svg?raw';
 import smIcon from '../../assets/pricing/self-icon.svg?raw';
 
@@ -80,71 +59,6 @@ function enrichTabs(
 	});
 }
 
-// Auto-fill faqTooltip on plan features that have faqId but no explicit tooltip
-function enrichPlans(plans: PlanCardType[]): PlanCardType[] {
-	return plans.map((plan) => ({
-		...plan,
-		features: plan.features.map((f) => ({
-			...f,
-			faqTooltip: f.faqTooltip || (f.faqId && faqAnswerMap.get(f.faqId)) || undefined,
-		})),
-	}));
-}
-
-// Auto-fill faqTooltip on comparison rows that have faqId but no explicit tooltip
-function enrichRows(
-	rows: import('../../data/pricing/types').ComparisonRow[]
-): import('../../data/pricing/types').ComparisonRow[] {
-	return rows.map((row) => {
-		const autoFill = !row.faqTooltip && row.faqId ? faqAnswerMap.get(row.faqId) : undefined;
-		return {
-			...row,
-			faqTooltip: row.faqTooltip || autoFill || undefined,
-			autoTooltip: !!autoFill,
-		};
-	});
-}
-
-const tbSubTabs = enrichTabs([
-	{
-		id: 'thingsboard-ce',
-		label: 'Community Edition',
-		icon: ceIcon,
-		gtmId: 'Pricing_CE',
-		faqId: 'what-is-tb-ce',
-		faqTooltip:
-			'Community Edition is the free, open-source starting point\u2014perfect for fast pilots and proof-of-value. Start small, validate quickly, and scale up when you\u2019re ready.',
-	},
-	{
-		id: 'thingsboard-cloud',
-		label: 'Public Cloud',
-		icon: cloudIcon,
-		default: true,
-		gtmId: 'Pricing_PE_Cloud',
-		faqId: 'tb-cloud-definition',
-		faqTooltip:
-			'Public Cloud is fully managed ThingsBoard\u2014built for speed. We handle infrastructure, upgrades, and reliability so your team can focus on shipping IoT solutions faster.',
-	},
-	{
-		id: 'thingsboard-private-cloud',
-		label: 'Private Cloud',
-		icon: pcIcon,
-		gtmId: 'Pricing_PE_PrivateCloud',
-		faqId: 'tb-private-cloud-what-does-thingsboard-private-cloud-stand-for',
-		faqTooltip:
-			'Private Cloud is a dedicated, isolated ThingsBoard Professional Edition cluster run by us for you. You get enterprise-grade control and security\u2014without the ops overhead.',
-	},
-	{
-		id: 'thingsboard-pe',
-		label: 'Self-managed',
-		icon: smIcon,
-		gtmId: 'Pricing_PE_SM',
-		faqId: 'pe-pay-as-you-go-self-managed-definition',
-		faqTooltip:
-			'Self-managed lets you run ThingsBoard on your own infrastructure (on-prem or cloud). Ideal when you need full environment control and prefer to manage operations in-house.',
-	},
-]);
-
 const tbmqSubTabs = enrichTabs([
 	{
 		id: 'tbmq-ce',
@@ -179,142 +93,6 @@ const tbmqSubTabs = enrichTabs([
 	<PricingBackground />
 	<main class="pricing-page">
 		<PricingHero />
-
-		<!-- ═══ ThingsBoard product sections ═══ -->
-		<!-- Product toggle removed — pricing is TBMQ-only. ThingsBoard content
-		     stays hidden by default and is only reachable via legacy deep-link
-		     URLs (e.g. ?product=thingsboard-pe). -->
-		<div class="pricing-product-content" data-product-content="thingsboard" style="display:none;">
-			<ProductSubTabs product="thingsboard" tabs={tbSubTabs} />
-
-			<!-- TB CE -->
-			<section class="pricing-section" data-section="thingsboard-ce">
-				<CommunityEditionCard data={tbCeData} />
-			</section>
-
-			<!-- TB Public Cloud -->
-			<section class="pricing-section active" data-section="thingsboard-cloud">
-				<div class="pricing-section-header-row">
-					<div class="pricing-section-header">
-						<h2>{tbCloudData.na.sectionTitle}</h2>
-						<p>{tbCloudData.na.sectionSubtitle}</p>
-					</div>
-					<RegionToggle />
-				</div>
-				<div data-region-content="na">
-					<PlanCardGrid plans={enrichPlans(tbCloudData.na.plans)}>
-						<UpsellCard
-							heading="Require dedicated infrastructure for unique enterprise needs?"
-							ctaText="See Private Cloud Options"
-							targetSection="thingsboard-private-cloud"
-						/>
-					</PlanCardGrid>
-					<AddOnsSection addOns={cloudAddOns.na} />
-					<TopUpsSection topUps={tbCloudTopUps.na} />
-				</div>
-				<div data-region-content="eu" style="display:none;">
-					<PlanCardGrid plans={enrichPlans(tbCloudData.eu.plans)}>
-						<UpsellCard
-							heading="Require dedicated infrastructure for unique enterprise needs?"
-							ctaText="See Private Cloud Options"
-							targetSection="thingsboard-private-cloud"
-						/>
-					</PlanCardGrid>
-					<AddOnsSection addOns={cloudAddOns.eu} />
-					<TopUpsSection topUps={tbCloudTopUps.eu} />
-				</div>
-			</section>
-
-			<!-- TB Private Cloud -->
-			<section class="pricing-section" data-section="thingsboard-private-cloud">
-				<div class="pricing-section-header-row">
-					<div class="pricing-section-header">
-						<h2>{tbPrivateCloudData.sectionTitle}</h2>
-						<p>{tbPrivateCloudData.sectionSubtitle}</p>
-					</div>
-					<div class="pc-billing-toggle-wrap">
-						<BillingToggle
-							leftLabel="Monthly"
-							rightLabel="Annual"
-							leftValue="monthly"
-							rightValue="annual"
-							id="tb-pc-billing"
-						/>
-						<p class="pc-billing-hint">Save 10% on annual plans</p>
-					</div>
-				</div>
-				<PlanCardGrid plans={enrichPlans(tbPrivateCloudData.plans)}>
-					<UpsellCard
-						heading="Not sure which plan fits?"
-						subtitle="Use our calculator to estimate the best plan for your needs."
-						ctaText="Estimate your cost"
-						onclick="window.openTbPcCalc?.()"
-					/>
-				</PlanCardGrid>
-				<AddOnsSection addOns={tbPrivateCloudAddOns} />
-				<ComparisonTable headers={pcFeatureHeaders} rows={enrichRows(pcFeatureRows)} />
-			</section>
-
-			<!-- TB Self-managed -->
-			<section class="pricing-section" data-section="thingsboard-pe">
-				<div class="pricing-section-header-row">
-					<div class="pricing-section-header">
-						<h2
-							data-billing-heading="tb-sm-billing"
-							data-payg-text="Subscription plans"
-							data-perpetual-text="Perpetual license"
-						>
-							Subscription plans
-						</h2>
-						<p
-							data-billing-subtitle="tb-sm-billing"
-							data-payg-text="All subscription plans include unlimited customers, dashboards, integrations, api calls, data points & messages."
-							data-perpetual-text="One-time payment, run forever on your infrastructure."
-						>
-							All subscription plans include unlimited customers, dashboards, integrations, api calls, data points &
-							messages.
-						</p>
-					</div>
-					<BillingToggle
-						leftLabel="Pay-as-you-go"
-						rightLabel="Perpetual"
-						leftValue="payg"
-						rightValue="perpetual"
-						id="tb-sm-billing"
-						leftGtmId="Pricing_PE_SM_PayAsYouGo"
-						rightGtmId="Pricing_PE_SM_Perpetual"
-						leftFaqId="pe-pay-as-you-go-self-managed-subscription-plans"
-						leftFaqTooltip="Pay-as-you-go is a flexible monthly subscription. Scale up as you grow and pay for the capacity you need (tiers based on devices/assets)."
-						rightFaqId="pe-pay-as-you-go-self-managed-purchase-perpetual-license"
-						rightFaqTooltip="Perpetual is a one-time license that turns your IoT platform into a long-term asset — predictable costs, full control of your roadmap, and a strong foundation for enterprise scale."
-					/>
-				</div>
-				<div data-billing-content="payg" data-billing-group="tb-sm-billing">
-					<PlanCardGrid plans={enrichPlans(tbSelfManagedData.payg.plans)}>
-						<UpsellCard
-							heading="Not sure which plan fits?"
-							subtitle="Use our calculator to estimate the best plan for your needs."
-							ctaText="Estimate your cost"
-							onclick="window.openTbPaygCalc?.()"
-						/>
-					</PlanCardGrid>
-					<AddOnsSection addOns={tbSelfManagedAddOns} />
-				</div>
-				<div data-billing-content="perpetual" data-billing-group="tb-sm-billing" style="display:none;">
-					<CommunityEditionCard data={tbPerpetualHero} />
-					{
-						tbSelfManagedData.perpetual.benefits && (
-							<PerpetualBenefits benefits={tbSelfManagedData.perpetual.benefits} />
-						)
-					}
-					<AddOnsSection addOns={tbPerpetualAddOns} />
-					<div class="perpetual-bottom-cta">
-						<h3>Let us help you identify the best option for your business</h3>
-						<NButton href="/contact-us/?subject=ThingsBoard%20Products" variant="filled" size="md">Contact Us</NButton>
-					</div>
-				</div>
-			</section>
-		</div>
 
 		<!-- ═══ TBMQ product sections ═══ -->
 		<div class="pricing-product-content" data-product-content="tbmq">
@@ -414,7 +192,6 @@ const tbmqSubTabs = enrichTabs([
 					const productParam = p.get('product');
 					const solutionParam = p.get('solution');
 					const sectionMap = {
-						'thingsboard-pe-options': { product: 'thingsboard', subtab: 'thingsboard-pe' },
 						'tbmq-options': { product: 'tbmq' },
 					};
 					let activeProduct = 'tbmq';
@@ -424,8 +201,9 @@ const tbmqSubTabs = enrichTabs([
 						activeProduct = sectionMap[sectionParam].product;
 						if (sectionMap[sectionParam].subtab) activeSubTab = sectionMap[sectionParam].subtab;
 					}
-					if (productParam && productParam.startsWith('tbmq')) activeProduct = 'tbmq';
-					if (productParam) activeSubTab = productParam;
+					// Legacy ThingsBoard values (?product=thingsboard-pe) fall through to
+					// the TBMQ defaults — the ThingsBoard pricing content is gone.
+					if (productParam && productParam.startsWith('tbmq')) activeSubTab = productParam;
 					if (solutionParam) {
 						const sol = solutionParam.replace(/^pe-/, '');
 						if (sol === 'payg' || sol === 'perpetual') activeBilling = sol;
@@ -520,10 +298,6 @@ const tbmqSubTabs = enrichTabs([
 			}
 		</div>
 	</main>
-
-	<!-- Calculator modals (rendered outside main flow) -->
-	<TbPaygCalculator />
-	<TbPrivateCloudCalculator />
 </BaseLayout>
 
 <!-- ═══ URL state + tab/toggle logic ═══ -->
@@ -543,10 +317,6 @@ const tbmqSubTabs = enrichTabs([
 		// ─── GTM Analytics ───
 		function reportPriceOpen(sectionId: string) {
 			if (typeof gtag !== 'undefined' && sectionId) gtag('event', 'PriceOpen', { event_category: sectionId });
-		}
-		function reportPriceLink(link: string, product: string) {
-			if (typeof gtag !== 'undefined' && link)
-				gtag('event', 'PriceLink', { event_category: product, event_label: link });
 		}
 
 		let skipAnimation = true; // No animation on initial load
@@ -604,35 +374,6 @@ const tbmqSubTabs = enrichTabs([
 					return;
 				}
 
-				// Plan-card CTAs that should route through getLicense() instead
-				// of following their href.
-				const planCta = t.closest<HTMLElement>('.plan-card-cta[data-product-id][data-plan-id]');
-				if (planCta) {
-					e.preventDefault();
-					getLicense(planCta.dataset.productId!, planCta.dataset.planId!);
-					return;
-				}
-
-				// Upsell card switch.
-				const upsell = t.closest<HTMLElement>('.upsell-card-btn');
-				if (upsell) {
-					const target = upsell.dataset.switchTo;
-					if (target === 'contact') window.open('/contact-us/', '_blank');
-					else if (target) activateSubTab(target);
-					return;
-				}
-
-				// Top-ups accordion.
-				const topupHeader = t.closest<HTMLElement>('.topup-header');
-				if (topupHeader) {
-					const item = topupHeader.closest('.topup-item');
-					if (item) {
-						item.classList.toggle('expanded');
-						topupHeader.setAttribute('aria-expanded', String(item.classList.contains('expanded')));
-					}
-					return;
-				}
-
 				// Product-tab click (top-level tabs).
 				const productTab = t.closest<HTMLElement>('.product-tab');
 				if (productTab) {
@@ -644,17 +385,6 @@ const tbmqSubTabs = enrichTabs([
 				const subTab = t.closest<HTMLElement>('.sub-tab');
 				if (subTab) {
 					activateSubTab(subTab.dataset.subtab!);
-					return;
-				}
-
-				// Region-toggle label click → flip #region-select, fire change.
-				const regionLabel = t.closest<HTMLElement>('.region-toggle-label');
-				if (regionLabel) {
-					const cb = document.getElementById('region-select') as HTMLInputElement | null;
-					if (cb) {
-						cb.checked = regionLabel.dataset.region === 'eu';
-						cb.dispatchEvent(new Event('change', { bubbles: true }));
-					}
 					return;
 				}
 
@@ -725,10 +455,6 @@ const tbmqSubTabs = enrichTabs([
 		// ─── FAQ context mapping ───
 		// Maps sub-tab ID to FAQ context ID(s)
 		const faqContextMap: Record<string, string[]> = {
-			'thingsboard-ce': ['thingsboard-ce'],
-			'thingsboard-cloud': ['thingsboard-cloud'],
-			'thingsboard-private-cloud': ['thingsboard-private-cloud'],
-			'thingsboard-pe': ['thingsboard-pe'],
 			'tbmq-ce': ['tbmq-ce'],
 			'tbmq-pe': ['tbmq-pe-payg', 'tbmq-pe-perpetual'],
 			'tbmq-private-cloud': ['tbmq-private-cloud'],
@@ -741,20 +467,6 @@ const tbmqSubTabs = enrichTabs([
 				const show = ctx && contexts.includes(ctx);
 				(el as HTMLElement).style.display = show ? 'block' : 'none';
 			});
-
-			// For thingsboard-pe, hide FAQ when perpetual is active (perpetual has no FAQ)
-			if (sectionId === 'thingsboard-pe') {
-				const billingToggle = $('[data-billing-toggle="tb-sm-billing"]') as HTMLInputElement | null;
-				const isPerpetual = billingToggle?.checked ?? false;
-				if (isPerpetual) {
-					$$('.pricing-faq-block').forEach((el) => {
-						const ctx = el.dataset.faqContext;
-						if (ctx === 'thingsboard-pe') {
-							(el as HTMLElement).style.display = 'none';
-						}
-					});
-				}
-			}
 
 			// For tbmq-pe, show PAYG or Perpetual FAQ based on billing toggle
 			if (sectionId === 'tbmq-pe') {
@@ -837,12 +549,6 @@ const tbmqSubTabs = enrichTabs([
 				if (ctx) {
 					for (const [tabId, contexts] of Object.entries(faqContextMap)) {
 						if (contexts.includes(ctx)) {
-							// Activate the right product tab first
-							if (tabId.startsWith('tbmq') && activeProduct !== 'tbmq') {
-								activateProductTab('tbmq');
-							} else if (!tabId.startsWith('tbmq') && activeProduct !== 'thingsboard') {
-								activateProductTab('thingsboard');
-							}
 							activateSubTab(tabId);
 							break;
 						}
@@ -1057,65 +763,10 @@ const tbmqSubTabs = enrichTabs([
 				const tooltip = info.querySelector('.plan-feature-tooltip') as HTMLElement | null;
 				if (tooltip) bindPricingTooltip(info, tooltip);
 			});
-			$$('.addon-tooltip-trigger').forEach((trigger) => {
-				const tooltip = trigger.querySelector('.addon-tooltip') as HTMLElement | null;
-				if (tooltip) bindPricingTooltip(trigger, tooltip);
-			});
-			$$('.comparison-tooltip-trigger').forEach((trigger) => {
-				const tooltip = trigger.querySelector('.comparison-tooltip') as HTMLElement | null;
-				if (tooltip) bindPricingTooltip(trigger, tooltip);
-			});
 		};
 		(window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 200)))(bindAllPricingTooltips, {
 			timeout: 1500,
 		});
-
-		// ─── Region toggle ───
-		const regionCheckbox = $('#region-select') as HTMLInputElement | null;
-		// Rewrite hrefs on any FAQ/plan link tagged `.pricing-paas-link`
-		// so they point at the selected PaaS region's docs (NA → /docs/paas/,
-		// EU → /docs/paas/eu/). The default href in the HTML stays NA so
-		// crawlers and no-JS users still get a valid link.
-		function updatePaasLinks(isEu: boolean) {
-			const prefix = isEu ? 'https://thingsboard.io/docs/paas/eu' : 'https://thingsboard.io/docs/paas';
-			$$('a.pricing-paas-link').forEach((a) => {
-				const path = (a as HTMLAnchorElement).dataset.paasPath ?? '/';
-				(a as HTMLAnchorElement).href = `${prefix}${path}`;
-			});
-		}
-		if (regionCheckbox) {
-			function setRegion(isEu: boolean) {
-				$$('[data-region-content]').forEach((el) => {
-					(el as HTMLElement).style.display = el.dataset.regionContent === (isEu ? 'eu' : 'na') ? '' : 'none';
-				});
-				$$('.region-toggle-label').forEach((lbl) => {
-					lbl.classList.toggle('active', lbl.dataset.region === (isEu ? 'eu' : 'na'));
-				});
-
-				// Persist in cookie
-				try {
-					document.cookie = `cloudServer=${isEu ? 'eu' : 'na'};path=/;max-age=31536000`;
-				} catch {
-					/* ignore cookie write failure */
-				}
-
-				updatePaasLinks(isEu);
-			}
-
-			regionCheckbox.addEventListener('change', () => {
-				setRegion(regionCheckbox.checked);
-			});
-			// `.region-toggle-label` click is delegated above on `main.pricing-page`;
-			// it flips `regionCheckbox.checked` and dispatches `change`, which
-			// the handler above picks up.
-
-			// Restore from cookie (supports both new "eu"/"na" and old "/docs/paas/eu/" format)
-			const cookieMatch = document.cookie.match(/cloudServer=([^;]+)/);
-			if (cookieMatch?.[1] === 'eu' || cookieMatch?.[1]?.includes('/eu')) {
-				regionCheckbox.checked = true;
-				setRegion(true);
-			}
-		}
 
 		// ─── Billing toggles ───
 		$$('[data-billing-toggle]').forEach((input) => {
@@ -1165,59 +816,6 @@ const tbmqSubTabs = enrichTabs([
 			// it flips `checkbox.checked` and dispatches `change`, which the
 			// handler above picks up.
 		});
-
-		// ─── Private Cloud billing toggle (monthly/annual) ───
-		const pcBillingCheckbox = $('[data-billing-toggle="tb-pc-billing"]') as HTMLInputElement | null;
-		if (pcBillingCheckbox) {
-			const pcSection = pcBillingCheckbox.closest('.pricing-section');
-			function setPcBilling(isAnnual: boolean) {
-				if (!pcSection) return;
-				pcSection.querySelectorAll('.plan-card').forEach((card) => {
-					const el = card as HTMLElement;
-					const monthly = el.dataset.monthlyPrice;
-					const annual = el.dataset.annualPrice;
-					if (!monthly || !annual) return;
-					const price = isAnnual ? Number(annual) : Number(monthly);
-					const amountEl = el.querySelector('.plan-card-amount');
-					if (amountEl) amountEl.textContent = '$' + price.toLocaleString('en-US').replace(/,/g, ' ');
-				});
-				const toggle = pcBillingCheckbox!.closest('.billing-toggle');
-				if (toggle) {
-					$$('.billing-toggle-label', toggle).forEach((lbl, i) => {
-						lbl.classList.toggle('active', isAnnual ? i === 1 : i === 0);
-					});
-				}
-			}
-			pcBillingCheckbox.addEventListener('change', () => setPcBilling(pcBillingCheckbox.checked));
-			// `.billing-toggle-label` click for the PC toggle is also delegated
-			// above; the change event handler above picks up the result.
-		}
-
-		// ─── getLicense — plan card CTA clicks for self-managed plans ───
-		function getLicense(productId: string, planId: string) {
-			let url = 'https://license.thingsboard.io/signup?createSubscription=true';
-			url += '&productId=' + productId;
-			url += '&planId=' + planId;
-			// Append UTM params from localStorage
-			const utmRaw = localStorage.getItem('utm');
-			if (utmRaw) {
-				try {
-					const utm = JSON.parse(utmRaw);
-					Object.keys(utm).forEach((key) => {
-						url += '&' + key + '=' + encodeURIComponent(utm[key]);
-					});
-				} catch {
-					/* ignore malformed utm */
-				}
-			}
-			const fpr = localStorage.getItem('fpr');
-			if (fpr) url += '&fpr=' + encodeURIComponent(fpr);
-			reportPriceLink(url, productId + '/' + planId);
-			window.open(url, '_blank');
-		}
-
-		// `.plan-card-cta[data-product-id][data-plan-id]` click is delegated above.
-		// `.topup-header` click (accordion) is delegated above.
 
 		// ─── FAQ — single delegated listener for all FAQ interactions ───
 		// Guard: register this document-level listener only once. initPricing()
@@ -1270,17 +868,6 @@ const tbmqSubTabs = enrichTabs([
 					return;
 				}
 
-				// FAQ calculator-open link (replaces former inline onclick in FAQ HTML)
-				const calcLink = target.closest('[data-open-calc]') as HTMLElement | null;
-				if (calcLink) {
-					e.preventDefault();
-					const which = calcLink.dataset.openCalc;
-					const fnName = which === 'pc' ? 'openTbPcCalc' : 'openTbPaygCalc';
-					(window as any)[fnName]?.();
-					window.scrollTo({ top: 0, behavior: 'smooth' });
-					return;
-				}
-
 				// FAQ category tabs
 				const catTab = target.closest('.faq-cat-tab') as HTMLElement | null;
 				if (catTab) {
@@ -1330,11 +917,6 @@ const tbmqSubTabs = enrichTabs([
 					if (ctx) {
 						for (const [tabId, contexts] of Object.entries(faqContextMap)) {
 							if (contexts.includes(ctx)) {
-								if (tabId.startsWith('tbmq')) {
-									activateProductTab('tbmq');
-								} else {
-									activateProductTab('thingsboard');
-								}
 								activateSubTab(tabId);
 								break;
 							}
@@ -1349,11 +931,7 @@ const tbmqSubTabs = enrichTabs([
 		// ─── URL update ───
 		function updateUrl() {
 			const p = new URLSearchParams();
-			if (activeProduct === 'tbmq') {
-				p.set('section', 'tbmq-options');
-			} else {
-				p.set('section', 'thingsboard-pe-options');
-			}
+			p.set('section', 'tbmq-options');
 			if (activeSubTab) {
 				p.set('product', activeSubTab);
 			}
