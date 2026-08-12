@@ -2,7 +2,7 @@ import { docsLoader, i18nLoader } from '@astrojs/starlight/loaders';
 import { docsSchema, i18nSchema } from '@astrojs/starlight/schema';
 import { defineCollection, type CollectionEntry } from 'astro:content';
 import { z } from 'astro/zod';
-import { file, glob } from 'astro/loaders';
+import { glob } from 'astro/loaders';
 import { logoKeys } from './data/logos';
 import { Products } from './models/site.models';
 
@@ -26,18 +26,10 @@ export const baseSchema = z.object({
 			gridVariant: z.enum(['lines', 'dots']).optional().default('lines'),
 			variant: z.enum(['default', 'simple']).optional().default('default'),
 			activity: z
-				.discriminatedUnion('type', [
-					z.object({
-						type: z.literal('contributors'),
-						tagline: z.string(),
-						linkText: z.string(),
-						link: z.string(),
-					}),
-					z.object({
-						type: z.literal('dashboard'),
-						product: z.enum(Products),
-					}),
-				])
+				.object({
+					type: z.literal('dashboard'),
+					product: z.enum(Products),
+				})
 				.optional(),
 		})
 		.optional(),
@@ -121,11 +113,6 @@ export const docsCollectionSchema = z.union([
 	deploySchema,
 	recipeSchema,
 ]);
-
-const contributorSchema = z.object({
-	id: z.number(),
-	login: z.string(),
-});
 
 export type DocsEntryData = z.infer<typeof docsCollectionSchema>;
 
@@ -232,54 +219,5 @@ export const collections = {
 				'recipesLink.plural': z.string().default('Related recipes:'),
 			}),
 		}),
-	}),
-	contributors: defineCollection({
-		loader: file('src/data/contributors.json'),
-		schema: contributorSchema,
-	}),
-	packages: defineCollection({
-		loader: async () => {
-			const packages = [
-				'@astrojs/alpinejs',
-				'@astrojs/cloudflare',
-				'@astrojs/db',
-				'@astrojs/markdoc',
-				'@astrojs/mdx',
-				'@astrojs/netlify',
-				'@astrojs/node',
-				'@astrojs/partytown',
-				'@astrojs/preact',
-				'@astrojs/react',
-				'@astrojs/rss',
-				'@astrojs/sitemap',
-				'@astrojs/solid-js',
-				'@astrojs/svelte',
-				'@astrojs/vercel',
-				'@astrojs/vue',
-				'astro',
-			];
-			try {
-				const url = `https://npm.antfu.dev/${packages.join('+')}`;
-				const data = await fetch(url).then((res) => res.json());
-				return data.map((pkg: any) => ({ id: pkg.name, version: pkg.version }));
-			} catch {
-				return packages.map((name) => ({ id: name, version: '0.0.0' }));
-			}
-		},
-		schema: z.object({ version: z.string() }),
-	}),
-	astroContributors: defineCollection({
-		loader: async () => {
-			try {
-				const result = await fetch('https://astro.badg.es/api/v1/top-contributors.json').then((res) => res.json());
-				return result.data.map((contributor: any) => ({
-					id: contributor.username,
-					...contributor,
-				}));
-			} catch {
-				return [];
-			}
-		},
-		schema: z.object({ avatar_url: z.string() }),
 	}),
 };
