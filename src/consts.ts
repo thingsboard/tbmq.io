@@ -29,13 +29,7 @@ export function devSafeOgImagePath(imagePath: string): string {
 const SEP = ` ${TITLE_SEPARATOR} `;
 
 export const SECTION_LABELS: Record<string, string> = {
-	'/case-studies/': 'Case Studies',
 	'/blog/': 'Blog',
-	'/use-cases/': 'Use Cases',
-	'/industries/': 'Industries',
-	'/services/': 'Services',
-	// Lives at /clients-feedback/ but is surfaced as "About" in the title for SEO.
-	'/clients-feedback/': 'About',
 };
 
 export function formatSectionIndexTitle(section: string): string {

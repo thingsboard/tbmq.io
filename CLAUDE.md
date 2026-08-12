@@ -74,7 +74,6 @@ Props and usage live in each component file under `src/components/`. Commonly us
 
 - **ImageGallery** — responsive image grid with lightbox, product suffix resolution, dark theme variants
 - **DocImage** — single optimized image with width/alignment options
-- **Banner** — product/info banners (`peFeature` variant renders only on CE pages)
 - **ShowFor** — product-conditional Markdown blocks (see "Shared Content via \_includes" below)
 - **ConditionalHeading** — TOC-aware heading for use inside JSX conditionals in `_includes`
 - **InstallationCardGrid** — installation option card grid

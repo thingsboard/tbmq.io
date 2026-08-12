@@ -3,12 +3,7 @@ import type { AstroIntegration } from 'astro';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-	getSitemapLastmodRegistry,
-	getSitemapSourceRegistry,
-	maxEpochToIso,
-	normalizeSitemapPath,
-} from '../sitemap-source-registry';
+import { getSitemapSourceRegistry, maxEpochToIso, normalizeSitemapPath } from '../sitemap-source-registry';
 import { getGitDateMap } from '../sitemap/git-date';
 import { captureRoutes } from '../sitemap/route-match';
 import { resolveNonDocSources } from '../sitemap/source-resolve';
@@ -111,10 +106,6 @@ function getLastmod(url: string): string | null {
 		return null;
 	}
 	const key = normalizeSitemapPath(pathname);
-
-	// Explicit build-data dates (IoT Hub `updatedTime`) win over git.
-	const explicit = getSitemapLastmodRegistry().get(key);
-	if (explicit) return explicit;
 
 	// Docs come from the route-middleware registry; non-docs are resolved here
 	// (they never run the middleware).

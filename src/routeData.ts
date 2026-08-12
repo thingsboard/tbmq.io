@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { APIContext } from 'astro';
 import { defineRouteMiddleware, type StarlightRouteData } from '@astrojs/starlight/route-data';
-import { tutorialPages as pages } from '~/content';
 import { Products } from '@models/site.models.ts';
 import {
 	getVersionFromSlug,
@@ -13,13 +12,11 @@ import {
 	getVersionPrefix,
 	getLanguagePrefix,
 	getProductTitleName,
-	stripLanguagePrefix,
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
 import { devSafeOgImagePath, DOCS_SUFFIX, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
-import { getTutorialPages } from '~/util/getTutorialPages';
 // No alias covers `config/`; relative import is the only option here.
 import {
 	getRepoRoot,
@@ -41,23 +38,10 @@ const API_SECTION_NAMES: Record<string, string> = {
 	'snmp-api': 'SNMP API',
 };
 
-/** Tutorial pages bucketed by product version. Built once at module load — `pages` is static. */
-const tutorialPagesByVersion: Map<Products, typeof pages> = (() => {
-	const result = new Map<Products, typeof pages>();
-	const ordered = getTutorialPages(pages);
-	for (const page of ordered) {
-		const version = getVersionFromSlug(page.id);
-		const bucket = result.get(version);
-		if (bucket) bucket.push(page);
-		else result.set(version, [page]);
-	}
-	return result;
-})();
-
 /** Memoization cache for `linkMatchesVersion(href) && linkMatchesLanguage(href)`. */
 const sidebarLinkMatchCache = new Map<string, boolean>();
 
-const EDIT_BASE_URL = 'https://github.com/thingsboard/thingsboard.io/edit/main';
+const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 const INCLUDES_IMPORT_REGEX = /^\s*import\s+\w+\s+from\s+['"]@includes\/([^'"]+)['"]/gm;
 const JSX_COMPONENT_REGEX = /^\s*<[A-Z][A-Za-z0-9]*\b/gm;
 /** filePath → include path relative to `_includes/` (e.g. `docs/introduction.mdx`), or `null`. */
@@ -65,14 +49,12 @@ const stubIncludeRelCache = new Map<string, string | null>();
 
 export const onRequest = defineRouteMiddleware((context) => {
 	const starlightRoute = context.locals.starlightRoute;
-	const isTutorial = isTutorialEntry(starlightRoute.entry);
-	updateHead(context, isTutorial);
+	updateHead(context);
 	rewriteStubEditUrl(starlightRoute);
 	recordSitemapSources(context, starlightRoute);
 	filterSidebarByVersionAndLanguage(starlightRoute);
 	markParentSidebarItemAsCurrent(starlightRoute, context.url.pathname);
 	filterPaginationByVersion(starlightRoute);
-	if (isTutorial) updateTutorialPagination(starlightRoute);
 });
 
 /**
@@ -192,32 +174,8 @@ function linkMatchesVersion(href: string, version: Products): boolean {
 	if (path.startsWith('/uk/')) path = path.slice(4);
 	path = path.replace(/^\/docs\/?/, '');
 
-	if (version === Products.PE) return path.startsWith('pe/');
-	if (version === Products.PAAS) return path.startsWith('paas/') && !path.startsWith('paas/eu/');
-	if (version === Products.PAAS_EU) return path.startsWith('paas/eu/');
-	if (version === Products.EDGE_PE) return path.startsWith('edge/pe/');
-	if (version === Products.EDGE) return path.startsWith('edge/') && !path.startsWith('edge/pe/');
-	if (version === Products.TRENDZ) return path.startsWith('trendz/');
-	if (version === Products.GW) return path.startsWith('iot-gateway/');
 	if (version === Products.TBMQ_PE) return path.startsWith('pe/');
-	if (version === Products.TBMQ) return !path.startsWith('pe/');
-	if (version === Products.MOBILE_PE) return path.startsWith('mobile/pe/');
-	if (version === Products.MOBILE)
-		return path.startsWith('mobile/') && !path.startsWith('mobile/pe/');
-	if (version === Products.LICENSE) return path.startsWith('license-server/');
-	if (version === Products.IOT_HUB) return path.startsWith('iot-hub/');
-	// CE: everything that doesn't belong to other products
-	return (
-		!path.startsWith('pe/') &&
-		!path.startsWith('paas/') &&
-		!path.startsWith('edge/') &&
-		!path.startsWith('trendz/') &&
-		!path.startsWith('iot-gateway/') &&
-		!path.startsWith('mqtt-broker/') &&
-		!path.startsWith('mobile/') &&
-		!path.startsWith('license-server/') &&
-		!path.startsWith('iot-hub/')
-	);
+	return !path.startsWith('pe/');
 }
 
 /**
@@ -285,7 +243,7 @@ const escapedSep = TITLE_SEPARATOR.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 const docsSuffixMatcher = new RegExp(` ${escapedSep} ${DOCS_SUFFIX}$`);
 const apiPathMatcher = /^reference\/([^/]+)\//;
 
-function updateHead(context: APIContext, isTutorial: boolean) {
+function updateHead(context: APIContext) {
 	const starlightRoute = context.locals.starlightRoute;
 	starlightRoute.head = starlightRoute.head.filter(
 		(item) => !(item.tag === 'meta' && item.attrs?.name === 'generator')
@@ -314,12 +272,6 @@ function updateHead(context: APIContext, isTutorial: boolean) {
 
 	const entryHead = (entry.data as { head: StarlightRouteData['head'] }).head;
 	const frontmatterTitle = entryHead.find((item) => item.tag === 'title');
-
-	if (isTutorial && title && title.content && !frontmatterTitle) {
-		title.content = context.locals.t('tutorial.title.prefix', 'Tutorial - {{title}}', {
-			title: title.content,
-		});
-	}
 
 	const pathname = context.url.pathname;
 	// Title formatting and canonical consolidation only apply to real `/docs/`
@@ -392,44 +344,3 @@ function updateHead(context: APIContext, isTutorial: boolean) {
 	}
 }
 
-function updateTutorialPagination(starlightRoute: StarlightRouteData) {
-	const { entry, pagination } = starlightRoute;
-	const version = getVersionFromSlug(entry.id);
-	const tutorialPages = tutorialPagesByVersion.get(version);
-	if (!tutorialPages) return;
-	const i = tutorialPages.findIndex((p) => p.id === entry.id);
-
-	const lang = getLanguageFromSlug(entry.id);
-	const langPrefix = lang === 'uk' ? '/uk' : '';
-
-	if (tutorialPages[i - 1]) {
-		const prevPage = tutorialPages[i - 1];
-		const prevPath = stripLanguagePrefix(prevPage.id);
-		pagination.prev = {
-			href: `${langPrefix}/${prevPath}/`,
-			isCurrent: false,
-			label: prevPage.data.title,
-			type: 'link',
-			badge: undefined,
-			attrs: {},
-		};
-	}
-
-	if (tutorialPages[i + 1]) {
-		const nextPage = tutorialPages[i + 1];
-		const nextPath = stripLanguagePrefix(nextPage.id);
-		pagination.next = {
-			href: `${langPrefix}/${nextPath}/`,
-			isCurrent: false,
-			label: nextPage.data.title,
-			type: 'link',
-			badge: undefined,
-			attrs: {},
-		};
-	}
-}
-
-function isTutorialEntry(entry: StarlightRouteData['entry']) {
-	const slug = stripLanguagePrefix(entry.id);
-	return slug.startsWith('docs/tutorial/') || slug.startsWith('docs/pe/tutorial/');
-}

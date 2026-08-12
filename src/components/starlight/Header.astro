@@ -1,15 +1,6 @@
 ---
 import HeaderContent from '../Landing/HeaderContent.astro';
 import { Products } from '@models/site.models';
-
-const pathname = Astro.url.pathname;
-
-function getGitHubPlatform(path: string): Products {
-	if (path.includes('/docs/')) return Products.TBMQ;
-	return Products.CE;
-}
-
-const gitHubPlatform = getGitHubPlatform(pathname);
 ---
 
-<HeaderContent gitHubPlatform={gitHubPlatform} />
+<HeaderContent gitHubPlatform={Products.TBMQ} />
