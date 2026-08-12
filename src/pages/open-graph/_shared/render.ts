@@ -10,6 +10,17 @@ import { Card, type CardProps } from './Card';
 /** Bump when the template, fonts, or rendering pipeline changes — invalidates cache. */
 const TEMPLATE_VERSION = 6;
 
+// `netlify:build` runs `${NETLIFY_BUILD_SCRIPT:-build}` — if that variable ever
+// points at `build:fast`, every OG card ships as the fallback PNG, silently.
+// Netlify sets CONTEXT=production only for production deploys, so previews and
+// local `pnpm build:fast` stay unaffected.
+if (process.env.SKIP_OG && process.env.CONTEXT === 'production') {
+	throw new Error(
+		'SKIP_OG is set in a production build — every OG card would ship as the fallback PNG. ' +
+			'Unset SKIP_OG (check NETLIFY_BUILD_SCRIPT) or build with `pnpm build`.'
+	);
+}
+
 const CACHE_DIR = path.resolve('node_modules/.og-cache');
 const FONT_DIR = path.resolve('src/pages/open-graph/_fonts');
 
