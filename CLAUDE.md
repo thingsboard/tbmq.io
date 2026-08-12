@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **TBMQ website** — the documentation and marketing site for **TBMQ**, the open-source MQTT broker by ThingsBoard. It is built with **Astro + Starlight**.
 
-**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the TBMQ docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed. To keep those cherry-picks clean, some multi-product scaffolding inherited from upstream is still **kept intact on purpose**: the `Products` enum, `versions.ts`, the redirect tables, and the content schemas. `astro.sidebar.ts` is the exception — it has been **trimmed to the TBMQ sidebars only** (the unused upstream product sidebars were removed). When editing the remaining shared files, prefer trimming/deploying content over restructuring them.
+**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the TBMQ docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed. Some multi-product scaffolding inherited from upstream (the `Products` enum, most of `versions.ts`, several content schema types) still lingers, but it is **no longer kept for merge compatibility** — it is slated for removal. Don't build new code on the non-TBMQ parts. `astro.sidebar.ts` has already been trimmed to the TBMQ sidebars only.
 
 The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking.
 
@@ -73,20 +73,17 @@ Landing/marketing components live under `src/components/` (notably `Landing/`, `
 Props and usage live in each component file under `src/components/`. Commonly used in docs:
 
 - **ImageGallery** — responsive image grid with lightbox, product suffix resolution, dark theme variants
-- **MultiProductImageGallery** — auto product-suffix wrapper around ImageGallery
 - **DocImage** — single optimized image with width/alignment options
-- **Banner** — product/info banners (peFeature, ce, pe, cloud variants)
-- **Badge** — accent badge for sidebar and page titles
-- **YouTubeVideo** — responsive 16:9 YouTube embed
+- **Banner** — product/info banners (`peFeature` variant renders only on CE pages)
+- **ShowFor** — product-conditional Markdown blocks (see "Shared Content via \_includes" below)
 - **ConditionalHeading** — TOC-aware heading for use inside JSX conditionals in `_includes`
 - **InstallationCardGrid** — installation option card grid
-- **RuleNodeCardGrid** — rule node category card grid
 - **DocLink** — product-aware internal links (always use instead of bare markdown links)
 - **Code blocks** — `maxLines`, `collapsible`, `wrap`, `download='file.ext'` meta options; `<Code>` component for dynamic code
 
 ### Product System
 
-All product identifiers live in `src/models/site.models.ts` as the `Products` enum. The enum and its `productDocsPrefix` map are **kept full (all upstream products) for merge compatibility**, but only the TBMQ variants ship content here:
+All product identifiers live in `src/models/site.models.ts` as the `Products` enum. The enum and its `productDocsPrefix` map still carry all upstream products (removal pending), but only the TBMQ variants ship content here:
 
 | Enum value | URL prefix | Content directory |
 |------------|------------|-------------------|
@@ -126,7 +123,7 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-For TBMQ, the relevant constants are `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`. The file also retains the other products' constants (`CE_FULL_VER`, `PE_FULL_VER`, `TRENDZ_VER`, `EDGE_VER`, …) for upstream compatibility.
+For TBMQ, the relevant constants are `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`. The other products' constants (`CE_FULL_VER`, `PE_FULL_VER`, `TRENDZ_VER`, `EDGE_VER`, …) are unused upstream leftovers pending removal — don't reference them in new code.
 
 ### Custom Plugins
 
@@ -141,7 +138,7 @@ Registered in `astro.config.ts` (`rehypePlugins`):
 ### Pages vs Content
 
 - `src/content/docs/` — documentation pages rendered by Starlight (the TBMQ docs tree)
-- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `products/`, `pricing/`, `installations/`, `partners/`, `company/`, `community/`, `contact-us`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt`, plus use-case landing pages (`energy-management`, `smart-farming-demo`, `monitoring-dashboard`, `asset-management`, `device-management`, `iot-data-visualization`, `google-iot-core-alternative`, `ce-vs-pe-diff`)
+- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing), `products/mqtt-broker/` (`privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `community/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`
 
 ### Typography & Design System
 
@@ -158,7 +155,7 @@ Key rules: **Never hardcode font values** — use the mixins. **Never use compil
 | `SINGLE_REDIRECTS` | one-off `/docs/*` page rename | `{ oldPath: '...', target: '/docs/...' }` |
 | `CATCH_ALL_REDIRECTS` | `/docs/*` prefix rename (whole tree renamed 1:1) | prefix → `:splat` |
 | `DYNAMIC_REDIRECTS` | splat / `:placeholder` patterns that aren't a simple prefix rename | `/blog/category/:category/page/* → /blog/?category=:category` |
-| `NON_DOCS_REDIRECTS` | everything outside `/docs/*` (marketing, external targets) | `/iot-use-cases/` → `/use-cases/` |
+| `NON_DOCS_REDIRECTS` | everything outside `/docs/*` (marketing, external targets) | `/old-landing/` → `/new-landing/` |
 
 **Workflow to add a redirect:**
 
@@ -192,14 +189,15 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 - Cache lives at `node_modules/.og-cache/` (gitignored). Bump `TEMPLATE_VERSION` in `render.ts` to invalidate.
 - `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori.
 - Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`.
-- **Astro dev quirk:** `trailingSlash: 'always'` makes the dev server 404 dynamic-route URLs that end in `.png`. `og:image` gets a trailing `/` appended only in `import.meta.env.DEV` so dev links resolve while production HTML keeps the clean `.png` URL Cloudflare serves directly.
+- **Astro dev quirk:** `trailingSlash: 'always'` makes the dev server 404 dynamic-route URLs that end in `.png`. `devSafeOgImagePath()` in `src/consts.ts` appends a trailing `/` only in `import.meta.env.DEV` so dev links resolve while production HTML keeps the clean `.png` URL Cloudflare serves directly. The global fallback path lives there too as `OG_FALLBACK`.
 
 **To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` and rebuild.
 
 ## Releasing a New TBMQ Version
 
-- `src/data/versions.ts` — bump `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`.
-- `src/models/releases-table.ts` and `src/models/upgrade-instructions.ts` — release/upgrade tables if the release adds rows.
+- `src/data/versions.ts` — bump `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`; docs code blocks and install commands pick these up.
+- Release notes are hand-written prose: add the new version's section to `src/content/_includes/docs/mqtt-broker/releases.mdx` (separate CE and PE-conditional blocks; the changelog page links there).
+- Do **not** edit `src/models/releases-table.ts` or `src/models/upgrade-instructions.ts` — they hold stale ThingsBoard (non-TBMQ) data, no TBMQ page renders their tables, and they're slated for removal.
 
 ## Code Style
 
