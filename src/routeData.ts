@@ -17,7 +17,7 @@ import {
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
-import { DOCS_SUFFIX, formatDocsTitle, TITLE_SEPARATOR } from '~/consts';
+import { devSafeOgImagePath, DOCS_SUFFIX, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 import { getTutorialPages } from '~/util/getTutorialPages';
 // No alias covers `config/`; relative import is the only option here.
@@ -361,14 +361,7 @@ function updateHead(context: APIContext, isTutorial: boolean) {
 	// Marketing pages author their own `og:image` in frontmatter; only emit ours
 	// when none is present, else BaseLayout pages get a duplicate `og:image`.
 	if (!ogImage) {
-		const ogImageUrl = getOgImageUrl(pathname);
-		let imageSrc = ogImageUrl ?? '/tbmq-og.png';
-		// Astro dev with `trailingSlash: 'always'` requires dynamic-route URLs to end with '/'
-		// even when they have a file extension. Production (Cloudflare Pages serving static files)
-		// needs the clean .png URL with no trailing slash.
-		if (import.meta.env.DEV && /\.png$/.test(imageSrc) && imageSrc !== '/tbmq-og.png') {
-			imageSrc = imageSrc + '/';
-		}
+		const imageSrc = devSafeOgImagePath(getOgImageUrl(pathname) ?? OG_FALLBACK);
 		// Use request origin so dev shows localhost; in static build it equals context.site origin.
 		const canonicalImageSrc = new URL(imageSrc, context.url.origin).href;
 

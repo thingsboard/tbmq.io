@@ -32,9 +32,10 @@ const routeIndex = new Map<string, string>([
  * Walks up the URL tree if no exact match is found, so version-table sub-pages
  * (`/docs/foo/v3-X-x/`) inherit the parent docs card without needing their own
  * PNG. Returns undefined when no ancestor matches → caller falls back to
- * /tbmq-og.png.
+ * OG_FALLBACK.
  *
- * UK pages reuse the EN card via path normalization (the /uk/ prefix is stripped).
+ * UK pages (locale currently disabled) would reuse the EN card via path
+ * normalization — the /uk/ prefix is stripped.
  */
 export function getOgImageUrl(pathname: string): string | undefined {
 	let key = pathname;
