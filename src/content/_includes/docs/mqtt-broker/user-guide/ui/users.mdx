@@ -1,15 +1,18 @@
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
-{props.product !== Products.TBMQ_PE && (
-  <p>TBMQ provides a single user role: <strong>Administrator</strong>. Administrators have full permissions to create, update, and delete user accounts.</p>
-)}
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 
-{props.product === Products.TBMQ_PE && (
-  <p>TBMQ includes two predefined user roles: <strong>Administrator</strong> and <strong>Viewer</strong>. For a detailed explanation of role-based access control, see <DocLink product={props.product} path="security/rbac">RBAC</DocLink>.</p>
-)}
+TBMQ provides a single user role: **Administrator**. Administrators have full permissions to create, update, and delete user accounts.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+
+TBMQ includes two predefined user roles: **Administrator** and **Viewer**. For a detailed explanation of role-based access control, see <DocLink product={props.product} path="security/rbac">RBAC</DocLink>.
+</ShowFor>
 
 User management can be performed through the Web UI or <DocLink product={props.product} path="user-management">REST API</DocLink>.
 
@@ -60,17 +63,13 @@ Administrators can log in as other users without requiring their credentials.
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/login-as-user.png', alt: 'Click Login button in the user row to log in as that user', caption: 'In the Users table, select the desired user and click the Login button to proceed.' },
 ]} />
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <ConditionalHeading level={2} id="user-created-via-oauth-20" showFor="mqtt-broker-pe">User created via OAuth 2.0</ConditionalHeading>
-    <p>
-      If a user signs in using <DocLink product={props.product} path="security/oauth-2-support/#basic-mapper">OAuth 2.0</DocLink> while the <strong>Allow user creation</strong> option is enabled,
-      the user account is automatically created without a password.
-      These users can continue using SSO to log in.
-    </p>
-    <p>
-      To enable username/password login, go to <strong>Account → Security</strong> and <DocLink product={props.product} path="user-guide/ui/settings/#change-password">set a new password</DocLink>.
-      Leave the <strong>Current password</strong> field empty when setting the password for the first time.
-    </p>
-  </>
-)}
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="user-created-via-oauth-20" showFor="mqtt-broker-pe">User created via OAuth 2.0</ConditionalHeading>
+
+If a user signs in using <DocLink product={props.product} path="security/oauth-2-support/#basic-mapper">OAuth 2.0</DocLink> while the **Allow user creation** option is enabled,
+the user account is automatically created without a password.
+These users can continue using SSO to log in.
+
+To enable username/password login, go to **Account → Security** and <DocLink product={props.product} path="user-guide/ui/settings/#change-password">set a new password</DocLink>.
+Leave the **Current password** field empty when setting the password for the first time.
+</ShowFor>

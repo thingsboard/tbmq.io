@@ -1,109 +1,46 @@
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <ConditionalHeading level={2} id="v230PE" showFor="mqtt-broker-pe">v2.3.0 (May 12, 2026)</ConditionalHeading>
-    <p>
-      This release includes all features, improvements, and bug fixes from{' '}
-      <a href="#v230-may-12-2026">TBMQ v2.3.0</a>, along with the following Professional Edition exclusive updates:
-    </p>
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="v230PE" showFor="mqtt-broker-pe">v2.3.0 (May 12, 2026)</ConditionalHeading>
 
-    <p><strong>Main features</strong></p>
-    <ul>
-      <li>
-        <strong>Audit Logs:</strong> Introduced comprehensive audit logging to track and record all
-        administrative actions and system events. This provides full visibility into user activities,
-        configuration changes, and operational events — essential for compliance, security monitoring,
-        and troubleshooting in enterprise environments.
-      </li>
-      <li>
-        <strong>SSO Role Management:</strong> Enhanced the Single Sign-On (SSO) integration with
-        advanced role mapping capabilities. Administrators can now define role assignment strategies
-        that automatically map identity provider (IdP) roles to TBMQ roles during authentication.
-        This streamlines user provisioning and ensures consistent access control across federated
-        environments.
-      </li>
-    </ul>
+This release includes all features, improvements, and bug fixes from [TBMQ v2.3.0](#v230-may-12-2026), along with the following Professional Edition exclusive updates:
 
-    <p><strong>Improvements</strong></p>
-    <ul>
-      <li>
-        <strong>OAuth interface redesign:</strong> Redesigned the OAuth 2.0 / SSO configuration
-        interface with an improved layout and user experience, making it easier to set up and manage
-        identity provider integrations.
-      </li>
-      <li>
-        <strong>Internationalization:</strong> Added Spanish, Hindi, and Chinese (Simplified)
-        translations, expanding accessibility for a broader global audience.
-      </li>
-      <li>
-        <strong>Home page and getting started updates:</strong> Updated the home page, login screen,
-        and getting started guide with refreshed visuals and improved onboarding content.
-      </li>
-    </ul>
+**Main features**
 
-    <ConditionalHeading level={2} id="v220PE" showFor="mqtt-broker-pe">v2.2.0 (January 20, 2026)</ConditionalHeading>
-    <p>
-      This release includes all features, improvements, and bug fixes from{' '}
-      <a href="#v220-september-1-2025">TBMQ v2.2.0</a>, along with the following Professional Edition exclusive updates:
-    </p>
+- **Audit Logs:** Introduced comprehensive audit logging to track and record all administrative actions and system events. This provides full visibility into user activities, configuration changes, and operational events — essential for compliance, security monitoring, and troubleshooting in enterprise environments.
+- **SSO Role Management:** Enhanced the Single Sign-On (SSO) integration with advanced role mapping capabilities. Administrators can now define role assignment strategies that automatically map identity provider (IdP) roles to TBMQ roles during authentication. This streamlines user provisioning and ensures consistent access control across federated environments.
 
-    <p><strong>Main features</strong></p>
-    <ul>
-      <li>
-        <strong>Single Sign-On / OAuth 2.0:</strong> Integrate with corporate identity providers (IdPs) via
-        Single Sign-On (SSO) and the OAuth 2.0 framework. This centralizes user management, enforces strong
-        authentication, and improves the overall security posture for TBMQ users and administrators.
-      </li>
-      <li>
-        <strong>Role-Based Access Control (RBAC):</strong> RBAC system allowing administrators to define
-        fine-grained access permissions based on roles. This ensures users only
-        have access to the specific administrative functions and resources necessary for their job, which
-        is crucial for compliance and security segmentation.
-      </li>
-      <li>
-        <strong>White Labeling (Custom Branding):</strong> Provide the ability to fully customize the
-        TBMQ UI with custom logos, color schemes, and branding elements. This allows partners and
-        enterprise users to integrate the broker management UI directly into their own product ecosystem.
-      </li>
-    </ul>
+**Improvements**
 
-    <p><strong>Core system and operational improvements</strong></p>
-    <ul>
-      <li>
-        <strong>Security and performance:</strong> Vulnerability fixes across core services and deployment
-        scripts. Significant memory and performance optimizations to enhance throughput and reduce
-        operational costs.
-      </li>
-      <li>
-        <strong>Modernized system dependencies:</strong> Upgraded core components to the latest stable
-        versions, including <strong>Apache Kafka 4.0</strong>, <strong>Valkey 8.0</strong>, and{' '}
-        <strong>PostgreSQL 17</strong>. This ensures long-term stability and access to the latest
-        performance enhancements.
-      </li>
-      <li>
-        <strong>Advanced networking control:</strong> Introduced the ability to control the Proxy Protocol
-        configuration independently for each MQTT listener (TCP, TLS, WS, WSS). This offers greater
-        flexibility in complex networking environments and load-balancer setups.
-      </li>
-      <li>
-        <strong>Flexible certificate authentication:</strong> Added support to use the Common Name (CN)
-        placeholder for X.509 Certificate Chain credentials within authentication rules. This simplifies
-        the creation of dynamic, certificate-based authentication policies.
-      </li>
-      <li>
-        <strong>Authentication reliability fix:</strong> Resolved a validation bug in the JWT
-        authentication provider when switching between PEM and JWKS (JSON Web Key Set) formats, ensuring stable
-        authentication across dynamic key rotation setups.
-      </li>
-    </ul>
+- **OAuth interface redesign:** Redesigned the OAuth 2.0 / SSO configuration interface with an improved layout and user experience, making it easier to set up and manage identity provider integrations.
+- **Internationalization:** Added Spanish, Hindi, and Chinese (Simplified) translations, expanding accessibility for a broader global audience.
+- **Home page and getting started updates:** Updated the home page, login screen, and getting started guide with refreshed visuals and improved onboarding content.
 
-    <ConditionalHeading level={2} id="ce-release-history" showFor="mqtt-broker-pe">Community Edition release history</ConditionalHeading>
-    <p>The following release notes cover all Community Edition versions included in TBMQ.</p>
-  </>
-)}
+<ConditionalHeading level={2} id="v220PE" showFor="mqtt-broker-pe">v2.2.0 (January 20, 2026)</ConditionalHeading>
+
+This release includes all features, improvements, and bug fixes from [TBMQ v2.2.0](#v220-september-1-2025), along with the following Professional Edition exclusive updates:
+
+**Main features**
+
+- **Single Sign-On / OAuth 2.0:** Integrate with corporate identity providers (IdPs) via Single Sign-On (SSO) and the OAuth 2.0 framework. This centralizes user management, enforces strong authentication, and improves the overall security posture for TBMQ users and administrators.
+- **Role-Based Access Control (RBAC):** RBAC system allowing administrators to define fine-grained access permissions based on roles. This ensures users only have access to the specific administrative functions and resources necessary for their job, which is crucial for compliance and security segmentation.
+- **White Labeling (Custom Branding):** Provide the ability to fully customize the TBMQ UI with custom logos, color schemes, and branding elements. This allows partners and enterprise users to integrate the broker management UI directly into their own product ecosystem.
+
+**Core system and operational improvements**
+
+- **Security and performance:** Vulnerability fixes across core services and deployment scripts. Significant memory and performance optimizations to enhance throughput and reduce operational costs.
+- **Modernized system dependencies:** Upgraded core components to the latest stable versions, including **Apache Kafka 4.0**, **Valkey 8.0**, and **PostgreSQL 17**. This ensures long-term stability and access to the latest performance enhancements.
+- **Advanced networking control:** Introduced the ability to control the Proxy Protocol configuration independently for each MQTT listener (TCP, TLS, WS, WSS). This offers greater flexibility in complex networking environments and load-balancer setups.
+- **Flexible certificate authentication:** Added support to use the Common Name (CN) placeholder for X.509 Certificate Chain credentials within authentication rules. This simplifies the creation of dynamic, certificate-based authentication policies.
+- **Authentication reliability fix:** Resolved a validation bug in the JWT authentication provider when switching between PEM and JWKS (JSON Web Key Set) formats, ensuring stable authentication across dynamic key rotation setups.
+
+<ConditionalHeading level={2} id="ce-release-history" showFor="mqtt-broker-pe">Community Edition release history</ConditionalHeading>
+
+The following release notes cover all Community Edition versions included in TBMQ.
+</ShowFor>
 
 ## v2.3.0 (May 12, 2026)
 
