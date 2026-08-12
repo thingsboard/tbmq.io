@@ -111,7 +111,7 @@ export default defineConfig({
         },
         routeMiddleware: './src/routeData.ts',
         editLink: {
-            baseUrl: 'https://github.com/thingsboard/thingsboard.io/edit/main',
+            baseUrl: 'https://github.com/thingsboard/tbmq.io/edit/main',
         },
         defaultLocale: 'root',
         locales: {
