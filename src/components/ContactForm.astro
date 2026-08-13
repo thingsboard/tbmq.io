@@ -75,17 +75,12 @@ const { mode = 'page' } = Astro.props;
 					<label for="subject" class="select-label">
 						<select class="form-control select" name="subject" id="subject">
 							<option value="" disabled selected hidden>Select Subject</option>
+							<option value="TBMQ">Sales Inquiry</option>
 							<option value="Technical Support">Technical Support</option>
-							<option value="ThingsBoard Products">ThingsBoard Products</option>
 							<option value="Private Cloud">Private Cloud</option>
 							<option value="Deployment Options">Deployment Options</option>
-							<option value="Custom Development Service">Custom Development Service</option>
-							<option value="Training">Training</option>
-							<option value="Professional Services">Professional Services</option>
 							<option value="Partnership">Partnership</option>
-							<option value="Press or Analyst Inquiry">Press or Analyst Inquiry</option>
 							<option value="General Feedback">General Feedback</option>
-							<option value="TBMQ">TBMQ</option>
 							<option value="Other">Other</option>
 						</select>
 						<p>Subject</p>
@@ -287,7 +282,10 @@ const { mode = 'page' } = Astro.props;
 		const message = params.get('message');
 		if (subject) {
 			const sel = form.querySelector<HTMLSelectElement>('select[name="subject"]');
-			if (sel) {
+			// Ignore values that don't match an option (e.g. legacy links to
+			// removed subjects) — assigning them would blank the select instead
+			// of keeping the default.
+			if (sel && Array.from(sel.options).some((o) => o.value === subject)) {
 				sel.value = subject;
 				updateSelectEmpty(sel);
 			}
