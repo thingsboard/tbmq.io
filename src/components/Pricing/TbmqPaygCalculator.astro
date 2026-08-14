@@ -3,7 +3,7 @@ import { Icon } from 'astro-icon/components';
 import CalculatorInline from './CalculatorInline.astro';
 ---
 
-<CalculatorInline id="tbmq-payg-calc" title="TBMQ Self-managed calculator">
+<CalculatorInline id="tbmq-payg-calc">
 	<div slot="header">
 		<div class="calc-title-row"><h2 class="calc-title">TBMQ Pay-as-you-go calculator</h2></div>
 	</div>
@@ -222,40 +222,17 @@ import CalculatorInline from './CalculatorInline.astro';
 
 <script>
 	// Lazy-load the TBMQ PAYG calculator. Body lives in
-	// `src/scripts/pricing/calc-tbmq-payg.ts` and only loads when TBMQ pricing
-	// is active — visitors deep-linked to legacy ThingsBoard content never pay
-	// its parse cost.
-	//
-	// Two init paths, because the calc must load both on a later activation AND
-	// on the initial load that lands directly on TBMQ:
-	//   1. `pricing:product-activated` (detail 'tbmq') — dispatched by
-	//      activateProductTab() in pricing/index.astro.
-	//   2. On registration, if TBMQ is ALREADY the active product. We can't
-	//      rely on (1) for the initial activation: both this loader and the
-	//      initPricing() dispatcher are hoisted module scripts with no
-	//      guaranteed execution order, so initPricing() can fire the one-shot
-	//      event before this listener is attached. The pre-paint inline script
-	//      in index.astro sets each `.pricing-product-content` visibility during
-	//      HTML parse (before any module runs), so by the time this deferred
-	//      loader executes the TBMQ section's display state is already correct —
-	//      we read it directly.
-	// initTbmqPaygCalc() is idempotent (container `data-inited` guard), so the
-	// two paths can't double-init. The `_tbmqPaygLoaderInited` flag registers
-	// the listener once.
+	// `src/scripts/pricing/calc-tbmq-payg.ts` — the dynamic import keeps its
+	// parse cost out of the initial bundle.
+	// initTbmqPaygCalc() is idempotent (container `data-inited` guard); the
+	// `_tbmqPaygLoaderInited` flag keeps the import one-shot if this hoisted
+	// script ever runs again.
 	if (!(window as any)._tbmqPaygLoaderInited) {
 		(window as any)._tbmqPaygLoaderInited = true;
-		const loadCalc = () =>
-			import('~/scripts/pricing/calc-tbmq-payg')
-				.then((m) => m.initTbmqPaygCalc())
-				.catch(() => {
-					/* chunk fetch failed — keep the console clean */
-				});
-		document.addEventListener('pricing:product-activated', ((e: CustomEvent) => {
-			if (e.detail === 'tbmq') loadCalc();
-		}) as EventListener);
-		const tbmqContent = document.querySelector(
-			'.pricing-product-content[data-product-content="tbmq"]'
-		) as HTMLElement | null;
-		if (tbmqContent && tbmqContent.style.display !== 'none') loadCalc();
+		import('~/scripts/pricing/calc-tbmq-payg')
+			.then((m) => m.initTbmqPaygCalc())
+			.catch(() => {
+				/* chunk fetch failed — keep the console clean */
+			});
 	}
 </script>

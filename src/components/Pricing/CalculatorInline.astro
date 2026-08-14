@@ -3,7 +3,6 @@ import { Icon } from 'astro-icon/components';
 
 interface Props {
 	id: string;
-	title: string;
 }
 
 const { id } = Astro.props as Props;
@@ -143,40 +142,20 @@ const { id } = Astro.props as Props;
 	}
 
 	.calc-panel--inputs {
-		flex: 3;
 		background: var(--color-bg-surface);
 		border-radius: 16px;
 
 		@include media-down(lg) {
-			flex: none;
 			border-radius: 0;
 		}
 	}
 
 	.calc-panel--results {
-		flex: 2;
 		background: rgba(var(--color-primary-rgb), 0.04);
 		border-radius: 16px;
 
 		@include media-down(lg) {
 			border-radius: 0;
-		}
-	}
-
-	.calc-panel-fixed {
-		flex-shrink: 0;
-		display: flex;
-		align-items: center;
-		min-height: 64px;
-		padding: $spacing-3 32px;
-
-		@include media-down(md) {
-			padding: $spacing-3 $spacing-5;
-		}
-
-		// Let children fill width
-		> * {
-			width: 100%;
 		}
 	}
 
@@ -235,8 +214,6 @@ const { id } = Astro.props as Props;
 		display: flex;
 		gap: $spacing-2;
 	}
-
-	@include calc-icon-btn;
 
 	// ═══════════════════════════════════════════
 	// RESULTS FOOTER (total + CTA)
@@ -492,43 +469,6 @@ const { id } = Astro.props as Props;
 		}
 	}
 
-	// ─── Select input ───
-	.calc-select-input {
-		height: 36px;
-		padding: 0 24px 0 $spacing-3;
-		font-size: $font-size-sm;
-		font-weight: $font-weight-medium;
-		text-align: left;
-		border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-		border-radius: $radius-lg;
-		background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: right 8px center;
-		background-size: 10px 6px;
-		-webkit-appearance: none;
-		appearance: none;
-		color: var(--color-text);
-		cursor: pointer;
-
-		[data-theme='dark'] & {
-			color-scheme: dark;
-			background-color: rgba(var(--color-primary-rgb), 0.06);
-		}
-
-		option {
-			background: var(--color-bg-surface);
-			color: var(--color-text);
-			text-align: left;
-			direction: ltr;
-		}
-
-		&:focus {
-			outline: none;
-			border-color: var(--color-primary);
-		}
-	}
-
 	// ─── Slider ───
 	.calc-slider-container {
 		position: relative;
@@ -701,41 +641,6 @@ const { id } = Astro.props as Props;
 		-moz-appearance: textfield;
 	}
 
-	// ─── Input row with select + stepper ───
-	.calc-input-combo {
-		display: flex;
-		align-items: center;
-		gap: $spacing-3;
-
-		.calc-select-input,
-		.calc-payload-btn {
-			min-width: 130px;
-			text-align: center;
-		}
-
-		// Empty alignment spacer that keeps single-stepper rows column-aligned
-		// with rows that have a leading select/button.
-		.calc-row-spacer {
-			min-width: 130px;
-		}
-
-		@include media-down(sm) {
-			justify-content: flex-end;
-
-			// Alignment spacer (used on the Retention row to line its stepper
-			// up with the rows above) — drop it when the row stacks.
-			.calc-row-spacer {
-				display: none;
-			}
-
-			.calc-select-input,
-			.calc-payload-btn {
-				min-width: 0;
-				flex: 1 1 auto;
-			}
-		}
-	}
-
 	// ═══════════════════════════════════════════
 	// ADD-ONS GRID
 	// ═══════════════════════════════════════════
@@ -772,16 +677,6 @@ const { id } = Astro.props as Props;
 			border-color: var(--color-primary);
 			background: rgba(var(--color-primary-rgb), 0.03);
 		}
-
-		&.addon-free {
-			border-color: var(--color-primary);
-			background: rgba(var(--color-primary-rgb), 0.03);
-		}
-
-		&.addon-disabled {
-			opacity: 0.5;
-			pointer-events: none;
-		}
 	}
 
 	.calc-addon-header {
@@ -799,24 +694,6 @@ const { id } = Astro.props as Props;
 		display: flex;
 		align-items: center;
 		gap: 4px;
-	}
-
-	.calc-addon-badge {
-		display: none;
-		position: absolute;
-		top: -9px;
-		left: 12px;
-		font-size: 10px;
-		font-weight: $font-weight-bold;
-		color: var(--color-primary);
-		padding: 1px $spacing-2;
-		border: 1px solid var(--color-primary);
-		border-radius: 3px;
-		background: var(--color-bg-surface);
-		letter-spacing: 0.3px;
-		line-height: 1.4;
-
-		.addon-free & { display: inline-block; }
 	}
 
 	.calc-addon-desc {
@@ -899,26 +776,6 @@ const { id } = Astro.props as Props;
 	// RESULTS — content
 	// ═══════════════════════════════════════════
 
-	.calc-optimal-plan {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: $spacing-5;
-		padding-bottom: $spacing-5;
-		border-bottom: 1px solid var(--sl-color-gray-5);
-
-		.calc-optimal-label {
-			font-size: $font-size-lg;
-			color: var(--color-text);
-		}
-
-		.calc-optimal-value {
-			font-size: $font-size-lg;
-			font-weight: $font-weight-semibold;
-			color: var(--color-primary);
-		}
-	}
-
 	// ─── Collapsible section ───
 	.calc-section {
 		margin-bottom: $spacing-3;
@@ -944,15 +801,6 @@ const { id } = Astro.props as Props;
 		font-size: $font-size-base;
 		font-weight: $font-weight-medium;
 		color: var(--color-text);
-
-		.calc-info-icon {
-			width: 14px;
-			height: 14px;
-			color: var(--color-text);
-			opacity: 0.7;
-			vertical-align: middle;
-			margin-left: 2px;
-		}
 	}
 
 	.calc-section-body {
@@ -988,13 +836,6 @@ const { id } = Astro.props as Props;
 			&:has(.calc-tooltip)::after,
 			&:has(.calc-result-badge)::after {
 				display: none;
-			}
-
-			.calc-info-icon {
-				width: 12px;
-				height: 12px;
-				color: var(--color-text-secondary);
-				opacity: 0.5;
 			}
 		}
 	}
@@ -1163,13 +1004,6 @@ const { id } = Astro.props as Props;
 			@include media-down(sm) {
 				font-size: $font-size-lg;
 			}
-
-			.calc-info-icon {
-				width: 12px;
-				height: 12px;
-				color: var(--color-text-secondary);
-				opacity: 0.5;
-			}
 		}
 	}
 
@@ -1247,52 +1081,6 @@ const { id } = Astro.props as Props;
 		}
 	}
 
-	// ═══════════════════════════════════════════
-	// WHITE LABELING PROMPT
-	// ═══════════════════════════════════════════
-
-	.calc-wl-prompt {
-		display: flex;
-		align-items: center;
-		gap: $spacing-2;
-		padding: $spacing-2 $spacing-3;
-		background: rgba(var(--color-primary-rgb), 0.04);
-		border-radius: $radius-sm;
-		margin-top: $spacing-2;
-		font-size: $font-size-xs;
-		color: var(--color-text-secondary);
-		font-style: italic;
-
-		&.hidden { display: none; }
-
-		button {
-			color: var(--color-primary);
-			font-weight: $font-weight-medium;
-			background: none;
-			border: none;
-			cursor: pointer;
-			font-size: $font-size-xs;
-			font-style: normal;
-			&:hover { text-decoration: underline; }
-		}
-	}
-
-	// ═══════════════════════════════════════════
-	// ENTERPRISE MESSAGE
-	// ═══════════════════════════════════════════
-
-	.calc-enterprise-msg {
-		font-size: $font-size-sm;
-		color: var(--color-text-secondary);
-		line-height: 1.6;
-		margin: $spacing-4 0;
-	}
-
-	// ═══════════════════════════════════════════
-	// HIDDEN UTILITY
-	// ═══════════════════════════════════════════
-
-	.calc-hidden { display: none !important; }
 </style>
 
 <script is:inline>
@@ -1410,9 +1198,6 @@ const { id } = Astro.props as Props;
 				if (activeCalcTip && activeCalcTip.tip !== tip) forceHideCalcTip();
 				if (calcShowTimer) clearTimeout(calcShowTimer);
 
-				// Position — offset by modal wrapper since transform creates a new containing block
-				const modal = trigger.closest('.calc-modal-wrapper') as HTMLElement | null;
-				const modalRect = modal?.getBoundingClientRect() ?? { left: 0, top: 0, right: window.innerWidth };
 				const rect = trigger.getBoundingClientRect();
 				const tipWidth = 262;
 				const margin = 8;
@@ -1437,10 +1222,10 @@ const { id } = Astro.props as Props;
 					flexDir = 'row';
 					clamped = true;
 				}
-				tip.style.left = `${leftVp - modalRect.left}px`;
+				tip.style.left = `${leftVp}px`;
 				tip.style.flexDirection = flexDir;
 				if (arrow) arrow.style.display = clamped ? 'none' : '';
-				tip.style.top = `${rect.top - modalRect.top + rect.height / 2}px`;
+				tip.style.top = `${rect.top + rect.height / 2}px`;
 				tip.style.transform = 'translateY(-50%)';
 				activeCalcTip = { trigger, tip };
 

@@ -3,7 +3,7 @@ import { Icon } from 'astro-icon/components';
 import CalculatorInline from './CalculatorInline.astro';
 ---
 
-<CalculatorInline id="tbmq-pc-calc" title="TBMQ Private Cloud calculator">
+<CalculatorInline id="tbmq-pc-calc">
 	<div slot="header">
 		<div class="calc-title-row">
 			<h2 class="calc-title">TBMQ Private Cloud calculator</h2>
@@ -227,27 +227,16 @@ import CalculatorInline from './CalculatorInline.astro';
 </CalculatorInline>
 
 <script>
-	// Lazy-load the TBMQ Private Cloud calculator. See `TbmqPaygCalculator.astro`
-	// for the full rationale (two init paths: the `pricing:product-activated`
-	// event for tab switches, plus an immediate load when TBMQ is already the
-	// active product on a deep-link, since hoisted-script order isn't
-	// guaranteed). initMqpcCalc() is idempotent, so the paths can't double-init.
-	// Listener registered once per document lifetime.
+	// Lazy-load the TBMQ Private Cloud calculator — a dynamic import keeps its
+	// parse cost out of the initial bundle. initMqpcCalc() is idempotent; the
+	// flag keeps the import one-shot if this hoisted script ever runs again.
 	if (!(window as any)._tbmqPcLoaderInited) {
 		(window as any)._tbmqPcLoaderInited = true;
-		const loadCalc = () =>
-			import('~/scripts/pricing/calc-tbmq-pc')
-				.then((m) => m.initMqpcCalc())
-				.catch(() => {
-					/* chunk fetch failed — keep the console clean */
-				});
-		document.addEventListener('pricing:product-activated', ((e: CustomEvent) => {
-			if (e.detail === 'tbmq') loadCalc();
-		}) as EventListener);
-		const tbmqContent = document.querySelector(
-			'.pricing-product-content[data-product-content="tbmq"]'
-		) as HTMLElement | null;
-		if (tbmqContent && tbmqContent.style.display !== 'none') loadCalc();
+		import('~/scripts/pricing/calc-tbmq-pc')
+			.then((m) => m.initMqpcCalc())
+			.catch(() => {
+				/* chunk fetch failed — keep the console clean */
+			});
 	}
 </script>
 

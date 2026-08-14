@@ -14,14 +14,13 @@ interface SubTab {
 }
 
 interface Props {
-	product: string;
 	tabs: SubTab[];
 }
 
-const { product, tabs } = Astro.props;
+const { tabs } = Astro.props;
 ---
 
-<div class="segment-tabs segment-tabs--sub" data-product-subtabs={product}>
+<div class="segment-tabs segment-tabs--sub">
 	{
 		tabs.map((tab) => (
 			<button
