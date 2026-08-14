@@ -10,6 +10,9 @@ export const TITLE_SEPARATOR = '|';
  */
 export const PROD_ORIGIN = 'https://tbmq.io';
 
+/** Base for "Edit page" links — Starlight's editLink and the stub-rewrite middleware share it. */
+export const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
+
 /** Global OG-card fallback for pages without a generated per-page card. */
 export const OG_FALLBACK = '/tbmq-og.png';
 

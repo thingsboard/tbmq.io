@@ -52,19 +52,6 @@ export function getSitemapSourceRegistry(): Map<string, SitemapSources> {
 	return globalMap<string, SitemapSources>(REGISTRY_KEY);
 }
 
-/**
- * Largest finite, positive epoch (ms) among the inputs, as an ISO string — or
- * `null` if none qualify. Shared by both `<lastmod>` paths (git commit dates and
- * explicit API timestamps) so the formatting stays identical.
- */
-export function maxEpochToIso(epochsMs: Iterable<number | null | undefined>): string | null {
-	let latest = 0;
-	for (const ms of epochsMs) {
-		if (typeof ms === 'number' && Number.isFinite(ms) && ms > latest) latest = ms;
-	}
-	return latest > 0 ? new Date(latest).toISOString() : null;
-}
-
 /** Canonical key shape: always a single leading and trailing slash. */
 export function normalizeSitemapPath(pathname: string): string {
 	let p = pathname;

@@ -160,7 +160,7 @@ function stripDocsPrefix(slug: string): string {
 
 /** Walk src/pages/ for .astro files, skipping dynamic [...] routes and known non-content dirs. */
 function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pathname: string }>): void {
-	const SKIP_DIRS = new Set(['open-graph', 'docs', 'blog', 'case-studies', 'use-cases', 'device-library']);
+	const SKIP_DIRS = new Set(['open-graph', 'docs', 'blog']);
 	const dir = path.join(root, rel);
 	let entries: fs.Dirent[];
 	try {

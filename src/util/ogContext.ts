@@ -1,4 +1,4 @@
-/** Slug words whose display form is an acronym, not a capitalized word. */
+/** Slug words whose display form is not a plainly capitalized word (acronyms, brand casing). */
 const ACRONYMS = new Map([
 	['mqtt', 'MQTT'],
 	['tbmq', 'TBMQ'],
@@ -6,16 +6,30 @@ const ACRONYMS = new Map([
 	['ui', 'UI'],
 	['tls', 'TLS'],
 	['qos', 'QoS'],
+	['http', 'HTTP'],
+	['amqp', 'AMQP'],
+	['coap', 'CoAP'],
+	['rest', 'REST'],
+	['websocket', 'WebSocket'],
+	['id', 'ID'],
 ]);
+
+/** Service words kept lowercase in every position but the first: 'what-is-mqtt' → 'What is MQTT'. */
+const LOWERCASE_PARTICLES = new Set(['a', 'an', 'and', 'for', 'is', 'of', 'the', 'to', 'vs']);
 
 /**
  * Prettify a URL segment for display: 'mqtt-5' → 'MQTT 5',
- * 'getting-started' → 'Getting Started'.
+ * 'getting-started' → 'Getting Started', 'mqtt-vs-amqp' → 'MQTT vs AMQP'.
  */
 export function prettifySegment(seg: string): string {
 	return seg
 		.split('-')
-		.map((w) => ACRONYMS.get(w) ?? (w ? w[0]!.toUpperCase() + w.slice(1) : w))
+		.map((w, i) => {
+			const acronym = ACRONYMS.get(w);
+			if (acronym) return acronym;
+			if (i > 0 && LOWERCASE_PARTICLES.has(w)) return w;
+			return w ? w[0]!.toUpperCase() + w.slice(1) : w;
+		})
 		.join(' ');
 }
 

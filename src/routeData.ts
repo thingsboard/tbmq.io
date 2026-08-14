@@ -15,7 +15,14 @@ import {
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
-import { devSafeOgImagePath, DOCS_SUFFIX, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
+import {
+	devSafeOgImagePath,
+	DOCS_SUFFIX,
+	EDIT_BASE_URL,
+	formatDocsTitle,
+	OG_FALLBACK,
+	TITLE_SEPARATOR,
+} from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 // No alias covers `config/`; relative import is the only option here.
 import {
@@ -41,7 +48,6 @@ const API_SECTION_NAMES: Record<string, string> = {
 /** Memoization cache for `linkMatchesVersion(href) && linkMatchesLanguage(href)`. */
 const sidebarLinkMatchCache = new Map<string, boolean>();
 
-const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 const INCLUDES_IMPORT_REGEX = /^\s*import\s+\w+\s+from\s+['"]@includes\/([^'"]+)['"]/gm;
 const JSX_COMPONENT_REGEX = /^\s*<[A-Z][A-Za-z0-9]*\b/gm;
 /** filePath → include path relative to `_includes/` (e.g. `docs/introduction.mdx`), or `null`. */
@@ -161,9 +167,7 @@ function sidebarEntryMatchesVersionAndLanguage(
 		return match;
 	}
 	if (entry.type === 'group') {
-		entry.entries = entry.entries.filter((child) =>
-			sidebarEntryMatchesVersionAndLanguage(child, version, lang)
-		);
+		entry.entries = entry.entries.filter((child) => sidebarEntryMatchesVersionAndLanguage(child, version, lang));
 		return entry.entries.length > 0;
 	}
 	return true;
@@ -343,4 +347,3 @@ function updateHead(context: APIContext) {
 		}
 	}
 }
-

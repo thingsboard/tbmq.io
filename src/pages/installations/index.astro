@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductSection from '../../components/Installations/ProductSection.astro';
-import { products } from '~/data/installations';
-
-const tbmq = products.find((p) => p.id === 'mqtt-broker')!;
+import { mqttBrokerProduct } from '~/data/installations';
 ---
 
 <BaseLayout
@@ -13,7 +11,7 @@ const tbmq = products.find((p) => p.id === 'mqtt-broker')!;
 	pageId="installations"
 >
 	<div class="install-content">
-		<ProductSection data={tbmq} />
+		<ProductSection data={mqttBrokerProduct} />
 	</div>
 </BaseLayout>
 
@@ -239,6 +237,5 @@ const tbmq = products.find((p) => p.id === 'mqtt-broker')!;
 				}
 			}
 		}
-
 	}
 </style>

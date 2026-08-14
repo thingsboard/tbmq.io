@@ -209,13 +209,13 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 
 **Key facts:**
 - Cache lives at `node_modules/.og-cache/` (gitignored). Bump `TEMPLATE_VERSION` in `render.ts` to invalidate — required after any change that alters what a card renders.
-- `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori. `render.ts` throws when `SKIP_OG` is combined with `CONTEXT=production` so a production build can't ship fallback cards silently. **Caveat:** `CONTEXT` is a Netlify variable and deploys run on Cloudflare Pages (which sets `CF_PAGES_*`), so that guard does not currently fire on the real deploy path.
+- `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori. There is deliberately no "production build with SKIP_OG" guard — it keyed on a Netlify variable that never fires on Cloudflare Pages, and the only scripts that set `SKIP_OG` are local verification builds.
 - Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`. Only `/404/` and `/contact-us-thanks/` do so today.
 - Capitalisation of any label derived from a URL segment goes through `prettifySegment` — add to its `ACRONYMS` map rather than hand-casing, or you get "Mqtt".
 - To inspect a card without the slow full build: run `pnpm dev`, read the page's `og:image` URL out of its HTML, and fetch it — Satori runs on demand, so you get the real card (the URL needs the dev trailing slash, see below).
 - **Astro dev quirk:** `trailingSlash: 'always'` makes the dev server 404 dynamic-route URLs that end in `.png`. `devSafeOgImagePath()` in `src/consts.ts` appends a trailing `/` only in `import.meta.env.DEV` so dev links resolve while production HTML keeps the clean `.png` URL Cloudflare serves directly. The global fallback path lives there too as `OG_FALLBACK`.
 
-**To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` and rebuild.
+**To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` **and** a matching `PREFIX_RULES` entry in `marketing-meta.ts` (the build throws on an allowlisted pathname with no rule), then rebuild.
 
 ## Releasing a New TBMQ Version
 

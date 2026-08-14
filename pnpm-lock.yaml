@@ -66,9 +66,6 @@ importers:
       astro:
         specifier: ^6.3.8
         version: 6.3.8(@types/node@24.12.2)(jiti@2.3.3)(rollup@4.60.2)(sass@1.99.0)(yaml@2.8.3)
-      astro-eslint-parser:
-        specifier: ^1.4.0
-        version: 1.4.0
       astro-icon:
         specifier: ^1.1.5
         version: 1.1.5

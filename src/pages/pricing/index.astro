@@ -95,8 +95,8 @@ const tbmqSubTabs = enrichTabs([
 		<PricingHero />
 
 		<!-- ═══ TBMQ product sections ═══ -->
-		<div class="pricing-product-content" data-product-content="tbmq">
-			<ProductSubTabs product="tbmq" tabs={tbmqSubTabs} />
+		<div class="pricing-product-content">
+			<ProductSubTabs tabs={tbmqSubTabs} />
 
 			<!-- TBMQ CE -->
 			<section class="pricing-section" data-section="tbmq-ce">
@@ -165,14 +165,13 @@ const tbmqSubTabs = enrichTabs([
 
 		{
 			/* Pre-paint state sync. Runs synchronously during body parsing — after
-		    all `.product-tab` / `.sub-tab` / `.pricing-section` /
-		    `.pricing-product-content` nodes are in the DOM but before first
-		    paint. Resolves URL→state via the shared window.__resolvePricingState()
-		    (defined just below) so the correct tabs are highlighted and the
-		    correct section is visible from frame 1, even when arriving via a
-		    deep-link URL. Without this, visitors using `?product=…` / `?section=…`
-		    URLs see the SSR-default state painted briefly before initPricing()
-		    swaps it post-parse.
+		    all `.sub-tab` / `.pricing-section` nodes are in the DOM but before
+		    first paint. Resolves URL→state via the shared
+		    window.__resolvePricingState() (defined just below) so the correct
+		    tabs are highlighted and the correct section is visible from frame 1,
+		    even when arriving via a deep-link URL. Without this, visitors using
+		    `?product=…` / `?solution=…` URLs see the SSR-default state painted
+		    briefly before initPricing() swaps it post-parse.
 
 		    initPricing() later calls the same resolver — no-op for state that's
 		    already correct. */
@@ -183,37 +182,28 @@ const tbmqSubTabs = enrichTabs([
 				// `window` from this is:inline script — which runs during body
 				// parsing, before the deferred initPricing() module — so BOTH this
 				// pre-paint block and initPricing() resolve identical state from one
-				// pure function (params → { activeProduct, activeSubTab, activeBilling }).
+				// pure function (params → { activeSubTab, activeBilling }).
 				// The DOM application differs between the two callers and stays
 				// separate in each.
 				window.__resolvePricingState = function (search) {
 					const p = new URLSearchParams(search);
-					const sectionParam = p.get('section');
 					const productParam = p.get('product');
 					const solutionParam = p.get('solution');
-					const sectionMap = {
-						'tbmq-options': { product: 'tbmq' },
-					};
-					let activeProduct = 'tbmq';
 					let activeSubTab = null;
 					let activeBilling = null;
-					if (sectionParam && sectionMap[sectionParam]) {
-						activeProduct = sectionMap[sectionParam].product;
-						if (sectionMap[sectionParam].subtab) activeSubTab = sectionMap[sectionParam].subtab;
-					}
-					// Legacy ThingsBoard values (?product=thingsboard-pe) fall through to
-					// the TBMQ defaults — the ThingsBoard pricing content is gone.
+					// Legacy values (?product=thingsboard-pe, ?section=tbmq-options) fall
+					// through to the TBMQ defaults — the ThingsBoard pricing content and
+					// the product-tab layer are gone.
 					if (productParam && productParam.startsWith('tbmq')) activeSubTab = productParam;
 					if (solutionParam) {
 						const sol = solutionParam.replace(/^pe-/, '');
 						if (sol === 'payg' || sol === 'perpetual') activeBilling = sol;
 					}
-					return { activeProduct, activeSubTab, activeBilling };
+					return { activeSubTab, activeBilling };
 				};
 
 				try {
 					const state = window.__resolvePricingState(location.search);
-					const activeProduct = state.activeProduct;
 					const activeBilling = state.activeBilling;
 					let activeSubTab = state.activeSubTab;
 
@@ -232,32 +222,16 @@ const tbmqSubTabs = enrichTabs([
 									lbl.classList.toggle('active', i === 1);
 								});
 							}
-							const heading = document.querySelector('[data-billing-heading="' + toggleId + '"]');
-							if (heading && heading.dataset.perpetualText) heading.textContent = heading.dataset.perpetualText;
 							const subtitle = document.querySelector('[data-billing-subtitle="' + toggleId + '"]');
 							if (subtitle && subtitle.dataset.perpetualText) subtitle.textContent = subtitle.dataset.perpetualText;
 						});
 					}
 
-					// Product-tab active class
-					document.querySelectorAll('.product-tab').forEach(function (tab) {
-						const isActive = tab.dataset.product === activeProduct;
-						tab.classList.toggle('active', isActive);
-						tab.setAttribute('aria-current', isActive ? 'true' : 'false');
-					});
-
-					// Product-content visibility
-					document.querySelectorAll('.pricing-product-content').forEach(function (el) {
-						el.style.display = el.dataset.productContent === activeProduct ? '' : 'none';
-					});
-
-					// Inside the visible product, swap sub-tab + section state
-					const visible = document.querySelector(
-						'.pricing-product-content[data-product-content="' + activeProduct + '"]'
-					);
+					// Swap sub-tab + section state
+					const visible = document.querySelector('.pricing-product-content');
 					if (!visible) return;
 
-					// Default sub-tab = whichever was SSR'd with .active inside the visible product
+					// Default sub-tab = whichever was SSR'd with .active
 					if (!activeSubTab) {
 						const def = visible.querySelector('.sub-tab.active');
 						if (def) activeSubTab = def.dataset.subtab;
@@ -328,10 +302,9 @@ const tbmqSubTabs = enrichTabs([
 		// post-parse pass can't drift.
 		const params = new URLSearchParams(window.location.search);
 
-		// These stay `let`: activateProductTab(), activateSubTab() and the billing
-		// toggle reassign them as the user navigates. They're seeded with the
-		// SSR-default state so they remain valid even if the resolver is absent.
-		let activeProduct = 'tbmq';
+		// These stay `let`: activateSubTab() and the billing toggle reassign them
+		// as the user navigates. They're seeded with the SSR-default state so
+		// they remain valid even if the resolver is absent.
 		let activeSubTab: string | null = null;
 		let activeBilling: string | null = null;
 		// Guard the resolver call: __resolvePricingState is defined by the
@@ -344,7 +317,7 @@ const tbmqSubTabs = enrichTabs([
 		// fully interactive.
 		const resolvePricingState = (window as any).__resolvePricingState;
 		if (typeof resolvePricingState === 'function') {
-			({ activeProduct, activeSubTab, activeBilling } = resolvePricingState(window.location.search));
+			({ activeSubTab, activeBilling } = resolvePricingState(window.location.search));
 		}
 
 		// ─── Single delegated click listener on the pricing root ───
@@ -362,22 +335,13 @@ const tbmqSubTabs = enrichTabs([
 
 				// Tooltip-info icons that double as "scroll to FAQ" buttons.
 				// Skip if the click landed on a link inside the tooltip body.
-				const faqJump = t.closest<HTMLElement>(
-					'.sub-tab-info, .plan-feature-info, .addon-tooltip-trigger, .comparison-tooltip-trigger'
-				);
+				const faqJump = t.closest<HTMLElement>('.sub-tab-info, .plan-feature-info');
 				if (faqJump) {
 					if (t.closest('a')) return;
 					e.stopPropagation();
 					forceHidePricingTip();
 					const faqId = faqJump.dataset.faqId;
 					if (faqId) scrollToFaqItem(faqId);
-					return;
-				}
-
-				// Product-tab click (top-level tabs).
-				const productTab = t.closest<HTMLElement>('.product-tab');
-				if (productTab) {
-					activateProductTab(productTab.dataset.product!);
 					return;
 				}
 
@@ -403,54 +367,6 @@ const tbmqSubTabs = enrichTabs([
 				}
 			});
 		}
-
-		// ─── Product tabs ───
-		function activateProductTab(product: string, skipSubTabActivation = false) {
-			$$('.product-tab').forEach((tab) => {
-				const isActive = tab.dataset.product === product;
-				tab.classList.toggle('active', isActive);
-				tab.setAttribute('aria-current', isActive ? 'true' : 'false');
-			});
-			$$('.pricing-product-content').forEach((el) => {
-				const pEl = el as HTMLElement;
-				const isActive = el.dataset.productContent === product;
-				pEl.style.display = isActive ? '' : 'none';
-				if (!skipAnimation) {
-					pEl.classList.remove('fade-in');
-					if (isActive) {
-						void pEl.offsetHeight;
-						pEl.classList.add('fade-in');
-						pEl.addEventListener('animationend', () => pEl.classList.remove('fade-in'), { once: true });
-					}
-				}
-				if (isActive) {
-					requestAnimationFrame(() => {
-						if (typeof initAllSliders === 'function') initAllSliders(pEl);
-					});
-				}
-			});
-			activeProduct = product;
-			reportPriceOpen(product);
-			document.dispatchEvent(new CustomEvent('pricing:product-activated', { detail: product }));
-
-			// Active tab background is now CSS-only — no JS positioning needed.
-
-			// Re-activate the visible product's active sub-tab section.
-			const visibleContent = $(`.pricing-product-content[data-product-content="${product}"]`);
-			if (visibleContent) {
-				if (!skipSubTabActivation) {
-					// Find the active sub-tab and re-activate its section (ensures visible class)
-					const activeTab = $('.sub-tab.active', visibleContent);
-					if (activeTab) {
-						activateSubTab((activeTab as HTMLElement).dataset.subtab!);
-					}
-				}
-			}
-
-			updateUrl();
-		}
-
-		// `.product-tab` click is delegated above on `main.pricing-page`.
 
 		// ─── FAQ context mapping ───
 		// Maps sub-tab ID to FAQ context ID(s)
@@ -491,10 +407,7 @@ const tbmqSubTabs = enrichTabs([
 
 		// ─── Sub-tabs ───
 		function activateSubTab(sectionId: string) {
-			// Find the parent product content (visible one)
-			const productContent = document.querySelector(
-				`.pricing-product-content:not([style*="display: none"]):not([style*="display:none"])`
-			) as HTMLElement;
+			const productContent = document.querySelector('.pricing-product-content') as HTMLElement;
 			if (!productContent) return;
 
 			// Toggle sub-tab active state
@@ -659,7 +572,7 @@ const tbmqSubTabs = enrichTabs([
 			requestAnimationFrame(() => {
 				const tipRect = tooltip.getBoundingClientRect();
 				const arrow = tooltip.querySelector(
-					'.plan-feature-tooltip-arrow, .addon-tooltip-arrow, .comparison-tooltip-arrow, .sub-tab-tooltip-arrow'
+					'.plan-feature-tooltip-arrow, .sub-tab-tooltip-arrow'
 				) as HTMLElement | null;
 				let left = rect.right + 4;
 				let flipped = false;
@@ -745,15 +658,13 @@ const tbmqSubTabs = enrichTabs([
 			});
 		}
 
-		// Tooltip mouseenter/mouseleave bindings (per-element, ~hundreds of
-		// triggers across plan cards, addons, comparison table, sub-tab info
-		// icons). `mouseenter` doesn't bubble, so we can't fully delegate;
-		// instead, defer the bind work until the browser is idle so it
-		// doesn't compete with the LCP frame. First hover within ~50 ms of
+		// Tooltip mouseenter/mouseleave bindings — two trigger kinds survive:
+		// `.sub-tab-info` (3) and `.plan-feature-info` (2). `mouseenter` doesn't
+		// bubble, so we can't fully delegate; the bind work is deferred to idle
+		// so it doesn't compete with the LCP frame. First hover within ~50 ms of
 		// page-load might miss a tooltip; acceptable trade-off since the
 		// content isn't blocked, just the tooltip behavior.
-		// `.plan-feature-info` / `.addon-tooltip-trigger` / `.comparison-tooltip-trigger`
-		// click → scroll-to-FAQ is delegated above on `main.pricing-page`.
+		// Their click → scroll-to-FAQ is delegated above on `main.pricing-page`.
 		const bindAllPricingTooltips = () => {
 			$$('.sub-tab-info').forEach((info) => {
 				const tooltip = info.querySelector('.sub-tab-tooltip') as HTMLElement | null;
@@ -789,11 +700,6 @@ const tbmqSubTabs = enrichTabs([
 				const subtitle = document.querySelector(`[data-billing-subtitle="${toggleId}"]`) as HTMLElement | null;
 				if (subtitle) {
 					subtitle.textContent = isRight ? subtitle.dataset.perpetualText || '' : subtitle.dataset.paygText || '';
-				}
-				// Update heading text based on billing mode (mirrors subtitle pattern)
-				const heading = document.querySelector(`[data-billing-heading="${toggleId}"]`) as HTMLElement | null;
-				if (heading) {
-					heading.textContent = isRight ? heading.dataset.perpetualText || '' : heading.dataset.paygText || '';
 				}
 				// Track billing state for URL
 				activeBilling = isRight ? 'perpetual' : 'payg';
@@ -931,29 +837,28 @@ const tbmqSubTabs = enrichTabs([
 		// ─── URL update ───
 		function updateUrl() {
 			const p = new URLSearchParams();
-			p.set('section', 'tbmq-options');
 			if (activeSubTab) {
 				p.set('product', activeSubTab);
 			}
 			if (activeBilling && activeBilling !== 'payg') {
 				p.set('solution', `pe-${activeBilling}`);
 			}
-			const newUrl = `${window.location.pathname}?${p.toString()}`;
+			const qs = p.toString();
+			const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
 			history.replaceState(null, '', newUrl);
 		}
 
 		// ─── Initialize from URL ───
-		activateProductTab(activeProduct, !!activeSubTab);
+		// Page-level PriceOpen beacon, kept from the product-tab era so the GTM
+		// event stream doesn't lose its per-load 'tbmq' entry.
+		reportPriceOpen('tbmq');
+		if (!activeSubTab) {
+			// Fall back to whichever sub-tab was SSR'd active.
+			const defaultTab = $('.pricing-product-content .sub-tab.active');
+			if (defaultTab) activeSubTab = defaultTab.dataset.subtab ?? null;
+		}
 		if (activeSubTab) {
 			activateSubTab(activeSubTab);
-		} else {
-			// Activate default sub-tab
-			const defaultTab = $(
-				`.pricing-product-content:not([style*="display: none"]):not([style*="display:none"]) .sub-tab.active`
-			);
-			if (defaultTab) {
-				activateSubTab(defaultTab.dataset.subtab!);
-			}
 		}
 
 		// Set billing toggle from URL
@@ -1038,21 +943,6 @@ const tbmqSubTabs = enrichTabs([
 		}
 	}
 
-	.pricing-product-content {
-		&.fade-in {
-			animation: pricing-fade-in 0.3s ease forwards;
-		}
-	}
-
-	@keyframes pricing-fade-in {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-
 	.pricing-section-header-row {
 		display: flex;
 		align-items: center;
@@ -1065,7 +955,6 @@ const tbmqSubTabs = enrichTabs([
 		}
 
 		// Toggles inside header row lose their own margins
-		.region-toggle,
 		.billing-toggle {
 			margin-bottom: 0;
 			flex-shrink: 0;
@@ -1076,24 +965,6 @@ const tbmqSubTabs = enrichTabs([
 			align-items: center;
 			text-align: center;
 			gap: $spacing-3;
-		}
-	}
-
-	.pc-billing-toggle-wrap {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		flex-shrink: 0;
-
-		.billing-toggle {
-			margin-bottom: 0;
-		}
-
-		.pc-billing-hint {
-			font-size: $font-size-xs;
-			color: var(--color-primary);
-			margin: $spacing-1 0 0;
-			white-space: nowrap;
 		}
 	}
 
@@ -1125,7 +996,6 @@ const tbmqSubTabs = enrichTabs([
 		flex-direction: row-reverse;
 
 		.plan-feature-tooltip-arrow,
-		.comparison-tooltip-arrow,
 		.sub-tab-tooltip-arrow {
 			border-right-color: transparent;
 			border-left-color: var(--sl-color-gray-5);
@@ -1195,30 +1065,5 @@ const tbmqSubTabs = enrichTabs([
 		color: var(--color-text);
 		text-align: left;
 		margin: 0 0 $spacing-8;
-	}
-
-	.calc-open-row {
-		display: flex;
-		justify-content: center;
-		margin-bottom: $spacing-8;
-	}
-
-	.calc-open-btn {
-		padding: $spacing-3 $spacing-6;
-		font-size: $font-size-sm;
-		font-weight: $font-weight-medium;
-		color: $color-primary;
-		background: transparent;
-		border: 1px solid $color-primary;
-		border-radius: $radius-sm;
-		cursor: pointer;
-		transition:
-			background-color $transition-fast,
-			color $transition-fast;
-
-		&:hover {
-			background: $color-primary;
-			color: #fff;
-		}
 	}
 </style>

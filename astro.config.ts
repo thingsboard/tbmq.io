@@ -9,7 +9,7 @@ import { sitemap } from './config/integrations/sitemap';
 import { rehypeBlogImages } from './config/plugins/rehype-blog-images';
 import { rehypeMdxIncludeHeadings } from './config/plugins/rehype-mdx-include-headings';
 import { rehypeTasklistEnhancer } from './config/plugins/rehype-tasklist-enhancer';
-import { PROD_ORIGIN } from './src/consts';
+import { EDIT_BASE_URL, PROD_ORIGIN } from './src/consts';
 
 import icon from 'astro-icon';
 import svgo from 'vite-plugin-svgo';
@@ -111,7 +111,7 @@ export default defineConfig({
         },
         routeMiddleware: './src/routeData.ts',
         editLink: {
-            baseUrl: 'https://github.com/thingsboard/tbmq.io/edit/main',
+            baseUrl: EDIT_BASE_URL,
         },
         defaultLocale: 'root',
         locales: {
