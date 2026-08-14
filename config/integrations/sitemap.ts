@@ -3,7 +3,7 @@ import type { AstroIntegration } from 'astro';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getSitemapSourceRegistry, maxEpochToIso, normalizeSitemapPath } from '../sitemap-source-registry';
+import { getSitemapSourceRegistry, normalizeSitemapPath } from '../sitemap-source-registry';
 import { getGitDateMap } from '../sitemap/git-date';
 import { captureRoutes } from '../sitemap/route-match';
 import { resolveNonDocSources } from '../sitemap/source-resolve';
@@ -90,6 +90,18 @@ function getCanonicalHref(head: string): string | null {
 		if (href) return href[1] ?? null;
 	}
 	return null;
+}
+
+/**
+ * Largest finite, positive epoch (ms) among the inputs, as an ISO string — or
+ * `null` if none qualify.
+ */
+function maxEpochToIso(epochsMs: Iterable<number | null | undefined>): string | null {
+	let latest = 0;
+	for (const ms of epochsMs) {
+		if (typeof ms === 'number' && Number.isFinite(ms) && ms > latest) latest = ms;
+	}
+	return latest > 0 ? new Date(latest).toISOString() : null;
 }
 
 /**
