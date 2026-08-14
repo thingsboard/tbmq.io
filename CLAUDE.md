@@ -6,9 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **TBMQ website** — the documentation and marketing site for **TBMQ**, the open-source MQTT broker by ThingsBoard. It is built with **Astro + Starlight**.
 
-**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the TBMQ docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed. Some multi-product scaffolding inherited from upstream (the `Products` enum, most of `versions.ts`, several content schema types) still lingers, but it is **no longer kept for merge compatibility** — it is slated for removal. Don't build new code on the non-TBMQ parts. `astro.sidebar.ts` has already been trimmed to the TBMQ sidebars only.
+**This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the TBMQ docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed.
 
-The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking.
+The multi-product scaffolding inherited from upstream has been removed: the `Products` enum, `versions.ts`, the content schema types and `astro.sidebar.ts` are all TBMQ-only now, and the non-TBMQ components, assets and data files are deleted. Two things still linger:
+
+- `src/models/releases-table.ts` and `src/models/upgrade-instructions.ts` — stale ThingsBoard data, rendered nowhere (see "Releasing a New TBMQ Version").
+- Ukrainian locale scaffolding — inert but wired into live code (`src/util/path-utils.ts`, `src/routeData.ts`, `src/util/canonical.ts`, `src/util/getPageCategory.ts`, `translations: { uk }` in `astro.sidebar.ts`). It is the on-ramp if `uk` is ever enabled; leave it alone rather than half-removing it.
+
+The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking. If something removed here is ever needed again, take the current upstream version from there rather than reviving a stale copy out of this repo's history.
 
 ## Commands
 
@@ -28,11 +33,18 @@ pnpm lint:eslint      # ESLint
 pnpm lint:linkcheck   # Link validation (runs a build first)
 pnpm lint:linkcheck:nobuild  # Link validation (skip build)
 pnpm lint:slugcheck   # Validate slugs match across languages
+pnpm lint:steps       # Validate <Steps> usage in docs
+pnpm lint:redirects   # Detect redirect chains
 pnpm format           # Format with Prettier
 pnpm generate:redirects      # Regenerate public/_redirects + public/redirects.json
+pnpm generate:nav-sprite     # Rebuild public/nav-sprite.svg + its manifest
 ```
 
+`generate:nav-sprite` already runs as part of `build` and `build:fast`. Run it by hand after adding or editing an icon in `src/assets/images/landings/nav/` — otherwise `NavIcon` finds no manifest entry and renders nothing (it warns in the dev/build log).
+
 **Build policy:** Before running any build, always ask the user: "Run `pnpm build:fast` to verify, or skip?"
+
+**Comparing two builds** (the reliable way to prove a deletion or refactor changed nothing): two differences are expected and are *not* your change — Starlight `<Tabs>` `tab-panel-N` ids are assigned in page-render order and shuffle between runs, and sitemap `<lastmod>` comes from git commit dates, so it moves as soon as you commit. Anything else that differs is a real output change.
 
 ## Architecture
 
@@ -45,22 +57,26 @@ TBMQ documentation lives in `src/content/docs/docs/` as `.mdx` files with YAML f
 
 Content uses Astro's Content Collections with type-safe Zod schemas defined in `src/content.config.ts`.
 
-**Schema types** determine frontmatter shape: `base`, `deploy`, `backend`, `cms`, `media`, `integration`, `migration`, `tutorial`, `recipe`. The `type` frontmatter field selects the schema. (The schema set is inherited from upstream; TBMQ pages are almost all `base`.)
+**Schema:** there is one docs schema, `baseSchema` (`src/content.config.ts`), and its `type` field is `z.literal('base')` with a default — no page needs to declare it. The upstream `deploy`/`backend`/`cms`/`media`/`integration`/`migration`/`tutorial`/`recipe` types and the component trees they switched on are gone; don't reintroduce a `type:` in frontmatter.
 
 **Sidebar** is configured in `astro.sidebar.ts`. This file has been trimmed to the TBMQ sidebars only — `tbmqSidebar` / `tbmqPeSidebar` and their tab-links (the unused upstream product sidebars were removed). The site consumes the combined `sidebar` export (filtered per edition by route middleware) plus `sidebarTabLinksByPrefix`.
+
+### Route Middleware
+
+`src/routeData.ts` (registered as `routeMiddleware` in `astro.config.ts`) is where per-route behavior lives: SEO head / canonical / OG tags, rewriting "Edit page" to the underlying `_includes` file for thin stubs, recording source files so the sitemap can derive `<lastmod>` from git, filtering the combined sidebar per edition, and marking the active parent item. Anything that has to differ per route but isn't a component belongs here.
 
 ### i18n
 
 - **English-only** at present. `astro.config.ts` sets `defaultLocale: 'root'` (English served at the root, no `/en/` prefix).
-- Ukrainian (`uk`) scaffolding exists but is **commented out / disabled** in `astro.config.ts` ("no translations yet").
-- UI-string translations live in `src/content/i18n/` (`en.json`, `uk.json`); `src/content/i18n/i18n.ts` sets `DEFAULT_LOCALE = 'en'`.
-- Translation status is tracked by Lunaria (`lunaria.config.ts`, `uk` configured there).
+- Ukrainian (`uk`) is **commented out** in `astro.config.ts` ("no translations yet"). The path helpers still understand a `uk/` prefix — see the note in Project Overview.
+- `src/content/i18n/en.json` holds UI-string overrides for Starlight's built-in labels. It currently carries one key, and everything else resolves from Starlight's own translations via `Astro.locals.t()`.
+- Lunaria translation tracking has been removed (no `lunaria.config.ts`, no `uk.json`, no `i18n.ts`).
 
 There is **no** `config/locales.ts` and **no** per-language content directories in this repo — docs are authored once under `src/content/docs/docs/`.
 
 ### Path Alias
 
-`~/*` maps to `./src/*` (configured in tsconfig.json).
+`~/*` and `@root/*` both map to `./src/*`. Narrower aliases exist for the common trees (all in tsconfig.json): `@models/*`, `@components/*`, `@layouts/*`, `@styles/*`, `@data/*`, `@util/*`, and `@includes/*` → `./src/content/_includes/*`.
 
 ### Starlight Customization
 
@@ -80,16 +96,18 @@ Props and usage live in each component file under `src/components/`. Commonly us
 - **DocLink** — product-aware internal links (always use instead of bare markdown links)
 - **Code blocks** — `maxLines`, `collapsible`, `wrap`, `download='file.ext'` meta options; `<Code>` component for dynamic code
 
+**Asset references fail silently, not loudly.** `ImageGallery` swaps in a CDN URL (`https://img.thingsboard.io/…`) when a local asset is missing, and `InstallationCardGrid` renders no icon at all (`svgModules[item.icon] ?? null`). A deleted or renamed image therefore passes both `astro check` and the build. To verify an asset change, grep the built site for `img.thingsboard.io` — the one legitimate hit is `support-ukraine-banner.webp`, which has lived on the CDN since it was removed upstream.
+
 ### Product System
 
-All product identifiers live in `src/models/site.models.ts` as the `Products` enum. The enum and its `productDocsPrefix` map still carry all upstream products (removal pending), but only the TBMQ variants ship content here:
+All product identifiers live in `src/models/site.models.ts` as the `Products` enum, which now has exactly two members:
 
 | Enum value | URL prefix | Content directory |
 |------------|------------|-------------------|
 | `TBMQ` | `''` (empty) | `src/content/docs/docs/` |
 | `TBMQ_PE` | `pe/` | `src/content/docs/docs/pe/` |
 
-Other enum values (`CE`, `PE`, `PAAS`, `EDGE`, `GW`, `LICENSE`, `TRENDZ`, `MOBILE`, …) exist in the model but have **no content** in this repo. Don't add non-TBMQ product content — this is a TBMQ-only site.
+Adding a member to the enum means touching every exhaustive `Record<Products, …>` that hangs off it — `productDocsPrefix` (`site.models.ts`), `productVersions` (`util/path-utils.ts`), `productSuffix` (`ImageGallery.astro`), `repoMap` (`Landing/GitHubButton.astro`), `META_BY_PRODUCT` (`open-graph/_shared/product-meta.ts`). `astro check` fails loudly on each, which is the intended safety net. Don't add non-TBMQ product content — this is a TBMQ-only site.
 
 **URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/getting-started/` (CE), `/docs/pe/...` (PE).
 
@@ -122,7 +140,7 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-For TBMQ, the relevant constants are `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`. The other products' constants (`CE_FULL_VER`, `PE_FULL_VER`, `TRENDZ_VER`, `EDGE_VER`, …) are unused upstream leftovers pending removal — don't reference them in new code.
+The file holds exactly three constants: `TBMQ_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`. The other products' constants have been removed.
 
 ### Custom Plugins
 
@@ -175,19 +193,26 @@ Key rules: **Never hardcode font values** — use the mixins. **Never use compil
 
 ## OG image generation
 
-Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg. Each content collection has its own static endpoint under `src/pages/open-graph/`. One JSX template (`_shared/Card.tsx`) is varied only by an "eyebrow" line and an optional bottom-left meta line.
+Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg. Each content collection has its own static endpoint under `src/pages/open-graph/`. `_shared/Card.tsx` is a dispatcher over two variants — both carry the same TBMQ lockup on the same green slab, so docs and marketing cards read as one site.
 
 **Files:**
-- `src/pages/open-graph/_shared/Card.tsx` — template
+- `src/pages/open-graph/_shared/Card.tsx` — dispatcher; `DocsCard.tsx` (docs pages) and `LogoCard.tsx` (blog, marketing, collection indexes)
+- `src/pages/open-graph/_shared/{Slab,StackedLogo,Background}.tsx` + `colors.ts` — shared slab, TBMQ lockup, backdrop, single `tbmq` gradient
+- `src/pages/open-graph/_assets/icons.ts` — `TBMQ_LOGO_WHITE`, cropped into mark + wordmark by `StackedLogo`
+- `src/pages/open-graph/_shared/page-data.ts` — resolves every page to card props (title, eyebrow, section)
+- `src/pages/open-graph/_shared/marketing-meta.ts` — `PREFIX_RULES` (slab word per URL prefix) + per-page overrides
+- `src/pages/open-graph/_shared/product-meta.ts` — `META_BY_PRODUCT` for docs cards
 - `src/pages/open-graph/_shared/render.ts` — Satori → Resvg pipeline + content-hash cache
 - `src/pages/open-graph/{collection}/[…].png.ts` — three static endpoints: **docs, blog, pages**
-- `src/util/ogContext.ts` — eyebrow / label helpers + `MARKETING_ALLOWLIST`
+- `src/util/ogContext.ts` — `prettifySegment` + `ACRONYMS`, section labels, `MARKETING_ALLOWLIST`
 - `src/util/getOgImageUrl.ts` — pathname → OG PNG URL aggregator
 
 **Key facts:**
-- Cache lives at `node_modules/.og-cache/` (gitignored). Bump `TEMPLATE_VERSION` in `render.ts` to invalidate.
-- `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori.
-- Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`.
+- Cache lives at `node_modules/.og-cache/` (gitignored). Bump `TEMPLATE_VERSION` in `render.ts` to invalidate — required after any change that alters what a card renders.
+- `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori. `render.ts` throws when `SKIP_OG` is combined with `CONTEXT=production` so a production build can't ship fallback cards silently. **Caveat:** `CONTEXT` is a Netlify variable and deploys run on Cloudflare Pages (which sets `CF_PAGES_*`), so that guard does not currently fire on the real deploy path.
+- Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`. Only `/404/` and `/contact-us-thanks/` do so today.
+- Capitalisation of any label derived from a URL segment goes through `prettifySegment` — add to its `ACRONYMS` map rather than hand-casing, or you get "Mqtt".
+- To inspect a card without the slow full build: run `pnpm dev`, read the page's `og:image` URL out of its HTML, and fetch it — Satori runs on demand, so you get the real card (the URL needs the dev trailing slash, see below).
 - **Astro dev quirk:** `trailingSlash: 'always'` makes the dev server 404 dynamic-route URLs that end in `.png`. `devSafeOgImagePath()` in `src/consts.ts` appends a trailing `/` only in `import.meta.env.DEV` so dev links resolve while production HTML keeps the clean `.png` URL Cloudflare serves directly. The global fallback path lives there too as `OG_FALLBACK`.
 
 **To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` and rebuild.
