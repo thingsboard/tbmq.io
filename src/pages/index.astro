@@ -8,7 +8,6 @@ import MiddleFeaturesSection from '../components/MqttBroker/MiddleFeaturesSectio
 import ComparisonTable from '../components/Landing/ComparisonTable.astro';
 import BottomFeaturesSection from '../components/MqttBroker/BottomFeaturesSection.astro';
 import GetStartedSection from '../components/MqttBroker/GetStartedSection.astro';
-import NewsSection from '../components/MqttBroker/NewsSection.astro';
 import { Products } from '@models/site.models';
 
 const tbmqGroups = [
@@ -229,7 +228,6 @@ const tbmqGroups = [
 			</div>
 			<BottomFeaturesSection />
 			<GetStartedSection />
-			<NewsSection />
 		</div>
 	</main>
 </BaseLayout>
@@ -247,7 +245,7 @@ const tbmqGroups = [
 		filter: none;
 	}
 
-	:global(#mqtt-broker #content a:not(.btn):not(.news-tag):not(.news-title)) {
+	:global(#mqtt-broker #content a:not(.btn)) {
 		color: #1f8b4d;
 	}
 </style>

@@ -25,29 +25,13 @@ interface Props {
 const { images, product, cardMode = false } = Astro.props;
 
 const productSuffix: Record<Products, string> = {
-	[Products.CE]: 'ce',
-	[Products.PE]: 'pe',
-	[Products.PAAS]: 'paas',
-	[Products.PAAS_EU]: 'paas-eu',
-	[Products.EDGE]: 'edge',
-	[Products.EDGE_PE]: 'edge-pe',
-	[Products.GW]: 'gw',
-	[Products.LICENSE]: 'license',
-	[Products.IOT_HUB]: 'iot-hub',
-	[Products.TRENDZ]: 'trendz',
-	[Products.MOBILE]: 'mobile',
-	[Products.MOBILE_PE]: 'mobile-pe',
 	[Products.TBMQ]: 'tbmq',
 	[Products.TBMQ_PE]: 'tbmq-pe',
 };
 
 // Fallback chain when a product-specific image is missing.
-// e.g. PAAS_EU → PAAS → PE → base.
+// e.g. TBMQ_PE → TBMQ → base.
 const productFallback: Partial<Record<Products, Products[]>> = {
-	[Products.PAAS]: [Products.PE],
-	[Products.PAAS_EU]: [Products.PAAS, Products.PE],
-	[Products.EDGE_PE]: [Products.EDGE],
-	[Products.MOBILE_PE]: [Products.MOBILE],
 	[Products.TBMQ_PE]: [Products.TBMQ],
 };
 

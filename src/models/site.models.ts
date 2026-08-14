@@ -1,34 +1,10 @@
 export enum Products {
-	CE = 'CE',
-	PE = 'PE',
-	PAAS = 'PAAS',
-	PAAS_EU = 'PAAS_EU',
-	EDGE = 'EDGE',
-	EDGE_PE = 'EDGE_PE',
-	GW = 'GW',
-	LICENSE = 'LICENSE',
-	IOT_HUB = 'IOT_HUB',
-	TRENDZ = 'TRENDZ',
-	MOBILE = 'MOBILE',
-	MOBILE_PE = 'MOBILE_PE',
 	TBMQ = 'TBMQ',
 	TBMQ_PE = 'TBMQ_PE',
 }
 
 /** Maps each product to its docs URL prefix (the segment after /docs/). */
 export const productDocsPrefix: Record<Products, string> = {
-	[Products.CE]: '',
-	[Products.PE]: 'pe/',
-	[Products.PAAS]: 'paas/',
-	[Products.PAAS_EU]: 'paas/eu/',
-	[Products.EDGE]: 'edge/',
-	[Products.EDGE_PE]: 'edge/pe/',
-	[Products.GW]: 'iot-gateway/',
-	[Products.LICENSE]: 'license-server/',
-	[Products.IOT_HUB]: 'iot-hub/',
-	[Products.TRENDZ]: 'trendz/',
-	[Products.MOBILE]: 'mobile/',
-	[Products.MOBILE_PE]: 'mobile/pe/',
 	[Products.TBMQ]: '',
 	[Products.TBMQ_PE]: 'pe/',
 };

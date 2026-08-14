@@ -7,16 +7,12 @@ interface Props {
 
 const { platform = Products.TBMQ } = Astro.props;
 
-const repoMap: Partial<Record<Products, string>> = {
-	[Products.CE]: 'thingsboard/thingsboard',
-	[Products.GW]: 'thingsboard/thingsboard-gateway',
-	[Products.EDGE]: 'thingsboard/thingsboard-edge',
-	[Products.EDGE_PE]: 'thingsboard/thingsboard-edge',
+const repoMap: Record<Products, string> = {
 	[Products.TBMQ]: 'thingsboard/tbmq',
 	[Products.TBMQ_PE]: 'thingsboard/tbmq',
 };
 
-const repo = repoMap[platform] ?? 'thingsboard/thingsboard';
+const repo = repoMap[platform];
 const link = `https://github.com/${repo}`;
 ---
 

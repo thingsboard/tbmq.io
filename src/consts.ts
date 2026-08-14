@@ -10,16 +10,26 @@ export const TITLE_SEPARATOR = '|';
  */
 export const PROD_ORIGIN = 'https://tbmq.io';
 
+/** Global OG-card fallback for pages without a generated per-page card. */
+export const OG_FALLBACK = '/tbmq-og.png';
+
+/**
+ * Astro dev with `trailingSlash: 'always'` 404s dynamic-route URLs that end in
+ * `.png`, so generated card URLs get a trailing slash in dev only — production
+ * keeps the clean URL Cloudflare Pages serves directly. The global fallback is
+ * a real static file and stays untouched.
+ */
+export function devSafeOgImagePath(imagePath: string): string {
+	if (import.meta.env?.DEV && /\.png$/.test(imagePath) && imagePath !== OG_FALLBACK) {
+		return imagePath + '/';
+	}
+	return imagePath;
+}
+
 const SEP = ` ${TITLE_SEPARATOR} `;
 
 export const SECTION_LABELS: Record<string, string> = {
-	'/case-studies/': 'Case Studies',
 	'/blog/': 'Blog',
-	'/use-cases/': 'Use Cases',
-	'/industries/': 'Industries',
-	'/services/': 'Services',
-	// Lives at /clients-feedback/ but is surfaced as "About" in the title for SEO.
-	'/clients-feedback/': 'About',
 };
 
 export function formatSectionIndexTitle(section: string): string {

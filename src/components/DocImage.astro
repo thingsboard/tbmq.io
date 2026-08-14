@@ -60,8 +60,8 @@ const rawSvg = isSvg ? await svgRawModules[src]?.() : undefined;
 let interactiveSvg = rawSvg && /<a[\s>]/i.test(rawSvg) ? rawSvg : null;
 
 // Rewrite hrefs for the current product so inline diagrams navigate within
-// the same product context (CE → PE/PaaS/etc). SVG source stays CE-based.
-if (interactiveSvg && product && product !== Products.CE) {
+// the same product context (TBMQ → PE). SVG source stays TBMQ-(CE-)based.
+if (interactiveSvg && product && product !== Products.TBMQ) {
 	const prefix = getDocsPrefix(product);
 	interactiveSvg = interactiveSvg.replace(
 		/((?:xlink:)?href=")\/docs\//g,

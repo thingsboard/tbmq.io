@@ -75,85 +75,18 @@ export interface DynamicRedirectGroup {
 
 /**
  * Catch-all redirect groups.
- * Each group maps to one [...slug].astro file under src/pages/docs/{oldPrefix}/.
- * Add new groups here when the user provides a prefix-level redirect mapping.
+ * Add new groups here when a whole /docs/ prefix is renamed 1:1.
+ *
+ * The thingsboard.io-era legacy rules (/docs/mqtt-broker/*, /docs/pe/mqtt-broker/*,
+ * /products/mqtt-broker/) were removed: thingsboard.io's edge redirects map every
+ * legacy URL one-hop to its final tbmq.io page, so no request arrives here in the
+ * old shape and a second redirect on this side would only add a chain.
  */
-export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [
-	{ oldPrefix: 'mqtt-broker/install', newPrefix: 'installation', entries: [] },
-	{ oldPrefix: 'mqtt-broker/pe/install', newPrefix: 'pe/installation', entries: [] },
-	{ oldPrefix: 'pe/mqtt-broker/install', newPrefix: 'pe/installation', entries: [] },
-	{ oldPrefix: 'pe/mqtt-broker', newPrefix: 'pe', entries: [] },
-	{ oldPrefix: 'mqtt-broker', newPrefix: '', excludeSlugs: ['newsletter-thanks'], entries: [] },
-];
+export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [];
 
-export const SINGLE_REDIRECTS: SingleRedirect[] = [
-	{ oldPath: 'mqtt-broker/api', target: '/docs/rest-api/' },
-	{ oldPath: 'mqtt-broker/faq', target: '/docs/why-tbmq/' },
-	{
-		oldPath: 'mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker',
-		target: '/docs/why-tbmq/',
-	},
-	{ oldPath: 'mqtt-broker/image-gallery', target: '/docs/pe/image-gallery/' },
-	{ oldPath: 'mqtt-broker/install/cluster/helm-cluster-setup-options', target: '/docs/installation/' },
-	{ oldPath: 'mqtt-broker/install/installation-options', target: '/docs/installation/' },
-	{
-		oldPath: 'mqtt-broker/install/cluster/helm-cluster-upgrading-options',
-		target: '/docs/installation/upgrade-instructions/',
-	},
-	{
-		oldPath: 'mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-with-from-version',
-		target: '/docs/installation/upgrade-instructions/',
-	},
-	{
-		oldPath: 'mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-without-from-version',
-		target: '/docs/installation/upgrade-instructions/',
-	},
-	{
-		oldPath: 'mqtt-broker/install/cluster/resources/upgrade-options/k8s-upgrade-tbmq-with-from-version',
-		target: '/docs/installation/upgrade-instructions/',
-	},
-	{ oldPath: 'mqtt-broker/subscription', target: '/docs/pe/subscription/' },
-	{ oldPath: 'mqtt-broker/troubleshooting', target: '/docs/troubleshooting/' },
-	{ oldPath: 'mqtt-broker/user-guide/ui/mail-server', target: '/docs/user-guide/ui/settings/' },
-	{ oldPath: 'mqtt-broker/white-labeling', target: '/docs/pe/white-labeling/' },
-	{ oldPath: 'pe/mqtt-broker/api', target: '/docs/pe/rest-api/' },
-	{ oldPath: 'pe/mqtt-broker/faq', target: '/docs/pe/why-tbmq/' },
-	{
-		oldPath: 'pe/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker',
-		target: '/docs/pe/why-tbmq/',
-	},
-	{ oldPath: 'pe/mqtt-broker/image-gallery', target: '/docs/pe/image-gallery/' },
-	{
-		oldPath: 'pe/mqtt-broker/install/cluster/helm-cluster-setup-options',
-		target: '/docs/pe/installation/',
-	},
-	{ oldPath: 'pe/mqtt-broker/install/installation-options', target: '/docs/pe/installation/' },
-	{
-		oldPath: 'pe/mqtt-broker/install/cluster/helm-cluster-upgrading-options',
-		target: '/docs/pe/installation/upgrade-instructions/',
-	},
-	{
-		oldPath: 'pe/mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-with-from-version',
-		target: '/docs/pe/installation/upgrade-instructions/',
-	},
-	{
-		oldPath:
-			'pe/mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-without-from-version',
-		target: '/docs/pe/installation/upgrade-instructions/',
-	},
-	{
-		oldPath: 'pe/mqtt-broker/install/cluster/resources/upgrade-options/k8s-upgrade-tbmq-with-from-version',
-		target: '/docs/pe/installation/upgrade-instructions/',
-	},
-	{ oldPath: 'pe/mqtt-broker/troubleshooting', target: '/docs/pe/troubleshooting/' },
-	{ oldPath: 'pe/mqtt-broker/user-guide/ui/mail-server', target: '/docs/pe/user-guide/ui/settings/' },
-	{ oldPath: 'mqtt-broker/security', target: '/docs/security/overview/' },
-];
+export const SINGLE_REDIRECTS: SingleRedirect[] = [];
 
-export const NON_DOCS_REDIRECTS: Record<string, string> = {
-	'/products/mqtt-broker/': '/',
-	'/support-ukraine/': 'https://u24.gov.ua/',
-};
+export const NON_DOCS_REDIRECTS: Record<string, string> = {};
 
 export const DYNAMIC_REDIRECTS: DynamicRedirectGroup[] = [];
 

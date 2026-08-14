@@ -6,34 +6,7 @@
 
 # === Auto-generated redirects from src/data/redirects.ts ===
 
-/docs/mqtt-broker/install/cluster/helm-cluster-setup-options/ /docs/installation/ 301
-/docs/mqtt-broker/install/installation-options/ /docs/installation/ 301
-/docs/mqtt-broker/install/cluster/helm-cluster-upgrading-options/ /docs/installation/upgrade-instructions/ 301
-/docs/mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-with-from-version/ /docs/installation/upgrade-instructions/ 301
-/docs/mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-without-from-version/ /docs/installation/upgrade-instructions/ 301
-/docs/mqtt-broker/install/cluster/resources/upgrade-options/k8s-upgrade-tbmq-with-from-version/ /docs/installation/upgrade-instructions/ 301
-/docs/pe/mqtt-broker/install/cluster/helm-cluster-setup-options/ /docs/pe/installation/ 301
-/docs/pe/mqtt-broker/install/installation-options/ /docs/pe/installation/ 301
-/docs/pe/mqtt-broker/install/cluster/helm-cluster-upgrading-options/ /docs/pe/installation/upgrade-instructions/ 301
-/docs/pe/mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-with-from-version/ /docs/pe/installation/upgrade-instructions/ 301
-/docs/pe/mqtt-broker/install/cluster/resources/upgrade-options/docker-compose-upgrade-tbmq-without-from-version/ /docs/pe/installation/upgrade-instructions/ 301
-/docs/pe/mqtt-broker/install/cluster/resources/upgrade-options/k8s-upgrade-tbmq-with-from-version/ /docs/pe/installation/upgrade-instructions/ 301
-/docs/pe/mqtt-broker/api/ /docs/pe/rest-api/ 301
-/docs/pe/mqtt-broker/faq/ /docs/pe/why-tbmq/ 301
-/docs/pe/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/ /docs/pe/why-tbmq/ 301
-/docs/pe/mqtt-broker/user-guide/ui/mail-server/ /docs/pe/user-guide/ui/settings/ 301
-/docs/mqtt-broker/api/ /docs/rest-api/ 301
-/docs/mqtt-broker/faq/ /docs/why-tbmq/ 301
-/docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker/ /docs/why-tbmq/ 301
-/docs/mqtt-broker/image-gallery/ /docs/pe/image-gallery/ 301
-/docs/mqtt-broker/subscription/ /docs/pe/subscription/ 301
-/docs/mqtt-broker/user-guide/ui/mail-server/ /docs/user-guide/ui/settings/ 301
-/docs/mqtt-broker/white-labeling/ /docs/pe/white-labeling/ 301
-/docs/mqtt-broker/security/ /docs/security/overview/ 301
 
-# Non-docs redirects (from NON_DOCS_REDIRECTS)
-/products/mqtt-broker/ / 301
-/support-ukraine/ https://u24.gov.ua/ 301
 
 # === End auto-generated redirects ===
 
@@ -43,8 +16,4 @@
 # silently ignored. Keeping dynamics here leaves the static zone uncapped.
 # Refs: https://developers.cloudflare.com/pages/configuration/redirects/
 
-/docs/mqtt-broker/install/* /docs/installation/:splat 301
-/docs/mqtt-broker/pe/install/* /docs/pe/installation/:splat 301
-/docs/pe/mqtt-broker/install/* /docs/pe/installation/:splat 301
-/docs/pe/mqtt-broker/* /docs/pe/:splat 301
-/docs/mqtt-broker/* /docs/:splat 301
+

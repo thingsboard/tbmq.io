@@ -8,9 +8,12 @@ src/styles/
 ├── _theme.scss              # CSS custom properties for :root + [data-theme] tokens
 ├── _starlight-overrides.scss # Loaded via Starlight's customCss — emits the theme
 │                              # and overrides Starlight's tokens for every route
-├── _iot-hub.scss            # IoT Hub section mixins
-├── _iot-article.scss        # IoT article (blog-style) layout helpers
-└── landing.scss             # Marketing landing typography layer
+├── global.scss              # Entry point: @use's reset, variables, theme, base,
+│                              # utilities and layout
+├── _reset.scss              # Baseline element reset
+├── _base.scss               # Element + shared component base styles
+├── _utilities.scss          # Utility classes
+└── _layout.scss             # Page and section layout primitives
 ```
 
 ## Naming Conventions

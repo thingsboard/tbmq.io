@@ -5,6 +5,7 @@ import { Aside } from '@astrojs/starlight/components';
 import { Products } from '~/models/site.models';
 import DocLink from '~/components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import ShowFor from '~/components/ShowFor.astro';
 
 <Tabs defaultTab="on-premises" urlParam="installationType">
   <TabItem label="On-premises" id="on-premises" icon="tabler:server-2">
@@ -38,36 +39,25 @@ import ConditionalHeading from '~/components/ConditionalHeading.astro';
   </TabItem>
 </Tabs>
 
-{props.product === Products.TBMQ_PE && (
-<>
-
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="version-history-pe" showFor="mqtt-broker-pe">Version history</ConditionalHeading>
 
-<p>Select a card above to open the upgrade guide for your deployment type, then follow its steps for the target version.
-Each guide includes instructions for pulling the new image and running the upgrade script.</p>
+Select a card above to open the upgrade guide for your deployment type, then follow its steps for the target version.
+Each guide includes instructions for pulling the new image and running the upgrade script.
 
-<p>The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.</p>
+The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.
 
-<table>
-  <thead>
-    <tr>
-      <th>Target version</th>
-      <th>Upgrade from</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td><strong>2.3.0PE</strong></td><td>2.2.0PE</td><td></td></tr>
-    <tr><td><strong>2.3.0PE</strong></td><td>TBMQ 2.3.0 (CE)</td><td>See <a href="#upgrade-from-tbmq-to-tbmq-pe">CE-to-PE migration</a> below</td></tr>
-    <tr><td><strong>2.2.0PE</strong></td><td>TBMQ 2.2.0 (CE)</td><td>See <a href="#upgrade-from-tbmq-to-tbmq-pe">CE-to-PE migration</a> — <a href="#third-party-component-updates-in-tbmq-pe-v220">third-party changes apply</a></td></tr>
-  </tbody>
-</table>
+| Target version | Upgrade from    | Notes                                                                                                                                                    |
+| -------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.3.0PE**    | 2.2.0PE         |                                                                                                                                                          |
+| **2.3.0PE**    | TBMQ 2.3.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
+| **2.2.0PE**    | TBMQ 2.2.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) — [third-party changes apply](#third-party-component-updates-in-tbmq-pe-v220) |
 
 <ConditionalHeading level={2} id="upgrade-from-tbmq-to-tbmq-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
 
-<p>You can migrate from TBMQ to TBMQ PE of the <strong>same version</strong>.
+You can migrate from TBMQ to TBMQ PE of the **same version**.
 For example, TBMQ 2.3.0 can be upgraded to TBMQ PE 2.3.0.
-Cross-version migration (e.g. TBMQ 2.2.0 to TBMQ PE 2.3.0) is <strong>not supported</strong> — upgrade TBMQ to the target version first, then migrate to TBMQ PE.</p>
+Cross-version migration (e.g. TBMQ 2.2.0 to TBMQ PE 2.3.0) is **not supported** — upgrade TBMQ to the target version first, then migrate to TBMQ PE.
 
 <Aside type="note">
   To upgrade to TBMQ PE 2.3.0, you must be running TBMQ 2.3.0 first. If you are still on an earlier version,
@@ -84,62 +74,34 @@ Cross-version migration (e.g. TBMQ 2.2.0 to TBMQ PE 2.3.0) is <strong>not suppor
 
 <ConditionalHeading level={3} id="third-party-component-updates-in-tbmq-pe-v220" showFor="mqtt-broker-pe">Third-party component updates (CE v2.2.0 → PE v2.2.0 only)</ConditionalHeading>
 
-<p>The following changes apply <strong>only</strong> when migrating from TBMQ v2.2.0 to TBMQ PE v2.2.0. They do not apply to v2.3.0 and later.</p>
+The following changes apply **only** when migrating from TBMQ v2.2.0 to TBMQ PE v2.2.0. They do not apply to v2.3.0 and later.
 
-<p>These updates follow the modernization plan outlined in the <a href="https://github.com/thingsboard/thingsboard-ce-k8s/blob/master/BITNAMI-IMAGE-MIGRATION.md#3-long-term-production-solution" target="_blank" rel="noopener noreferrer">Bitnami Image Migration</a> guide.</p>
+These updates follow the modernization plan outlined in the <a href="https://github.com/thingsboard/thingsboard-ce-k8s/blob/master/BITNAMI-IMAGE-MIGRATION.md#3-long-term-production-solution" target="_blank" rel="noopener noreferrer">Bitnami Image Migration</a> guide.
 
-<table>
-  <thead>
-    <tr>
-      <th>Component</th>
-      <th>TBMQ v2.2.0</th>
-      <th>TBMQ PE v2.2.0</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>PostgreSQL</strong></td>
-      <td><code>postgres:16</code></td>
-      <td><code>postgres:17</code></td>
-      <td>Improved performance and resource efficiency. Existing data volumes remain compatible.</td>
-    </tr>
-    <tr>
-      <td><strong>Kafka</strong></td>
-      <td><code>bitnamilegacy/kafka:3.7.0</code></td>
-      <td><code>apache/kafka:4.0.0</code></td>
-      <td>Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.</td>
-    </tr>
-    <tr>
-      <td><strong>Redis → Valkey</strong></td>
-      <td><code>bitnamilegacy/redis:7.2.5</code></td>
-      <td><code>valkey/valkey:8.0</code></td>
-      <td>Migrated from Bitnami Redis to Valkey. A new volume <code>tbmq-valkey-data</code> is introduced.</td>
-    </tr>
-  </tbody>
-</table>
+| Component            | TBMQ v2.2.0                  | TBMQ PE v2.2.0      | Notes                                                                                       |
+| -------------------- | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| **PostgreSQL**       | `postgres:16`                | `postgres:17`       | Improved performance and resource efficiency. Existing data volumes remain compatible.      |
+| **Kafka**            | `bitnamilegacy/kafka:3.7.0`  | `apache/kafka:4.0.0` | Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.   |
+| **Redis → Valkey** | `bitnamilegacy/redis:7.2.5`  | `valkey/valkey:8.0` | Migrated from Bitnami Redis to Valkey. A new volume `tbmq-valkey-data` is introduced.       |
 
-<p>Before starting, create full backups of your environment — including the PostgreSQL database (for example, using <code>pg_dump</code>) and your Kafka and Redis data volumes if you plan to migrate them.</p>
+Before starting, create full backups of your environment — including the PostgreSQL database (for example, using `pg_dump`) and your Kafka and Redis data volumes if you plan to migrate them.
 
-<p>PostgreSQL is upgraded from <strong>16 to 17</strong>. Although existing data volumes remain compatible, you must perform a proper database version upgrade (for example, using <code>pg_upgrade</code>) to ensure data integrity.</p>
+PostgreSQL is upgraded from **16 to 17**. Although existing data volumes remain compatible, you must perform a proper database version upgrade (for example, using `pg_upgrade`) to ensure data integrity.
 
-<p>Kafka and Redis have been migrated from Bitnami images to official open-source alternatives. The new images use <strong>different internal data directories and volume mappings</strong>, so existing Bitnami volumes cannot be reused directly. You must either migrate your data manually or start from new, empty volumes.</p>
+Kafka and Redis have been migrated from Bitnami images to official open-source alternatives. The new images use **different internal data directories and volume mappings**, so existing Bitnami volumes cannot be reused directly. You must either migrate your data manually or start from new, empty volumes.
 
 <Aside type="caution">
   Starting from new volumes removes all data stored in Kafka and Redis, including client session states, undelivered messages, retained messages, and any other persisted broker data.
 </Aside>
 
-<p>The standard upgrade script updates only the PostgreSQL database schema and does not include data migration logic for Kafka or Valkey.</p>
+The standard upgrade script updates only the PostgreSQL database schema and does not include data migration logic for Kafka or Valkey.
 
 <Aside type="note">
   <DocLink product={Products.TBMQ_PE} path="help">Contact us</DocLink> if you need guidance for the migration. We can offer general recommendations to help facilitate a smoother upgrade.
 </Aside>
+</ShowFor>
 
-</>
-)}
-
-{props.product !== Products.TBMQ_PE && (
-<>
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 
 <Aside type="tip">
   Interested in TBMQ PE? You can upgrade your TBMQ installation to <DocLink product={Products.TBMQ_PE} path="installation/upgrade-instructions">TBMQ PE</DocLink>.
@@ -147,82 +109,48 @@ Cross-version migration (e.g. TBMQ 2.2.0 to TBMQ PE 2.3.0) is <strong>not suppor
 
 <ConditionalHeading level={2} id="version-history" exclude="mqtt-broker-pe">Version history</ConditionalHeading>
 
-<p>Select a card above to open the upgrade guide for your deployment type, then follow its steps for the target version.
-Each guide includes instructions for pulling the new image and running the upgrade script.</p>
+Select a card above to open the upgrade guide for your deployment type, then follow its steps for the target version.
+Each guide includes instructions for pulling the new image and running the upgrade script.
 
-<p>The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.</p>
+The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.
 
-<table>
-  <thead>
-    <tr>
-      <th>Target version</th>
-      <th>Upgrade from</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td><strong>2.3.0</strong></td><td>2.2.0</td><td>See <a href="#third-party-component-updates-in-v230">third-party component updates</a> below</td></tr>
-    <tr><td><strong>2.2.0</strong></td><td>2.1.0</td><td>See <a href="#notice-about-bitnami-images">Bitnami images notice</a> below</td></tr>
-    <tr><td><strong>2.1.0</strong></td><td>2.0.0 or 2.0.1</td><td><code>fromVersion</code> is auto-detected — no longer required</td></tr>
-    <tr><td><strong>2.0.1</strong></td><td>2.0.0</td><td><code>fromVersion</code>: <code>2.0.0</code></td></tr>
-    <tr><td><strong>2.0.0</strong></td><td>1.4.0</td><td><code>fromVersion</code>: <code>1.4.0</code> — see <a href="#upgrading-to-200">migration note</a> below</td></tr>
-    <tr><td><strong>1.4.0</strong></td><td>1.3.0</td><td><code>fromVersion</code>: <code>1.3.0</code></td></tr>
-    <tr><td><strong>1.3.0</strong></td><td>1.2.1</td><td><code>fromVersion</code>: <code>1.2.1</code></td></tr>
-    <tr><td><strong>1.2.1</strong></td><td>1.2.0</td><td><code>fromVersion</code>: <code>1.2.0</code></td></tr>
-    <tr><td><strong>1.2.0</strong></td><td>1.1.0</td><td><code>fromVersion</code>: <code>1.1.0</code></td></tr>
-    <tr><td><strong>1.1.0</strong></td><td>1.0.0 or 1.0.1</td><td><code>fromVersion</code>: <code>1.0.0</code> or <code>1.0.1</code></td></tr>
-  </tbody>
-</table>
+| Target version | Upgrade from   | Notes                                                                                       |
+| -------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| **2.3.0**      | 2.2.0          | See [third-party component updates](#third-party-component-updates-in-v230) below           |
+| **2.2.0**      | 2.1.0          | See [Bitnami images notice](#notice-about-bitnami-images) below                             |
+| **2.1.0**      | 2.0.0 or 2.0.1 | `fromVersion` is auto-detected — no longer required                                     |
+| **2.0.1**      | 2.0.0          | `fromVersion`: `2.0.0`                                                                      |
+| **2.0.0**      | 1.4.0          | `fromVersion`: `1.4.0` — see [migration note](#upgrading-to-200) below                  |
+| **1.4.0**      | 1.3.0          | `fromVersion`: `1.3.0`                                                                      |
+| **1.3.0**      | 1.2.1          | `fromVersion`: `1.2.1`                                                                      |
+| **1.2.1**      | 1.2.0          | `fromVersion`: `1.2.0`                                                                      |
+| **1.2.0**      | 1.1.0          | `fromVersion`: `1.1.0`                                                                      |
+| **1.1.0**      | 1.0.0 or 1.0.1 | `fromVersion`: `1.0.0` or `1.0.1`                                                           |
 
 <ConditionalHeading level={2} id="third-party-component-updates-in-v230" exclude="mqtt-broker-pe">Third-party component updates in v2.3.0</ConditionalHeading>
 
-<p>TBMQ v2.3.0 migrates all third-party components from Bitnami images to official open-source alternatives.
-These changes improve performance, stability, and remove the dependency on Bitnami's image catalog.</p>
+TBMQ v2.3.0 migrates all third-party components from Bitnami images to official open-source alternatives.
+These changes improve performance, stability, and remove the dependency on Bitnami's image catalog.
 
-<p>These updates follow the modernization plan outlined in the <a href="https://github.com/thingsboard/thingsboard-ce-k8s/blob/master/BITNAMI-IMAGE-MIGRATION.md#3-long-term-production-solution" target="_blank" rel="noopener noreferrer">Bitnami Image Migration</a> guide.</p>
+These updates follow the modernization plan outlined in the <a href="https://github.com/thingsboard/thingsboard-ce-k8s/blob/master/BITNAMI-IMAGE-MIGRATION.md#3-long-term-production-solution" target="_blank" rel="noopener noreferrer">Bitnami Image Migration</a> guide.
 
-<table>
-  <thead>
-    <tr>
-      <th>Component</th>
-      <th>TBMQ v2.2.0</th>
-      <th>TBMQ v2.3.0</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>PostgreSQL</strong></td>
-      <td><code>postgres:16</code></td>
-      <td><code>postgres:17</code></td>
-      <td>Improved performance and resource efficiency. Existing data volumes remain compatible.</td>
-    </tr>
-    <tr>
-      <td><strong>Kafka</strong></td>
-      <td><code>bitnamilegacy/kafka:3.7.0</code></td>
-      <td><code>apache/kafka:4.0.0</code></td>
-      <td>Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.</td>
-    </tr>
-    <tr>
-      <td><strong>Redis → Valkey</strong></td>
-      <td><code>bitnamilegacy/redis:7.2.5</code></td>
-      <td><code>valkey/valkey:8.0</code></td>
-      <td>Migrated from Bitnami Redis to Valkey. A new volume <code>tbmq-valkey-data</code> is introduced.</td>
-    </tr>
-  </tbody>
-</table>
+| Component            | TBMQ v2.2.0                  | TBMQ v2.3.0         | Notes                                                                                       |
+| -------------------- | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| **PostgreSQL**       | `postgres:16`                | `postgres:17`       | Improved performance and resource efficiency. Existing data volumes remain compatible.      |
+| **Kafka**            | `bitnamilegacy/kafka:3.7.0`  | `apache/kafka:4.0.0` | Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.   |
+| **Redis → Valkey** | `bitnamilegacy/redis:7.2.5`  | `valkey/valkey:8.0` | Migrated from Bitnami Redis to Valkey. A new volume `tbmq-valkey-data` is introduced.       |
 
-<p>Before starting, create full backups of your environment — including the PostgreSQL database (for example, using <code>pg_dump</code>) and your Kafka and Redis data volumes if you plan to migrate them.</p>
+Before starting, create full backups of your environment — including the PostgreSQL database (for example, using `pg_dump`) and your Kafka and Redis data volumes if you plan to migrate them.
 
-<p>PostgreSQL is upgraded from <strong>16 to 17</strong>. Although existing data volumes remain compatible, you must perform a proper database version upgrade (for example, using <code>pg_upgrade</code>) to ensure data integrity.</p>
+PostgreSQL is upgraded from **16 to 17**. Although existing data volumes remain compatible, you must perform a proper database version upgrade (for example, using `pg_upgrade`) to ensure data integrity.
 
-<p>Kafka and Redis have been migrated from Bitnami images to official open-source alternatives. The new images use <strong>different internal data directories and volume mappings</strong>, so existing Bitnami volumes cannot be reused directly. You must either migrate your data manually or start from new, empty volumes.</p>
+Kafka and Redis have been migrated from Bitnami images to official open-source alternatives. The new images use **different internal data directories and volume mappings**, so existing Bitnami volumes cannot be reused directly. You must either migrate your data manually or start from new, empty volumes.
 
 <Aside type="caution">
   Starting from new volumes removes all data stored in Kafka and Redis, including client session states, undelivered messages, retained messages, and any other persisted broker data.
 </Aside>
 
-<p>The standard upgrade script updates only the PostgreSQL database schema and does not include data migration logic for Kafka or Valkey.</p>
+The standard upgrade script updates only the PostgreSQL database schema and does not include data migration logic for Kafka or Valkey.
 
 <Aside type="note">
   <DocLink product={props.product} path="help">Contact us</DocLink> if you need guidance for the migration. We can offer general recommendations to help facilitate a smoother upgrade.
@@ -230,27 +158,23 @@ These changes improve performance, stability, and remove the dependency on Bitna
 
 <ConditionalHeading level={2} id="notice-about-bitnami-images" exclude="mqtt-broker-pe">Notice about Bitnami images (v2.2.0)</ConditionalHeading>
 
-<p>TBMQ deployments prior to v2.3.0 use <strong>Bitnami images</strong> for third-party components such as PostgreSQL, Redis, and Kafka.
-The Bitnami team <a href="https://github.com/bitnami/charts/issues/35164" target="_blank" rel="noopener noreferrer">has announced important upcoming changes</a> to their catalog that affect these images.</p>
+TBMQ deployments prior to v2.3.0 use **Bitnami images** for third-party components such as PostgreSQL, Redis, and Kafka.
+The Bitnami team <a href="https://github.com/bitnami/charts/issues/35164" target="_blank" rel="noopener noreferrer">has announced important upcoming changes</a> to their catalog that affect these images.
 
-<ul>
-  <li>Starting <strong>August 28, 2025</strong>, the public <code>docker.io/bitnami</code> registry will only provide a small set of "latest" hardened images for development use.</li>
-  <li>All versioned images will be moved to a temporary legacy registry: <code>docker.io/bitnamilegacy</code>. These images will remain available but will not receive updates or security patches.</li>
-  <li>The long-term supported solution is Bitnami's new Secure Images (subscription-based).</li>
-</ul>
+- Starting **August 28, 2025**, the public `docker.io/bitnami` registry will only provide a small set of "latest" hardened images for development use.
+- All versioned images will be moved to a temporary legacy registry: `docker.io/bitnamilegacy`. These images will remain available but will not receive updates or security patches.
+- The long-term supported solution is Bitnami's new Secure Images (subscription-based).
 
-<p><strong>Recommended:</strong> Complete the upgrade to v2.2.0 first (upgrades must be sequential), then continue to v2.3.0, which replaces all Bitnami images with official open-source alternatives. See <a href="#third-party-component-updates-in-v230">third-party component updates in v2.3.0</a> for details.</p>
+**Recommended:** Complete the upgrade to v2.2.0 first (upgrades must be sequential), then continue to v2.3.0, which replaces all Bitnami images with official open-source alternatives. See [third-party component updates in v2.3.0](#third-party-component-updates-in-v230) for details.
 
-<p>If you are staying on v2.2.0 for now, update your image references from <code>docker.io/bitnami/...</code> to <code>docker.io/bitnamilegacy/...</code> to avoid disruption after August 28, 2025.</p>
+If you are staying on v2.2.0 for now, update your image references from `docker.io/bitnami/...` to `docker.io/bitnamilegacy/...` to avoid disruption after August 28, 2025.
 
 <ConditionalHeading level={2} id="upgrading-to-200" exclude="mqtt-broker-pe">Migration note for v2.0.0</ConditionalHeading>
 
-<p>Version 2.0.0 introduces significant improvements, including a migration from PostgreSQL to Redis for storing messages for persistent DEVICE clients.
-For details, see the <DocLink product={props.product} path="architecture">architecture documentation</DocLink>.</p>
+Version 2.0.0 introduces significant improvements, including a migration from PostgreSQL to Redis for storing messages for persistent DEVICE clients.
+For details, see the <DocLink product={props.product} path="architecture">architecture documentation</DocLink>.
 
 <Aside type="caution">
   Back up your PostgreSQL database before upgrading to 2.0.0.
 </Aside>
-
-</>
-)}
+</ShowFor>

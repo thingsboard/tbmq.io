@@ -1,6 +1,7 @@
 import { Aside, Code } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 import { TBMQ_VER, TBMQ_BRANCH } from '~/data/versions';
 
@@ -145,17 +146,16 @@ For cluster installation, see the <DocLink product={props.product} path="install
 - At least 2 GB of RAM.
 - <a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener noreferrer">Docker Desktop for Windows</a> installed.
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
-    <p>Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the{' '}
-    <a href="/pricing/?section=tbmq-options" target="_blank" rel="noopener noreferrer">Pricing page</a>,
-    choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.</p>
-    <Aside>
-      Throughout this guide, the license key is referred to as <strong>YOUR_LICENSE_KEY_HERE</strong>.
-    </Aside>
-  </>
-)}
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
+
+Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the <a href="/pricing/?section=tbmq-options" target="_blank" rel="noopener noreferrer">Pricing page</a>,
+choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
+
+<Aside>
+  Throughout this guide, the license key is referred to as **YOUR_LICENSE_KEY_HERE**.
+</Aside>
+</ShowFor>
 
 ## Installation
 
@@ -184,12 +184,10 @@ The script downloads the `docker-compose.yml` file, creates the necessary Docker
 Key configuration points in the `docker-compose.yml`:
 
 <ul>
-  {props.product === Products.TBMQ_PE && (
-    <>
-      <li><code>TBMQ_LICENSE_SECRET: YOUR_LICENSE_KEY_HERE</code> — placeholder for the PE license key (see below);</li>
-      <li><code>TBMQ_LICENSE_INSTANCE_DATA_FILE: /data/tbmq-instance-license.data</code> — path to the auto-generated instance data file used to identify this TBMQ instance;</li>
-    </>
-  )}
+  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+    <li><code>TBMQ_LICENSE_SECRET: YOUR_LICENSE_KEY_HERE</code> — placeholder for the PE license key (see below);</li>
+    <li><code>TBMQ_LICENSE_INSTANCE_DATA_FILE: /data/tbmq-instance-license.data</code> — path to the auto-generated instance data file used to identify this TBMQ instance;</li>
+  </ShowFor>
   <li><code>8083:8083</code> — exposes the HTTP UI on port 8083;</li>
   <li><code>1883:1883</code> — exposes the MQTT port 1883;</li>
   <li><code>8084:8084</code> — exposes MQTT over WebSockets on port 8084;</li>
@@ -202,16 +200,16 @@ Key configuration points in the `docker-compose.yml`:
   <li><code>restart: always</code> — auto-restarts TBMQ on system reboot or failure.</li>
 </ul>
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <ConditionalHeading level={3} id="configure-the-license-key" showFor="mqtt-broker-pe">Configure the license key</ConditionalHeading>
-    <p>Open the downloaded <code>docker-compose.yml</code>, find <code>TBMQ_LICENSE_SECRET</code>, and replace
-    {' '}<strong>YOUR_LICENSE_KEY_HERE</strong> with your actual license key.
-    Then re-run the script to apply the change:</p>
-    <Code code={'.\\tbmq-install-and-run.ps1'} lang="powershell" />
-    <Aside type="caution">The broker will not start without a valid license key.</Aside>
-  </>
-)}
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="configure-the-license-key" showFor="mqtt-broker-pe">Configure the license key</ConditionalHeading>
+
+Open the downloaded `docker-compose.yml`, find `TBMQ_LICENSE_SECRET`, and replace **YOUR_LICENSE_KEY_HERE** with your actual license key.
+Then re-run the script to apply the change:
+
+<Code code={'.\\tbmq-install-and-run.ps1'} lang="powershell" />
+
+<Aside type="caution">The broker will not start without a valid license key.</Aside>
+</ShowFor>
 
 <Aside>
   **Port conflict:** If TBMQ is installed on a host already running ThingsBoard, you may see:
@@ -264,18 +262,16 @@ docker compose start
 
 ## Upgrading
 
-<ol>
-  <li>Check the <strong>version-specific notes</strong> below for any preparation your target version requires.</li>
-  <li><a href="#backup-and-restore-optional">Back up your database</a> (optional but recommended).</li>
-  <li><a href="#run-upgrade">Run the upgrade</a> command.</li>
-</ol>
+1. Check the **version-specific notes** below for any preparation your target version requires.
+2. [Back up your database](#backup-and-restore-optional) (optional but recommended).
+3. [Run the upgrade](#run-upgrade) command.
 
 For full version history and supported upgrade paths, see the{' '}
 <DocLink product={props.product} path="installation/upgrade-instructions">upgrade instructions</DocLink> page.{' '}
 If the documentation does not cover your specific upgrade path,{' '}
 <DocLink product={props.product} path="help">contact us</DocLink> for guidance.
 
-If there are no version-specific notes for your upgrade path, skip directly to <a href="#run-upgrade">Run upgrade</a>.
+If there are no version-specific notes for your upgrade path, skip directly to [Run upgrade](#run-upgrade).
 
 ### Backup and restore (optional)
 
@@ -289,143 +285,147 @@ For guidance, follow the{' '}
   rel="noopener noreferrer"
 >backup and restore instructions</a>.
 
-{props.product !== Products.TBMQ_PE && (
-  <>
-    <ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
-    <p>
-      This release migrates all third-party components from Bitnami images to official open-source alternatives.{' '}
-      Review the <DocLink product={props.product} path="installation/upgrade-instructions/#third-party-component-updates-in-v230">third-party component updates</DocLink> for full details.
-    </p>
-    <p>
-      The upgrade script requires a <strong><code>.tbmq-upgrade.env</code></strong> file.{' '}
-      If it does not already exist from a previous upgrade, create an empty one:
-    </p>
-    <Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
-    <p>Then proceed with the <a href="#run-upgrade">upgrade</a>.</p>
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
-    <ConditionalHeading level={3} id="upgrade-to-2-2-0" exclude="mqtt-broker-pe">Upgrade to 2.2.0</ConditionalHeading>
-    <details>
-      <summary>This release migrates MQTT authentication from YAML/env configuration into the database.</summary>
+This release migrates all third-party components from Bitnami images to official open-source alternatives.
+Review the <DocLink product={props.product} path="installation/upgrade-instructions/#third-party-component-updates-in-v230">third-party component updates</DocLink> for full details.
 
-      <p>
-        The upgrade script requires a <strong><code>.tbmq-upgrade.env</code></strong> file in the same directory as{' '}
-        <code>docker-compose.yml</code>. The values must match the authentication settings in your <code>tbmq</code> service environment.
-      </p>
-      <p><strong>Create the env file</strong></p>
-      <Code code={createEnvFile220Ce} lang="powershell" />
-      <Aside type="tip">
-        If you use only Basic authentication, set <code>SECURITY_MQTT_SSL_ENABLED=false</code>.{' '}
-        If you use only X.509 authentication, set <code>SECURITY_MQTT_BASIC_ENABLED=false</code> and <code>SECURITY_MQTT_SSL_ENABLED=true</code>.
-      </Aside>
-      <p><strong>Notes</strong></p>
-      <ul>
-        <li><strong>Required:</strong> If <code>.tbmq-upgrade.env</code> is missing, the upgrade script will fail.</li>
-        <li>Supported variables:
-          <ul>
-            <li><code>SECURITY_MQTT_BASIC_ENABLED</code> (<code>true|false</code>)</li>
-            <li><code>SECURITY_MQTT_SSL_ENABLED</code> (<code>true|false</code>)</li>
-            <li><code>SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT</code> (<code>true|false</code>) — usually <code>false</code></li>
-          </ul>
-        </li>
-      </ul>
-      <p>Once the file is created, proceed with the <a href="#run-upgrade">upgrade</a>.</p>
-    </details>
+The upgrade script requires a **`.tbmq-upgrade.env`** file.
+If it does not already exist from a previous upgrade, create an empty one:
 
-    <ConditionalHeading level={3} id="upgrade-to-2-1-0" exclude="mqtt-broker-pe">Upgrade to 2.1.0</ConditionalHeading>
-    <details>
-      <summary>This release adds the Integration Executor microservice and updates third-party service versions.</summary>
+<Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
 
-      <p><strong>Add Integration Executor microservice</strong></p>
-      <p>
-        Add the{' '}
-        <DocLink product={props.product} path="integrations">Integration Executor</DocLink>{' '}
-        service definition and volume to your <code>docker-compose.yml</code> ({' '}
-        <a href="https://github.com/thingsboard/tbmq/blob/release-2.1.0/msa/tbmq/configs/docker-compose.yml" target="_blank" rel="noopener noreferrer">full example</a>):
-      </p>
-      <details>
-        <summary>Service definition and volume</summary>
-        <Code code={ieServiceYaml} lang="yaml" />
-      </details>
-      <p>Create the log volume and start the service:</p>
-      <Code code={`docker volume create tbmq-ie-logs\ndocker compose up -d tbmq-integration-executor --no-deps`} lang="powershell" />
+Then proceed with the [upgrade](#run-upgrade).
 
-      <p><strong>Update third-party services</strong></p>
-      <p>
-        This release updates third-party dependency versions ({' '}
-        <a href="https://github.com/thingsboard/tbmq/pull/218" target="_blank" rel="noopener noreferrer">pull request</a>):
-      </p>
-      <table>
-        <thead><tr><th>Service</th><th>Previous version</th><th>Updated version</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Redis</strong></td><td>7.0</td><td>7.2.5</td></tr>
-          <tr><td><strong>PostgreSQL</strong></td><td>15.x</td><td>16.x</td></tr>
-          <tr><td><strong>Kafka</strong></td><td>3.5.1</td><td>3.7.0</td></tr>
-        </tbody>
-      </table>
-      <Aside type="caution">
-        Changing the image tag alone is <strong>not</strong> enough.{' '}
-        Refer to the official documentation of each service for proper upgrade procedures.
-      </Aside>
-      <p>After addressing third-party service versions, proceed with the <a href="#run-upgrade">upgrade</a>.</p>
-    </details>
+<ConditionalHeading level={3} id="upgrade-to-2-2-0" exclude="mqtt-broker-pe">Upgrade to 2.2.0</ConditionalHeading>
 
-    <ConditionalHeading level={3} id="upgrade-to-2-0-0" exclude="mqtt-broker-pe">Upgrade to 2.0.0</ConditionalHeading>
-    <details>
-      <summary>This release adds Redis configuration to the Docker Compose setup.</summary>
+<details>
+<summary>This release migrates MQTT authentication from YAML/env configuration into the database.</summary>
 
-      <p>
-        Update your <code>docker-compose.yml</code> to include the Redis service ({' '}
-        <a href="https://github.com/thingsboard/tbmq/pull/142/files#diff-18a10097b03fb393429353a8f84ba29498e9b72a21326deb9809865d384e2800" target="_blank" rel="noopener noreferrer">pull request diff</a>).
-      </p>
-      <details>
-        <summary>Complete Docker Compose file prior to the upgrade</summary>
-        <Code code={oldDockerCompose200} lang="yaml" />
-      </details>
-      <p>Create the Redis data volume:</p>
-      <Code code="docker volume create tbmq-redis-data" lang="powershell" />
-      <p>Then run the script to apply the changes:</p>
-      <Code code={'.\\tbmq-install-and-run.ps1'} lang="powershell" />
-      <p>Afterward, proceed with the <a href="#run-upgrade">upgrade</a>.</p>
-    </details>
-  </>
-)}
+The upgrade script requires a **`.tbmq-upgrade.env`** file in the same directory as
+`docker-compose.yml`. The values must match the authentication settings in your `tbmq` service environment.
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
-    <p>
-      This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.
-    </p>
-    <p>
-      The upgrade script requires a <strong><code>.tbmq-upgrade.env</code></strong> file.{' '}
-      If it does not already exist from a previous upgrade, create an empty one:
-    </p>
-    <Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
-    <p>Then proceed with the <a href="#run-upgrade">upgrade</a>.</p>
+**Create the env file**
 
-    <ConditionalHeading level={3} id="upgrade-from-ce-to-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
-    <p>
-      CE-to-PE migration is supported for the <strong>same version only</strong>.{' '}
-      If you are on an earlier CE version,{' '}
-      <DocLink product={Products.TBMQ} path="installation/upgrade-instructions/">upgrade TBMQ CE</DocLink> to the latest version first.{' '}
-      For all supported paths, see the{' '}
-      <DocLink product={props.product} path="installation/upgrade-instructions/#upgrade-from-tbmq-to-tbmq-pe">upgrade instructions</DocLink>.
-    </p>
-    <p>
-      Before upgrading, update your <code>docker-compose.yml</code> to include the PE-specific environment variables:
-    </p>
-    <ul>
-      <li><code>TBMQ_LICENSE_SECRET</code> — your license key from the <a href="#get-the-license-key">license step</a>;</li>
-      <li><code>TBMQ_LICENSE_INSTANCE_DATA_FILE</code> — path to the auto-generated instance data file (e.g. <code>/data/tbmq-instance-license.data</code>).</li>
-    </ul>
-    <p>Then create the required <strong><code>.tbmq-upgrade.env</code></strong> file:</p>
-    <Code code={createEnvFileCeToPe} lang="powershell" />
-    <p>Then proceed with the <a href="#run-upgrade">upgrade</a>.</p>
-    <Aside type="tip">
-      After the upgrade completes, clear your browser cache to ensure PE assets load correctly.
-    </Aside>
-  </>
-)}
+<Code code={createEnvFile220Ce} lang="powershell" />
+
+<Aside type="tip">
+  If you use only Basic authentication, set `SECURITY_MQTT_SSL_ENABLED=false`.
+  If you use only X.509 authentication, set `SECURITY_MQTT_BASIC_ENABLED=false` and `SECURITY_MQTT_SSL_ENABLED=true`.
+</Aside>
+
+**Notes**
+
+- **Required:** If `.tbmq-upgrade.env` is missing, the upgrade script will fail.
+- Supported variables:
+  - `SECURITY_MQTT_BASIC_ENABLED` (`true|false`)
+  - `SECURITY_MQTT_SSL_ENABLED` (`true|false`)
+  - `SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT` (`true|false`) — usually `false`
+
+Once the file is created, proceed with the [upgrade](#run-upgrade).
+</details>
+
+<ConditionalHeading level={3} id="upgrade-to-2-1-0" exclude="mqtt-broker-pe">Upgrade to 2.1.0</ConditionalHeading>
+
+<details>
+<summary>This release adds the Integration Executor microservice and updates third-party service versions.</summary>
+
+**Add Integration Executor microservice**
+
+Add the <DocLink product={props.product} path="integrations">Integration Executor</DocLink> service definition and volume to your `docker-compose.yml`
+( <a href="https://github.com/thingsboard/tbmq/blob/release-2.1.0/msa/tbmq/configs/docker-compose.yml" target="_blank" rel="noopener noreferrer">full example</a>):
+
+<details>
+<summary>Service definition and volume</summary>
+
+<Code code={ieServiceYaml} lang="yaml" />
+</details>
+
+Create the log volume and start the service:
+
+<Code code={`docker volume create tbmq-ie-logs\ndocker compose up -d tbmq-integration-executor --no-deps`} lang="powershell" />
+
+**Update third-party services**
+
+This release updates third-party dependency versions
+( <a href="https://github.com/thingsboard/tbmq/pull/218" target="_blank" rel="noopener noreferrer">pull request</a>):
+
+| Service | Previous version | Updated version |
+|---|---|---|
+| **Redis** | 7.0 | 7.2.5 |
+| **PostgreSQL** | 15.x | 16.x |
+| **Kafka** | 3.5.1 | 3.7.0 |
+
+<Aside type="caution">
+  Changing the image tag alone is **not** enough.
+  Refer to the official documentation of each service for proper upgrade procedures.
+</Aside>
+
+After addressing third-party service versions, proceed with the [upgrade](#run-upgrade).
+</details>
+
+<ConditionalHeading level={3} id="upgrade-to-2-0-0" exclude="mqtt-broker-pe">Upgrade to 2.0.0</ConditionalHeading>
+
+<details>
+<summary>This release adds Redis configuration to the Docker Compose setup.</summary>
+
+Update your `docker-compose.yml` to include the Redis service
+( <a href="https://github.com/thingsboard/tbmq/pull/142/files#diff-18a10097b03fb393429353a8f84ba29498e9b72a21326deb9809865d384e2800" target="_blank" rel="noopener noreferrer">pull request diff</a>).
+
+<details>
+<summary>Complete Docker Compose file prior to the upgrade</summary>
+
+<Code code={oldDockerCompose200} lang="yaml" />
+</details>
+
+Create the Redis data volume:
+
+<Code code="docker volume create tbmq-redis-data" lang="powershell" />
+
+Then run the script to apply the changes:
+
+<Code code={'.\\tbmq-install-and-run.ps1'} lang="powershell" />
+
+Afterward, proceed with the [upgrade](#run-upgrade).
+</details>
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
+
+This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.
+
+The upgrade script requires a **`.tbmq-upgrade.env`** file.
+If it does not already exist from a previous upgrade, create an empty one:
+
+<Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
+
+Then proceed with the [upgrade](#run-upgrade).
+
+<ConditionalHeading level={3} id="upgrade-from-ce-to-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
+
+CE-to-PE migration is supported for the **same version only**.
+If you are on an earlier CE version,
+<DocLink product={Products.TBMQ} path="installation/upgrade-instructions/">upgrade TBMQ CE</DocLink> to the latest version first.
+For all supported paths, see the
+<DocLink product={props.product} path="installation/upgrade-instructions/#upgrade-from-tbmq-to-tbmq-pe">upgrade instructions</DocLink>.
+
+Before upgrading, update your `docker-compose.yml` to include the PE-specific environment variables:
+
+- `TBMQ_LICENSE_SECRET` — your license key from the [license step](#get-the-license-key);
+- `TBMQ_LICENSE_INSTANCE_DATA_FILE` — path to the auto-generated instance data file (e.g. `/data/tbmq-instance-license.data`).
+
+Then create the required **`.tbmq-upgrade.env`** file:
+
+<Code code={createEnvFileCeToPe} lang="powershell" />
+
+Then proceed with the [upgrade](#run-upgrade).
+
+<Aside type="tip">
+  After the upgrade completes, clear your browser cache to ensure PE assets load correctly.
+</Aside>
+</ShowFor>
 
 ### Run upgrade
 
@@ -435,14 +435,13 @@ To upgrade to the latest version, run:
 {props.product === Products.TBMQ_PE && <Code code={upgradeCmdPe} lang="powershell" />}
 
 <Aside type="caution">
-  Replace <code>valkey_url</code>,{' '}
-  <code>db_url</code>, <code>db_username</code>, and <code>db_password</code> in the script
+  Replace `valkey_url`, `db_url`, `db_username`, and `db_password` in the script
   with the values used during database initialization.
 </Aside>
 
 <Aside type="tip">
   To upgrade to a specific version (e.g., TBMQ v2.0.0),
-  replace the release branch in the command above with the target branch name, e.g., <strong>release-2.0.0</strong>.
+  replace the release branch in the command above with the target branch name, e.g., **release-2.0.0**.
 </Aside>
 
 ## Enabling MQTTS (MQTT over SSL/TLS)

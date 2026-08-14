@@ -3,7 +3,13 @@ import { getCollection } from 'astro:content';
 import fs from 'node:fs';
 import path from 'node:path';
 import { allPages } from '~/content';
-import { formatBlogDate, getSectionLabel, isAllowlistedMarketingPath, truncate } from '~/util/ogContext';
+import {
+	formatBlogDate,
+	getSectionLabel,
+	isAllowlistedMarketingPath,
+	prettifySegment,
+	truncate,
+} from '~/util/ogContext';
 import { getLanguageFromSlug } from '~/util/path-utils';
 import type { CardProps } from './Card';
 import { getDocsProductMeta } from './product-meta';
@@ -40,13 +46,6 @@ export async function getDocsCardInputs(): Promise<CardInput[]> {
 		});
 }
 
-function prettyCategory(slug: string): string {
-	return slug
-		.split('-')
-		.map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
-		.join(' ');
-}
-
 function authorName(slug: string): string {
 	return BLOG_AUTHORS.find((a) => a.slug === slug)?.name ?? slug;
 }
@@ -58,7 +57,7 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 
 	// /blog/{post-slug}/
 	for (const post of posts) {
-		const category = post.data.categories?.[0] ? prettyCategory(post.data.categories[0]!) : 'Article';
+		const category = post.data.categories?.[0] ? prettifySegment(post.data.categories[0]!) : 'Article';
 		inputs.push({
 			slug: post.id,
 			props: {
@@ -188,20 +187,12 @@ function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pa
 function pathnameToTitle(pathname: string): string {
 	if (pathname === '/') return 'Scalable, fault-tolerant, and durable messaging for millions of MQTT clients';
 	const segs = pathname.split('/').filter(Boolean);
-	const last = segs[segs.length - 1] ?? '';
-	return last
-		.split('-')
-		.map((word) => (word ? word[0]!.toUpperCase() + word.slice(1) : word))
-		.join(' ');
+	return prettifySegment(segs[segs.length - 1] ?? '');
 }
 
 /** Eyebrow for non-home marketing pages — usually the second-to-last URL segment, prettified. */
 function pathnameToSubtitle(pathname: string): string {
 	const segs = pathname.split('/').filter(Boolean);
 	if (segs.length <= 1) return 'TBMQ';
-	const parent = segs[segs.length - 2]!;
-	return parent
-		.split('-')
-		.map((word) => (word ? word[0]!.toUpperCase() + word.slice(1) : word))
-		.join(' ');
+	return prettifySegment(segs[segs.length - 2]!);
 }

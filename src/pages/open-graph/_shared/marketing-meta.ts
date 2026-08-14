@@ -10,8 +10,8 @@ export interface MarketingSection {
 
 /**
  * Per-pathname eyebrow + title override for marketing pages whose URL
- * fragments don't carry a usable display name (e.g. /products/mobile/ → "Mobile"
- * is too thin for a hero card; /products/paas/ → "Paas" is plain wrong).
+ * fragments don't carry a usable display name (the legal pages would get a
+ * "Mqtt Broker" eyebrow from their /products/mqtt-broker/ parent segment).
  * Pathnames are stored with a trailing slash so they match the normaliser
  * inside `getMarketingSection` / `isAllowlistedMarketingPath`.
  */
@@ -21,7 +21,6 @@ export interface MarketingOverride {
 }
 
 const PRODUCT_OVERRIDES: Record<string, MarketingOverride> = {
-	'/products/mqtt-broker/': { eyebrow: 'TBMQ', title: 'Scalable, fault-tolerant open-source MQTT broker' },
 	'/products/mqtt-broker/privacy-policy/': { eyebrow: 'TBMQ', title: 'Privacy Policy' },
 	'/products/mqtt-broker/terms-of-use/': { eyebrow: 'TBMQ', title: 'Terms of Use' },
 };
@@ -40,23 +39,26 @@ interface PrefixRule {
 const PREFIX_RULES: PrefixRule[] = [
 	{ prefix: '/pricing/', section: { sectionName: 'Pricing' } },
 	{ prefix: '/products/', section: { sectionName: 'Products' } },
-	{ prefix: '/industries/', section: { sectionName: 'Industries' } },
-	{ prefix: '/services/', section: { sectionName: 'Services' } },
 	{ prefix: '/community/', section: { sectionName: 'Community' } },
 	{ prefix: '/company/', section: { sectionName: 'Company' } },
-	{ prefix: '/clients-feedback/', section: { sectionName: 'Customers' } },
 	{ prefix: '/contact-us/', section: { sectionName: 'Contact' } },
 	{ prefix: '/cookie-policy/', section: { sectionName: 'Legal' } },
 	{ prefix: '/installations/', section: { sectionName: 'Installations' } },
+	{ prefix: '/mqtt/', section: { sectionName: 'Learn' } },
+	{ prefix: '/performance/', section: { sectionName: 'Benchmark', tight: true } },
+	{ prefix: '/product/', section: { sectionName: 'Product' } },
+	{ prefix: '/live-demo/', section: { sectionName: 'Live Demo', tight: true } },
 ];
 
+// Fallback for allowlisted pages without a prefix rule — currently unreachable,
+// every MARKETING_ALLOWLIST entry has a rule above.
 const STANDALONE_SECTION: MarketingSection = { sectionName: 'Solutions' };
 
 /**
  * Resolve a marketing pathname to its slab section.
  * - '/' → no section name (logo alone).
  * - Known prefixes → matching section word.
- * - Standalone allowlisted pages (asset-management/, device-management/, etc.) → 'Solutions'.
+ * - Anything else → the standalone fallback.
  */
 export function getMarketingSection(pathname: string): MarketingSection {
 	const normalized = pathname.endsWith('/') ? pathname : pathname + '/';

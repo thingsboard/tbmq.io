@@ -2,19 +2,6 @@
 // Pricing Page — TypeScript Interfaces
 // ============================================
 
-/** Which top-level product tab is active */
-export type PricingProduct = 'thingsboard' | 'tbmq';
-
-/** Sub-tab within a product */
-export type TbSubTab = 'ce' | 'cloud' | 'private-cloud' | 'self-managed';
-export type TbmqSubTab = 'ce' | 'self-managed' | 'private-cloud';
-
-/** Region for Public Cloud pricing */
-export type CloudRegion = 'na' | 'eu';
-
-/** Billing model for Self-managed */
-export type BillingModel = 'payg' | 'perpetual';
-
 // ─── Plan cards ─────────────────────────────
 
 export interface PlanFeature {
@@ -85,19 +72,6 @@ export interface CommunityEditionData {
 	priceLabel?: string;
 }
 
-// ─── Public Cloud ───────────────────────────
-
-export interface CloudPlansData {
-	sectionTitle: string;
-	sectionSubtitle: string;
-	plans: PlanCard[];
-}
-
-export interface CloudRegionData {
-	na: CloudPlansData;
-	eu: CloudPlansData;
-}
-
 // ─── Private Cloud ──────────────────────────
 
 export interface PrivateCloudData {
@@ -129,78 +103,6 @@ export interface PerpetualBenefit {
 	icon: string;
 	title: string;
 	description: string;
-}
-
-// ─── Add-ons & Top-ups ─────────────────────
-
-export interface AddOnItem {
-	id: string;
-	name: string;
-	icon?: string;
-	priceUsd: number | string;
-	priceEur?: number | string;
-	setupFee?: number;
-	setupFeeCurrency?: string;
-	period?: string;
-	description?: string;
-	/** Show "Starting from" prefix before price */
-	startingFrom?: boolean;
-	faqId?: string;
-	faqTooltip?: string;
-}
-
-export interface TopUpItem {
-	name: string;
-	priceUsd: number | string;
-	priceEur?: number | string;
-	period?: string;
-	details?: { label: string; value: string }[];
-	faqId?: string;
-	faqTooltip?: string;
-}
-
-export interface TopUpGroup {
-	title: string;
-	items: TopUpItem[];
-}
-
-// ─── Upsell card ────────────────────────────
-
-export interface UpsellCardData {
-	heading: string;
-	ctaText: string;
-	/** Product sub-tab to switch to */
-	targetSection: string;
-}
-
-// ─── Calculator ─────────────────────────────
-
-export interface CalculatorPlan {
-	name: string;
-	price: number;
-	includedDevices?: number;
-	includedSessions?: number;
-	includedThroughput?: number;
-	includedProdInstances?: number;
-	extraProdInstancePrice?: number;
-	devQaExtraInstancePrice?: number;
-	extraDevicePrice?: number;
-	extraSessionPrice?: number;
-	extraThroughputPrice?: number;
-	edgeMonthPrice?: number;
-	edgeInstancesIncluded?: number;
-	trendzMonthPrice?: number;
-	wl?: boolean;
-	wlMonthPrice?: number;
-	wlSetupFee?: number;
-	productId?: string;
-	planId?: string;
-}
-
-export interface CalculatorData {
-	plans: CalculatorPlan[];
-	mobileApp?: number;
-	mobileAppSetup?: number;
 }
 
 // ─── FAQ ────────────────────────────────────
