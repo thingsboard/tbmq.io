@@ -94,12 +94,6 @@ export const DYNAMIC_REDIRECTS: DynamicRedirectGroup[] = [];
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Returns entries for a catch-all prefix, or empty array if not found. */
-export function getCatchAllEntries(oldPrefix: string): RedirectEntry[] {
-	const group = CATCH_ALL_REDIRECTS.find((g) => g.oldPrefix === oldPrefix);
-	return group?.entries ?? [];
-}
-
 /**
  * Returns a flat map of ALL redirects: oldPath (with /docs/ prefix and trailing slash) → target.
  * Used by scripts/generate-redirects.ts to produce the JSON map.
