@@ -7,19 +7,21 @@
  * plugin reads <ConditionalHeading> from the raw include source and injects the heading into
  * the page TOC only for products that match the `exclude`/`showFor` filter.
  *
+ * Product ids come from the stub path, not the Products enum: a page under
+ * src/content/docs/docs/pe/ is `mqtt-broker-pe`, everything else is `mqtt-broker`
+ * (see getProductFromFilePath in the plugin).
+ *
  * Props:
  *   level    — heading level 2–6 (default: 3)
- *   id       — anchor id, e.g. "export-dashboard" (required)
- *   exclude  — comma-separated product ids to EXCLUDE, e.g. "ce" (parsed by plugin only)
- *   showFor  — comma-separated product ids to INCLUDE (parsed by plugin only)
+ *   id       — anchor id, e.g. "get-the-license-key" (required)
+ *   exclude  — comma-separated product ids to EXCLUDE, e.g. "mqtt-broker-pe" (parsed by plugin only)
+ *   showFor  — comma-separated product ids to INCLUDE, e.g. "mqtt-broker-pe" (parsed by plugin only)
  *
- * Usage in MDX _includes:
- *   {props.product !== Products.CE && (
- *     <>
- *       <ConditionalHeading level={3} id="export-dashboard" exclude="ce">Export dashboard</ConditionalHeading>
- *       <p>Content…</p>
- *     </>
- *   )}
+ * Usage in MDX _includes — wrap the block in <ShowFor> and use the heading for the title:
+ *   <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+ *     <ConditionalHeading level={3} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
+ *     Content…
+ *   </ShowFor>
  */
 interface Props {
 	level?: 2 | 3 | 4 | 5 | 6;

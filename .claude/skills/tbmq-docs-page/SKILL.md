@@ -1,24 +1,26 @@
 ---
 name: tbmq-docs-page
-description: Review, improve, or create any TBMQ reference doc under /docs/mqtt-broker/ — user guide, installation and cluster setup, security, integrations, concepts, architecture, or performance reference. Verifies technical correctness against BOTH the MQTT spec AND the TBMQ broker source (config defaults, env vars, listener ports, packet handling) in the sibling tbmq / tbmq-pe checkouts, fills gaps with TBMQ-specific parameters, behaviors and instructions, and authors new pages for undocumented topics. Use whenever someone wants to audit, correct, deepen, or extend the mqtt-broker docs, add a missing doc page, document a config parameter or feature, or verify a documented claim against TBMQ code.
+description: Review, improve, or create any TBMQ reference doc under /docs/ (CE) or /docs/pe/ (PE) — user guide, installation and cluster setup, security, integrations, concepts, architecture, or performance reference. Verifies technical correctness against BOTH the MQTT spec AND the TBMQ broker source (config defaults, env vars, listener ports, packet handling) in the sibling tbmq / tbmq-pe checkouts, fills gaps with TBMQ-specific parameters, behaviors and instructions, and authors new pages for undocumented topics. Use whenever someone wants to audit, correct, deepen, or extend the TBMQ docs, add a missing doc page, document a config parameter or feature, or verify a documented claim against TBMQ code.
 ---
 
 # TBMQ Docs Page
 
-`/docs/mqtt-broker/` is TBMQ's **reference documentation** — the how-to/technical tree that a person *operating* TBMQ relies on. This skill governs three jobs on that tree: **review** an existing page for correctness, **improve** a thin one, or **create** a new page for a topic that has none. The bar is accuracy against two sources of truth at once: the **MQTT spec** (where the page touches protocol behavior) and the **actual TBMQ source code** (always).
+`/docs/` is TBMQ's **reference documentation** — the how-to/technical tree that a person *operating* TBMQ relies on. PE renders the same content at `/docs/pe/`. This skill governs three jobs on that tree: **review** an existing page for correctness, **improve** a thin one, or **create** a new page for a topic that has none. The bar is accuracy against two sources of truth at once: the **MQTT spec** (where the page touches protocol behavior) and the **actual TBMQ source code** (always).
 
-**Scope: the whole tree, not just protocol topics.** All 85-odd CE pages are in scope, and the sections differ in character — write to the one you're in:
+> **URL note.** The docs used to live at `/docs/mqtt-broker/` and `/docs/mqtt-broker/pe/`. They are now `/docs/` and `/docs/pe/`. The old shape survives in two non-URL places, both correct: the **`_includes` directory path** (`src/content/_includes/docs/mqtt-broker/…`, kept so upstream cherry-picks stay clean — see [File map](#a-doc-page--3-files--1-sidebar-entry)) and the **image asset tree** (`src/assets/images/docs/mqtt-broker/…`). Never write `/docs/mqtt-broker/` as a *URL*; the repo's redirect arrays are empty because thingsboard.io's edge redirects already map every legacy URL one-hop to its final tbmq.io page.
+
+**Scope: the whole tree, not just protocol topics.** 88 CE pages / 94 PE pages are in scope, and the sections differ in character — write to the one you're in:
 
 | Section | Character | What "accurate" means here |
 |---|---|---|
-| `user-guide/` | operating the broker, UI paths, per-feature behavior | env var + default + UI path + edge cases |
+| `user-guide/` (incl. `user-guide/ui/`) | operating the broker, UI paths, per-feature behavior | env var + default + UI path + edge cases |
 | `installation/` (incl. `cluster/`) | runnable setup — Docker, compose, k8s, helm, AWS/Azure/GCP, upgrades | commands and manifests that actually work, versions from `~/data/versions` |
-| `security/` | listeners, TLS, the auth providers | which listener/provider, its yml keys, its default enabled state |
+| `security/` (incl. `security/authentication/`) | listeners, TLS, the auth providers | which listener/provider, its yml keys, its default enabled state |
 | `integrations/` | HTTP / Kafka / MQTT integrations (**in CE too**) | config fields, payload handling, failure behavior |
-| `concepts/`, `architecture*/` | how TBMQ is built — clustering, sessions, client types, persistence | the real components and data flow, not an idealized diagram |
-| `reference/`, `other/` | performance results, blocked clients, proxy protocol, health | the actual measured numbers and their conditions |
+| `concepts/`, `architecture`, `architecture-details/` | how TBMQ is built — clustering, sessions, client types, persistence | the real components and data flow, not an idealized diagram |
+| `reference/`, `other/` | performance results, blocked clients, proxy protocol, msg-delivery strategies, health, bulk provisioning | the actual measured numbers and their conditions |
 
-Most of the tree has **no** `/mqtt/` learn-page counterpart (only 9 of 79 page names overlap), so treat pairing as the exception it is — see [If the page has a learn-hub counterpart](#if-the-page-has-a-learn-hub-counterpart), and skip that section entirely when it doesn't.
+Most of the tree has **no** `/mqtt/` learn-page counterpart — only **9 of 82** CE page names overlap (`keep-alive`, `last-will`, `mqtt-broker`, `mqtt-client-id`, `qos`, `retained-messages`, `security`, `shared-subscriptions`, `topics`). Treat pairing as the exception it is — see [If the page has a learn-hub counterpart](#if-the-page-has-a-learn-hub-counterpart), and skip that section entirely when it doesn't.
 
 ## Principles
 
@@ -30,17 +32,40 @@ Most of the tree has **no** `/mqtt/` learn-page counterpart (only 9 of 79 page n
 ## A doc page = 3 files + 1 sidebar entry
 
 ```
-src/content/_includes/docs/mqtt-broker/<path>/<page>.mdx   ← the actual content (SHARED by CE + PE). No frontmatter.
-src/content/docs/docs/mqtt-broker/<path>/<page>.mdx        ← CE stub: frontmatter + imports include, passes Products.TBMQ
-src/content/docs/docs/mqtt-broker/pe/<path>/<page>.mdx     ← PE stub: same, passes Products.TBMQ_PE
+src/content/_includes/docs/mqtt-broker/<include-path>.mdx   ← the actual content (SHARED by CE + PE). No frontmatter.
+src/content/docs/docs/<slug>.mdx                            ← CE stub: frontmatter + imports include, passes Products.TBMQ
+src/content/docs/docs/pe/<slug>.mdx                         ← PE stub: same, passes Products.TBMQ_PE
 astro.sidebar.ts                                            ← one entry in tbmqGuideItems (serves CE + PE via the prefix arg)
 ```
 
-URL: `/docs/mqtt-broker/<path>/<page>/` (CE) and `/docs/mqtt-broker/pe/<path>/<page>/` (PE). `trailingSlash: 'always'`.
+URL: `/docs/<slug>/` (CE) and `/docs/pe/<slug>/` (PE). `trailingSlash: 'always'`.
 
-**Exception — a wholly PE-only page** (the feature does not exist in CE at all): create the include and the **PE stub only**, *no* CE stub, and gate the sidebar entry with `isPE`. That is 2 files + 1 gated entry. Existing examples: `white-labeling`, `image-gallery`, `subscription`, `security/rbac`, `security/audit-log`, `user-guide/dropped-messages`. Adding a CE stub for one of these publishes a PE feature to CE readers — the error the edition split exists to prevent.
+**The include path is decoupled from the URL slug — don't assume they match.** The include tree mirrors the *upstream thingsboard.io* layout so cherry-picks stay clean; the stub slug is whatever this site wants the URL to be. Real pairs in the repo:
 
-Choosing between the two shapes: use `<ShowFor>` inside a **shared** page when only *part* of the content is PE-only; use a **PE-only page** when the whole topic is. Check the PE-only list in [CE vs PE](#ce-vs-pe--whats-actually-pe-only) before deciding, and ask if it isn't clear-cut.
+| CE stub (→ URL) | Include it imports |
+|---|---|
+| `other/blocked-client` | `user-guide/blocked-clients.mdx` |
+| `other/health` | `user-guide/health-api.mdx` |
+| `other/msg-delivery-strategy` | `user-guide/msg-delivery-strategies.mdx` |
+| `other/proxy-protocol` | `user-guide/proxy-protocol.mdx` |
+| `security/https` | `security/enable-https.mdx` |
+| `architecture-details/persistent-app-client` | `reference/architecture/persistent-application-client.mdx` |
+| `user-guide/ui/shared-subscriptions` | `user-guide/ui/application-shared-subscriptions.mdx` |
+| `user-guide/integrations/how-to-connect-thingsboard-to-tbmq` | `user-guide/integration-with-thingsboard.mdx` |
+| `application-shared-subscription` | `reference/rest-api/application-shared-subscriptions-management.mdx` |
+| `subscription` (PE-only) | `user-guide/private-cloud-subscription.mdx` |
+
+When editing an existing page, **open the stub first** and read its `import PageContent from '@includes/…'` line — that is the only reliable way to find the file the content lives in. For a *new* page, pick the include path that matches where upstream would put it (usually mirroring the slug is fine).
+
+**Exception — a wholly PE-only page** (the feature does not exist in CE at all): create the include and the **PE stub only**, *no* CE stub, and gate the sidebar entry with `isPE`. That is 2 files + 1 gated entry. The 8 PE-only pages today:
+
+`white-labeling` · `image-gallery` · `subscription` · `security/rbac` · `security/audit-log` · `security/domains` · `security/oauth-2-support` · `user-guide/dropped-messages`
+
+Adding a CE stub for one of these publishes a PE feature to CE readers — the error the edition split exists to prevent.
+
+**The mirror case — CE-only.** Two pages have no PE stub: `installation/building-from-source` (gated `!isPE` in `tbmqInstallItems`) and `newsletter-thanks` (a standalone page with no include and no sidebar entry). Everything else ships in both.
+
+Choosing between the two shapes: use `<ShowFor>` inside a **shared** page when only *part* of the content is PE-only; use a **PE-only page** when the whole topic is. Check the PE-only list above and [CE vs PE](#ce-vs-pe--whats-actually-pe-only) before deciding, and ask if it isn't clear-cut.
 
 Existing pages are the best reference — read a neighbour in the same section before writing, since conventions differ by section. Models worth copying:
 
@@ -49,11 +74,11 @@ Existing pages are the best reference — read a neighbour in the same section b
 - `_includes/docs/mqtt-broker/security/authentication/x509.mdx` — a provider page: yml keys, default enabled state, and `<Steps>` for the configuration walkthrough.
 - `_includes/docs/mqtt-broker/integrations/kafka.mdx` — an integration page (present in CE **and** PE; don't gate these).
 
-`<Steps>` is the convention for ordered walkthroughs in `user-guide/`, `security/`, `integrations/` and `concepts/` — but **not** in `installation/`, which sequences with headings and `<Code>` blocks instead. Match the section you're in.
+**`<Steps>` is rarer than it looks — match the section, don't sprinkle it.** Current usage across the include tree: `integrations/` 3 of 3 files, `security/` 3 of 13, `user-guide/` 4 of 30, and **zero** in `installation/`, `concepts/`, and `reference/`. Installation sequences with headings and `<Code>` blocks instead. Reach for `<Steps>` only for a genuinely ordered UI/config walkthrough.
 
 ### The stubs (nearly boilerplate)
 
-CE stub (`.../docs/mqtt-broker/<path>/<page>.mdx`):
+CE stub (`src/content/docs/docs/<slug>.mdx`):
 
 ```mdx
 ---
@@ -61,13 +86,15 @@ title: Keep Alive
 description: MQTT Keep Alive mechanism in TBMQ — connection timeout detection and PING request/response behavior.
 ---
 
-import PageContent from '@includes/docs/mqtt-broker/<path>/<page>.mdx'
+import PageContent from '@includes/docs/mqtt-broker/<include-path>.mdx'
 import { Products } from '~/models/site.models'
 
 <PageContent product={Products.TBMQ}/>
 ```
 
-PE stub (`.../docs/mqtt-broker/pe/<path>/<page>.mdx`): **identical**, except the last line passes `Products.TBMQ_PE`. For a page that ships in **both** editions, both stubs are required — each edition resolves its own. A wholly PE-only page has the PE stub only (see the exception above). Frontmatter is the `base` schema (`title` + `description`; `type` defaults to `base`). `description` is the meta description — benefit-framed, ~150–160 chars, includes the key term.
+PE stub (`src/content/docs/docs/pe/<slug>.mdx`): **identical**, except the last line passes `Products.TBMQ_PE`. For a page that ships in **both** editions, both stubs are required — each edition resolves its own. A wholly PE-only page has the PE stub only (see the exception above). Frontmatter is the `base` schema in `src/content.config.ts` (`title` + `description`; `type` defaults to `base` — never declare it). `description` is the meta description — benefit-framed, ~150–160 chars, includes the key term.
+
+The docs collection is `docsSchema({ extend: baseSchema })`, so **Starlight's own frontmatter is available too** — `tableOfContents: false`, `editUrl: false`, `sidebar`, `slug`, `hero` (see `search.mdx` / `newsletter-thanks.mdx`). Extra `baseSchema` fields you may legitimately need: `wrapTableCode: true` (opt in to breaking long inline-code tokens inside that page's tables — use only when a code column is otherwise unreadable), `selfCanonical` / `canonicalUrl`, `customDocsTitle`.
 
 ### The shared include (where the work is)
 
@@ -100,20 +127,25 @@ PE-only detail written as **normal Markdown** — lists, `code`, `<Tabs>`, `<Asi
 ```
 
 **Product-conditional content** (per repo CLAUDE.md):
-- Wrap PE-only (or CE-only) blocks in `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>…</ShowFor>` and write **normal Markdown** inside. Do **not** use `{props.product === … && (<>…</>)}` with hand-written HTML — a JSX `{…}` expression disables Markdown parsing.
-- Conditional **headings** use `<ConditionalHeading … showFor="…">`, not `##` — the TOC plugin needs that metadata to include them conditionally.
-- Internal doc links use **`<DocLink product={props.product} path="user-guide/…">`** (product-aware; always prefer over a bare Markdown link). Use `useTbDocs` to point a link at the core ThingsBoard docs instead of the TBMQ subtree.
+
+- Wrap PE-only (or CE-only) blocks in `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>…</ShowFor>` and write **normal Markdown** inside. Do **not** use `{props.product === … && (<>…</>)}` with hand-written HTML — a JSX `{…}` expression disables Markdown parsing. (A handful of `installation/` includes still use the old JSX form; don't copy them, and don't mass-convert them either.)
+- Conditional **headings** use `<ConditionalHeading level={2|3} id="…" showFor="…">`, not `##` — the TOC plugin (`config/plugins/rehype-mdx-include-headings.ts`) reads the raw tag to decide whether the heading enters that edition's TOC.
+  - **The product ids are `mqtt-broker` (CE) and `mqtt-broker-pe` (PE)** — derived from the stub path (`docs/pe/…` → `mqtt-broker-pe`). Not `ce`/`pe`. So PE-only is `showFor="mqtt-broker-pe"` and CE-only is `exclude="mqtt-broker-pe"`. The component's own docstring shows a stale `Products.CE` example — ignore it and follow the shipped usage in `getting-started.mdx` / `roadmap.mdx`.
+  - `id` is required and must be the slugified heading text, so the TOC anchor resolves.
+- Internal doc links use **`<DocLink product={props.product} path="user-guide/…">`** (product-aware; always prefer over a bare Markdown link). It builds `/docs/{prefix}{path}/`, so `path` is **prefix-relative and slash-free at the front** (`"user-guide/last-will"`, not `"/docs/user-guide/last-will"`). It supports `#anchor` and `?query` inside `path`, a `target` prop, and **`bold` which defaults to `true`** — pass `bold={false}` when the link sits mid-sentence and shouldn't render bold. There is **no** `useTbDocs` prop; every `DocLink` resolves inside this site's docs tree.
 - **Never hardcode version strings** — import `TBMQ_VER` / `TBMQ_PE_VER` / `TBMQ_BRANCH` from `~/data/versions`.
 
 ### Sidebar
 
-Add one entry to the right group in `tbmqGuideItems` (or `tbmqInstallItems` / `tbmqReferenceItems`) in `astro.sidebar.ts` — the `${prefix}` arg makes a single entry serve **both** CE (`docs/mqtt-broker`) and PE (`docs/mqtt-broker/pe`):
+`astro.sidebar.ts` builds both editions from three prefix-parameterized helpers — `tbmqGuideItems(prefix)`, `tbmqInstallItems(prefix)`, `tbmqReferenceItems(prefix)` — called with **`'docs'`** for CE and **`'docs/pe'`** for PE. One entry therefore serves both:
 
 ```ts
 { label: 'Keep alive', slug: `${prefix}/user-guide/keep-alive` },
 ```
 
-Groups you'll usually target: **MQTT features** (protocol concepts), **Operating TBMQ** (tuning, health, provisioning), **Management console** (UI pages), **Security**, **Integrations**. Put PE-only pages behind the `isPE` conditional already used in that file.
+Groups inside the helpers: **Security**, **MQTT features**, **Integration with ThingsBoard**, **Operating TBMQ**, **Integrations**, **Management console**, **Troubleshooting**, **Prometheus metrics**, plus PE-gated **White Labeling** / **Private Cloud subscription** (`tbmqGuideItems`); **Live demo / On-premises / Cloud / Helm / Upgrade instructions** (`tbmqInstallItems`); **Architecture / Configuration / Performance tests / REST APIs** (`tbmqReferenceItems`). PE-only entries go behind the `isPE` conditional already used in the file; the one CE-only entry uses `!isPE`.
+
+**The `Getting Started`, `Core concepts` and `Releases` groups are NOT parameterized** — `tbmqSidebar` and `tbmqPeSidebar` each spell those slugs out by hand (`'docs/why-tbmq'` vs `'docs/pe/why-tbmq'`). Adding a page to one of those three groups means **two** edits, one per array. Everything else is a single edit inside a helper.
 
 ## Verify against the TBMQ source
 
@@ -136,15 +168,24 @@ Confirm before relying on either: `ls ../tbmq/application/src/main/resources/thi
 - `max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}"` · `acks: "${TB_KAFKA_DEFAULT_PRODUCER_ACKS:1}"`
 - Nested fallback form occurs too: `"${A:${b.c:${B:10000}}}"`.
 
-Section jump-table in the CE yml: `server:` (HTTP/REST + SSL) L18–60 · `listener:` (MQTT TCP/SSL/WS/WSS, Netty, proxy) L63–248 · `queue:` (Kafka consumers/acks + topic names) L251–653 · `actors:` L668–694 · `mqtt:` (connect threads, flow-control, keep-alive, topic/alias, wildcard toggle, shared-subs, session-expiry, persistent-session, rate-limits) L875–1055 · `security:` (JWT, unauthorized clients) L852–872 · `sql/datasource/redis/cache/stats/management:` L709–1218. (Integration-executor microservice has its own file: `integration/executor/src/main/resources/tbmq-integration-executor.yml`.)
+**Don't navigate by line number — line numbers drift with every release.** Jump by top-level key instead:
+
+```bash
+grep -nE '^[a-z][a-z0-9_-]*:' ../tbmq/application/src/main/resources/thingsboard-mqtt-broker.yml   # section map
+grep -n 'MQTT_KEEP_ALIVE' ../tbmq/application/src/main/resources/thingsboard-mqtt-broker.yml       # a specific knob
+```
+
+The CE file is ~1300 lines with these top-level sections: `server:` (HTTP/REST + SSL) · `listener:` (MQTT TCP/SSL/WS/WSS, Netty, proxy) · `queue:` (Kafka consumers/acks + topic names) · `service:` · `actors:` · `integrations:` · `database:` / `sql:` / `lettuce:` / `spring:` · `security:` (JWT, unauthorized clients) · `mqtt:` (connect threads, flow-control, keep-alive, topic/alias, wildcard toggle, shared-subs, session-expiry, persistent-session, rate-limits) · `device:` / `cache:` / `redis:` · `stats:` / `historical-data-report:` / `management:` · `springdoc:` / `swagger:` / `app:` / `analysis:`.
+
+PE adds `audit-log:` at the top level plus `security.oauth2:`, `mqtt.dropped-msg:` and `queue.dropped-msg:`. The integration-executor microservice has its own file: `integration/executor/src/main/resources/tbmq-integration-executor.yml` (documented at `installation/ie-config`).
 
 ### Listener / port defaults (confirmed in current source)
 
 | Purpose | YAML key (env var) | Default | Enabled by default? |
 |---|---|---|---|
-| MQTT TCP | `listener.tcp.bind_port` (`LISTENER_TCP_BIND_PORT`) | **1883** | yes |
+| MQTT TCP | `listener.tcp.bind_port` (`LISTENER_TCP_BIND_PORT`) | **1883** | yes (`LISTENER_TCP_ENABLED:true`) |
 | MQTTS (SSL) | `listener.ssl.bind_port` (`LISTENER_SSL_BIND_PORT`) | **8883** | **no** (`LISTENER_SSL_ENABLED:false`) |
-| MQTT over WS | `listener.ws.bind_port` (`LISTENER_WS_BIND_PORT`) | **8084** | yes |
+| MQTT over WS | `listener.ws.bind_port` (`LISTENER_WS_BIND_PORT`) | **8084** | yes (`LISTENER_WS_ENABLED:true`) |
 | MQTT over WSS | `listener.wss.bind_port` (`LISTENER_WSS_BIND_PORT`) | **8085** | **no** (`LISTENER_WSS_ENABLED:false`) |
 | HTTP / REST / Web UI | `server.port` (`HTTP_BIND_PORT`) | **8083** | yes |
 
@@ -173,11 +214,11 @@ Section jump-table in the CE yml: `server:` (HTTP/REST + SSL) L18–60 · `liste
 
 ### Version
 
-Root `pom.xml` `<version>` — CE `2.4.0-SNAPSHOT`, PE `2.4.0PE-SNAPSHOT` (Maven build; exposed at runtime as `app.version`). Use this to *verify* behavior against the right version, but **write version strings in docs via the `~/data/versions` constants**, never hardcoded.
+Root `pom.xml` `<version>` — CE `2.4.0-SNAPSHOT`, PE `2.4.0PE-SNAPSHOT` (Maven build; exposed at runtime as `app.version`). The **published** version the docs target is lower: `src/data/versions.ts` currently ships `TBMQ_VER = '2.3.0'`, `TBMQ_PE_VER = '2.3.0PE'`, `TBMQ_BRANCH = 'release-2.3.0'`. Use the pom to *verify* behavior against the right source tree, but **write version strings in docs via the `~/data/versions` constants**, never hardcoded. If a behavior exists only on the SNAPSHOT and not in the released version, don't document it yet.
 
 ### CE vs PE — what's actually PE-only
 
-The **entire MQTT protocol core** (listeners, QoS, retained, LWT, shared subs, sessions, keep-alive, flow control, rate limits) **and the HTTP/MQTT/Kafka integrations** are in **both** editions — integrations are **not** PE-only in current source. Gate only these **PE-only** features behind `<ShowFor … show={[Products.TBMQ_PE]}>`: **audit logs, OAuth2/SSO login, RBAC roles & permissions, white-labeling, domain management, image/resource storage, dropped-message reporting** (packages `service/security/auth/oauth2/`, `service/security/permission/`, `service/entity/wl/`, `service/entity/domain/`, `service/resource/`, `service/mqtt/dropped/`; PE-only controllers `AuditLogController`, `OAuth2Controller`, `RoleController`, `WhiteLabelingController`, `DomainController`, `ImageController`, `DroppedMsgController`; PE-only yml sections `audit-log:`, `security.oauth2:`, `mqtt.dropped-msg:`).
+The **entire MQTT protocol core** (listeners, QoS, retained, LWT, shared subs, sessions, keep-alive, flow control, rate limits) **and the HTTP/MQTT/Kafka integrations** are in **both** editions — integrations are **not** PE-only in current source. Gate only these **PE-only** features behind `<ShowFor … show={[Products.TBMQ_PE]}>`: **audit logs, OAuth2/SSO login, domain management, RBAC roles & permissions, white-labeling, image/resource storage, dropped-message reporting, Private Cloud subscription** (packages `service/security/auth/oauth2/`, `service/security/permission/`, `service/entity/wl/`, `service/entity/domain/`, `service/resource/`, `service/mqtt/dropped/`; PE-only controllers `AuditLogController`, `OAuth2Controller`, `RoleController`, `WhiteLabelingController`, `DomainController`, `ImageController`, `DroppedMsgController`; PE-only yml sections `audit-log:`, `security.oauth2:`, `mqtt.dropped-msg:`).
 
 ### Verify claim → read file (cheat sheet)
 
@@ -187,6 +228,7 @@ The **entire MQTT protocol core** (listeners, QoS, retained, LWT, shared subs, s
 - CONNECT/keep-alive negotiation → `actors/client/service/connect/ConnectServiceImpl` + `service/mqtt/keepalive/KeepAliveServiceImpl`.
 - Retained / LWT / shared-subs / wildcard → `service/mqtt/retain/`, `service/mqtt/will/`, `service/subscription/`.
 - Auth → `service/auth/providers/` + `service/auth/enhanced/`.
+- Integration executor config → `integration/executor/src/main/resources/tbmq-integration-executor.yml`.
 - "Is this PE-only?" → the PE-only lists above.
 
 ## Verify against the MQTT spec
@@ -200,13 +242,13 @@ The **entire MQTT protocol core** (listeners, QoS, retained, LWT, shared subs, s
 
 ## If the page has a learn-hub counterpart
 
-**Optional — most pages don't.** Skip this section unless the page is about a general MQTT concept that the `/mqtt/` learn hub also covers (keep-alive, QoS, topics, retained messages, sessions, TLS, the auth methods, shared subscriptions…). Installation, cluster setup, integrations, performance reference and `other/` pages have no counterpart, and nothing here applies to them.
+**Optional — most pages don't** (9 of 82; the list is in the Scope section). Skip this section unless the page is one of them. Installation, cluster setup, integrations, performance reference and `other/` pages have no counterpart, and nothing here applies to them.
 
 Check with `ls src/pages/mqtt/ | grep <topic>`. If a learn page exists:
 
 1. **Don't re-teach the concept.** Open with a one-line recap that links back via a plain marketing link (`/mqtt/<slug>/`), then go straight to TBMQ specifics.
 2. **Split by intent** — concept/why → learn page; parameters/defaults/behavior/steps/UI → this doc. A sentence of overlap is fine; a whole duplicated section is not.
-3. **Point the learn page at this doc** if it currently links only the generic `/docs/mqtt-broker/` root because this page didn't exist yet. That's the `mqtt-learn-topic` skill's rule; use that skill if the learn page itself needs work.
+3. **Point the learn page at this doc** if it currently links only the generic `/docs/` root because this page didn't exist yet (only `mqtt-vs-amqp` and `mqtt-vs-coap` legitimately do). That's the `mqtt-learn-topic` skill's rule; use that skill if the learn page itself needs work.
 
 ## Finding gaps (what to create or fix next)
 
@@ -220,20 +262,33 @@ grep -ohE '\$\{[A-Z0-9_]+' ../tbmq/application/src/main/resources/thingsboard-mq
 # env vars the docs mention
 grep -rohE '[A-Z][A-Z0-9_]{6,}' src/content/_includes/docs/mqtt-broker | sort -u
 ```
+
 `comm -23` the two lists to see the difference. Expect ~90 hits, most of them **intentional internal knobs** (thread-pool sizes, `ACTORS_*` dispatcher tuning) that should stay undocumented — so judge per parameter and only document what an operator would plausibly tune. A gap that matters looks like a rate limit, timeout, or feature toggle, not a pool size.
 
 **Thin or stale pages.** Short includes are candidates for deepening; a page whose defaults no longer match the yml is a correctness bug:
+
 ```bash
 wc -l $(find src/content/_includes/docs/mqtt-broker -name '*.mdx') | sort -n | head -20
 ```
 
 **Missing section coverage.** Compare the sidebar groups in `astro.sidebar.ts` against the actual tree — a feature with a UI page but no doc, a new integration, a cluster target with no setup guide.
 
-**Learn-hub topics with no technical doc** (only relevant to protocol concepts):
+**Orphaned includes / stubs.** An include nothing imports, or a stub whose include was renamed:
+
 ```bash
-find src/content/docs/docs/mqtt-broker -name '*.mdx' -not -path '*/pe/*' | sed -E 's#.*/mqtt-broker/##; s#\.mdx$##' | sort
+# includes with no importing stub
+for f in $(find src/content/_includes/docs/mqtt-broker -name '*.mdx' | sed 's#src/content/_includes/##; s#\.mdx$##'); do
+  grep -rq "@includes/$f.mdx" src/content/docs || echo "orphan include: $f"
+done
+```
+
+**Learn-hub topics with no technical doc** (only relevant to protocol concepts):
+
+```bash
+find src/content/docs/docs -name '*.mdx' -not -path '*/pe/*' | sed -E 's#.*/docs/docs/##; s#\.mdx$##' | sort
 grep -oE "slug: '[^']+'" src/data/mqttLearn.ts | sed "s/slug: //; s/'//g" | sort
 ```
+
 MQTT-5 features that fall back to `user-guide/mqtt-protocol` — reason codes, user properties, topic alias, flow control, message/session expiry, request/response — are standing candidates. Confirm any gap before creating; the tree evolves.
 
 ## Verification
@@ -244,22 +299,29 @@ Dev server on `http://localhost:4321` (`NODE_OPTIONS=--max-old-space-size=8192 p
 pnpm check                 # astro type-check — expect 0 errors
 pnpm lint:eslint           # expect clean
 pnpm lint:slugcheck        # slugs consistent across editions
-pnpm exec prettier --write "src/content/**/mqtt-broker/**/<page>.mdx" && pnpm exec prettier --check "src/content/**/mqtt-broker/**/<page>.mdx"
-curl -s http://localhost:4321/docs/mqtt-broker/<path>/<page>/     | grep -o '<title>'   # CE page renders
-curl -s http://localhost:4321/docs/mqtt-broker/pe/<path>/<page>/  | grep -o '<title>'   # PE page renders
+pnpm lint:steps            # catches a markdown list inside <Steps> inside a JSX {…} block
+pnpm exec prettier --write "src/content/**/docs/**/<page>.mdx" && pnpm exec prettier --check "src/content/**/docs/**/<page>.mdx"
+curl -s http://localhost:4321/docs/<slug>/     | grep -o '<title>[^<]*'   # CE page renders
+curl -s http://localhost:4321/docs/pe/<slug>/  | grep -o '<title>[^<]*'   # PE page renders
 pnpm lint:linkcheck        # builds + validates all internal links — run after adding/renaming pages, especially new DocLink targets
 ```
+
+If you **rename or move** an existing page, add the old→new pair to `SINGLE_REDIRECTS` (or `CATCH_ALL_REDIRECTS` for a whole prefix) in `src/data/redirects.ts`, run `pnpm generate:redirects`, and commit the regenerated `public/_redirects` + `public/redirects.json`. Do not create an `.astro` redirect stub under `src/pages/docs/`.
 
 Ask the user before running `pnpm build:fast` (repo build policy: always ask "run build:fast to verify, or skip?").
 
 ## Gotchas
 
+- **The URL is `/docs/…`, the include directory is `_includes/docs/mqtt-broker/…`.** Both are correct; don't "fix" the include path, and don't let it leak into a link.
 - **Indentation flips vs the learn skill: MDX/YAML use SPACES**, not tabs. (Tabs are only for `.ts`/`.astro` in this repo; `.mdx`, `.json`, `.yaml` use spaces — prettier enforces it.)
-- **Both CE and PE stubs are required** for a page that ships in both editions. A missing PE stub means the page 404s under `/docs/mqtt-broker/pe/…` and breaks its sidebar entry. The sidebar entry itself is added once (via `${prefix}`) and serves both. **A wholly PE-only page is the exception:** PE stub only, no CE stub, sidebar entry gated with `isPE`.
-- **`<ShowFor>` for product-conditional prose, not JSX `{props.product === …}`** — the latter disables Markdown parsing and forces raw HTML. Conditional headings use `<ConditionalHeading>`, not `##`.
-- **`<DocLink>` for internal doc links**, never bare Markdown links — it resolves the correct CE/PE prefix from `props.product`.
+- **Both CE and PE stubs are required** for a page that ships in both editions. A missing PE stub means the page 404s under `/docs/pe/…` and breaks its sidebar entry. The sidebar entry itself is added once (via `${prefix}`) and serves both — **except** in the `Getting Started` / `Core concepts` / `Releases` groups, which are hand-duplicated per edition. **A wholly PE-only page is the other exception:** PE stub only, no CE stub, sidebar entry gated with `isPE`.
+- **`<ShowFor>` for product-conditional prose, not JSX `{props.product === …}`** — the latter disables Markdown parsing and forces raw HTML. It also breaks `<Steps>`: a markdown numbered list inside a JSX expression never compiles to `<ol>`, and Starlight throws during `llms-full.txt` generation, far from the source. That's what `pnpm lint:steps` guards.
+- **`<ConditionalHeading>` product ids are `mqtt-broker` / `mqtt-broker-pe`**, not `ce`/`pe`. A wrong id silently drops the heading from the TOC — no build error.
+- **`<DocLink>` for internal doc links**, never bare Markdown links — it resolves the correct CE/PE prefix from `props.product`. Its `path` is prefix-relative (`"user-guide/last-will"`), and `bold` defaults to **true**.
 - **Never hardcode versions / image tags** — import from `~/data/versions`.
-- **Trailing slash everywhere:** `/docs/mqtt-broker/…/`, and `DocLink` `path` values are prefix-relative (`"user-guide/last-will"`), not absolute.
+- **Trailing slash everywhere:** `/docs/…/`, `/docs/pe/…/`.
 - **Verify, don't assume.** The most likely way to ship a wrong doc is to state a default from memory. Open `thingsboard-mqtt-broker.yml` and read the `:default`.
 - **Don't over-gate.** Integrations (HTTP/MQTT/Kafka) are in CE too — only the PE-only list above goes behind `<ShowFor>`.
-- **Don't restructure shared files gratuitously** — `astro.sidebar.ts`, the `Products` enum, and schemas are kept upstream-merge-compatible; add entries, don't reshape.
+- **Default to no screenshots** (repo CLAUDE.md): describe the exact page, button, field and toggle labels in `<Steps>` instead. Never bulk-remove the older annotated galleries from a page you happen to be editing — that's the user's call, page by page.
+- **Asset references fail silently.** A missing image makes `ImageGallery` swap in a CDN URL instead of erroring, so `astro check` and the build both pass. Grep the built site for `img.thingsboard.io` to catch it (the one legitimate hit is `support-ukraine-banner.webp`).
+- **Don't restructure shared files gratuitously** — `astro.sidebar.ts`, the `Products` enum, and the schemas are kept upstream-merge-compatible; add entries, don't reshape.

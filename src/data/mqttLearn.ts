@@ -17,7 +17,8 @@ export interface MqttTopic {
 	/** One crisp sentence for the hub-grid card blurb (clamped to 2 lines) */
 	cardSummary: string;
 	/** Estimated reading time in minutes, shown on the hub card. Computed from the
-	 *  rendered page word count (~200 wpm); regenerate via scripts/mqtt-reading-time. */
+	 *  rendered page word count (~200 wpm) — don't hand-edit it. Regenerate for every
+	 *  topic with `pnpm build:fast && pnpm generate:reading-time` (needs dist/). */
 	readingMinutes: number;
 	/** One-line "how TBMQ relates" summary (hub card + How-TBMQ block) */
 	tbmqTieIn: string;
@@ -150,7 +151,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mqtt-reason-codes',
-		readingMinutes: 2,
+		readingMinutes: 8,
 		title: 'MQTT Reason Codes',
 		navLabel: 'Reason codes',
 		cardSummary: 'Single-byte status values attached to control packets to report outcomes.',
