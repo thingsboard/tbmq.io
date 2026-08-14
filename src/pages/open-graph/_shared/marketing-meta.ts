@@ -50,15 +50,14 @@ const PREFIX_RULES: PrefixRule[] = [
 	{ prefix: '/live-demo/', section: { sectionName: 'Live Demo', tight: true } },
 ];
 
-// Fallback for allowlisted pages without a prefix rule — currently unreachable,
-// every MARKETING_ALLOWLIST entry has a rule above.
-const STANDALONE_SECTION: MarketingSection = { sectionName: 'Solutions' };
-
 /**
  * Resolve a marketing pathname to its slab section.
  * - '/' → no section name (logo alone).
  * - Known prefixes → matching section word.
- * - Anything else → the standalone fallback.
+ *
+ * Only called on MARKETING_ALLOWLIST pathnames; a miss means the allowlist
+ * gained an entry without a matching PREFIX_RULES rule, so fail the build
+ * loudly instead of stamping a stale section word onto the card.
  */
 export function getMarketingSection(pathname: string): MarketingSection {
 	const normalized = pathname.endsWith('/') ? pathname : pathname + '/';
@@ -66,5 +65,5 @@ export function getMarketingSection(pathname: string): MarketingSection {
 	for (const rule of PREFIX_RULES) {
 		if (normalized.startsWith(rule.prefix)) return rule.section;
 	}
-	return STANDALONE_SECTION;
+	throw new Error(`No PREFIX_RULES entry for allowlisted marketing pathname: ${pathname}`);
 }
