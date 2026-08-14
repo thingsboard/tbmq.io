@@ -494,18 +494,16 @@ See the <a href="https://kubernetes.io/docs/reference/kubectl/cheatsheet/" targe
 
 ## Upgrading
 
-<ol>
-  <li>Check the <strong>version-specific notes</strong> below for any preparation your target version requires.</li>
-  <li><a href="#backup-and-restore-optional">Back up your database</a> (optional but recommended).</li>
-  <li><a href="#run-upgrade">Run the upgrade</a> commands.</li>
-</ol>
+1. Check the **version-specific notes** below for any preparation your target version requires.
+2. [Back up your database](#backup-and-restore-optional) (optional but recommended).
+3. [Run the upgrade](#run-upgrade) commands.
 
 For full version history and supported upgrade paths, see the{' '}
 <DocLink product={props.product} path="installation/upgrade-instructions">upgrade instructions</DocLink> page.{' '}
 If the documentation does not cover your specific upgrade path,{' '}
 <DocLink product={props.product} path="help">contact us</DocLink> for guidance.
 
-If there are no version-specific notes for your upgrade path, skip directly to <a href="#run-upgrade">Run upgrade</a>.
+If there are no version-specific notes for your upgrade path, skip directly to [Run upgrade](#run-upgrade).
 
 ### Backup and restore (optional)
 
@@ -580,22 +578,21 @@ Pull the latest changes from the release branch:
 <Code code={gitPullCmd} lang="bash" />
 
 <Aside type="tip">
-  To upgrade to a specific version (e.g. v2.0.0), replace the branch with the target branch name, e.g. <code>release-2.0.0</code>.
+  To upgrade to a specific version (e.g. v2.0.0), replace the branch with the target branch name, e.g. `release-2.0.0`.
 </Aside>
 
-<p><strong>Note:</strong> Make sure any custom changes are not lost during the merge.</p>
+**Note:** Make sure any custom changes are not lost during the merge.
 
 <Aside>
-  <p>If you encounter conflicts during the merge that are unrelated to your changes, accept all remote changes:</p>
-  <ol>
-    <li>Abort the current merge: <code>git merge --abort</code></li>
-    <li>Re-pull accepting remote changes: <code>git pull origin {TBMQ_BRANCH} -X theirs</code></li>
-  </ol>
-  <p>Merge strategy options:</p>
-  <ul>
-    <li><code>-X ours</code> — auto-resolve conflicts by favoring your local version</li>
-    <li><code>-X theirs</code> — auto-resolve conflicts by favoring the remote version</li>
-  </ul>
+If you encounter conflicts during the merge that are unrelated to your changes, accept all remote changes:
+
+1. Abort the current merge: `git merge --abort`
+2. Re-pull accepting remote changes: <code>git pull origin {TBMQ_BRANCH} -X theirs</code>
+
+Merge strategy options:
+
+- `-X ours` — auto-resolve conflicts by favoring your local version
+- `-X theirs` — auto-resolve conflicts by favoring the remote version
 </Aside>
 
 After pulling, run the upgrade script:
@@ -605,10 +602,13 @@ After pulling, run the upgrade script:
 ```
 
 <Aside>
-  <p>You may optionally stop TBMQ pods before running the database upgrade to ensure a consistent DB state:</p>
-  <Code code="./k8s-delete-tbmq.sh" lang="bash" />
-  <p>This causes downtime, but most upgrades do not require stopping TBMQ. Once the upgrade completes, redeploy to roll out the new version:</p>
-  <Code code="./k8s-deploy-tbmq.sh" lang="bash" />
+You may optionally stop TBMQ pods before running the database upgrade to ensure a consistent DB state:
+
+<Code code="./k8s-delete-tbmq.sh" lang="bash" />
+
+This causes downtime, but most upgrades do not require stopping TBMQ. Once the upgrade completes, redeploy to roll out the new version:
+
+<Code code="./k8s-deploy-tbmq.sh" lang="bash" />
 </Aside>
 
 ## Cluster deletion
