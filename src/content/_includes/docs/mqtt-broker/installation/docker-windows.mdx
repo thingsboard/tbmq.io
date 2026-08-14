@@ -333,8 +333,7 @@ Once the file is created, proceed with the [upgrade](#run-upgrade).
 
 **Add Integration Executor microservice**
 
-Add the <DocLink product={props.product} path="integrations">Integration Executor</DocLink> service definition and volume to your `docker-compose.yml`
-( <a href="https://github.com/thingsboard/tbmq/blob/release-2.1.0/msa/tbmq/configs/docker-compose.yml" target="_blank" rel="noopener noreferrer">full example</a>):
+Add the <DocLink product={props.product} path="integrations">Integration Executor</DocLink> service definition and volume to your `docker-compose.yml` (<a href="https://github.com/thingsboard/tbmq/blob/release-2.1.0/msa/tbmq/configs/docker-compose.yml" target="_blank" rel="noopener noreferrer">full example</a>):
 
 <details>
 <summary>Service definition and volume</summary>
@@ -348,8 +347,7 @@ Create the log volume and start the service:
 
 **Update third-party services**
 
-This release updates third-party dependency versions
-( <a href="https://github.com/thingsboard/tbmq/pull/218" target="_blank" rel="noopener noreferrer">pull request</a>):
+This release updates third-party dependency versions (<a href="https://github.com/thingsboard/tbmq/pull/218" target="_blank" rel="noopener noreferrer">pull request</a>):
 
 | Service | Previous version | Updated version |
 |---|---|---|
@@ -370,8 +368,7 @@ After addressing third-party service versions, proceed with the [upgrade](#run-u
 <details>
 <summary>This release adds Redis configuration to the Docker Compose setup.</summary>
 
-Update your `docker-compose.yml` to include the Redis service
-( <a href="https://github.com/thingsboard/tbmq/pull/142/files#diff-18a10097b03fb393429353a8f84ba29498e9b72a21326deb9809865d384e2800" target="_blank" rel="noopener noreferrer">pull request diff</a>).
+Update your `docker-compose.yml` to include the Redis service (<a href="https://github.com/thingsboard/tbmq/pull/142/files#diff-18a10097b03fb393429353a8f84ba29498e9b72a21326deb9809865d384e2800" target="_blank" rel="noopener noreferrer">pull request diff</a>).
 
 <details>
 <summary>Complete Docker Compose file prior to the upgrade</summary>
