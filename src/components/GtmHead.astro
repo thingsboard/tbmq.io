@@ -1,7 +1,9 @@
 ---
+import { GTM_ID } from '~/consts';
 ---
+
 <!-- Google Tag Manager -->
-<script is:inline>
+<script is:inline define:vars={{ GTM_ID }}>
 	window.dataLayer = window.dataLayer || [];
 	window.gtag = function (...args) {
 		window.dataLayer.push(args);
@@ -18,7 +20,7 @@
 				j.async = true;
 				j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
 				f.parentNode.insertBefore(j, f);
-			})(window, document, 'script', 'dataLayer', 'GTM-TGBNQXN');
+			})(window, document, 'script', 'dataLayer', GTM_ID);
 		};
 
 		if (new URL(window.location.href).searchParams.has('gtm_debug')) {

@@ -16,6 +16,18 @@ export const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 /** Global OG-card fallback for pages without a generated per-page card. */
 export const OG_FALLBACK = '/tbmq-og.png';
 
+/** Google Tag Manager container id, read by GtmHead + GtmNoscript. */
+export const GTM_ID = 'GTM-TFXSRSWK';
+
+/**
+ * Google Programmable Search Engine id (`cx`) behind the header search modal
+ * and the /docs/search/ + /docs/pe/search/ pages. The domain the results come
+ * from (tbmq.io) is configured in the PSE control panel, not in this repo —
+ * pointing search at another domain means creating a new engine there and
+ * swapping this id.
+ */
+export const GOOGLE_CSE_CX = 'a0cca37fad72c4a8e';
+
 /**
  * Astro dev with `trailingSlash: 'always'` 404s dynamic-route URLs that end in
  * `.png`, so generated card URLs get a trailing slash in dev only — production
