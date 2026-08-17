@@ -28,19 +28,6 @@ export const GTM_ID = 'GTM-TFXSRSWK';
  */
 export const GOOGLE_CSE_CX = 'a0cca37fad72c4a8e';
 
-/**
- * Astro dev with `trailingSlash: 'always'` 404s dynamic-route URLs that end in
- * `.png`, so generated card URLs get a trailing slash in dev only — production
- * keeps the clean URL Cloudflare Pages serves directly. The global fallback is
- * a real static file and stays untouched.
- */
-export function devSafeOgImagePath(imagePath: string): string {
-	if (import.meta.env?.DEV && /\.png$/.test(imagePath) && imagePath !== OG_FALLBACK) {
-		return imagePath + '/';
-	}
-	return imagePath;
-}
-
 const SEP = ` ${TITLE_SEPARATOR} `;
 
 export const SECTION_LABELS: Record<string, string> = {

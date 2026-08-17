@@ -16,7 +16,6 @@ import {
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
 import {
-	devSafeOgImagePath,
 	DOCS_SUFFIX,
 	EDIT_BASE_URL,
 	formatDocsTitle,
@@ -317,7 +316,7 @@ function updateHead(context: APIContext) {
 	// Marketing pages author their own `og:image` in frontmatter; only emit ours
 	// when none is present, else BaseLayout pages get a duplicate `og:image`.
 	if (!ogImage) {
-		const imageSrc = devSafeOgImagePath(getOgImageUrl(pathname) ?? OG_FALLBACK);
+		const imageSrc = getOgImageUrl(pathname) ?? OG_FALLBACK;
 		// Use request origin so dev shows localhost; in static build it equals context.site origin.
 		const canonicalImageSrc = new URL(imageSrc, context.url.origin).href;
 

@@ -213,7 +213,7 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 - Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`. Only `/404/` and `/contact-us-thanks/` do so today.
 - Capitalisation of any label derived from a URL segment goes through `prettifySegment` — add to its `ACRONYMS` map rather than hand-casing, or you get "Mqtt".
 - To inspect a card without the slow full build: run `pnpm dev`, read the page's `og:image` URL out of its HTML, and fetch it — Satori runs on demand, so you get the real card (the URL needs the dev trailing slash, see below).
-- **Astro dev quirk:** `trailingSlash: 'always'` makes the dev server 404 dynamic-route URLs that end in `.png`. `devSafeOgImagePath()` in `src/consts.ts` appends a trailing `/` only in `import.meta.env.DEV` so dev links resolve while production HTML keeps the clean `.png` URL Cloudflare serves directly. The global fallback path lives there too as `OG_FALLBACK`.
+- OG card URLs are clean `.png` paths in dev and production alike (Astro 7 fixed the old dev-server 404 on dynamic `.png` routes under `trailingSlash: 'always'`; the `devSafeOgImagePath()` workaround was removed with the Astro 7 upgrade). The global fallback path lives in `src/consts.ts` as `OG_FALLBACK`.
 
 **To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` **and** a matching `PREFIX_RULES` entry in `marketing-meta.ts` (the build throws on an allowlisted pathname with no rule), then rebuild.
 

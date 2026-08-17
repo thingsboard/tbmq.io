@@ -1,5 +1,5 @@
 ---
-import { devSafeOgImagePath, OG_FALLBACK, SITE_NAME } from '@root/consts';
+import { OG_FALLBACK, SITE_NAME } from '@root/consts';
 
 interface Props {
 	title: string;
@@ -31,8 +31,7 @@ const {
 
 // Resolve against the actual request origin so dev shows localhost and prod shows the site origin.
 // In Astro static build, Astro.url.origin equals Astro.site origin, so production output is unchanged.
-const ogImagePath = devSafeOgImagePath(ogImage ?? OG_FALLBACK);
-const ogImageUrl = new URL(ogImagePath, Astro.url.origin).href;
+const ogImageUrl = new URL(ogImage ?? OG_FALLBACK, Astro.url.origin).href;
 ---
 
 {!noCanonical && <link rel="canonical" href={canonicalUrl} />}
