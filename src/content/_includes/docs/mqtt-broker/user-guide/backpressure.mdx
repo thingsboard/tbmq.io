@@ -1,15 +1,20 @@
 import { Aside, Code } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { Products } from '~/models/site.models';
 
 export const rateLimitsCe = `rate-limits:
   total:
-    # Enables or disables total incoming and outgoing messages rate limits for the broker (per whole cluster).
+    # Enables or disables the cluster-wide total throughput quota.
     enabled: "\${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
-    # Limits the total count of incoming and outgoing messages per time interval (in s).
-    # Example: 1000 messages per second or 50000 messages per minute.
-    config: "\${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
+    # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths.
+    # The default sustains ~833 messages per second and allows a 50000-packet burst.
+    config: "\${MQTT_TOTAL_RATE_LIMITS_CONFIG:50000:60}"
+    # Tokens a node draws from Redis per round trip. 0 derives max(1, sustainedRate / 10).
+    block-size: "\${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
+    # Period of the tick returning a node's unused drawn tokens to the shared bucket (in ms).
+    lease-return-ms: "\${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
   incoming-publish:
     # Enables or disables publish rate limits per client for incoming messages to the broker.
     enabled: "\${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
@@ -67,11 +72,12 @@ When the receive buffer fills up, TCP signals the sender to slow down, preventin
 Unlike TCP-level backpressure, which is reactive, rate limiting is a proactive control layer. It enforces traffic constraints before the system becomes overloaded, preventing individual publishers from overwhelming the broker and maintaining fairness across clients.
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
-TBMQ supports both cluster-wide rate limits and per-client publish rate limits:
+TBMQ supports both a cluster-wide throughput quota and per-client publish rate limits:
 
 <Code code={rateLimitsCe} lang="yaml" />
 
-The `total` limit is cluster-wide: the token bucket lives in Redis, so all broker nodes draw from the same budget.
+The `total` quota is cluster-wide: the token bucket lives in Redis, so all broker nodes draw from the same budget. It is
+described in detail below.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
@@ -80,20 +86,13 @@ the total incoming and outgoing message rate across the cluster, so there is no 
 Per-client publish rate limits remain configurable:
 
 <Code code={rateLimitsPe} lang="yaml" />
+
+How that budget is charged and what happens when it runs out is described below.
 </ShowFor>
 
-The cluster-wide budget is charged at several stages — when the PUBLISH arrives, when the broker processes it, once per
-extra subscriber it fans out to, and for retained messages sent on SUBSCRIBE. Only the first of those reports back to the
-publisher; once the bucket is empty the other stages drop copies silently, so a message can reach some subscribers and
-not others.
-
-Both limits are configured as a comma-separated list of `limit:seconds` pairs, and **all** pairs must be satisfied.
+Per-client limits are configured as a comma-separated list of `limit:seconds` pairs, and **all** pairs must be satisfied.
 The default `10:1,300:60` means at most 10 messages in any second **and** at most 300 in any minute — so a client cannot
 burst at 10 msg/sec for a whole minute.
-
-While the cluster-wide limit is active, every incoming PUBLISH also goes through a batching queue, drained when it reaches
-`MQTT_RATE_LIMITS_BATCH_SIZE` (50) messages or every `MQTT_RATE_LIMITS_PERIOD_MS` (50 ms), whichever comes first — at low
-message rates that adds up to one period of latency.
 
 Rate limits are disabled by default. When an incoming limit is hit, the PUBLISH is dropped, the `droppedMsgs` counter is
 incremented, and the broker's response to the publisher depends on the protocol version:
@@ -102,6 +101,69 @@ incremented, and the broker's response to the publisher depends on the protocol 
 |---|---|
 | 5.0 | The message is acknowledged with reason code `0x97` Quota exceeded — in PUBACK for QoS 1, in PUBREC for QoS 2. QoS 0 publishes are dropped silently. The session stays open. |
 | 3.1.1 / 3.1 | The client is **disconnected**, since MQTT 3.x has no way to signal a rejected publish. |
+
+#### Cluster-wide throughput quota
+
+The cluster-wide quota counts MQTT PUBLISH packets — incoming and outgoing combined — against a single budget shared by
+every node in the cluster. Packets are charged at **admission**: when the publish is processed, before it is stored. A
+publish costs
+
+- **1 packet** for the incoming message itself, plus
+- **1 packet** for every persistent subscriber, shared subscription group, and integration it is routed to.
+
+The bill is therefore `1 + fanout`, computed at publish time and independent of whether those subscribers happen to be
+online. Once a message has been charged and stored, delivering it costs nothing more: a persistent session that
+reconnects after being offline receives its whole backlog however large, and QoS 1/2 retransmissions are free.
+
+Two kinds of packet fall outside that one charge. Delivery to a **non-persistent** subscriber is charged as it is sent,
+because nothing was stored — for those clients, delivery *is* admission. A **retained** message sent to a client that
+subscribes later is charged on SUBSCRIBE, since it is a new outgoing packet that nothing has paid for yet.
+
+When the budget runs out, the outcome depends on which packet is being charged:
+
+| Packet | Result |
+|---|---|
+| Incoming PUBLISH | Refused — MQTT 5.0 gets a PUBACK (QoS 1) or PUBREC (QoS 2) carrying reason code `0x97` Quota exceeded, MQTT 3.x is disconnected. Counted in `droppedMsgs`. |
+| Copy for a persistent subscriber, shared subscription group, or integration | Never stored. The subscription list is truncated and the copies past the cut are counted in `droppedMsgs`. |
+| Delivery to a non-persistent subscriber | Dropped and counted in `droppedMsgs`. |
+| Retained message on SUBSCRIBE | Truncated, but **not** counted in `droppedMsgs` — the retained store is left intact, so the next matching subscription still receives the full set. |
+
+Because refusals happen at admission, the quota only ever sheds work the broker has not yet acknowledged; a message that
+is already durable is never discarded to save budget.
+
+<Aside type="caution">
+  If Redis is unreachable, the quota **fails open**: traffic passes unmetered instead of being refused. The only signal
+  that enforcement has stopped is the `throughputQuotaDegraded_total` counter, so alert on it if you rely on the quota
+  as a hard ceiling.
+</Aside>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={5} id="sizing-the-bucket" showFor="mqtt-broker">Sizing the bucket</ConditionalHeading>
+
+`config` is a comma-separated list of `capacity:seconds` bandwidths. Each refills continuously over its period, so the
+sustained rate is `capacity / seconds` while the capacity is how much unused budget accumulates for a burst. The default
+`50000:60` sustains roughly 833 messages per second, and after a full idle minute admits 50000 packets at once.
+
+**The capacity is also the largest amount a single publish can charge**, because a publish pays for its entire fan-out in
+one charge — so keep it above your widest fan-out.
+
+Configuring more than one bandwidth lowers that ceiling to the smallest capacity among them, since a single charge has to
+fit within every configured bandwidth. `1000:1,50000:60` sustains the same ~833 msg/sec but truncates any fan-out wider
+than 1000 subscribers, even on a completely idle cluster. To allow a smaller burst without capping the fan-out, keep one
+bandwidth and shorten the period at the same ratio instead of adding a second one: `5000:6` is the same ~833 msg/sec with
+a tenth of the burst.
+
+The remaining two parameters govern how nodes share the bucket and rarely need changing:
+
+- **`block-size`** — how many tokens a node draws from Redis per round trip. Defaults to `0`, which derives
+  `max(1, sustainedRate / 10)` from `config`. Larger blocks mean fewer Redis calls but let an idle node hold more of the
+  cluster budget between lease returns. A publish whose fan-out exceeds the node's drawn tokens draws the shortfall on
+  demand, so this value never caps a single publish.
+- **`lease-return-ms`** — how often a node returns unused drawn tokens to the shared bucket, in milliseconds. Defaults to
+  `1000`. Setting it to `0` disables the tick, and a node that draws a block and then goes quiet holds those tokens
+  indefinitely — the cluster's effective budget shrinks by the sum of every idle node's lease. Leave the tick on unless
+  traffic is even across all nodes.
+</ShowFor>
 
 ## Outbound backpressure
 

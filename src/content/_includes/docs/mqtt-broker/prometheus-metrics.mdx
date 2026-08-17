@@ -114,6 +114,21 @@ Both counters are untagged: `droppedMsgs_total` tells you *that* messages were l
   `droppedMsgs_total` gives you the rate but not the cause. For the client, topic, and reason behind each drop, see <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink>.
 </ShowFor>
 
+One more counter belongs next to these, even though it does not count lost messages:
+
+| Series | Type | Labels | Notes |
+|---|---|---|---|
+| `throughputQuotaDegraded_total` | counter | `cause` = `redis` | Times the cluster-wide throughput quota failed open because Redis was unreachable |
+
+`throughputQuotaDegraded_total` is the inverse signal of `droppedMsgs_total`: it increments when the cluster-wide
+throughput quota cannot reach Redis and therefore stops enforcing, letting traffic through **unmetered** rather than
+refusing it. The series is registered on every node whether or not the quota is enabled, so a flat zero is the normal
+reading — any increase means enforcement is silently off.
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+  The quota itself is described in <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> — alert on this counter if you rely on it as a hard ceiling.
+</ShowFor>
+
 ## Connection lifecycle
 
 | Series | Type | Labels | Notes |
