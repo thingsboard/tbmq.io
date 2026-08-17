@@ -1,3 +1,4 @@
+import { unified } from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import { defineConfig, passthroughImageService, sharpImageService } from 'astro/config';
 import rehypeSlug from 'rehype-slug';
@@ -146,12 +147,17 @@ export default defineConfig({
     scopedStyleStrategy: 'where',
     compressHTML: false,
     markdown: {
-        smartypants: false,
-        remarkPlugins: [
-            // @ts-expect-error — `remark-smartypants` type is not matching Astro's for some reason even though they both use unified's `Plugin` type
-            [remarkSmartypants, { dashes: false }],
-        ],
-        rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings(), rehypeBlogImages()],
+        // Astro 7 defaults to the Sätteri (Rust) pipeline, which does not run remark/rehype
+        // plugins. Our TOC injection (`rehype-mdx-include-headings`) and the other rehype
+        // plugins below require the unified pipeline, so we pin it explicitly.
+        processor: unified({
+            smartypants: false,
+            remarkPlugins: [
+                // @ts-expect-error — `remark-smartypants` type is not matching Astro's for some reason even though they both use unified's `Plugin` type
+                [remarkSmartypants, { dashes: false }],
+            ],
+            rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings(), rehypeBlogImages()],
+        }),
     },
     image: {
         domains: ['avatars.githubusercontent.com'],
