@@ -26,6 +26,7 @@ const jsonLd = marketingJsonLd({
 	gitHubPlatform={Products.TBMQ}
 	jsonLd={jsonLd}
 	ogImageAlt="TBMQ live demo — try the open-source MQTT broker online"
+	openContentLinksInNewTab
 >
 	<main>
 		<LiveDemoHero />
@@ -36,8 +37,6 @@ const jsonLd = marketingJsonLd({
 </BaseLayout>
 
 <script>
-	import '~/scripts/open-links-in-new-tab';
-
 	// Scroll reveal: fade + slide elements in as they enter the viewport.
 	const main = document.querySelector('main');
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -27,6 +27,7 @@ const jsonLd = marketingJsonLd({
 	gitHubPlatform={Products.TBMQ}
 	jsonLd={jsonLd}
 	ogImageAlt="TBMQ MQTT broker performance benchmarks at 100M connections and 3M+ msg/sec"
+	openContentLinksInNewTab
 >
 	<main>
 		<BenchmarkHero />
@@ -38,8 +39,6 @@ const jsonLd = marketingJsonLd({
 </BaseLayout>
 
 <script>
-	import '~/scripts/open-links-in-new-tab';
-
 	// Scroll reveal: fade + slide elements in as they enter the viewport.
 	const main = document.querySelector('main');
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

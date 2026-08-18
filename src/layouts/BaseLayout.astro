@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Landing/Header.astro';
 import Footer from '../components/Landing/Footer.astro';
+import OpenLinksInNewTab from '../components/OpenLinksInNewTab.astro';
 import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import GtmNoscript from '../components/GtmNoscript.astro';
@@ -39,6 +40,8 @@ interface Props {
 	 * images will compete with the real LCP target for bandwidth.
 	 */
 	preloadLcpImage?: string;
+	/** Open all in-content links in a new tab (SEO request; see OpenLinksInNewTab). */
+	openContentLinksInNewTab?: boolean;
 }
 
 const {
@@ -60,6 +63,7 @@ const {
 	noIndex = false,
 	jsonLd,
 	preloadLcpImage,
+	openContentLinksInNewTab = false,
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
@@ -122,11 +126,13 @@ locals.bslForceLight = forceLightTheme;
 	<body>
 		<GtmNoscript />
 
-		{/* Theme-switcher icon palette (light/dark/auto) that `StarlightThemeProvider.updatePickers()`
+		{
+			/* Theme-switcher icon palette (light/dark/auto) that `StarlightThemeProvider.updatePickers()`
 		    clones into the theme-select label icon. Rendered here at the top of <body> instead of
 		    <head> because a warmed `astro dev` traps hoisted <style> blocks inside any <head>
 		    <template>, unstyling the page (https://github.com/withastro/astro/issues/16994).
-		    Only needed where the switcher exists (not on forceLightTheme pages). */}
+		    Only needed where the switcher exists (not on forceLightTheme pages). */
+		}
 		{
 			!forceLightTheme && (
 				<template id="theme-icons">
@@ -150,6 +156,8 @@ locals.bslForceLight = forceLightTheme;
 		<UtmTracker />
 
 		<slot />
+
+		{openContentLinksInNewTab && <OpenLinksInNewTab />}
 
 		<Footer />
 
