@@ -68,6 +68,28 @@ const {
 					</div>
 					{group.rows.map((row) => {
 						const Tag = row.href ? 'a' : 'div';
+						// The CE and PE cells share one shape; render both from data so the
+						// columns can't drift apart when a new cell state is added.
+						const cells = [
+							{
+								colClass: 'col-ce',
+								edition: 'Community Edition',
+								included: row.ce,
+								text: row.ceText,
+								linkHref: row.ceLinkHref,
+								linkClass: 'cell-link',
+								markSrc: '/src/assets/images/landings/pe/blue-mark.svg',
+							},
+							{
+								colClass: 'col-pe',
+								edition: 'Professional Edition',
+								included: row.pe,
+								text: row.peText,
+								linkHref: row.peLinkHref,
+								linkClass: 'cell-link pe-link',
+								markSrc: '/src/assets/images/landings/pe/green-mark.svg',
+							},
+						];
 						return (
 							<Tag
 								href={row.href}
@@ -76,52 +98,31 @@ const {
 								class="comparison-row"
 							>
 								<div class="col-feature">{row.label}</div>
-								<div class="col-ce">
-									{row.ceText ? (
-										row.ceLinkHref ? (
-											<a href={row.ceLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link">
-												{row.ceText}
-											</a>
+								{cells.map((cell) => (
+									<div class={cell.colClass}>
+										{cell.text ? (
+											cell.linkHref ? (
+												<a href={cell.linkHref} target="_blank" rel="noopener noreferrer" class={cell.linkClass}>
+													{cell.text}
+												</a>
+											) : (
+												<span>{cell.text}</span>
+											)
+										) : cell.included ? (
+											<>
+												<SmartImage src={cell.markSrc} alt="" width="20" height="20" />
+												<span class="sr-only">Included in {cell.edition}</span>
+											</>
 										) : (
-											<span>{row.ceText}</span>
-										)
-									) : row.ce ? (
-										<>
-											<SmartImage src="/src/assets/images/landings/pe/blue-mark.svg" alt="" width="20" height="20" />
-											<span class="sr-only">Included in Community Edition</span>
-										</>
-									) : (
-										<>
-											<span class="empty" aria-hidden="true">
-												&nbsp;
-											</span>
-											<span class="sr-only">Not included in Community Edition</span>
-										</>
-									)}
-								</div>
-								<div class="col-pe">
-									{row.peText ? (
-										row.peLinkHref ? (
-											<a href={row.peLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link pe-link">
-												{row.peText}
-											</a>
-										) : (
-											<span>{row.peText}</span>
-										)
-									) : row.pe ? (
-										<>
-											<SmartImage src="/src/assets/images/landings/pe/green-mark.svg" alt="" width="20" height="20" />
-											<span class="sr-only">Included in Professional Edition</span>
-										</>
-									) : (
-										<>
-											<span class="empty" aria-hidden="true">
-												&nbsp;
-											</span>
-											<span class="sr-only">Not included in Professional Edition</span>
-										</>
-									)}
-								</div>
+											<>
+												<span class="empty" aria-hidden="true">
+													&nbsp;
+												</span>
+												<span class="sr-only">Not included in {cell.edition}</span>
+											</>
+										)}
+									</div>
+								))}
 							</Tag>
 						);
 					})}

@@ -7,7 +7,8 @@ type Benchmark = {
 	kicker: string;
 	title: string;
 	viz: 'fan-in' | 'fan-out' | 'p2p';
-	scenario: string;
+	// Rendered via set:html — may carry inline markup (links). Local constants only.
+	scenarioHtml: string;
 	metrics: Metric[];
 	href: string;
 };
@@ -17,7 +18,7 @@ const benchmarks: Benchmark[] = [
 		kicker: 'Fan-in · Scale',
 		title: '100 million connections',
 		viz: 'fan-in',
-		scenario:
+		scenarioHtml:
 			'A 25-node cluster sustained 100M+ concurrent MQTT clients emulating smart trackers while processing 6M messages per second.',
 		metrics: [
 			{ label: 'Throughput', value: '6M msg/sec', hi: true },
@@ -33,7 +34,7 @@ const benchmarks: Benchmark[] = [
 		kicker: 'Fan-out · Throughput',
 		title: '3M msg/sec, single node',
 		viz: 'fan-out',
-		scenario:
+		scenarioHtml:
 			'One 32-vCPU <a href="/">TBMQ</a> node handled a 3M msg/sec fan-out — 100 publishers to 3,000 subscribers — with CPU headroom to spare.',
 		metrics: [
 			{ label: 'Throughput', value: '3M msg/sec', hi: true },
@@ -49,7 +50,7 @@ const benchmarks: Benchmark[] = [
 		kicker: 'Point-to-point · Delivery',
 		title: '1M msg/sec, guaranteed',
 		viz: 'p2p',
-		scenario:
+		scenarioHtml:
 			'Persistent DEVICE clients scaled linearly from 200k to 1M msg/sec with QoS 1 guaranteed delivery, backed by Redis and Kafka.',
 		metrics: [
 			{ label: 'Throughput', value: '1M msg/sec', hi: true },
@@ -467,7 +468,7 @@ const benchmarks: Benchmark[] = [
 						<div class="card-body">
 							<p class="kicker">{b.kicker}</p>
 							<h3 class="title">{b.title}</h3>
-							<p class="scenario" set:html={b.scenario} />
+							<p class="scenario" set:html={b.scenarioHtml} />
 							<div class="metricgrid">
 								{b.metrics.map((m) => (
 									<div class:list={['mt', { hi: m.hi }]}>
