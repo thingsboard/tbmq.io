@@ -16,23 +16,23 @@ const { platformQuery = '' } = Astro.props;
 
 const pathname = Astro.url.pathname; // trailingSlash:'always' → always ends with '/'
 const withSlash = (p: string) => (p.endsWith('/') ? p : `${p}/`);
-// Path prefixes that mark an item current, in priority order: explicit `match`,
-// then the item's own (relative) href, then the hrefs of its submenu links. Only
-// relative paths take part — an absolute href (the external Blog) can never prefix
-// a pathname. Prefixes are slash-terminated so `/contact-us/` won't match
-// `/contact-us-thanks/`, and deriving from the submenu means new dropdown links
-// pick up the highlight automatically.
+// Path prefixes that mark an item current: an explicit `matchPrefixes` wins outright;
+// otherwise the item's own (relative) href is unioned with the hrefs of its submenu
+// links, so new dropdown links pick up the highlight automatically. Only relative
+// paths take part — an absolute href (the external Blog) can never prefix a pathname.
+// Prefixes are slash-terminated so `/contact-us/` won't match `/contact-us-thanks/`.
 const currentPrefixes = (item: NavItem): string[] => {
-	if (item.match) return item.match.map(withSlash);
-	if (item.href?.startsWith('/')) return [withSlash(item.href)];
+	if (item.matchPrefixes) return item.matchPrefixes.map(withSlash);
 	const submenu = allSubmenus.find((s) => s.id === item.submenuId);
-	return (submenu?.groups ?? [])
-		.flatMap((g) => g.items)
-		.map((i) => i.href)
-		.filter((h) => h.startsWith('/'))
+	const submenuHrefs = (submenu?.groups ?? []).flatMap((g) => g.items).map((i) => i.href);
+	return [item.href, ...submenuHrefs]
+		.filter((h): h is string => !!h && h.startsWith('/'))
 		.map(withSlash);
 };
 const isCurrent = (item: NavItem) => currentPrefixes(item).some((p) => pathname.startsWith(p));
+// 'page' only on an exact-href match; 'true' marks the broader current section.
+const ariaCurrent = (item: NavItem, current: boolean): 'page' | 'true' | undefined =>
+	current ? (pathname === item.href ? 'page' : 'true') : undefined;
 ---
 
 <nav class="head-menu">
@@ -51,18 +51,8 @@ const isCurrent = (item: NavItem) => currentPrefixes(item).some((p) => pathname.
 						{item.href ? (
 							<a
 								class="main-menu-link"
-								aria-current={current ? (pathname === item.href ? 'page' : 'true') : undefined}
-								id={
-									item.submenuId === 'nav-cases'
-										? 'use-cases-link'
-										: item.submenuId === 'nav-learn'
-											? 'learn-link'
-											: item.label === 'Device Library'
-												? 'devices-link'
-												: item.label === 'Blog'
-													? 'blog-link'
-													: undefined
-								}
+								aria-current={ariaCurrent(item, current)}
+								id={item.id}
 								href={
 									item.label === 'Device Library' ? `/device-library/${platformQuery}` : item.href
 								}

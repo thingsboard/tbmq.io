@@ -3,10 +3,13 @@ import { learnNavTopics, topicHref } from './mqttLearn';
 export interface NavItem {
 	label: string;
 	href?: string;
+	id?: string; // id of the rendered <a> (mobile hub-link JS and analytics hook on these)
 	submenuId?: string;
 	items?: SubMenuItem[];
 	target?: string;
-	match?: string[]; // path prefixes (each ends in '/') that mark this item current; defaults to [href]
+	// Path prefixes that mark this item current. Overrides the href/submenu-based
+	// default entirely; trailing slash optional.
+	matchPrefixes?: string[];
 }
 
 export interface SubMenuItem {
@@ -34,9 +37,10 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Live Demo', href: '/live-demo/' },
 	{ label: 'Performance', href: '/performance/' },
 	{ label: 'Company', submenuId: 'nav-company' },
-	{ label: 'Learn', href: '/mqtt/', submenuId: 'nav-learn' },
-	{ label: 'Docs', href: '/docs/pe/', match: ['/docs/'] },
-	{ label: 'Blog', href: 'https://thingsboard.io/blog/', target: '_blank' },
+	{ label: 'Learn', href: '/mqtt/', id: 'learn-link', submenuId: 'nav-learn' },
+	// matchPrefixes: href '/docs/pe/' alone would miss the CE docs tree.
+	{ label: 'Docs', href: '/docs/pe/', matchPrefixes: ['/docs/'] },
+	{ label: 'Blog', href: 'https://thingsboard.io/blog/', id: 'blog-link', target: '_blank' },
 ];
 
 // Company submenu
