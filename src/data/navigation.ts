@@ -33,7 +33,7 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Product', href: '/product/' },
 	{ label: 'Live Demo', href: '/live-demo/' },
 	{ label: 'Performance', href: '/performance/' },
-	{ label: 'Company', submenuId: 'nav-company', match: ['/company/', '/contact-us/'] },
+	{ label: 'Company', submenuId: 'nav-company' },
 	{ label: 'Learn', href: '/mqtt/', submenuId: 'nav-learn' },
 	{ label: 'Docs', href: '/docs/pe/', match: ['/docs/'] },
 	{ label: 'Blog', href: 'https://thingsboard.io/blog/', target: '_blank' },

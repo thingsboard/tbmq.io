@@ -276,7 +276,7 @@ const { id } = Astro.props as Props;
 		white-space: nowrap;
 
 		&.active {
-			background: var(--color-primary);
+			background-color: var(--color-brand);
 			color: #fff;
 
 			[data-theme='dark'] & {
@@ -347,7 +347,7 @@ const { id } = Astro.props as Props;
 
 		&:hover > [data-icon],
 		&:hover > svg {
-			color: var(--color-primary);
+			color: var(--color-brand);
 			opacity: 1;
 		}
 	}
@@ -460,7 +460,7 @@ const { id } = Astro.props as Props;
 
 		&:focus {
 			outline: none;
-			border-color: var(--color-primary);
+			border-color: var(--color-brand);
 		}
 
 		&:disabled {
@@ -494,7 +494,7 @@ const { id } = Astro.props as Props;
 			width: 25px;
 			height: 25px;
 			border-radius: 50%;
-			background-color: var(--color-primary);
+			background-color: var(--color-brand);
 			border: none;
 			cursor: pointer;
 		}
@@ -503,7 +503,7 @@ const { id } = Astro.props as Props;
 			width: 25px;
 			height: 25px;
 			border-radius: 50%;
-			background-color: var(--color-primary);
+			background-color: var(--color-brand);
 			border: none;
 			cursor: pointer;
 		}
@@ -564,7 +564,7 @@ const { id } = Astro.props as Props;
 		transition: color 0.15s ease;
 
 		&:hover {
-			color: var(--color-primary);
+			color: var(--color-brand);
 		}
 
 		// Renders the tabler:infinity SVG icon. Sized via `font-size` because
@@ -603,7 +603,7 @@ const { id } = Astro.props as Props;
 		height: 36px;
 		border: none;
 		background: transparent;
-		color: var(--color-primary);
+		color: var(--color-brand);
 		cursor: pointer;
 		font-size: $font-size-lg;
 		font-weight: $font-weight-medium;
@@ -674,7 +674,7 @@ const { id } = Astro.props as Props;
 		transition: border-color 0.2s ease, background-color 0.2s ease;
 
 		&.active {
-			border-color: var(--color-primary);
+			border-color: var(--color-brand);
 			background: rgba(var(--color-primary-rgb), 0.03);
 		}
 	}
@@ -762,8 +762,8 @@ const { id } = Astro.props as Props;
 		}
 
 		input:checked + .calc-toggle-track {
-			background: var(--color-primary);
-			border-color: var(--color-primary);
+			background-color: var(--color-brand);
+			border-color: var(--color-brand);
 			&::before { transform: translateX(20px); }
 		}
 
@@ -846,8 +846,8 @@ const { id } = Astro.props as Props;
 		font-size: $font-size-xs;
 		font-weight: $font-weight-medium;
 		border-radius: $radius-sm;
-		border: 1px solid var(--color-primary);
-		color: var(--color-primary);
+		border: 1px solid var(--color-brand);
+		color: var(--color-brand);
 
 		&--disabled {
 			border-color: var(--color-text-secondary);
@@ -897,7 +897,7 @@ const { id } = Astro.props as Props;
 			font-size: $font-size-sm;
 			font-weight: $font-weight-medium;
 			line-height: 1.4;
-			color: var(--color-primary);
+			color: var(--color-brand);
 			background: none;
 			border: none;
 			padding: 0;
@@ -950,7 +950,7 @@ const { id } = Astro.props as Props;
 
 		.calc-billing-save {
 			font-size: $font-size-xs;
-			color: var(--color-primary);
+			color: var(--color-brand);
 			font-weight: $font-weight-medium;
 		}
 
@@ -960,8 +960,8 @@ const { id } = Astro.props as Props;
 			height: 24px;
 
 			.calc-toggle-track {
-				background: var(--color-primary);
-				border-color: var(--color-primary);
+				background-color: var(--color-brand);
+				border-color: var(--color-brand);
 
 				&::before {
 					width: 20px;
@@ -1015,7 +1015,7 @@ const { id } = Astro.props as Props;
 		font-size: $font-size-base;
 		font-weight: $font-weight-medium;
 		color: var(--color-white);
-		background: var(--color-primary);
+		background-color: var(--color-brand);
 		border: none;
 		border-radius: $radius-lg;
 		cursor: pointer;
@@ -1060,9 +1060,9 @@ const { id } = Astro.props as Props;
 		font-size: $font-size-base;
 		font-weight: $font-weight-medium;
 		text-align: center;
-		color: var(--color-primary);
+		color: var(--color-brand);
 		background: transparent;
-		border: 1px solid var(--color-primary);
+		border: 1px solid var(--color-brand);
 		border-radius: $radius-lg;
 		cursor: pointer;
 		transition: background-color 0.15s ease, color 0.15s ease;
@@ -1077,7 +1077,7 @@ const { id } = Astro.props as Props;
 
 		&:hover {
 			background: rgba(var(--color-primary-rgb), 0.1);
-			border-color: var(--color-primary);
+			border-color: var(--color-brand);
 		}
 	}
 
@@ -1095,7 +1095,7 @@ const { id } = Astro.props as Props;
 	function _readSliderColors() {
 		const cs = getComputedStyle(document.documentElement);
 		window._sliderColors = {
-			primary: cs.getPropertyValue('--sl-color-text-accent').trim() || '#3D50F5',
+			primary: cs.getPropertyValue('--color-brand').trim() || '#1f8b4d',
 			track: cs.getPropertyValue('--sl-color-gray-5').trim() || '#E0E1E2',
 		};
 		return window._sliderColors;

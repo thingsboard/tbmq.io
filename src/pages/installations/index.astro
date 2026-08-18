@@ -151,18 +151,18 @@ import { mqttBrokerProduct } from '~/data/installations';
 			}
 		}
 
-		:global(a.btn-blue),
-		:global(button.btn-blue) {
+		:global(a.btn-primary),
+		:global(button.btn-primary) {
 			min-width: 200px;
 			padding: 10px 50px;
-			background-color: #1f8b4d;
+			background-color: var(--color-brand);
 			color: #fff;
 			text-align: center;
 			font-size: 18px;
 			font-weight: 500;
 			outline: none;
 			border-radius: 4px;
-			border: solid 1px #1f8b4d;
+			border: solid 1px var(--color-brand);
 			line-height: 28px;
 			letter-spacing: -0.03em;
 			text-decoration: none;
@@ -173,7 +173,7 @@ import { mqttBrokerProduct } from '~/data/installations';
 
 			&:global(.secondary) {
 				background-color: transparent;
-				color: #1f8b4d;
+				color: var(--color-brand);
 			}
 
 			@media (max-width: 600px) {
@@ -208,13 +208,13 @@ import { mqttBrokerProduct } from '~/data/installations';
 						font-size: 26px;
 						line-height: 30px;
 						margin-right: 22px;
-						color: #1f8b4d;
+						color: #2a7dec;
 						display: inline-block;
 					}
 
 					:global(.item-text) {
 						:global(.item-title) {
-							color: #1f8b4d;
+							color: #2a7dec;
 							font-weight: 400;
 							font-size: 20px;
 							line-height: 32px;

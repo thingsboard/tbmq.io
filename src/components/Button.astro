@@ -48,9 +48,12 @@ const { link, variant, target, icon } = propsSchema.parse(Astro.props);
 		text-decoration: none;
 		font-size: var(--sl-text-sm);
 	}
+	/* Brand green — this is a filled CTA (docs hero "Getting started"), so it uses
+	   --color-brand, not the blue link accent. Text keeps --sl-color-black, which
+	   Starlight resolves to the contrasting colour per theme. */
 	.action.primary,
 	.action.primary:hover {
-		background: var(--sl-color-text-accent);
+		background-color: var(--color-brand);
 		color: var(--sl-color-black);
 	}
 	.action.secondary {

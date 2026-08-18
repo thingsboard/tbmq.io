@@ -6,15 +6,17 @@
 // SCSS Variables (for use in SCSS files)
 // --------------------------------------------
 
-// Colors - Primary
-$color-primary: #1f8b4d;
-$color-primary-hover: #35c86a;
-$color-primary-dark: #166b3b;
-$color-primary-darker: #0d3d22;
+// Colors - Primary — the blue link/accent (docs + marketing hyperlinks). Aligned at
+// runtime to Starlight's accent token in _theme.scss; this is the fallback blue.
+$color-primary: #2a7dec;
+$color-primary-hover: #4f97f8;
+$color-primary-dark: #305680;
+$color-primary-darker: #0d2743;
 
-// Brand green — the single TBMQ brand accent (header/footer CTA + promo banner).
-// Source of truth for the brand green; the Cloud product token aliases this in _theme.scss.
-// Adapts per theme: deep green in light, light green in dark.
+// Brand green — the TBMQ CTA/button accent: the header "Try it now", footer subscribe,
+// promo banner, marketing action buttons, and the nav active-section highlight. Kept
+// green while $color-primary/links are blue — they are intentionally separate. The
+// Cloud product token aliases this in _theme.scss. -dark is the mint used on dark bg.
 $color-brand: #1f8b4d;
 $color-brand-dark: #7ee0a0;
 

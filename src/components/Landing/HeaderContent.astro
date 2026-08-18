@@ -510,11 +510,11 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
+					background-color: var(--color-brand);
 					color: $color-white;
 
 					&:hover {
-						color: $color-primary;
+						color: var(--color-brand);
 						box-shadow: none;
 						background-color: var(--color-bg-surface);
 					}
@@ -560,11 +560,11 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
+					background-color: var(--color-brand);
 					color: $color-white;
 
 					&:hover {
-						color: $color-primary;
+						color: var(--color-brand);
 						box-shadow: none;
 						// Theme-aware: in light mode this resolves to white, in
 						// dark mode to the dark surface — avoids a glaring
@@ -578,19 +578,17 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Pages that opt into the docs-accent primary token for header buttons
-	// instead of the legacy brand blue. `:is()` matches both the default
-	// page state and the scrolled `.flip-nav` state — the `.flip-nav`
-	// variant in the list also bumps specificity so this rule beats the
-	// `#pricing.flip-nav header.header .n-button.try` rule above. Other
-	// marketing pages keep their brand-blue Try-it-now button.
+	// Force the brand-green Try-it-now button on these pages regardless of scroll
+	// state. `:is()` matches both the default page state and the scrolled `.flip-nav`
+	// state — the `.flip-nav` variant in the list also bumps specificity so this
+	// rule beats the `#pricing.flip-nav header.header .n-button.try` rule above.
 	html:is(#contact-us, #pricing, #pricing.flip-nav) header.header .n-button {
 		&.try {
-			background-color: var(--color-primary);
+			background-color: var(--color-brand);
 			color: var(--sl-color-text-invert);
 
 			&:hover {
-				background-color: var(--color-primary-hover);
+				background-color: var(--color-brand);
 				color: var(--sl-color-text-invert);
 			}
 		}
@@ -650,11 +648,11 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
+					background-color: var(--color-brand);
 					color: $color-white;
 
 					&:hover {
-						background-color: $color-primary;
+						background-color: var(--color-brand);
 						color: $color-white;
 						box-shadow: var(--shadow-primary);
 					}
@@ -722,7 +720,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 				li:hover a,
 				li:hover span.main-menu-link {
-					color: $color-primary;
+					color: var(--color-brand);
 				}
 			}
 
@@ -738,11 +736,11 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
+					background-color: var(--color-brand);
 					color: $color-white;
 
 					&:hover {
-						background-color: $color-primary;
+						background-color: var(--color-brand);
 						color: $color-white;
 						box-shadow: var(--shadow-primary);
 					}
@@ -881,9 +879,9 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		--color-border: #{$color-border};
 		--color-border-light: #{$color-border-light};
 		--shadow-header: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
-		// Force the nav-icon tint back to the light brand-blue too, so dropdown
-		// icons match the rest of the force-light header on no-dark pages.
-		--menu-icon-color: #{$color-primary};
+		// Force the nav-icon tint back to the brand green too, so dropdown icons
+		// match the rest of the green top menu on the force-light no-dark pages.
+		--menu-icon-color: #{$color-brand};
 
 		// Re-emit light values for Starlight tokens used by the header
 		--sl-color-white: hsl(224, 10%, 10%);
@@ -911,7 +909,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	html[data-theme='dark']:not(:where(#{$no-dark-pages})) {
 		// Group label inside dropdowns (e.g. "SCADA", "IoT platforms")
 		.head-menu .sub-menu .group-name {
-			color: var(--color-primary) !important;
+			color: var(--color-brand) !important;
 		}
 
 		// Item heading at rest — keep the regular text colour so the hover
@@ -922,7 +920,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		// hover state keeps using the dark-mode primary.
 		.head-menu .sub-menu a:hover .sub-text h1,
 		.head-menu .sub-menu a:hover .sub-text span.item-heading {
-			color: var(--color-primary) !important;
+			color: var(--color-brand) !important;
 		}
 
 		// Top-level main menu link hover (Products / Services / Use Cases / …)
@@ -930,15 +928,15 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		.head-menu ul li:hover span.main-menu-link,
 		.head-menu ul li a:not([href]):hover,
 		.head-menu ul li span.main-menu-link:hover {
-			color: var(--color-primary) !important;
+			color: var(--color-brand) !important;
 		}
 
 		// Active-tab indicator (the underline + arrow under the hovered top item)
 		.head-menu .indicator .head-arrow {
-			border-bottom-color: var(--color-primary) !important;
+			border-bottom-color: var(--color-brand) !important;
 		}
 		.head-menu .indicator .line {
-			background-color: var(--color-primary) !important;
+			background-color: var(--color-brand) !important;
 		}
 
 		// Recolour the dropdown product/use-case icons for dark theme.

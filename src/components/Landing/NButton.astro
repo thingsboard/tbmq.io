@@ -88,12 +88,15 @@ const classes = [
 		cursor: pointer;
 		box-sizing: border-box;
 
-		// ---- Color tokens (default: primary / accent) ----
-		--_btn-color: var(--sl-color-text-accent);
-		--_btn-color-hover: var(--sl-color-accent);
+		// ---- Color tokens (default: brand green — the CTA colour) ----
+		// Decoupled from --sl-color-*accent* (the blue link accent) so buttons stay
+		// green while links stay blue. Contrast keeps --sl-color-black (dark text on
+		// the green fill), unchanged from the previous accent button.
+		--_btn-color: var(--color-brand);
+		--_btn-color-hover: var(--color-brand);
 		--_btn-color-contrast: var(--sl-color-black);
-		--_btn-color-tonal-bg: var(--sl-color-accent-low);
-		--_btn-color-tonal-hover: var(--sl-color-accent-low);
+		--_btn-color-tonal-bg: var(--sl-color-green-low);
+		--_btn-color-tonal-hover: var(--sl-color-green-low);
 		--_btn-shadow: var(--shadow-primary);
 
 		// ---- Sizes ----
@@ -117,11 +120,12 @@ const classes = [
 
 		// ---- Colors ----
 		&--primary {
-			--_btn-color: var(--sl-color-text-accent);
-			--_btn-color-hover: var(--sl-color-accent);
+			// "primary" button = the brand-green CTA (see the default block above).
+			--_btn-color: var(--color-brand);
+			--_btn-color-hover: var(--color-brand);
 			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-accent-low);
-			--_btn-color-tonal-hover: var(--sl-color-accent-low);
+			--_btn-color-tonal-bg: var(--sl-color-green-low);
+			--_btn-color-tonal-hover: var(--sl-color-green-low);
 			--_btn-shadow: var(--shadow-primary);
 		}
 

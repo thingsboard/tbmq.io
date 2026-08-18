@@ -127,7 +127,10 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 	.cookie-policy-content {
 		max-width: 860px;
 		margin: 0 auto;
-		padding: 60px 24px 80px;
+		// Clear the fixed 80px header ($header-height); the previous 60px let the H1
+		// slide under it. The .tb-topbar sticky unit overlaps content by design, so
+		// BaseLayout pages self-offset by the header height (see community/index.astro).
+		padding: calc(#{$header-height} + 40px) 24px 80px;
 		color: #212529;
 		line-height: 1.7;
 		font-size: 16px;
@@ -172,7 +175,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 		}
 
 		a {
-			color: #1f8b4d;
+			color: #2a7dec;
 			text-decoration: none;
 
 			&:hover {

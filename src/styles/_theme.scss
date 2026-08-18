@@ -6,26 +6,21 @@
 @use 'variables' as *;
 
 :root {
-	// Colors - Primary — aligned to Starlight accent for consistency across docs and pages
+	// Colors - Primary — the blue link/accent, aligned to Starlight's accent token so
+	// docs and marketing links share one blue. (The Starlight accent ramp is left at
+	// its default indigo — no override here — so links stay blue; buttons use
+	// --color-brand, which is green, instead.)
 	--color-primary: var(--sl-color-text-accent, #{$color-primary});
 	--color-primary-hover: var(--sl-color-accent, #{$color-primary-hover});
 	--color-primary-dark: #{$color-primary-dark};
 	--color-primary-darker: #{$color-primary-darker};
+	// Green on purpose: powers --shadow-primary, the CTA glow, which sits under the
+	// green --color-brand buttons even though --color-primary (link text) is blue.
 	--color-primary-rgb: 31, 139, 77;
 
-	// Brand-green accent ramp — overrides Starlight's default indigo. Defined here
-	// (global, unlayered) rather than only in _starlight-overrides so it applies on
-	// marketing pages too, not just docs: --color-primary aliases --sl-color-text-accent,
-	// which otherwise falls back to Starlight's layered indigo. Anchored on #1f8b4d;
-	// text-accent is a shade darker so link text clears AA (4.5:1) on white.
-	--sl-color-accent-low: #cdefda;
-	--sl-color-accent: #1f8b4d;
-	--sl-color-accent-high: #145c33;
-	--sl-color-text-accent: #1a7f46;
-
-	// Brand indigo — the single brand colour for the header "Try it now" CTA, the
+	// Brand green — the single brand colour for the header "Try it now" CTA, the
 	// footer subscribe button, and the promo banner. Adapts per theme (dark override
-	// below); -contrast is the on-indigo text colour. Hover darkens via NButton's
+	// below); -contrast is the on-brand text colour. Hover darkens via NButton's
 	// filled overlay (no separate hover token). The Cloud product token aliases this.
 	--color-brand: #{$color-brand};
 	--color-brand-contrast: #{$color-white};
@@ -131,7 +126,7 @@
 	// Colors - Products (light mode)
 	--color-product-ce: #305680;
 	--color-product-pe: #00695c;
-	--color-product-cloud: var(--color-brand); // aliases the brand indigo
+	--color-product-cloud: var(--color-brand); // aliases the brand green
 	--color-product-trendz: #5555ff;
 	--color-product-gw: #6d28d9;
 	--color-product-tbmq: #1f8b4d;
@@ -146,10 +141,9 @@
 	--color-edge: #009688;
 	--color-edge-high: #004d40;
 
-	// Menu icon tint — follows the project primary in both themes so the
-	// inline-SVG nav icons (`fill="currentColor"`) match the rest of the
-	// site's accent.
-	--menu-icon-color: var(--color-primary);
+	// Menu icon tint — the brand green in both themes, so the inline-SVG nav icons
+	// (`fill="currentColor"`) match the green top menu (hover/active/indicator).
+	--menu-icon-color: var(--color-brand);
 
 	// Per-product brand accents for the nav dropdown (icon + heading hover);
 	// switch per theme so one reference serves light and dark.
@@ -162,12 +156,6 @@
 }
 
 [data-theme='dark'] {
-	// Brand-green accent ramp (dark) — see the light :root note above.
-	--sl-color-accent-low: #133a26;
-	--sl-color-accent: #22a35a;
-	--sl-color-accent-high: #a7e8c1;
-	--sl-color-text-accent: #4ade80;
-
 	// Colors - Text
 	--color-text: #e4e5e7;
 	--color-text-secondary: #a1a2a8;
@@ -195,12 +183,12 @@
 	// Colors - Products (dark mode)
 	--color-product-ce: #78b4f5;
 	--color-product-pe: #3fd9d1;
-	--color-product-cloud: var(--color-brand); // aliases the brand indigo (dark)
+	--color-product-cloud: var(--color-brand); // aliases the brand green (dark)
 	--color-product-trendz: #8888ff;
 	--color-product-gw: #a78bfa;
 	--color-product-tbmq: #4cd983;
 
-	// Brand indigo (dark) — light lavender fill + navy text, matching the pricing
+	// Brand green (dark) — light mint fill + dark-green text, matching the pricing
 	// "Get started" buttons.
 	--color-brand: #{$color-brand-dark};
 	--color-brand-contrast: #{$color-primary-darker};
@@ -215,9 +203,8 @@
 	--color-edge: #4db6ac;
 	--color-edge-high: #a0d8d2;
 
-	// Menu icon tint — dark mode uses the project primary (which itself
-	// resolves to Starlight's accent-high ≈ #b3c7ff in dark theme).
-	--menu-icon-color: var(--color-primary);
+	// Menu icon tint — brand green (dark theme resolves to the light mint #7ee0a0).
+	--menu-icon-color: var(--color-brand);
 
 	// Per-product brand accents — lighter variants for the dark dropdown bg.
 	--brand-ce: #7da9d8;
