@@ -16,9 +16,43 @@ import { mqttBrokerProduct } from '~/data/installations';
 </BaseLayout>
 
 <style lang="scss">
+	@use '../../styles/variables' as *;
+
 	:global(#installations) {
 		color: #212529;
 		background-color: #fff;
+	}
+
+	// Page-scoped grid (mirrors upstream thingsboard.io, which keeps these rules in
+	// its installations page). This page is the only consumer of the row/col grid —
+	// a global `[class*='col']` rule leaked its 15px gutter padding onto every
+	// substring match sitewide (nav dropdown `.column`s, ComparisonTable `col-*`
+	// cells), so the grid lives here instead. The gutter pair stays intact: `.row`
+	// pulls -15px, the two column classes pay it back as padding.
+	:global(.row) {
+		display: flex;
+		flex-wrap: wrap;
+		margin-left: -15px;
+		margin-right: -15px;
+	}
+
+	:global(.col),
+	:global(.col-lg-7) {
+		position: relative;
+		width: 100%;
+		padding-left: 15px;
+		padding-right: 15px;
+	}
+
+	:global(.col) {
+		flex: 1 0 0%;
+	}
+
+	@include media-up(lg) {
+		:global(.col-lg-7) {
+			flex: 0 0 calc(7 / 12 * 100%);
+			max-width: calc(7 / 12 * 100%);
+		}
 	}
 
 	:global(.install-content) {
@@ -156,7 +190,7 @@ import { mqttBrokerProduct } from '~/data/installations';
 			min-width: 200px;
 			padding: 10px 50px;
 			background-color: var(--color-brand);
-			color: #fff;
+			color: var(--color-brand-contrast);
 			text-align: center;
 			font-size: 18px;
 			font-weight: 500;
@@ -208,13 +242,13 @@ import { mqttBrokerProduct } from '~/data/installations';
 						font-size: 26px;
 						line-height: 30px;
 						margin-right: 22px;
-						color: #2a7dec;
+						color: $color-primary;
 						display: inline-block;
 					}
 
 					:global(.item-text) {
 						:global(.item-title) {
-							color: #2a7dec;
+							color: $color-primary;
 							font-weight: 400;
 							font-size: 20px;
 							line-height: 32px;
