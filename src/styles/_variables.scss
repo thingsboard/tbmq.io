@@ -13,11 +13,13 @@ $color-primary-hover: #4f97f8;
 $color-primary-dark: #305680;
 $color-primary-darker: #0d2743;
 
-// Brand green — the TBMQ CTA/button accent: the header "Try it now", footer subscribe,
-// promo banner, marketing action buttons, and the nav active-section highlight. Kept
-// green while $color-primary/links are blue — they are intentionally separate. The
-// Cloud product token aliases this in _theme.scss. -dark is the mint used on dark bg.
-$color-brand: #1f8b4d;
+// Brand green — the TBMQ CTA/button accent: the header "Try it now", the footer
+// "Contact us" button, the promo banner, NButton/marketing CTA fills, the nav
+// active-section highlight, and the docs sidebar active pill. Kept green while
+// $color-primary/links are blue — they are intentionally separate. The Cloud product
+// token aliases this in _theme.scss. -dark is the mint used on dark bg.
+// 5.04:1 on white — keeps small white CTA labels above the 4.5:1 AA threshold.
+$color-brand: #1a7f46;
 $color-brand-dark: #7ee0a0;
 
 // Colors - Neutral

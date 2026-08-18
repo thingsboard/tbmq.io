@@ -88,16 +88,14 @@ const classes = [
 		cursor: pointer;
 		box-sizing: border-box;
 
-		// ---- Color tokens (default: brand green — the CTA colour) ----
+		// ---- Color tokens (default = "primary": brand green — the CTA colour) ----
 		// Decoupled from --sl-color-*accent* (the blue link accent) so buttons stay
-		// green while links stay blue. Contrast keeps --sl-color-black (dark text on
-		// the green fill), unchanged from the previous accent button.
+		// green while links stay blue. --color-brand-contrast pairs with the green
+		// fill in both themes (white on green in light, navy on mint in dark).
 		--_btn-color: var(--color-brand);
-		--_btn-color-hover: var(--color-brand);
-		--_btn-color-contrast: var(--sl-color-black);
+		--_btn-color-contrast: var(--color-brand-contrast);
 		--_btn-color-tonal-bg: var(--sl-color-green-low);
 		--_btn-color-tonal-hover: var(--sl-color-green-low);
-		--_btn-shadow: var(--shadow-primary);
 
 		// ---- Sizes ----
 		&--sm {
@@ -119,50 +117,34 @@ const classes = [
 		}
 
 		// ---- Colors ----
-		&--primary {
-			// "primary" button = the brand-green CTA (see the default block above).
-			--_btn-color: var(--color-brand);
-			--_btn-color-hover: var(--color-brand);
-			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-green-low);
-			--_btn-color-tonal-hover: var(--sl-color-green-low);
-			--_btn-shadow: var(--shadow-primary);
-		}
-
+		// "primary" (the component default) uses the token block above — no
+		// override needed for `&--primary`.
 		&--warning {
 			--_btn-color: var(--sl-color-orange-high);
-			--_btn-color-hover: var(--sl-color-orange);
 			--_btn-color-contrast: var(--sl-color-black);
 			--_btn-color-tonal-bg: var(--sl-color-orange-low);
 			--_btn-color-tonal-hover: var(--sl-color-orange-low);
-			--_btn-shadow: none;
 		}
 
 		&--danger {
 			--_btn-color: var(--sl-color-red-high);
-			--_btn-color-hover: var(--sl-color-red);
 			--_btn-color-contrast: var(--sl-color-black);
 			--_btn-color-tonal-bg: var(--sl-color-red-low);
 			--_btn-color-tonal-hover: var(--sl-color-red-low);
-			--_btn-shadow: none;
 		}
 
 		&--success {
 			--_btn-color: var(--sl-color-green-high);
-			--_btn-color-hover: var(--sl-color-green);
 			--_btn-color-contrast: var(--sl-color-black);
 			--_btn-color-tonal-bg: var(--sl-color-green-low);
 			--_btn-color-tonal-hover: var(--sl-color-green-low);
-			--_btn-shadow: none;
 		}
 
 		&--white {
 			--_btn-color: var(--sl-color-white);
-			--_btn-color-hover: var(--sl-color-gray-1);
 			--_btn-color-contrast: var(--sl-color-black);
 			--_btn-color-tonal-bg: var(--sl-color-gray-6);
 			--_btn-color-tonal-hover: var(--sl-color-gray-5);
-			--_btn-shadow: none;
 		}
 
 		// ---- Variants ----
@@ -190,13 +172,13 @@ const classes = [
 			border: 1px solid var(--_btn-color);
 
 			&:hover {
-				background-color: rgba(var(--color-primary-rgb), 0.1);
+				background-color: rgba(var(--color-brand-rgb), 0.1);
 				color: var(--_btn-color);
 				text-decoration: none;
 			}
 
 			&:active {
-				background-color: rgba(var(--color-primary-rgb), 0.15);
+				background-color: rgba(var(--color-brand-rgb), 0.15);
 				color: var(--_btn-color);
 				transition-duration: 0s;
 			}

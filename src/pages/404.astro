@@ -58,9 +58,11 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 			font-size: 120px;
 			font-weight: $font-weight-bold;
 			line-height: 1;
-			color: var(--color-primary);
+			// Brand green, not the blue link accent — the giant 404 is decorative
+			// brand chrome, matching the green CTA below it.
+			color: var(--color-brand);
 			margin-bottom: $spacing-2;
-			text-shadow: 3px 3px 0 rgba($color-primary-dark, 0.15);
+			text-shadow: 3px 3px 0 rgba(var(--color-brand-rgb), 0.15);
 
 			@include media-down(md) {
 				font-size: 80px;
@@ -121,8 +123,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 			}
 
 			&--primary {
-				background-color: var(--color-primary);
-				color: var(--sl-color-black, $color-white);
+				background-color: var(--color-brand);
+				color: var(--color-brand-contrast, $color-white);
 
 				&:hover {
 					box-shadow: var(--shadow-primary);

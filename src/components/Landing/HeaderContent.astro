@@ -578,21 +578,9 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Force the brand-green Try-it-now button on these pages regardless of scroll
-	// state. `:is()` matches both the default page state and the scrolled `.flip-nav`
-	// state — the `.flip-nav` variant in the list also bumps specificity so this
-	// rule beats the `#pricing.flip-nav header.header .n-button.try` rule above.
-	html:is(#contact-us, #pricing, #pricing.flip-nav) header.header .n-button {
-		&.try {
-			background-color: var(--color-brand);
-			color: var(--sl-color-text-invert);
-
-			&:hover {
-				background-color: var(--color-brand);
-				color: var(--sl-color-text-invert);
-			}
-		}
-	}
+	// (No per-page Try-it-now override for #contact-us / #pricing any more: the
+	// rebrand made every .try rule — and NButton's own filled default — the same
+	// brand green, so those pages inherit the shared styling and hover feedback.)
 
 	// Pricing page: transparent header by default, opaque on hover and scroll
 	#pricing header.header {

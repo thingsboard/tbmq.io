@@ -151,7 +151,7 @@ const { id } = Astro.props as Props;
 	}
 
 	.calc-panel--results {
-		background: rgba(var(--color-primary-rgb), 0.04);
+		background: rgba(var(--color-brand-rgb), 0.04);
 		border-radius: 16px;
 
 		@include media-down(lg) {
@@ -586,12 +586,12 @@ const { id } = Astro.props as Props;
 		gap: 0;
 		flex-shrink: 0;
 		width: fit-content;
-		background: rgba(var(--color-primary-rgb), 0.06);
+		background: rgba(var(--color-brand-rgb), 0.06);
 		border-radius: $radius-lg;
 		overflow: hidden;
 
 		[data-theme='dark'] & {
-			background: rgba(var(--color-primary-rgb), 0.12);
+			background: rgba(var(--color-brand-rgb), 0.12);
 		}
 	}
 
@@ -611,7 +611,7 @@ const { id } = Astro.props as Props;
 		transition: background-color 0.15s ease;
 
 		&:hover:not(:disabled) {
-			background: rgba(var(--color-primary-rgb), 0.12);
+			background: rgba(var(--color-brand-rgb), 0.12);
 		}
 
 		&:disabled {
@@ -625,7 +625,7 @@ const { id } = Astro.props as Props;
 	.calc-stepper-input {
 		width: 42px;
 		height: 36px;
-		border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+		border: 1px solid rgba(var(--color-brand-rgb), 0.2);
 		border-radius: $radius-sm;
 		text-align: center;
 		font-size: $font-size-sm;
@@ -675,7 +675,7 @@ const { id } = Astro.props as Props;
 
 		&.active {
 			border-color: var(--color-brand);
-			background: rgba(var(--color-primary-rgb), 0.03);
+			background: rgba(var(--color-brand-rgb), 0.03);
 		}
 	}
 
@@ -742,8 +742,8 @@ const { id } = Astro.props as Props;
 		.calc-toggle-track {
 			position: absolute;
 			inset: 0;
-			background: rgba(var(--color-primary-rgb), 0.15);
-			border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+			background: rgba(var(--color-brand-rgb), 0.15);
+			border: 1px solid rgba(var(--color-brand-rgb), 0.2);
 			border-radius: 12px;
 			transition: background-color 0.2s ease, border-color 0.2s ease;
 
@@ -1076,7 +1076,7 @@ const { id } = Astro.props as Props;
 		}
 
 		&:hover {
-			background: rgba(var(--color-primary-rgb), 0.1);
+			background: rgba(var(--color-brand-rgb), 0.1);
 			border-color: var(--color-brand);
 		}
 	}

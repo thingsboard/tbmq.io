@@ -102,10 +102,12 @@ body[data-mobile-menu-expanded] {
 // Docs sidebar: the current-page link is a filled pill. Starlight fills it with
 // --sl-color-text-accent (the blue link accent); repaint it in the brand green so the
 // active doc reads as a brand marker, matching the green top-menu highlight. Unlayered
-// here → beats Starlight's @layer components rule; the label keeps Starlight's
-// --sl-color-text-invert, which stays contrasting on green in both light and dark.
+// here → beats Starlight's @layer components rule. The label uses the paired
+// --color-brand-contrast token (white on green in light, navy on mint in dark) —
+// Starlight's own --sl-color-text-invert stays indigo-tinted in dark mode.
 .sidebar-content a[aria-current='page'],
 .sidebar-content a[aria-current='page']:hover,
 .sidebar-content a[aria-current='page']:focus {
 	background-color: var(--color-brand);
+	color: var(--color-brand-contrast);
 }

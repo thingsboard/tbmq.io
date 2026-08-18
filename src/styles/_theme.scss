@@ -3,6 +3,7 @@
 // (loaded by Starlight's customCss config so it reaches every route).
 // DO NOT @use this file from component <style> blocks.
 // ============================================
+@use 'sass:color';
 @use 'variables' as *;
 
 :root {
@@ -11,19 +12,19 @@
 	// its default indigo — no override here — so links stay blue; buttons use
 	// --color-brand, which is green, instead.)
 	--color-primary: var(--sl-color-text-accent, #{$color-primary});
-	--color-primary-hover: var(--sl-color-accent, #{$color-primary-hover});
-	--color-primary-dark: #{$color-primary-dark};
-	--color-primary-darker: #{$color-primary-darker};
-	// Green on purpose: powers --shadow-primary, the CTA glow, which sits under the
-	// green --color-brand buttons even though --color-primary (link text) is blue.
-	--color-primary-rgb: 31, 139, 77;
 
 	// Brand green — the single brand colour for the header "Try it now" CTA, the
-	// footer subscribe button, and the promo banner. Adapts per theme (dark override
-	// below); -contrast is the on-brand text colour. Hover darkens via NButton's
-	// filled overlay (no separate hover token). The Cloud product token aliases this.
+	// footer "Contact us" button, the promo banner, NButton/marketing CTA fills, the
+	// nav active-section highlight, and the docs sidebar active pill. Adapts per theme
+	// (dark override below); -contrast is the on-brand text colour. Hover darkens via
+	// NButton's filled overlay (no separate hover token). The Cloud product token
+	// aliases this. -rgb (derived, can't drift) powers the tints and --shadow-primary,
+	// the glow under the green CTAs.
 	--color-brand: #{$color-brand};
 	--color-brand-contrast: #{$color-white};
+	--color-brand-rgb:
+		#{color.channel($color-brand, 'red', $space: rgb)}, #{color.channel($color-brand, 'green', $space: rgb)},
+		#{color.channel($color-brand, 'blue', $space: rgb)};
 
 	// Colors - Neutral
 	--color-white: #{$color-white};
@@ -104,7 +105,7 @@
 	--shadow-md: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12);
 	--shadow-lg: 0 50px 50px -20px rgba(0, 0, 0, 0.15), 0 0 30px 0 rgba(0, 0, 0, 0.05);
 	--shadow-xl: 0 30px 60px -30px rgba(0, 0, 0, 0.3), 0 50px 100px -20px rgba(0, 0, 0, 0.25);
-	--shadow-primary: 0 18px 16px -10px rgba(var(--color-primary-rgb), 0.25);
+	--shadow-primary: 0 18px 16px -10px rgba(var(--color-brand-rgb), 0.25);
 	--shadow-header: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
 	--shadow-card: 0 50px 50px -20px rgba(0, 0, 0, 0.15), 0 0 30px 0 rgba(0, 0, 0, 0.04);
 
@@ -129,7 +130,7 @@
 	--color-product-cloud: var(--color-brand); // aliases the brand green
 	--color-product-trendz: #5555ff;
 	--color-product-gw: #6d28d9;
-	--color-product-tbmq: #1f8b4d;
+	--color-product-tbmq: var(--color-brand);
 
 	// Colors - Light-blue badge palette (the design system; complements Starlight's --sl-color-* badge tokens)
 	--color-light-blue-low: #d6e7e5;
@@ -141,7 +142,8 @@
 	--color-edge: #009688;
 	--color-edge-high: #004d40;
 
-	// Menu icon tint — the brand green in both themes, so the inline-SVG nav icons
+	// Menu icon tint — the brand green in both themes (--color-brand re-resolves per
+	// theme, so one declaration covers light and dark), so the inline-SVG nav icons
 	// (`fill="currentColor"`) match the green top menu (hover/active/indicator).
 	--menu-icon-color: var(--color-brand);
 
@@ -181,15 +183,16 @@
 	--shadow-header: 0 0 20px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.2);
 
 	// Colors - Products (dark mode)
+	// (--color-product-cloud keeps its :root alias of --color-brand, which itself
+	// re-resolves per theme — no dark copy needed.)
 	--color-product-ce: #78b4f5;
 	--color-product-pe: #3fd9d1;
-	--color-product-cloud: var(--color-brand); // aliases the brand green (dark)
 	--color-product-trendz: #8888ff;
 	--color-product-gw: #a78bfa;
 	--color-product-tbmq: #4cd983;
 
-	// Brand green (dark) — light mint fill + dark-green text, matching the pricing
-	// "Get started" buttons.
+	// Brand green (dark) — light mint fill + navy text ($color-primary-darker,
+	// 9.4:1 on the mint), matching the pricing "Get started" buttons.
 	--color-brand: #{$color-brand-dark};
 	--color-brand-contrast: #{$color-primary-darker};
 
@@ -202,9 +205,6 @@
 	--color-edge-low: #103e39;
 	--color-edge: #4db6ac;
 	--color-edge-high: #a0d8d2;
-
-	// Menu icon tint — brand green (dark theme resolves to the light mint #7ee0a0).
-	--menu-icon-color: var(--color-brand);
 
 	// Per-product brand accents — lighter variants for the dark dropdown bg.
 	--brand-ce: #7da9d8;

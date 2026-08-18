@@ -7,8 +7,8 @@ const currentYear = new Date().getFullYear();
 
 <footer>
 	<div class="light-text main-div">
-		<div class="newsletterSubsContainer">
-			<div class="newsletter-left">
+		<div class="footer-top">
+			<div class="footer-top-cta">
 				<NButton id="Footer_ContactUs" href="/contact-us/" class="contact-us gtm_button"> Contact us </NButton>
 			</div>
 			<div class="footer-top-img-section">
@@ -162,7 +162,7 @@ const currentYear = new Date().getFullYear();
 			}
 		}
 
-		.newsletterSubsContainer {
+		.footer-top {
 			min-height: 6.625rem;
 			width: 100%;
 			display: flex;
@@ -180,11 +180,6 @@ const currentYear = new Date().getFullYear();
 				align-items: center;
 			}
 
-			.newsletter-left {
-				flex: 1;
-				min-width: 0;
-			}
-
 			.footer-top-img-section {
 				display: flex;
 				gap: 2.5rem;
@@ -197,23 +192,12 @@ const currentYear = new Date().getFullYear();
 				}
 			}
 
+			// Geometry only — NButton's filled default owns the brand-green fill,
+			// contrast label and hover overlay.
 			.contact-us {
 				margin: 0;
 				height: fit-content;
 				padding: 0.8125rem 1.25rem;
-				background-color: var(--color-brand);
-				color: var(--color-brand-contrast);
-				transition-duration: unset;
-
-				&:hover {
-					transition-duration: unset;
-					box-shadow: unset;
-					color: var(--color-brand-contrast);
-				}
-
-				&:focus {
-					outline: none;
-				}
 			}
 		}
 
