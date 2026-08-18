@@ -89,10 +89,10 @@ const faq: FaqItem[] = [
 
 	<h2>Payload encryption in TBMQ</h2>
 	<p>
-		TBMQ treats every payload as opaque bytes — it never inspects or modifies message content — so client-side payload
-		encryption passes through the broker unchanged, end to end. Combine it with <a href="/mqtt/mqtt-tls/">TLS</a> for the
-		transport and <a href="/mqtt/mqtt-authorization/">authorization</a> to limit topic access. You can also carry metadata
-		like the cipher or key ID in <a href="/mqtt/mqtt-user-properties/">user properties</a>. See the
+		<a href="/">TBMQ</a> treats every payload as opaque bytes — it never inspects or modifies message content — so client-side
+		payload encryption passes through the broker unchanged, end to end. Combine it with <a href="/mqtt/mqtt-tls/">TLS</a
+		> for the transport and <a href="/mqtt/mqtt-authorization/">authorization</a> to limit topic access. You can also carry
+		metadata like the cipher or key ID in <a href="/mqtt/mqtt-user-properties/">user properties</a>. See the
 		<a href="/docs/security/overview/">security overview</a> for the layers TBMQ enforces.
 	</p>
 </MqttTopicLayout>

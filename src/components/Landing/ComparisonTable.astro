@@ -36,7 +36,6 @@ const {
 	noSkew = false,
 	fixedMaxWidth = false,
 } = Astro.props;
-
 ---
 
 <section
@@ -61,62 +60,74 @@ const {
 			</div>
 		</div>
 
-		{groups.map((group) => (
-			<div class="comparison-group">
-				<div class="group-header">
-					<span>{group.category}</span>
+		{
+			groups.map((group) => (
+				<div class="comparison-group">
+					<div class="group-header">
+						<span>{group.category}</span>
+					</div>
+					{group.rows.map((row) => {
+						const Tag = row.href ? 'a' : 'div';
+						return (
+							<Tag
+								href={row.href}
+								target={row.href?.startsWith('http') ? '_blank' : undefined}
+								rel={row.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+								class="comparison-row"
+							>
+								<div class="col-feature">{row.label}</div>
+								<div class="col-ce">
+									{row.ceText ? (
+										row.ceLinkHref ? (
+											<a href={row.ceLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link">
+												{row.ceText}
+											</a>
+										) : (
+											<span>{row.ceText}</span>
+										)
+									) : row.ce ? (
+										<>
+											<SmartImage src="/src/assets/images/landings/pe/blue-mark.svg" alt="" width="20" height="20" />
+											<span class="sr-only">Included in Community Edition</span>
+										</>
+									) : (
+										<>
+											<span class="empty" aria-hidden="true">
+												&nbsp;
+											</span>
+											<span class="sr-only">Not included in Community Edition</span>
+										</>
+									)}
+								</div>
+								<div class="col-pe">
+									{row.peText ? (
+										row.peLinkHref ? (
+											<a href={row.peLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link pe-link">
+												{row.peText}
+											</a>
+										) : (
+											<span>{row.peText}</span>
+										)
+									) : row.pe ? (
+										<>
+											<SmartImage src="/src/assets/images/landings/pe/green-mark.svg" alt="" width="20" height="20" />
+											<span class="sr-only">Included in Professional Edition</span>
+										</>
+									) : (
+										<>
+											<span class="empty" aria-hidden="true">
+												&nbsp;
+											</span>
+											<span class="sr-only">Not included in Professional Edition</span>
+										</>
+									)}
+								</div>
+							</Tag>
+						);
+					})}
 				</div>
-				{group.rows.map((row) => {
-					const Tag = row.href ? 'a' : 'div';
-					return (
-						<Tag
-							href={row.href}
-							target={row.href?.startsWith('http') ? '_blank' : undefined}
-							rel={row.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-							class="comparison-row"
-						>
-							<div class="col-feature">{row.label}</div>
-							<div class="col-ce">
-								{row.ceText ? (
-									row.ceLinkHref ? (
-										<a href={row.ceLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link">{row.ceText}</a>
-									) : (
-										<span>{row.ceText}</span>
-									)
-								) : row.ce ? (
-									<SmartImage
-										src="/src/assets/images/landings/pe/blue-mark.svg"
-										alt="Available in Community Edition"
-										width="20"
-										height="20"
-									/>
-								) : (
-									<span class="empty" aria-hidden="true">&nbsp;</span>
-								)}
-							</div>
-							<div class="col-pe">
-								{row.peText ? (
-									row.peLinkHref ? (
-										<a href={row.peLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link pe-link">{row.peText}</a>
-									) : (
-										<span>{row.peText}</span>
-									)
-								) : row.pe ? (
-									<SmartImage
-										src="/src/assets/images/landings/pe/green-mark.svg"
-										alt="Available in Professional Edition"
-										width="20"
-										height="20"
-									/>
-								) : (
-									<span class="empty" aria-hidden="true">&nbsp;</span>
-								)}
-							</div>
-						</Tag>
-					);
-				})}
-			</div>
-		))}
+			))
+		}
 	</div>
 </section>
 

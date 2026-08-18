@@ -114,13 +114,13 @@ const faq: FaqItem[] = [
 
 	<h2>Keep-alive in TBMQ</h2>
 	<p>
-		TBMQ monitors keep-alive per connection (checking on an interval set by
+		<a href="/">TBMQ</a> monitors keep-alive per connection (checking on an interval set by
 		<code>MQTT_KEEP_ALIVE_MONITORING_DELAY_MS</code>, every second by default). On timeout it closes the connection with
 		reason <code>KEEP_ALIVE_TIMEOUT</code> and publishes the client's
 		<a href="/mqtt/last-will/">Last Will</a> if one was set. For MQTT 5.0 clients it also enforces a
 		<strong>Server Keep Alive</strong>: a requested interval above <code>600</code> seconds (10 minutes) is capped to that
 		maximum and returned in the CONNACK. See the
-		<a href="/docs/user-guide/keep-alive/">keep-alive docs</a> for the full behavior, including client take-over
-		when the same client ID reconnects.
+		<a href="/docs/user-guide/keep-alive/">keep-alive docs</a> for the full behavior, including client take-over when the
+		same client ID reconnects.
 	</p>
 </MqttTopicLayout>

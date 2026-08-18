@@ -9,9 +9,9 @@ import ProductCta from '@components/Product/ProductCta.astro';
 import { Products } from '@models/site.models';
 import { marketingJsonLd } from '~/util/structuredData';
 
-const title = 'Distributed MQTT Broker Architecture – Built to Scale';
+const title = 'TBMQ — Open-source MQTT Broker for IoT at Scale';
 const description =
-	'TBMQ is a distributed open-source MQTT broker built to scale: Kafka-backed durability, in-memory subscription matching, and a masterless, zero-loss cluster.';
+	'Run an open-source MQTT broker that handles 100M+ concurrent connections and 3M+ messages/sec. Kafka-backed durability, zero message loss. Self-host free.';
 const jsonLd = marketingJsonLd({
 	path: '/product/',
 	name: title,
@@ -40,6 +40,8 @@ const jsonLd = marketingJsonLd({
 </BaseLayout>
 
 <script>
+	import '~/scripts/open-links-in-new-tab';
+
 	// Scroll reveal: fade + slide elements in as they enter the viewport.
 	const main = document.querySelector('main');
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

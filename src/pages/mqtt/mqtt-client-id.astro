@@ -105,9 +105,9 @@ const faq: FaqItem[] = [
 
 	<h2>Client IDs in TBMQ</h2>
 	<p>
-		TBMQ enforces one live connection per client ID across the whole cluster: a conflicting CONNECT takes over the
-		session and disconnects the previous connection with reason <code>SESSION_TAKEN_OVER</code>, even when the two
-		clients are connected to different nodes.
+		<a href="/">TBMQ</a> enforces one live connection per client ID across the whole cluster: a conflicting CONNECT takes
+		over the session and disconnects the previous connection with reason <code>SESSION_TAKEN_OVER</code>, even when the
+		two clients are connected to different nodes.
 	</p>
 	<p>
 		If a client sends an empty client ID, TBMQ generates one for it (and, for MQTT 5.0, returns it in the CONNACK as the

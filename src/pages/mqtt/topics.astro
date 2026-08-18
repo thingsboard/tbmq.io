@@ -115,9 +115,10 @@ const faq: FaqItem[] = [
 
 	<h2>Topics in TBMQ</h2>
 	<p>
-		TBMQ matches subscriptions with an in-memory <strong>topic trie</strong>, so a published message is routed by
-		walking its topic levels and match cost scales with a topic's depth rather than its total subscription count. You
-		can cap how deep topics may go with <code>MQTT_TOPIC_MAX_SEGMENTS_COUNT</code> to keep matching predictable, and the
+		<a href="/">TBMQ</a> matches subscriptions with an in-memory <strong>topic trie</strong>, so a published message is
+		routed by walking its topic levels and match cost scales with a topic's depth rather than its total subscription
+		count. You can cap how deep topics may go with <code>MQTT_TOPIC_MAX_SEGMENTS_COUNT</code> to keep matching predictable,
+		and the
 		<code>$share/</code> prefix turns a normal subscription into a load-balanced
 		<a href="/mqtt/shared-subscriptions/">shared subscription</a>. See the
 		<a href="/docs/user-guide/topics/">topics reference</a> for the full matching rules.

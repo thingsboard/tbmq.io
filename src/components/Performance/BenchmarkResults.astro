@@ -34,7 +34,7 @@ const benchmarks: Benchmark[] = [
 		title: '3M msg/sec, single node',
 		viz: 'fan-out',
 		scenario:
-			'One 32-vCPU TBMQ node handled a 3M msg/sec fan-out — 100 publishers to 3,000 subscribers — with CPU headroom to spare.',
+			'One 32-vCPU <a href="/">TBMQ</a> node handled a 3M msg/sec fan-out — 100 publishers to 3,000 subscribers — with CPU headroom to spare.',
 		metrics: [
 			{ label: 'Throughput', value: '3M msg/sec', hi: true },
 			{ label: 'Avg latency', value: '7.4 ms', hi: true },
@@ -467,7 +467,7 @@ const benchmarks: Benchmark[] = [
 						<div class="card-body">
 							<p class="kicker">{b.kicker}</p>
 							<h3 class="title">{b.title}</h3>
-							<p class="scenario">{b.scenario}</p>
+							<p class="scenario" set:html={b.scenario} />
 							<div class="metricgrid">
 								{b.metrics.map((m) => (
 									<div class:list={['mt', { hi: m.hi }]}>
@@ -574,6 +574,16 @@ const benchmarks: Benchmark[] = [
 		// Reserve 3 lines so the metric tiles start at the same height across
 		// all three cards, keeping the columns aligned row-for-row.
 		min-height: 5.1em;
+
+		// Scenario text is injected via set:html, so links inside need :global.
+		:global(a) {
+			color: $color-pe-link;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
 	}
 
 	// Metrics as compact tiles; the two headline numbers per card are accented.
