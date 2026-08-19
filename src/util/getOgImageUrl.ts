@@ -1,6 +1,5 @@
 import {
 	getDocsCardInputs,
-	getBlogCardInputs,
 	getMarketingCardInputs,
 	getCollectionIndexInputs,
 	type CardInput,
@@ -19,8 +18,6 @@ const routeIndex = new Map<string, string>([
 	// Docs CE root has page.id === 'docs', which strips to slug 'docs'; map that
 	// single case to the /docs landing.
 	...fromInputs(await getDocsCardInputs(), (s) => (s === 'docs' ? '/docs' : `/docs/${s}`), '/open-graph/docs'),
-	// Blog index entry has slug 'index' — key it at /blog (not /blog/index).
-	...fromInputs(await getBlogCardInputs(), (s) => (s === 'index' ? '/blog' : `/blog/${s}`), '/open-graph/blog'),
 	// Homepage marketing card has slug 'index' — key it at '' so trailing-slash
 	// strip turns the `/` lookup into '' and matches.
 	...fromInputs(await getMarketingCardInputs(), (s) => (s === 'index' ? '' : `/${s}`), '/open-graph/pages'),

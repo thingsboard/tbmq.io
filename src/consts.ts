@@ -43,9 +43,10 @@ export function devSafeOgImagePath(imagePath: string): string {
 
 const SEP = ` ${TITLE_SEPARATOR} `;
 
-export const SECTION_LABELS: Record<string, string> = {
-	'/blog/': 'Blog',
-};
+// URL-prefix → section label for title formatting (see getSectionFromPath).
+// Empty since the local blog was removed; kept as the registration point for
+// future sections.
+export const SECTION_LABELS: Record<string, string> = {};
 
 export function formatSectionIndexTitle(section: string): string {
 	return `${section}${SEP}${SITE_NAME}`;
