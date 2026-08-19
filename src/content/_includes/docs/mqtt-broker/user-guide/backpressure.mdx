@@ -138,10 +138,14 @@ When the budget runs out, the outcome depends on which packet is being charged:
 Because refusals happen at admission, the quota only ever sheds work the broker has not yet acknowledged; a message that
 is already durable is never discarded to save budget.
 
-<Aside type="caution">
-  If Redis is unreachable, the quota **fails open**: traffic passes unmetered instead of being refused. The only signal
-  that enforcement has stopped is the `throughputQuotaDegraded_total` counter, so alert on it if you rely on the quota
-  as a hard ceiling.
+<Aside type="note">
+  A Redis problem must not stop message flow, so when the shared bucket cannot be reached the quota **fails open**: it
+  lets publishes through unaccounted rather than refusing traffic it has no way to price. The opening is short — it is
+  granted one second at a time and closes as soon as a draw succeeds again — so a transient blip passes a negligible
+  amount of extra traffic and enforcement resumes on its own, with no intervention. Each failed draw increments
+  `throughputQuotaDegraded_total`, described in
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>, so a genuinely sustained
+  outage shows up there rather than passing unnoticed.
 </Aside>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>

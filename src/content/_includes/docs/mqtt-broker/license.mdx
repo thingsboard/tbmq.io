@@ -96,11 +96,14 @@ from the shared budget).
   <DocLink product={props.product} path="security/rbac">Administrator</DocLink> role. Left alone, it disappears five
   minutes after it was first raised.
 
-<Aside type="caution">
-  If Redis becomes unreachable the quota **fails open** — traffic passes unmetered instead of being refused, and the
-  notification never appears. The only signal is the `throughputQuotaDegraded_total` counter described in
-  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>. Alert on it if you rely on
-  the quota as a hard ceiling.
+<Aside type="note">
+  A Redis problem must not stop message flow, so when the shared bucket cannot be reached the quota **fails open**: it
+  lets publishes through unaccounted rather than refusing traffic it has no way to price. The opening is short — it is
+  granted one second at a time and closes as soon as a draw succeeds again — so a transient blip passes a negligible
+  amount of extra traffic against a per-second budget, and enforcement resumes on its own with no intervention. Each
+  failed draw increments `throughputQuotaDegraded_total`, described in
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>, so a genuinely sustained
+  outage shows up there rather than passing unnoticed.
 </Aside>
 
 ## Sessions
