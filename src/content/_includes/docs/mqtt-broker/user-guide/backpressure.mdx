@@ -22,6 +22,11 @@ export const rateLimitsCe = `rate-limits:
     client-config: "\${MQTT_INCOMING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"`;
 
 export const rateLimitsPe = `rate-limits:
+  total:
+    # Tokens a node draws from Redis per round trip. 0 derives max(1, sustainedRate / 10).
+    block-size: "\${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
+    # Period of the tick returning a node's unused drawn tokens to the shared bucket (in ms).
+    lease-return-ms: "\${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
   incoming-publish:
     # Enables or disables publish rate limits per client for incoming messages to the broker.
     enabled: "\${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
@@ -81,21 +86,23 @@ described in detail below.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-Cluster-wide throughput is enforced by the TBMQ subscription plan — the **Throughput (msg/sec)** tier you purchase caps
-the total incoming and outgoing message rate across the cluster, so there is no `total` rate-limit section to configure.
-Per-client publish rate limits remain configurable:
+The cluster-wide quota is sized by your TBMQ subscription plan — the **Throughput (msg/sec)** tier you purchase *is* the
+budget. It is always enforced and cannot be enabled, disabled, or enlarged from the configuration; the `total` section
+only tunes how each node draws from that shared budget. Per-client publish rate limits are configured separately:
 
 <Code code={rateLimitsPe} lang="yaml" />
 
-How that budget is charged and what happens when it runs out is described below.
+When the quota refuses a message, TBMQ also raises a **licensed throughput reached** indicator in the license usage
+notification, so an operator can tell a licensing ceiling apart from an ordinary rate limit. It clears when
+acknowledged, and otherwise expires five minutes after it was first raised.
 </ShowFor>
 
 Per-client limits are configured as a comma-separated list of `limit:seconds` pairs, and **all** pairs must be satisfied.
 The default `10:1,300:60` means at most 10 messages in any second **and** at most 300 in any minute — so a client cannot
 burst at 10 msg/sec for a whole minute.
 
-Rate limits are disabled by default. When an incoming limit is hit, the PUBLISH is dropped, the `droppedMsgs` counter is
-incremented, and the broker's response to the publisher depends on the protocol version:
+Per-client rate limits are disabled by default. When an incoming limit is hit, the PUBLISH is dropped, the
+`droppedMsgs` counter is incremented, and the broker's response to the publisher depends on the protocol version:
 
 | MQTT version | Broker response |
 |---|---|
@@ -152,18 +159,20 @@ fit within every configured bandwidth. `1000:1,50000:60` sustains the same ~833 
 than 1000 subscribers, even on a completely idle cluster. To allow a smaller burst without capping the fan-out, keep one
 bandwidth and shorten the period at the same ratio instead of adding a second one: `5000:6` is the same ~833 msg/sec with
 a tenth of the burst.
+</ShowFor>
 
-The remaining two parameters govern how nodes share the bucket and rarely need changing:
+##### How nodes share the bucket
+
+Two parameters govern how each node draws from the shared budget, and rarely need changing:
 
 - **`block-size`** — how many tokens a node draws from Redis per round trip. Defaults to `0`, which derives
-  `max(1, sustainedRate / 10)` from `config`. Larger blocks mean fewer Redis calls but let an idle node hold more of the
-  cluster budget between lease returns. A publish whose fan-out exceeds the node's drawn tokens draws the shortfall on
-  demand, so this value never caps a single publish.
+  `max(1, sustainedRate / 10)` from the sustained rate. Larger blocks mean fewer Redis calls but let an idle node hold
+  more of the cluster budget between lease returns. A publish whose fan-out exceeds the node's drawn tokens draws the
+  shortfall on demand, so this value never caps a single publish.
 - **`lease-return-ms`** — how often a node returns unused drawn tokens to the shared bucket, in milliseconds. Defaults to
   `1000`. Setting it to `0` disables the tick, and a node that draws a block and then goes quiet holds those tokens
   indefinitely — the cluster's effective budget shrinks by the sum of every idle node's lease. Leave the tick on unless
   traffic is even across all nodes.
-</ShowFor>
 
 ## Outbound backpressure
 
