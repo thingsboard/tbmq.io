@@ -115,6 +115,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 							{ label: 'Image gallery', slug: `${prefix}/image-gallery` },
 						],
 					},
+					{ label: 'License', slug: `${prefix}/license` },
 					{ label: 'Private Cloud subscription', slug: `${prefix}/subscription` },
 				]
 			: []),
