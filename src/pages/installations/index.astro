@@ -23,43 +23,11 @@ import { mqttBrokerProduct } from '~/data/installations';
 		background-color: #fff;
 	}
 
-	// Page-scoped grid (mirrors upstream thingsboard.io, which keeps these rules in
-	// its installations page). This page is the only consumer of the row/col grid —
-	// a global `[class*='col']` rule leaked its 15px gutter padding onto every
-	// substring match sitewide (nav dropdown `.column`s, ComparisonTable `col-*`
-	// cells), so the grid lives here instead. The gutter pair stays intact: `.row`
-	// pulls -15px, the two column classes pay it back as padding.
-	:global(.row) {
-		display: flex;
-		flex-wrap: wrap;
-		margin-left: -15px;
-		margin-right: -15px;
-	}
-
-	:global(.col),
-	:global(.col-lg-7) {
-		position: relative;
-		width: 100%;
-		padding-left: 15px;
-		padding-right: 15px;
-	}
-
-	:global(.col) {
-		flex: 1 0 0%;
-	}
-
-	@include media-up(lg) {
-		:global(.col-lg-7) {
-			flex: 0 0 calc(7 / 12 * 100%);
-			max-width: calc(7 / 12 * 100%);
-		}
-	}
-
 	:global(.install-content) {
 		position: relative;
 		z-index: 4;
 		padding-top: var(--header-height, 80px);
-		background-color: #f4f8fe;
+		background-color: var(--color-bg-brand-tint);
 		overflow: hidden;
 
 		:global(.install-content-header) {

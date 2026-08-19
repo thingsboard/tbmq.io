@@ -3,7 +3,9 @@ import { learnNavTopics, topicHref } from './mqttLearn';
 export interface NavItem {
 	label: string;
 	href?: string;
-	id?: string; // id of the rendered <a> (mobile hub-link JS and analytics hook on these)
+	// id of the rendered <a>. Only external analytics (the GTM container) hooks on
+	// these — nothing in this repo consumes them, so check GTM before removing one.
+	id?: string;
 	submenuId?: string;
 	items?: SubMenuItem[];
 	target?: string;

@@ -8,9 +8,7 @@ const currentYear = new Date().getFullYear();
 <footer>
 	<div class="light-text main-div">
 		<div class="footer-top">
-			<div class="footer-top-cta">
-				<NButton id="Footer_ContactUs" href="/contact-us/" class="contact-us gtm_button"> Contact us </NButton>
-			</div>
+			<NButton id="Footer_ContactUs" href="/contact-us/" class="gtm_button"> Contact us </NButton>
 			<div class="footer-top-img-section">
 				<SmartImage
 					src="/src/assets/images/landings/footer/crozdesk-quality-choice-badge.png"
@@ -190,14 +188,6 @@ const currentYear = new Date().getFullYear();
 					justify-content: center;
 					gap: 1.5rem 2rem;
 				}
-			}
-
-			// Geometry only — NButton's filled default owns the brand-green fill,
-			// contrast label and hover overlay.
-			.contact-us {
-				margin: 0;
-				height: fit-content;
-				padding: 0.8125rem 1.25rem;
 			}
 		}
 

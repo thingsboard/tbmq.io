@@ -1,7 +1,7 @@
 ---
 import Header from '../components/Landing/Header.astro';
 import Footer from '../components/Landing/Footer.astro';
-import OpenLinksInNewTab from '../components/OpenLinksInNewTab.astro';
+import OpenContentLinksInNewTab from '../components/OpenContentLinksInNewTab.astro';
 import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import GtmNoscript from '../components/GtmNoscript.astro';
@@ -40,7 +40,7 @@ interface Props {
 	 * images will compete with the real LCP target for bandwidth.
 	 */
 	preloadLcpImage?: string;
-	/** Open all in-content links in a new tab (SEO request; see OpenLinksInNewTab). */
+	/** Open all in-content links in a new tab (SEO request; see OpenContentLinksInNewTab). */
 	openContentLinksInNewTab?: boolean;
 }
 
@@ -157,7 +157,7 @@ locals.bslForceLight = forceLightTheme;
 
 		<slot />
 
-		{openContentLinksInNewTab && <OpenLinksInNewTab />}
+		{openContentLinksInNewTab && <OpenContentLinksInNewTab />}
 
 		<Footer />
 

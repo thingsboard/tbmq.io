@@ -36,6 +36,33 @@ const {
 	noSkew = false,
 	fixedMaxWidth = false,
 } = Astro.props;
+
+// The CE and PE columns share one shape; the header row and every body cell
+// render from this single descriptor so the two columns — and their visible
+// vs. sr-only edition labels — can't drift apart when a new cell state is added.
+// Only the three accessors vary per row; everything else is static config.
+const EDITION_COLUMNS = [
+	{
+		colClass: 'col-ce',
+		edition: 'Community Edition',
+		abbreviation: 'CE',
+		linkClass: 'cell-link',
+		markSrc: '/src/assets/images/landings/pe/blue-mark.svg',
+		included: (row: ComparisonRow) => row.ce,
+		text: (row: ComparisonRow) => row.ceText,
+		linkHref: (row: ComparisonRow) => row.ceLinkHref,
+	},
+	{
+		colClass: 'col-pe',
+		edition: 'Professional Edition',
+		abbreviation: 'PE',
+		linkClass: 'cell-link pe-link',
+		markSrc: '/src/assets/images/landings/pe/green-mark.svg',
+		included: (row: ComparisonRow) => row.pe,
+		text: (row: ComparisonRow) => row.peText,
+		linkHref: (row: ComparisonRow) => row.peLinkHref,
+	},
+];
 ---
 
 <section
@@ -50,14 +77,14 @@ const {
 
 		<div class="comparison-header">
 			<div class="col-feature">Features</div>
-			<div class="col-ce">
-				<span class="long">Community Edition</span>
-				<span class="short">CE</span>
-			</div>
-			<div class="col-pe">
-				<span class="long">Professional Edition</span>
-				<span class="short">PE</span>
-			</div>
+			{
+				EDITION_COLUMNS.map((col) => (
+					<div class={col.colClass}>
+						<span class="long">{col.edition}</span>
+						<span class="short">{col.abbreviation}</span>
+					</div>
+				))
+			}
 		</div>
 
 		{
@@ -68,28 +95,6 @@ const {
 					</div>
 					{group.rows.map((row) => {
 						const Tag = row.href ? 'a' : 'div';
-						// The CE and PE cells share one shape; render both from data so the
-						// columns can't drift apart when a new cell state is added.
-						const cells = [
-							{
-								colClass: 'col-ce',
-								edition: 'Community Edition',
-								included: row.ce,
-								text: row.ceText,
-								linkHref: row.ceLinkHref,
-								linkClass: 'cell-link',
-								markSrc: '/src/assets/images/landings/pe/blue-mark.svg',
-							},
-							{
-								colClass: 'col-pe',
-								edition: 'Professional Edition',
-								included: row.pe,
-								text: row.peText,
-								linkHref: row.peLinkHref,
-								linkClass: 'cell-link pe-link',
-								markSrc: '/src/assets/images/landings/pe/green-mark.svg',
-							},
-						];
 						return (
 							<Tag
 								href={row.href}
@@ -98,27 +103,27 @@ const {
 								class="comparison-row"
 							>
 								<div class="col-feature">{row.label}</div>
-								{cells.map((cell) => (
-									<div class={cell.colClass}>
-										{cell.text ? (
-											cell.linkHref ? (
-												<a href={cell.linkHref} target="_blank" rel="noopener noreferrer" class={cell.linkClass}>
-													{cell.text}
+								{EDITION_COLUMNS.map((col) => (
+									<div class={col.colClass}>
+										{col.text(row) ? (
+											col.linkHref(row) ? (
+												<a href={col.linkHref(row)} target="_blank" rel="noopener noreferrer" class={col.linkClass}>
+													{col.text(row)}
 												</a>
 											) : (
-												<span>{cell.text}</span>
+												<span>{col.text(row)}</span>
 											)
-										) : cell.included ? (
+										) : col.included(row) ? (
 											<>
-												<SmartImage src={cell.markSrc} alt="" width="20" height="20" />
-												<span class="sr-only">Included in {cell.edition}</span>
+												<SmartImage src={col.markSrc} alt="" width="20" height="20" />
+												<span class="sr-only">Included in {col.edition}</span>
 											</>
 										) : (
 											<>
 												<span class="empty" aria-hidden="true">
 													&nbsp;
 												</span>
-												<span class="sr-only">Not included in {cell.edition}</span>
+												<span class="sr-only">Not included in {col.edition}</span>
 											</>
 										)}
 									</div>

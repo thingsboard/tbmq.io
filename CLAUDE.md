@@ -226,7 +226,7 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 ## Code Style
 
 - Tabs for indentation in code files; spaces for JSON, Markdown, MDX, YAML, TOML
-- Prettier with `prettier-plugin-astro`, printWidth 100, single quotes, trailing commas
+- Prettier with `prettier-plugin-astro`, printWidth 120, single quotes, trailing commas
 - ESLint flat config with TypeScript and Astro plugins
 
 ## CI Checks
