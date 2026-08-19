@@ -6,11 +6,13 @@
 </div>
 
 <script>
+	import { GOOGLE_CSE_CX } from '~/consts';
+
 	// Ensure CSE script is loaded (may already be loaded by SearchButton)
 	if (!document.querySelector('script[src*="cse.google.com"]')) {
 		const script = document.createElement('script');
 		script.async = true;
-		script.src = 'https://cse.google.com/cse.js?cx=006967103846171422263:o5lnt35mvwq';
+		script.src = `https://cse.google.com/cse.js?cx=${GOOGLE_CSE_CX}`;
 		document.head.appendChild(script);
 	}
 
