@@ -11,7 +11,7 @@ export interface MarketingSection {
 /**
  * Per-pathname eyebrow + title override for marketing pages whose URL
  * fragments don't carry a usable display name (the legal pages would get a
- * "Mqtt Broker" eyebrow from their /products/mqtt-broker/ parent segment).
+ * "Products" eyebrow from their /products/ parent segment).
  * Pathnames are stored with a trailing slash so they match the normaliser
  * inside `getMarketingSection` / `isAllowlistedMarketingPath`.
  */
@@ -21,8 +21,8 @@ export interface MarketingOverride {
 }
 
 const PRODUCT_OVERRIDES: Record<string, MarketingOverride> = {
-	'/products/mqtt-broker/privacy-policy/': { eyebrow: 'TBMQ', title: 'Privacy Policy' },
-	'/products/mqtt-broker/terms-of-use/': { eyebrow: 'TBMQ', title: 'Terms of Use' },
+	'/products/privacy-policy/': { eyebrow: 'TBMQ', title: 'Privacy Policy' },
+	'/products/terms-of-use/': { eyebrow: 'TBMQ', title: 'Terms of Use' },
 };
 
 export function getMarketingOverride(pathname: string): MarketingOverride | null {
