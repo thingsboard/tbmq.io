@@ -1,5 +1,7 @@
 import DocLink from '@components/DocLink.astro';
 import { Aside } from '@astrojs/starlight/components';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
 
 MQTT is the wire protocol TBMQ speaks. This page covers **how TBMQ implements MQTT** — the versions it accepts, the endpoints clients connect to, the protocol limits it enforces, and the MQTT 5.0 features it supports. For a conceptual introduction to the protocol itself — the publish/subscribe model, brokers, topics, and where MQTT fits versus other protocols — see the [What is MQTT?](/mqtt/what-is-mqtt/) guide and the rest of the [MQTT guide](/mqtt/).
 
@@ -39,8 +41,19 @@ TBMQ enforces — and lets you tune — a number of protocol-level behaviors. Ea
 | Flow control / Receive Maximum | enabled | `MQTT_FLOW_CONTROL_ENABLED` |
 | Receive Maximum applied to MQTT 3.x clients | 65535 | `MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX` |
 | Max session expiry interval | 604800 s (1 week) | `MQTT_CLIENT_SESSION_EXPIRY_MAX_EXPIRY_INTERVAL` |
-| Cluster-wide session limit (`0` = unlimited) | 0 | `MQTT_SESSIONS_LIMIT` |
-| Per-client / total message rate limits | disabled | `MQTT_INCOMING_RATE_LIMITS_ENABLED`, `MQTT_TOTAL_RATE_LIMITS_ENABLED` |
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+Two further limits are off out of the box: the cluster-wide **session limit** (`MQTT_SESSIONS_LIMIT`, `0` = unlimited),
+and **message rate limits** — per-client (`MQTT_INCOMING_RATE_LIMITS_ENABLED`) and cluster-wide
+(`MQTT_TOTAL_RATE_LIMITS_ENABLED`). See <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink>.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Two further limits come from your subscription rather than the configuration, and there is no environment variable for
+either. The **session limit** and the **cluster-wide throughput quota** are both sized by your plan and always enforced.
+Per-client publish rate limits are separate and off out of the box (`MQTT_INCOMING_RATE_LIMITS_ENABLED`). See
+<DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink>.
+</ShowFor>
 
 <Aside type="tip">
   In production, set `MQTT_SUBSCRIPTION_ROOT_MULTI_LVL_WILDCARD=false` to stop clients subscribing to the bare `#` firehose, and enable TLS on the listeners above.
