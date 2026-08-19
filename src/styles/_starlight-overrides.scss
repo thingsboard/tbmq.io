@@ -111,3 +111,14 @@ body[data-mobile-menu-expanded] {
 	background-color: var(--color-brand);
 	color: var(--color-brand-contrast);
 }
+
+// "On this page" TOC: the current heading is the same kind of state marker as
+// the sidebar pill above, so it reads brand green too (Starlight paints it with
+// the blue --sl-color-text-accent). Covers the desktop list and the mobile
+// dropdown list; the mobile bar's collapsed `display-current` label stays white
+// — it is a caption, not a current-vs-siblings highlight. Unlayered → beats
+// Starlight's @layer rules, including the mobile hover/focus white.
+starlight-toc a[aria-current='true'],
+mobile-starlight-toc a[aria-current='true'] {
+	color: var(--color-brand);
+}

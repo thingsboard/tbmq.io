@@ -9,8 +9,9 @@ export interface Props {
 
 const { product } = Astro.props;
 
-// TBMQ brand green (--color-product-tbmq), consumed as `currentColor` by the SVG.
-const color = '#1f8b4d';
+// TBMQ brand green, consumed as `currentColor` by the SVG. Baked in at build
+// time, so keep in sync with $color-brand in src/styles/_variables.scss.
+const color = '#1a7f46';
 
 const svgPath = join(process.cwd(), 'public', 'hero', 'tbmq-hero.svg');
 let svg = fs.readFileSync(svgPath, 'utf-8');

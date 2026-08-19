@@ -18,8 +18,9 @@
 	// nav active-section highlight, and the docs sidebar active pill. Adapts per theme
 	// (dark override below); -contrast is the on-brand text colour. Hover darkens via
 	// NButton's filled overlay (no separate hover token). The Cloud product token
-	// aliases this. -rgb (derived, can't drift) powers the tints and --shadow-primary,
-	// the glow under the green CTAs.
+	// aliases this. -rgb powers the tints and --shadow-primary, the glow under the
+	// green CTAs; it's derived from the same Sass variable per theme (light here,
+	// dark in the block below), so the pair can't drift.
 	--color-brand: #{$color-brand};
 	--color-brand-contrast: #{$color-white};
 	--color-brand-rgb:
@@ -44,6 +45,9 @@
 	--color-bg-light: #{$color-bg-light};
 	--color-bg-dark: #{$color-bg-dark};
 	--color-bg-muted: #{$color-bg-muted};
+	// Brand-tinted surface (pricing cards, installations/contact page bg,
+	// deployment-card hover). Light: 5% brand over white; dark: a brand wash.
+	--color-bg-brand-tint: #{$color-bg-brand-tint};
 
 	// Colors - Border
 	--color-border: #{$color-border};
@@ -151,7 +155,7 @@
 	// switch per theme so one reference serves light and dark.
 	--brand-ce: #305680;
 	--brand-cloud: #5fa8e8;
-	--brand-pe: #1f8b4d;
+	--brand-pe: var(--color-brand);
 	--brand-edge: #009688;
 	--brand-gateway: #7a4dc3;
 	--brand-trendz: #2696f3;
@@ -175,6 +179,9 @@
 	--color-border: #2e3035;
 	--color-border-light: #383a40;
 
+	// Colors - Background (brand-tinted surface, dark wash over the page bg)
+	--color-bg-brand-tint: rgba(var(--color-brand-rgb), 0.06);
+
 	// Shadows
 	--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 1px 0 rgba(0, 0, 0, 0.2);
 	--shadow-md: 0 1px 8px 0 rgba(0, 0, 0, 0.4), 0 3px 4px 0 rgba(0, 0, 0, 0.3), 0 3px 3px -2px rgba(0, 0, 0, 0.25);
@@ -189,12 +196,18 @@
 	--color-product-pe: #3fd9d1;
 	--color-product-trendz: #8888ff;
 	--color-product-gw: #a78bfa;
-	--color-product-tbmq: #4cd983;
+	// (--color-product-tbmq keeps its :root alias of --color-brand, same as
+	// --color-product-cloud above.)
 
 	// Brand green (dark) — light mint fill + navy text ($color-primary-darker,
-	// 9.4:1 on the mint), matching the pricing "Get started" buttons.
+	// 9.4:1 on the mint), matching the pricing "Get started" buttons. -rgb is
+	// re-derived from the mint so the dark-mode tints and --shadow-primary glow
+	// track the fill they sit under instead of the light-mode green.
 	--color-brand: #{$color-brand-dark};
 	--color-brand-contrast: #{$color-primary-darker};
+	--color-brand-rgb:
+		#{color.channel($color-brand-dark, 'red', $space: rgb)}, #{color.channel($color-brand-dark, 'green', $space: rgb)},
+		#{color.channel($color-brand-dark, 'blue', $space: rgb)};
 
 	// Colors - Light-blue badge palette (dark mode)
 	--color-light-blue-low: #1d3739;

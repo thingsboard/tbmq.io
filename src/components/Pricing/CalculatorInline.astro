@@ -1095,7 +1095,7 @@ const { id } = Astro.props as Props;
 	function _readSliderColors() {
 		const cs = getComputedStyle(document.documentElement);
 		window._sliderColors = {
-			primary: cs.getPropertyValue('--color-brand').trim() || '#1f8b4d',
+			primary: cs.getPropertyValue('--color-brand').trim() || '#1a7f46',
 			track: cs.getPropertyValue('--sl-color-gray-5').trim() || '#E0E1E2',
 		};
 		return window._sliderColors;

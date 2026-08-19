@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 // ============================================
 // DESIGN SYSTEM - ThingsBoard
 // ============================================
@@ -40,6 +42,9 @@ $color-bg-light: #f7f9fc;
 $color-bg-white: #ffffff;
 $color-bg-dark: #252628;
 $color-bg-muted: #f7f7f7;
+// Brand-tinted near-white for page/card surfaces — the green analogue of the
+// retired blue #f4f8fe tint. Derived from $color-brand so it can't drift.
+$color-bg-brand-tint: color.mix($color-brand, $color-bg-white, 5%);
 
 // Colors - Border
 $color-border: #ebebeb;
@@ -47,7 +52,7 @@ $color-border-light: #e0e1e2;
 $color-border-dark: rgba(0, 0, 0, 0.08);
 
 // Colors - Semantic
-$color-success: #1f8b4d;
+$color-success: $color-brand; // success == the brand green (was the interim #1f8b4d)
 $color-success-alt: #21b91b;
 $color-danger: #ba0000;
 $color-warning: #ff3d00;
@@ -61,7 +66,7 @@ $color-edge: #7a4dc3;
 // Colors - PE brand (green)
 $color-pe: #17bb52;
 $color-pe-hover: #35c86a;
-$color-pe-dark: #1f8b4d;
+$color-pe-dark: $color-brand; // dark PE accent == the brand green (was the interim #1f8b4d)
 // Accessible PE green for text/links on light backgrounds (5.89:1 on white)
 $color-pe-link: #166c37;
 
@@ -444,32 +449,6 @@ $z-tooltip: 1200;
 	transition: all $transition-base;
 	cursor: pointer;
 	border: none;
-}
-
-@mixin button-primary {
-	@include button-base;
-	// Tracks Starlight's accent — saturated blue in light mode, lighter blue
-	// in dark mode. Text is always white in light mode and black in dark mode
-	// (overridden below) because the dark-mode bg is too light for white text.
-	// Hover is a 15% dark overlay on the same bg — subtle darken that keeps
-	// the same color identity instead of jumping to a different blue.
-	background-color: var(--color-primary);
-	background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0));
-	color: var(--color-white);
-	transition: background-image 0.15s ease;
-
-	[data-theme='dark'] & {
-		color: var(--color-black);
-	}
-
-	&:hover {
-		background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15));
-		color: var(--color-white);
-
-		[data-theme='dark'] & {
-			color: var(--color-black);
-		}
-	}
 }
 
 @mixin button-outline {

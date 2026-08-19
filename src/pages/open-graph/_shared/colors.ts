@@ -7,7 +7,8 @@
 export type SlabClass = 'tbmq';
 
 export const SLAB_GRADIENTS: Record<SlabClass, [string, string, string]> = {
-	tbmq: ['#1F8B4D', '#166e3c', '#0c4525'],
+	// Top stop is $color-brand (keep in sync with src/styles/_variables.scss).
+	tbmq: ['#1a7f46', '#166e3c', '#0c4525'],
 };
 
 /** Build the CSS background string for a slab class. */
