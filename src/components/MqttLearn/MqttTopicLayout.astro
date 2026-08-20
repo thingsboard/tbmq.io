@@ -386,7 +386,9 @@ const jsonLd = marketingJsonLd({
 			margin-bottom: 8px;
 		}
 		:global(a) {
-			color: $color-pe-link;
+			// The shared link blue — body prose links read as hyperlinks, like in
+			// the docs; green stays for the surrounding learn-hub chrome.
+			color: $color-primary;
 			text-decoration: underline;
 		}
 		:global(code) {
