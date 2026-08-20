@@ -67,7 +67,8 @@ response:
 Everything except the last two fields describes the license itself, `plan` reading `TBMQ PE subscription` or
 `TBMQ PE license` as above. `sessionsCount` is the live cluster-wide session
 count, and `totalMsgsLimitReached` reports whether the throughput quota has refused traffic recently — it is the field
-to scrape if you want to alert on hitting the licensed ceiling.
+to scrape if you want to alert on hitting the licensed ceiling. It stays `false` while Redis is unreachable, even
+though the quota may be refusing: see the note under [Throughput](#throughput).
 
 ## Throughput
 
@@ -94,16 +95,18 @@ from the shared budget).
 - A **Total messages rate exceeded** notification appears at the top of the License info popover. Clearing it is a
   deliberate act: click the check button (or call `DELETE /api/admin/license/ack/totalMessages`), which requires the
   <DocLink product={props.product} path="security/rbac">Administrator</DocLink> role. Left alone, it disappears five
-  minutes after it was first raised.
+  minutes after it was first raised. It is raised only when the budget is genuinely spent — refusals caused by an
+  unreachable Redis do not raise it.
 
 <Aside type="note">
-  A Redis problem must not stop message flow, so when the shared bucket cannot be reached the quota **fails open**: it
-  lets publishes through unaccounted rather than refusing traffic it has no way to price. The opening is short — it is
-  granted one second at a time and closes as soon as a draw succeeds again — so a transient blip passes a negligible
-  amount of extra traffic against a per-second budget, and enforcement resumes on its own with no intervention. Each
-  failed draw increments `throughputQuotaDegraded_total`, described in
-  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>, so a genuinely sustained
-  outage shows up there rather than passing unnoticed.
+  A Redis blip must not stop message flow, so when the shared bucket cannot be reached the quota keeps granting rather
+  than refuse traffic it has no way to price. That opening is bounded by a **fixed grace period**, measured from the
+  first failed draw of an outage: later failures do not extend it, and any successful draw resets it. The grace is long
+  enough to ride out a Redis Cluster or Sentinel failover and is deliberately not configurable — being able to lengthen
+  it would suspend the licensed limit for as long as one chose. Past the grace the node spends only the tokens it
+  actually drew and then refuses, exactly as above, but **without** raising the notification: the budget is unknown
+  rather than spent. Each failed draw increments `throughputQuotaDegraded_total`, described in
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>.
 </Aside>
 
 ## Sessions

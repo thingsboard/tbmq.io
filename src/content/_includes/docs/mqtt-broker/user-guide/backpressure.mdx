@@ -15,6 +15,8 @@ export const rateLimitsCe = `rate-limits:
     block-size: "\${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
     # Period of the tick returning a node's unused drawn tokens to the shared bucket (in ms).
     lease-return-ms: "\${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
+    # How long the quota keeps granting after it loses the shared Redis bucket (in ms).
+    degraded-grace-ms: "\${MQTT_TOTAL_RATE_LIMITS_DEGRADED_GRACE_MS:30000}"
   incoming-publish:
     # Enables or disables publish rate limits per client for incoming messages to the broker.
     enabled: "\${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
@@ -139,14 +141,31 @@ Because refusals happen at admission, the quota only ever sheds work the broker 
 is already durable is never discarded to save budget.
 
 <Aside type="note">
-  A Redis problem must not stop message flow, so when the shared bucket cannot be reached the quota **fails open**: it
-  lets publishes through unaccounted rather than refusing traffic it has no way to price. The opening is short — it is
-  granted one second at a time and closes as soon as a draw succeeds again — so a transient blip passes a negligible
-  amount of extra traffic and enforcement resumes on its own, with no intervention. Each failed draw increments
-  `throughputQuotaDegraded_total`, described in
-  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>, so a genuinely sustained
-  outage shows up there rather than passing unnoticed.
+  A Redis blip must not stop message flow, so when the shared bucket cannot be reached the quota keeps granting rather
+  than refuse traffic it has no way to price. That opening is **bounded by a grace period**, measured from the first
+  failed draw of an outage: later failures do not extend it, and any successful draw resets it, so an intermittent
+  Redis never accumulates toward the deadline. Past the grace the node lends nothing — it spends only the tokens it
+  actually drew and then refuses, exactly as it does on a spent budget: counted in `droppedMsgs`, with MQTT 5.0
+  publishers getting `0x97` Quota exceeded and MQTT 3.x publishers disconnected. Refusing never stops the node
+  probing Redis, once a second, so enforcement resumes on its own as soon as a draw succeeds. Each failed draw
+  increments `throughputQuotaDegraded_total`, described in
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>.
 </Aside>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+The grace is `degraded-grace-ms`, `30000` by default — long enough to ride out a Redis Cluster or Sentinel failover, so
+a node passes the switch without refusing anything. Raising it trades enforcement for availability; `0` refuses the
+moment a single draw fails.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The grace is fixed — long enough to ride out a Redis Cluster or Sentinel failover, and deliberately not configurable:
+the quota is what enforces your licensed throughput, so a setting able to lengthen the grace could suspend that limit
+for as long as one chose, simply by taking Redis away.
+
+Refusals past the grace do **not** raise the **licensed throughput reached** indicator: the budget is unknown rather
+than spent. During a Redis outage the only signals are `droppedMsgs` and `throughputQuotaDegraded_total`.
+</ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
 <ConditionalHeading level={5} id="sizing-the-bucket" showFor="mqtt-broker">Sizing the bucket</ConditionalHeading>
