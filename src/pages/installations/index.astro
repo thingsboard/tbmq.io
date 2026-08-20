@@ -30,6 +30,9 @@ import { mqttBrokerProduct } from '~/data/installations';
 		background-color: var(--color-bg-brand-tint);
 		overflow: hidden;
 
+		// This block styles ProductSection's markup via :global(); the same
+		// element's `.row`/`.col` grid rules live scoped inside
+		// src/components/Installations/ProductSection.astro — one div, two files.
 		:global(.install-content-header) {
 			flex-direction: row;
 			padding-top: 10px;

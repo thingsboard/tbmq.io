@@ -40,21 +40,14 @@ export function devSafeOgImagePath(imagePath: string): string {
 
 const SEP = ` ${TITLE_SEPARATOR} `;
 
-// URL-prefix → section label for title formatting (see getSectionFromPath).
-// Empty since the local blog was removed; kept as the registration point for
-// future sections.
-export const SECTION_LABELS: Record<string, string> = {};
-
-export function formatSectionIndexTitle(section: string): string {
-	return `${section}${SEP}${SITE_NAME}`;
-}
-
-export function formatMarketingTitle(title: string, section?: string): string {
+// The blog-era section machinery (SECTION_LABELS / getSectionFromPath /
+// formatSectionIndexTitle and the `section` title segment) was removed with the
+// local blog — re-add a section registry when the site actually has a second
+// marketing section again.
+export function formatMarketingTitle(title: string): string {
 	// Strip any legacy " | ThingsBoard" baked into the title prop (some pages include it themselves)
 	const clean = title.replace(/\s*\|\s*ThingsBoard\s*$/i, '').trim();
-	if (!section) return `${clean}${SEP}${SITE_NAME}`;
-	if (clean === section) return formatSectionIndexTitle(section);
-	return `${clean}${SEP}${section}${SEP}${SITE_NAME}`;
+	return `${clean}${SEP}${SITE_NAME}`;
 }
 
 export function formatDocsTitle(pageTitle: string, productName: string, isIndex: boolean): string {

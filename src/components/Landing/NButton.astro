@@ -1,6 +1,6 @@
 ---
 interface Props {
-	variant?: 'filled' | 'outlined' | 'text' | 'elevated' | 'tonal';
+	variant?: 'filled' | 'outlined' | 'text';
 	size?: 'sm' | 'md' | 'lg';
 	href?: string;
 	type?: 'button' | 'submit' | 'reset';
@@ -90,8 +90,9 @@ const classes = [
 		// green while links stay blue. --color-brand-contrast pairs with the green
 		// fill in both themes (white on green in light, navy on mint in dark).
 		// The variants below read only these tokens, so a future second colour is
-		// one token block, not new rules. (The old warning/danger/success/white
-		// blocks had no call sites and were removed.)
+		// one token block, not new rules. One consistent rule for the surface: no
+		// call sites, no code — the warning/danger/success/white colour blocks and
+		// the elevated/tonal variants were all removed on those grounds.
 		--_btn-color: var(--color-brand);
 		--_btn-color-contrast: var(--color-brand-contrast);
 		--_btn-color-tonal-bg: var(--sl-color-green-low);
@@ -119,17 +120,18 @@ const classes = [
 		&--filled {
 			background-color: var(--_btn-color);
 			color: var(--_btn-color-contrast);
-			// Use background-image overlay for darkening so text color stays crisp
-			background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0));
 
+			// Darken with color-mix so background-color (animatable) carries the
+			// hover easing — the old gradient overlay couldn't ease despite
+			// `transition: all`, because background-image is a discrete property.
 			&:hover {
-				background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15));
+				background-color: color-mix(in srgb, var(--_btn-color) 85%, black);
 				text-decoration: none;
 				color: var(--_btn-color-contrast);
 			}
 
 			&:active {
-				background-image: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
+				background-color: color-mix(in srgb, var(--_btn-color) 75%, black);
 				transition-duration: 0s;
 			}
 		}
@@ -160,27 +162,6 @@ const classes = [
 
 			&:hover {
 				background-color: var(--_btn-color-tonal-bg);
-				text-decoration: none;
-			}
-		}
-
-		&--elevated {
-			background-color: var(--_btn-color);
-			color: var(--_btn-color-contrast);
-			box-shadow: var(--shadow-sm);
-
-			&:hover {
-				box-shadow: var(--shadow-md);
-				text-decoration: none;
-				color: var(--_btn-color-contrast);
-			}
-		}
-
-		&--tonal {
-			background-color: var(--_btn-color-tonal-bg);
-			color: var(--_btn-color);
-
-			&:hover {
 				text-decoration: none;
 			}
 		}

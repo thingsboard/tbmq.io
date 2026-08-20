@@ -1,6 +1,4 @@
 ---
-import SmartImage from '@components/SmartImage.astro';
-
 interface ComparisonRow {
 	label: string;
 	href?: string;
@@ -20,6 +18,8 @@ interface ComparisonGroup {
 interface Props {
 	title?: string;
 	groups: ComparisonGroup[];
+	/** PE column accent (heading, tick, links). Passed verbatim into an inline
+	 *  style, so CSS `var()` strings work as well as literals. */
 	peColor?: string;
 	centerTitle?: boolean;
 	bgColor?: string;
@@ -30,7 +30,7 @@ interface Props {
 const {
 	title = 'Feature comparison',
 	groups,
-	peColor = '#038f7e',
+	peColor = 'var(--color-brand)',
 	centerTitle = false,
 	bgColor = '#f4f4f4',
 	noSkew = false,
@@ -47,7 +47,6 @@ const EDITION_COLUMNS = [
 		edition: 'Community Edition',
 		abbreviation: 'CE',
 		linkClass: 'cell-link',
-		markSrc: '/src/assets/images/landings/pe/blue-mark.svg',
 		included: (row: ComparisonRow) => row.ce,
 		text: (row: ComparisonRow) => row.ceText,
 		linkHref: (row: ComparisonRow) => row.ceLinkHref,
@@ -57,7 +56,6 @@ const EDITION_COLUMNS = [
 		edition: 'Professional Edition',
 		abbreviation: 'PE',
 		linkClass: 'cell-link pe-link',
-		markSrc: '/src/assets/images/landings/pe/green-mark.svg',
 		included: (row: ComparisonRow) => row.pe,
 		text: (row: ComparisonRow) => row.peText,
 		linkHref: (row: ComparisonRow) => row.peLinkHref,
@@ -115,7 +113,18 @@ const EDITION_COLUMNS = [
 											)
 										) : col.included(row) ? (
 											<>
-												<SmartImage src={col.markSrc} alt="" width="20" height="20" />
+												{/* The tick inherits its column's accent via currentColor — see the
+												    .mark colour rules below — so it can't drift from the heading. */}
+												<svg class="mark" width="20" height="20" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+													<circle cx="9" cy="9" r="9" fill="currentColor" fill-opacity="0.08" />
+													<path
+														d="M4.92725 9.58194L7.25466 11.9093L13.0732 6.09082"
+														stroke="currentColor"
+														stroke-width="2"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+													/>
+												</svg>
 												<span class="sr-only">Included in {col.edition}</span>
 											</>
 										) : (
@@ -277,7 +286,7 @@ const EDITION_COLUMNS = [
 			font-size: $font-size-2xl;
 			font-weight: $font-weight-medium;
 			line-height: 2.25rem;
-			color: var(--comparison-pe-color, #038f7e);
+			color: var(--comparison-pe-color);
 
 			@media screen and (max-width: 900px) {
 				flex: 0.3;
@@ -372,12 +381,10 @@ const EDITION_COLUMNS = [
 					line-height: 28px;
 				}
 
-				.col-ce,
-				.col-pe {
-					:global(img) {
-						width: 24px;
-						height: 24px;
-					}
+				.col-ce .mark,
+				.col-pe .mark {
+					width: 24px;
+					height: 24px;
 				}
 			}
 		}
@@ -412,15 +419,15 @@ const EDITION_COLUMNS = [
 			text-align: center;
 			overflow-wrap: break-word;
 
-			:global(img) {
+			.mark {
 				width: 20px;
 				height: 20px;
 				// `.col-ce` is itself a flex container, and the parent row has
 				// `min-width: 0` on this cell so the cell can collapse when a
 				// neighbour row contains an unbreakable token like
 				// "(MQTT/CoAP/HTTP/SNMP/LWM2M)". Without `flex-shrink: 0`,
-				// the img's default flex-shrink: 1 lets it shrink with the cell
-				// and the icon renders smaller in that row only.
+				// the svg's default flex-shrink: 1 lets it shrink with the cell
+				// and the tick renders smaller in that row only.
 				flex-shrink: 0;
 			}
 
@@ -443,6 +450,16 @@ const EDITION_COLUMNS = [
 			}
 		}
 
+		// Each column's tick takes its column accent (via currentColor on the
+		// inline svg): CE the navy its heading uses, PE whatever peColor is set to.
+		.col-ce .mark {
+			color: #0d417b;
+		}
+
+		.col-pe .mark {
+			color: var(--comparison-pe-color);
+		}
+
 		.cell-link {
 			font-size: $font-size-sm;
 			color: $color-primary;
@@ -453,7 +470,7 @@ const EDITION_COLUMNS = [
 			}
 
 			&.pe-link {
-				color: var(--comparison-pe-color, #{$color-pe});
+				color: var(--comparison-pe-color);
 			}
 		}
 	}

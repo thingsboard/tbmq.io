@@ -52,7 +52,10 @@ $color-border-light: #e0e1e2;
 $color-border-dark: rgba(0, 0, 0, 0.08);
 
 // Colors - Semantic
-$color-success: $color-brand; // success == the brand green (was the interim #1f8b4d)
+// Currently the same green as $color-brand, but kept as its own literal on
+// purpose: success is a semantic colour and must stay green even if the brand
+// colour ever moves off green.
+$color-success: #1a7f46;
 $color-success-alt: #21b91b;
 $color-danger: #ba0000;
 $color-warning: #ff3d00;
@@ -167,6 +170,96 @@ $z-tooltip: 1200;
 // --------------------------------------------
 // SCSS Mixins
 // --------------------------------------------
+
+// Light-theme token palette — every theme-varying CSS custom property with its
+// light value, in one place. Included by: `:root` in _theme.scss (the canonical
+// light palette), HeaderContent's force-light header scope (no-dark pages under
+// a dark user preference), and LegalLayout's standalone document (which loads no
+// global token sheet). A new theme token added here reaches all three scopes
+// automatically — before this mixin they were hand-mirrored lists that drifted
+// silently.
+// The var()-valued tokens (--menu-icon-color, --shadow-primary, --color-primary,
+// the product aliases) are included deliberately: a var() declared on :root
+// resolves against :root's values, so any scope that re-declares --color-brand
+// or --color-brand-rgb must re-declare these too for them to follow.
+@mixin light-theme-tokens {
+	// Colors - Primary — the blue link/accent, aligned to Starlight's accent
+	// token so docs and marketing links share one blue. (The Starlight accent
+	// ramp is left at its default indigo — no override — so links stay blue;
+	// buttons use --color-brand, which is green, instead.)
+	--color-primary: var(--sl-color-text-accent, #{$color-primary});
+
+	// Brand green — the single brand colour for the header "Try it now" CTA, the
+	// footer "Contact us" button, NButton/marketing CTA fills, the nav
+	// active-section highlight, and the docs sidebar active pill. Dark theme
+	// overrides the trio in _theme.scss; -contrast is the on-brand text colour.
+	// -rgb powers the tints and --shadow-primary and is derived from the same
+	// Sass variable, so the pair can't drift.
+	--color-brand: #{$color-brand};
+	--color-brand-contrast: #{$color-white};
+	--color-brand-rgb:
+		#{color.channel($color-brand, 'red', $space: rgb)}, #{color.channel($color-brand, 'green', $space: rgb)},
+		#{color.channel($color-brand, 'blue', $space: rgb)};
+
+	// Colors - Text
+	--color-text: #{$color-text-primary};
+	--color-text-secondary: #{$color-text-secondary};
+	--color-text-muted: #{$color-text-muted};
+	--color-text-light: #{$color-text-light};
+
+	// Colors - Background
+	--color-bg: #{$color-bg-white};
+	--color-bg-surface: #{$color-bg-white};
+	--color-bg-light: #{$color-bg-light};
+	--color-bg-dark: #{$color-bg-dark};
+	--color-bg-muted: #{$color-bg-muted};
+	// Brand-tinted surface (pricing cards, installations/contact page bg,
+	// deployment-card hover). Light: 5% brand over white; dark: a brand wash.
+	--color-bg-brand-tint: #{$color-bg-brand-tint};
+
+	// Colors - Border
+	--color-border: #{$color-border};
+	--color-border-light: #{$color-border-light};
+
+	// Shadows (theme-varying)
+	--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 1px 0 rgba(0, 0, 0, 0.07);
+	--shadow-md: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12);
+	--shadow-lg: 0 50px 50px -20px rgba(0, 0, 0, 0.15), 0 0 30px 0 rgba(0, 0, 0, 0.05);
+	--shadow-card: 0 50px 50px -20px rgba(0, 0, 0, 0.15), 0 0 30px 0 rgba(0, 0, 0, 0.04);
+	--shadow-header: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
+	--shadow-primary: 0 18px 16px -10px rgba(var(--color-brand-rgb), 0.25);
+
+	// Colors - Products
+	--color-product-ce: #305680;
+	--color-product-pe: #00695c;
+	--color-product-cloud: var(--color-brand); // aliases the brand green
+	--color-product-trendz: #5555ff;
+	--color-product-gw: #6d28d9;
+	--color-product-tbmq: var(--color-brand);
+
+	// Colors - Light-blue badge palette (complements Starlight's --sl-color-* badge tokens)
+	--color-light-blue-low: #d6e7e5;
+	--color-light-blue: #00695c;
+	--color-light-blue-high: #00423a;
+
+	// Colors - Edge teal badge palette (Material Teal — distinguished from PE's cooler light-blue)
+	--color-edge-low: #b2dfdb;
+	--color-edge: #009688;
+	--color-edge-high: #004d40;
+
+	// Menu icon tint — the brand green (re-resolves against the scope's own
+	// --color-brand), so the inline-SVG nav icons (`fill="currentColor"`) match
+	// the green top menu (hover/active/indicator).
+	--menu-icon-color: var(--color-brand);
+
+	// Per-product brand accents for the nav dropdown (icon + heading hover).
+	--brand-ce: #305680;
+	--brand-cloud: #5fa8e8;
+	--brand-pe: var(--color-brand);
+	--brand-edge: #009688;
+	--brand-gateway: #7a4dc3;
+	--brand-trendz: #2696f3;
+}
 
 // Breakpoint mixins
 @mixin media-up($breakpoint) {

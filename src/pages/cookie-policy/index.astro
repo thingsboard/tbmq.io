@@ -121,7 +121,18 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
 	.cookie-policy-page {
 		min-height: 100vh;
-		background-color: #fff;
+		// The page surface stays light inside the theme-aware BaseLayout, so
+		// re-emit the light token palette (the same convention as LegalLayout and
+		// the forced-light header) and let the rules below read the tokens —
+		// otherwise theme-aware inks like _base.scss's heading colour go
+		// near-white in dark mode and vanish on this white surface.
+		color-scheme: light;
+		@include light-theme-tokens;
+		// One exception: the mixin's --color-primary points at Starlight's accent
+		// token, which still resolves to the dark-mode accent here — pin the
+		// literal light link blue instead.
+		--color-primary: #{$color-primary};
+		background-color: var(--color-bg-surface);
 	}
 
 	.cookie-policy-content {
@@ -131,7 +142,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 		// slide under it. The .tb-topbar sticky unit overlaps content by design, so
 		// BaseLayout pages self-offset by the header height (see community/index.astro).
 		padding: calc(#{$header-height} + 40px) 24px 80px;
-		color: #212529;
+		color: var(--color-text);
 		line-height: 1.7;
 		font-size: 16px;
 		text-align: justify;
@@ -140,17 +151,12 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 			font-size: 32px;
 			font-weight: 600;
 			margin-bottom: 24px;
-			// The page surface is pinned light (#fff above), but _base.scss paints
-			// headings with the theme-aware --color-text, which goes near-white in
-			// dark mode — pin the ink too or the heading vanishes on the white bg.
-			color: #212529;
 		}
 
 		h3 {
 			font-size: 20px;
 			font-weight: 600;
 			margin: 32px 0 8px;
-			color: #212529;
 
 			&::before {
 				display: none;
@@ -180,10 +186,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 		}
 
 		a {
-			// The shared link blue as a compile-time value: the page surface is
-			// pinned light, so the theme-aware var(--color-primary) would resolve
-			// to the pale dark-mode accent on this white background.
-			color: $color-primary;
+			color: var(--color-primary);
 			text-decoration: none;
 
 			&:hover {

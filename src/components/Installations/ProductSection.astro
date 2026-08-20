@@ -132,8 +132,12 @@ const hasTwoColumns =
 	// global `[class*='col']` version once leaked 15px gutters onto every
 	// substring match sitewide: nav dropdown `.column`s, ComparisonTable `col-*`
 	// cells). The gutter pair stays intact: `.row` pulls -15px, the column
-	// classes pay it back as padding. Note only `col-lg-7` is defined — other
-	// `col-lg-*` widths don't exist.
+	// classes pay it back as padding. Two silent traps to know about: only
+	// `col-lg-7` is defined (other `col-lg-*` widths don't exist), and because
+	// the rules are Astro-scoped, `.row`/`.col` markup rendered by a *child*
+	// component won't pick them up. The rest of `.install-content-header`'s
+	// styling (typography, image parallax, buttons) lives in
+	// src/pages/installations/index.astro behind :global() — see the note there.
 	.row {
 		display: flex;
 		flex-wrap: wrap;

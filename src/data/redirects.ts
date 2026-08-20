@@ -86,6 +86,12 @@ export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [];
 
 export const SINGLE_REDIRECTS: SingleRedirect[] = [];
 
+// The legal pages moved /products/mqtt-broker/{privacy-policy,terms-of-use}/ →
+// /products/…/ (2026-08) with no redirects — a deliberate decision, not an
+// oversight: the site was not yet public, so no external links to the old
+// paths exist, and thingsboard.io's edge table keeps its own legal pages on
+// thingsboard.io (only /products/mqtt-broker/ itself points here, at the root),
+// so nothing upstream resolves to the old URLs either.
 export const NON_DOCS_REDIRECTS: Record<string, string> = {};
 
 export const DYNAMIC_REDIRECTS: DynamicRedirectGroup[] = [];

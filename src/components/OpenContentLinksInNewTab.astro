@@ -7,13 +7,18 @@
 	// component — a bundled module script is included from the module graph and
 	// would leak onto pages that never opted in. Rendering after <slot /> also
 	// guarantees <main> is parsed before this runs.
+	// `noopener` only, no `noreferrer`: internal links are rewritten too, and
+	// stripping the Referer would make internal navigation from these landings
+	// read as direct/none in analytics.
 	document.querySelectorAll('main a[href]').forEach((link) => {
+		// is:inline scripts are outside astro check's reach, so guard the type at
+		// runtime instead of via the querySelectorAll generic.
+		if (!(link instanceof HTMLAnchorElement)) return;
 		const href = link.getAttribute('href') ?? '';
 		if (href.startsWith('#') || link.hasAttribute('target')) return;
 		link.target = '_blank';
 		const rel = new Set(link.rel.split(' ').filter(Boolean));
 		rel.add('noopener');
-		rel.add('noreferrer');
 		link.rel = [...rel].join(' ');
 	});
 </script>

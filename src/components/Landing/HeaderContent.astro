@@ -850,29 +850,14 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	html[data-theme='dark']:where(#{$no-dark-pages}) header.header {
 		color-scheme: light;
 
-		// Re-emit light values for project theme tokens used by header + nav
-		--color-text: #{$color-text-primary};
-		--color-text-secondary: #{$color-text-secondary};
-		--color-text-muted: #{$color-text-muted};
-		--color-text-light: #{$color-text-light};
-		--color-bg: #{$color-bg-white};
-		--color-bg-surface: #{$color-bg-white};
-		--color-bg-light: #{$color-bg-light};
-		--color-bg-muted: #{$color-bg-muted};
-		--color-border: #{$color-border};
-		--color-border-light: #{$color-border-light};
-		--shadow-header: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
-		// Brand tokens too: without these the .try CTA keeps the dark-theme mint
-		// fill (and its glow keeps the mint tint) inside the forced-light header.
-		--color-brand: #{$color-brand};
-		--color-brand-contrast: #{$color-white};
-		--shadow-primary: 0 18px 16px -10px rgba($color-brand, 0.25);
-		// Force the nav-icon tint back to the brand green too, so dropdown icons
-		// match the rest of the green top menu on the force-light no-dark pages.
-		// (Re-emitted as a literal rather than relying on the --color-brand line
-		// above: --menu-icon-color is declared on :root, so its var() resolves
-		// against :root's --color-brand — still the dark mint here.)
-		--menu-icon-color: #{$color-brand};
+		// Re-emit the whole light palette for project theme tokens. The mixin is
+		// the same one :root uses (_variables.scss), so a token added there is
+		// automatically forced light here too — this block used to be a
+		// hand-mirrored subset that had to be extended one silent failure at a
+		// time (the .try CTA's brand tokens, then --menu-icon-color). The
+		// var()-valued tokens in the mixin re-resolve against this scope's own
+		// --color-brand, which is exactly what the old literal re-emits fixed.
+		@include light-theme-tokens;
 
 		// Re-emit light values for Starlight tokens used by the header
 		--sl-color-white: hsl(224, 10%, 10%);
@@ -907,8 +892,8 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		// state stays visible. Only the hover transitions to primary.
 
 		// Item heading on hover — overrides every product/use-case brand colour
-		// (#2a7dec, var(--color-brand), #305680, #009688, #7a4dc3, #2696f3 …) so the
-		// hover state keeps using the dark-mode primary.
+		// set by Navigation.astro's per-link rules, so the hover state keeps
+		// using the dark-mode primary.
 		.head-menu .sub-menu a:hover .sub-text h1,
 		.head-menu .sub-menu a:hover .sub-text span.item-heading {
 			color: var(--color-brand) !important;

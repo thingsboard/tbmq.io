@@ -43,5 +43,8 @@ pages that use it. Render it once per page, after <main>. */
 	main.reveal-ready .reveal.in {
 		opacity: 1;
 		transform: none;
+		/* The reveal is one-shot (the script unobserves after adding .in), so
+		   release the compositor layer that will-change pinned for the animation. */
+		will-change: auto;
 	}
 </style>
