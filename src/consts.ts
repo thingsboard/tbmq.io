@@ -16,9 +16,6 @@ export const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 /** Global OG-card fallback for pages without a generated per-page card. */
 export const OG_FALLBACK = '/tbmq-og.png';
 
-/** Google Tag Manager container id, read by GtmHead + GtmNoscript. */
-export const GTM_ID = 'GTM-TFXSRSWK';
-
 /**
  * Google Programmable Search Engine id (`cx`) behind the header search modal
  * and the /docs/search/ + /docs/pe/search/ pages. The domain the results come

@@ -1,0 +1,171 @@
+import { Aside, Steps } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+
+Your TBMQ PE license is more than an entitlement document — the broker reads it at runtime and enforces it. Two of its
+limits are applied by the broker itself, the cluster-wide **throughput quota** and the **session limit**. One is applied
+by the ThingsBoard License Server when a node starts. The rest either gate a feature or are informational.
+
+This page covers what the license grants, how each grant is enforced, and where to see what you are currently using.
+
+## What your license grants
+
+| Entitlement | Enforced by | What it controls |
+|---|---|---|
+| **Throughput (msg/sec)** | the broker, continuously | The cluster-wide budget for MQTT PUBLISH packets, incoming and outgoing combined |
+| **Sessions** | the broker, on CONNECT | Sessions stored across the cluster — connected clients plus persistent sessions that are currently offline |
+| **Production instances** | the License Server, at activation | How many TBMQ nodes may run against the production license key |
+| **Development instances** | the License Server, at activation | The same, for nodes started with the development license key |
+| **White labeling** | the broker, as a feature gate | Access to the <DocLink product={props.product} path="white-labeling">White labeling</DocLink> page |
+| **Support** | — | Your support tier: Community, Help desk, or Priority help desk |
+| **Subscriptions and integrations** | — | Unlimited on every plan |
+
+The support tier is derived from the plan rather than purchased on its own: perpetual licenses and plans carrying the
+priority add-on get **Priority help desk**, larger subscriptions get **Help desk**, and the smallest get **Community**.
+
+## Where to see current usage
+
+<Steps>
+1. Open the TBMQ web interface.
+2. In the top toolbar, immediately to the left of your user avatar, click the **credit card** icon.
+3. The **License info** popover opens.
+</Steps>
+
+Its header is **License info**, with a **Plans & Pricing** link to the right. Below that it lists:
+
+- your **plan** name — **TBMQ PE subscription** for a pay-as-you-go plan, **TBMQ PE license** for a perpetual one — which
+  is itself a link to the pricing page;
+- **Maximum N messages per second** — your licensed throughput;
+- **N / M sessions** — how many sessions are stored right now, against the licensed maximum;
+- **Maximum N Production instances**, and the same for **Development instances** — crossed out if your plan includes none;
+- **Unlimited subscriptions** and **Unlimited integrations**;
+- your **support tier**;
+- **White labeling**, ticked when your plan includes it.
+
+The sessions line switches to a warning once you pass **85%** of your licensed maximum, which makes the popover a useful
+early signal; the throughput line does so only once the quota has actually refused traffic. The red badge on the toolbar
+icon is stricter than either — it counts only the limits you have genuinely reached. Both refresh every minute.
+
+### Reading it over REST
+
+`GET /api/admin/licenseUsageInfo` returns the same information and requires the system administrator role. An example
+response:
+
+```json
+{
+  "maxMessages": 10000,
+  "maxSessions": 100000,
+  "maxProdInstances": 3,
+  "maxDevInstances": 1,
+  "whiteLabelingEnabled": true,
+  "plan": "TBMQ PE subscription",
+  "support": "Help desk",
+  "sessionsCount": 42371,
+  "totalMsgsLimitReached": false
+}
+```
+
+Everything except the last two fields describes the license itself, `plan` reading `TBMQ PE subscription` or
+`TBMQ PE license` as above. `sessionsCount` is the live cluster-wide session
+count, and `totalMsgsLimitReached` reports whether the throughput quota has refused traffic recently — it is the field
+to scrape if you want to alert on hitting the licensed ceiling.
+
+## Throughput
+
+The licensed messages-per-second figure **is** the quota. TBMQ builds a token bucket of exactly that capacity in Redis
+and every broker node draws from it, so the budget is shared across the cluster rather than applied per node. It is
+always enforced: there is no setting that disables it and none that raises it above what the license allows.
+
+A publish is charged when it is admitted, and it pays for its whole fan-out at once. The full charging model — including
+why replaying a persistent session's backlog is free and how retained messages are treated — is described in
+<DocLink product={props.product} path="user-guide/backpressure#cluster-wide-throughput-quota">Backpressure</DocLink>,
+along with the two settings that remain tunable (`block-size` and `lease-return-ms`, which only affect how a node draws
+from the shared budget).
+
+### When the quota is reached
+
+- The publisher is refused. MQTT 5.0 clients receive a PUBACK (QoS 1) or PUBREC (QoS 2) carrying reason code `0x97`
+  Quota exceeded and stay connected; MQTT 3.x clients are disconnected, since the protocol has no way to signal a
+  rejected publish.
+- Refusals are counted in the `droppedMsgs` statistic and listed on the
+  <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page under reason
+  **Rate limits**, with details **Total rate limits detected**. Per-client rate limits carry the same reason, so it is
+  that details string that tells the two apart.
+- The broker logs a warning, at most once a minute, naming the metrics to look at.
+- A **Total messages rate exceeded** notification appears at the top of the License info popover. Clearing it is a
+  deliberate act: click the check button (or call `DELETE /api/admin/license/ack/totalMessages`), which requires the
+  <DocLink product={props.product} path="security/rbac">Administrator</DocLink> role. Left alone, it disappears five
+  minutes after it was first raised.
+
+<Aside type="note">
+  A Redis problem must not stop message flow, so when the shared bucket cannot be reached the quota **fails open**: it
+  lets publishes through unaccounted rather than refusing traffic it has no way to price. The opening is short — it is
+  granted one second at a time and closes as soon as a draw succeeds again — so a transient blip passes a negligible
+  amount of extra traffic against a per-second budget, and enforcement resumes on its own with no intervention. Each
+  failed draw increments `throughputQuotaDegraded_total`, described in
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>, so a genuinely sustained
+  outage shows up there rather than passing unnoticed.
+</Aside>
+
+## Sessions
+
+The session limit counts every session the cluster stores: clients connected right now, plus persistent sessions whose
+clients are offline but whose state is still kept. A session stops counting once it expires or is removed.
+
+The limit is checked on CONNECT, and only for a client that has no session yet. Reconnecting to an existing session is
+never refused, and neither is a client taking over its own session, so a client that is already known to the broker can
+always get back in.
+
+When a new session would push the cluster past the limit, the connection is refused:
+
+| MQTT version | CONNACK returned |
+|---|---|
+| 5.0 | `0x97` Quota exceeded |
+| 3.1.1 / 3.1 | `0x03` Server unavailable |
+
+Unlike the throughput quota, there is no notification to acknowledge here — the sessions line in the License info popover
+turns red and the toolbar badge increments for as long as you are at the limit.
+
+## Instances
+
+An instance is a single TBMQ node registered against your license. A node activates on first start and is refused if
+your plan's instance capacity is already taken.
+
+A subscription carries two license keys, a production one and a development one, and the key you set in
+`TBMQ_LICENSE_SECRET` decides which pool the node counts against. Activating with the production key also binds the
+subscription to that cluster, so the same production key cannot bring up a second, separate cluster.
+
+## Keeping the license current
+
+Each node re-checks with the ThingsBoard License Server about once an hour, so a plan change takes effect within the
+hour — **no restart is needed**. The shared throughput bucket is reconfigured in place, handing over exactly the tokens
+an upgrade added or reclaiming exactly those a downgrade removed rather than rescaling what is left, and the session
+limit is re-read on every check.
+
+If the License Server cannot be reached, the node keeps running on the plan it last retrieved for up to **three days**.
+Past that the failure is treated as critical and the node stops.
+
+That cached plan, together with the node's identity, lives in the file named by `TBMQ_LICENSE_INSTANCE_DATA_FILE`
+(`tbmq-instance-license.data` by default). The broker refuses to start if it cannot write to it, and if the file is lost
+the node activates again as a new instance — consuming another slot from your instance capacity. Keep it on a volume
+that survives restarts.
+
+## If the broker will not start
+
+License problems are fatal by design: rather than run in a degraded state, the node logs the error and exits.
+
+| Symptom in the log | Cause |
+|---|---|
+| `License secret is not provided!` | `TBMQ_LICENSE_SECRET` is empty |
+| Invalid license secret / Subscription not found | The key is malformed, or does not match any subscription |
+| Subscription is not active | The subscription has lapsed |
+| Active instances capacity exceeded | Every instance slot on your plan is already taken — deactivate an unused instance, or add capacity |
+| Instance software version is not supported by this license | A perpetual license does not cover a release this new |
+| Cluster id mismatch | The production key is already bound to a different cluster |
+| Failed to connect to ThingsBoard License Server | Unreachable for longer than the three-day grace period |
+
+<Aside type="tip">
+  Your license key comes from the <a href="/pricing/?section=tbmq-options" target="_blank" rel="noopener noreferrer">Pricing page</a>,
+  where the calculator sizes throughput, sessions, instances, and add-ons. The
+  <DocLink product={props.product} path="installation/docker#get-the-license-key">Docker installation guide</DocLink>
+  shows where the key goes.
+</Aside>
