@@ -834,43 +834,13 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Pages that don't support dark theme — the theme toggle is hidden on
-	// these. Listed once and reused below in both the force-light scope
-	// (`:where(...)`) and the dark-tinting scope (`:not(:where(...))`) so a
-	// new product page only has to be added in one place.
+	// Pages that don't support dark theme, excluded from the dark-tinting scope
+	// below via :not(:where(...)). No force-light token override exists for them
+	// — none is reachable: every page with one of these ids is rendered with
+	// BaseLayout's `forceLightTheme` (SSR `data-theme="light"`, re-pinned before
+	// paint by ThemeProvider's force-light branch, theme toggle not rendered),
+	// so `html[data-theme='dark']` can never co-occur with these ids.
 	$no-dark-pages: '#home, #thingsboard-paas, #thingsboard-pe, #products, #development-services, #trainings, #trendz, #partners, #thingsboard-edge, #mqtt-broker, #mobile-app, #mobile-pe, #products-form, #company, #mediakit, #careers, #installations, #performance, #live-demo, #product, #choose-region, #google-iot-core-alternative, #mqtt-learn';
-
-	// Force light-theme styling for the header on pages that don't support
-	// dark theme. The theme toggle is hidden on these pages, but a user who
-	// switched to dark on a supported page would otherwise see the menu in
-	// dark mode here. We re-emit the light values for theme-aware tokens so
-	// the header (and its dropdown sub-menus) renders light, while leaving
-	// the global `[data-theme]` setting alone so it persists when the user
-	// navigates back to a dark-supporting page.
-	html[data-theme='dark']:where(#{$no-dark-pages}) header.header {
-		color-scheme: light;
-
-		// Re-emit the whole light palette for project theme tokens. The mixin is
-		// the same one :root uses (_variables.scss), so a token added there is
-		// automatically forced light here too — this block used to be a
-		// hand-mirrored subset that had to be extended one silent failure at a
-		// time (the .try CTA's brand tokens, then --menu-icon-color). The
-		// var()-valued tokens in the mixin re-resolve against this scope's own
-		// --color-brand, which is exactly what the old literal re-emits fixed.
-		@include light-theme-tokens;
-
-		// Re-emit light values for Starlight tokens used by the header
-		--sl-color-white: hsl(224, 10%, 10%);
-		--sl-color-gray-1: hsl(224, 14%, 16%);
-		--sl-color-gray-2: hsl(224, 10%, 23%);
-		--sl-color-gray-3: hsl(224, 7%, 36%);
-		--sl-color-gray-5: hsl(224, 6%, 77%);
-		--sl-color-gray-6: hsl(224, 20%, 94%);
-		--sl-color-gray-7: hsl(224, 19%, 97%);
-		--sl-color-bg-sidebar: #{$color-bg-white};
-		--sl-color-hairline-light: #{$color-border};
-		--sl-color-hairline-shade: #{$color-border-light};
-	}
 
 	// Dark-theme tinting for the menu's dropdown content. Only applies on
 	// pages that support dark theme — pages in $no-dark-pages above are

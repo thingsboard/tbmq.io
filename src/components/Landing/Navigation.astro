@@ -1145,9 +1145,10 @@ const ariaCurrent = (item: NavItem): 'page' | 'true' | undefined =>
 	#mqtt-broker,
 	#pricing {
 		&.flip-nav header .head-menu ul {
-			// Brand green, not the blue link accent: this id-scoped rule
-			// out-specifies the aria-current highlight above, so on a scrolled
-			// (flip-nav) page hovering the current item must not flip it blue.
+			// Hover colour for top-level items on flip-nav pages (`.active` is the
+			// class the hover/indicator JS owns, added on mouseenter) — brand green,
+			// so this id-scoped rule can't fight the aria-current highlight above
+			// when the hovered item happens to be the current one.
 			li.active a,
 			li.active span.main-menu-link {
 				opacity: 1;

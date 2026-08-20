@@ -9,10 +9,18 @@
 :root {
 	// Theme-varying tokens (light values). The palette lives in the
 	// `light-theme-tokens` mixin (_variables.scss) because two more scopes
-	// re-emit it: HeaderContent's force-light header (no-dark pages under a
-	// dark user preference) and LegalLayout's standalone document. The dark
-	// block below overrides the theme-varying subset.
+	// re-emit it: LegalLayout's standalone document and the pinned-light
+	// cookie-policy page. The dark block below overrides the theme-varying
+	// subset.
 	@include light-theme-tokens;
+
+	// Align the link blue to Starlight's accent token so docs and marketing
+	// links share one blue per theme (the accent ramp is left at its default
+	// indigo — links stay blue; buttons use the green --color-brand instead).
+	// Declared after the include so source order wins over the mixin's literal,
+	// which exists for the pinned-light scopes where this alias would resolve
+	// to the dark accent.
+	--color-primary: var(--sl-color-text-accent, #{$color-primary});
 
 	// Colors - Neutral
 	--color-white: #{$color-white};

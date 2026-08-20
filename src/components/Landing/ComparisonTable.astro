@@ -149,6 +149,10 @@ const EDITION_COLUMNS = [
 <style lang="scss">
 	@use '../../styles/variables' as *;
 
+	// CE column accent — one definition read by the heading and its tick, so the
+	// two can't drift apart (the PE pair shares --comparison-pe-color the same way).
+	$ce-accent: #0d417b;
+
 	.comparison-table {
 		position: relative;
 		width: 100%;
@@ -264,7 +268,7 @@ const EDITION_COLUMNS = [
 			font-size: $font-size-2xl;
 			font-weight: $font-weight-medium;
 			line-height: 2.25rem;
-			color: #0d417b;
+			color: $ce-accent;
 
 			@media screen and (max-width: 900px) {
 				flex: 0.3;
@@ -453,7 +457,7 @@ const EDITION_COLUMNS = [
 		// Each column's tick takes its column accent (via currentColor on the
 		// inline svg): CE the navy its heading uses, PE whatever peColor is set to.
 		.col-ce .mark {
-			color: #0d417b;
+			color: $ce-accent;
 		}
 
 		.col-pe .mark {

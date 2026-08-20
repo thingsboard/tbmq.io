@@ -128,10 +128,6 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 		// near-white in dark mode and vanish on this white surface.
 		color-scheme: light;
 		@include light-theme-tokens;
-		// One exception: the mixin's --color-primary points at Starlight's accent
-		// token, which still resolves to the dark-mode accent here — pin the
-		// literal light link blue instead.
-		--color-primary: #{$color-primary};
 		background-color: var(--color-bg-surface);
 	}
 

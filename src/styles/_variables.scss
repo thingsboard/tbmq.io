@@ -173,21 +173,22 @@ $z-tooltip: 1200;
 
 // Light-theme token palette — every theme-varying CSS custom property with its
 // light value, in one place. Included by: `:root` in _theme.scss (the canonical
-// light palette), HeaderContent's force-light header scope (no-dark pages under
-// a dark user preference), and LegalLayout's standalone document (which loads no
-// global token sheet). A new theme token added here reaches all three scopes
-// automatically — before this mixin they were hand-mirrored lists that drifted
-// silently.
-// The var()-valued tokens (--menu-icon-color, --shadow-primary, --color-primary,
-// the product aliases) are included deliberately: a var() declared on :root
-// resolves against :root's values, so any scope that re-declares --color-brand
-// or --color-brand-rgb must re-declare these too for them to follow.
+// light palette), LegalLayout's standalone document (which loads no global
+// token sheet), and the pinned-light cookie-policy page. A new theme token
+// added here reaches all three scopes automatically — before this mixin they
+// were hand-mirrored lists that drifted silently.
+// The var()-valued tokens (--menu-icon-color, --shadow-primary, the product
+// aliases) are included deliberately: a var() declared on :root resolves
+// against :root's values, so any scope that re-declares --color-brand or
+// --color-brand-rgb must re-declare these too for them to follow.
 @mixin light-theme-tokens {
-	// Colors - Primary — the blue link/accent, aligned to Starlight's accent
-	// token so docs and marketing links share one blue. (The Starlight accent
-	// ramp is left at its default indigo — no override — so links stay blue;
-	// buttons use --color-brand, which is green, instead.)
-	--color-primary: var(--sl-color-text-accent, #{$color-primary});
+	// Colors - Primary — the blue link/accent as a literal, so every including
+	// scope goes light unconditionally. `:root` in _theme.scss re-declares it
+	// after the include as var(--sl-color-text-accent, …) so docs and marketing
+	// links keep tracking Starlight's accent per theme; a Starlight-token-valued
+	// declaration here would resolve dark in any pinned-light scope where the
+	// Starlight accent is still dark.
+	--color-primary: #{$color-primary};
 
 	// Brand green — the single brand colour for the header "Try it now" CTA, the
 	// footer "Contact us" button, NButton/marketing CTA fills, the nav
