@@ -1,5 +1,7 @@
 import { Aside } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
 import ImageGallery from '~/components/ImageGallery.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import DocLink from '@components/DocLink.astro';
 
 In MQTT, a subscription is a mechanism that allows clients to receive messages directed to specific topics.
@@ -13,13 +15,18 @@ The table contains the following information about each subscription:
 - **Client ID** — the identifier of the client that owns the subscription.
 - **Topic filter** — the MQTT topic filter.
 - **QoS** — Quality of Service of the subscription.
+- **No Local** — when true, the broker will not forward messages from this client back to the connection on which this subscription was made.
 - **Retain as Published** — when true, messages forwarded using this subscription keep the RETAIN flag they were published with.
 - **Retain Handling** — how the broker handles retained messages when the client subscribes:
   - `0` — send retained messages at subscription time.
   - `1` — send retained messages at subscription time if the subscription does not already exist.
   - `2` — do not send retained messages at subscription time.
-- **No local** — when true, the broker will not forward messages from this client back to the connection on which this subscription was made.
-- **Subscription Identifier** — a unique numerical value assigned to the subscription.
+- **Subscription ID** — the numeric identifier (1 to 268,435,455) the client assigned to the subscription when subscribing. The broker includes it in every PUBLISH message that matches the subscription, so the client can identify which subscription the message was matched against.
+
+**No Local**, **Retain as Published**, **Retain Handling**, and **Subscription ID** are MQTT 5 subscription options.
+For MQTT 3.x clients, the table shows their default values: `false`, `false`, `0`, and an empty Subscription ID.
+
+Subscriptions can be filtered by any combination of these fields using the filter above the table.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/subscriptions-table-1.png', alt: 'Subscriptions table showing all broker subscriptions', caption: 'Subscriptions table' },
@@ -65,4 +72,13 @@ To clear empty subscription nodes, click the **Clear empty subscription nodes** 
 ]} />
 
 The broker also clears empty subscription nodes on a schedule, controlled by the environment variables
-`MQTT_SUB_TRIE_CLEAR_NODES_CRON` and `MQTT_SUB_TRIE_CLEAR_NODES_ZONE`.
+`MQTT_SUB_TRIE_CLEAR_NODES_CRON` (default `0 0 0 * * *` — every day at midnight) and `MQTT_SUB_TRIE_CLEAR_NODES_ZONE` (default `UTC`).
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<Aside type="caution">
+  The subscription editor and the **Clear empty subscription nodes** button are shown only to users with administrator
+  rights. Everyone else gets a read-only view of subscriptions. The REST API enforces the same rule: reading
+  subscriptions requires the `READ` permission, updating them requires `WRITE`, and clearing empty nodes requires
+  `DELETE`. See <DocLink product={props.product} path="security/rbac">Roles and permissions</DocLink>.
+</Aside>
+</ShowFor>
