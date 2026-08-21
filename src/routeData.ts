@@ -183,9 +183,9 @@ function linkMatchesVersion(href: string, version: Products): boolean {
 }
 
 /**
- * When the current page is not a sidebar link (e.g. a dynamic sub-page like
- * /docs/pe/releases/releases-table/v4-3-x/), mark the closest ancestor
- * sidebar link as current so that collapsed groups containing it render open.
+ * When the current page is not a sidebar link (e.g. /docs/search/ or an anchor
+ * page reached from a link in the body), mark the closest ancestor sidebar link
+ * as current so that collapsed groups containing it render open.
  */
 function markParentSidebarItemAsCurrent(starlightRoute: StarlightRouteData, pathname: string) {
 	// If any entry is already current, nothing to do

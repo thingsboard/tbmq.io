@@ -60,7 +60,6 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
-    "@astrojs/rss": "4.0.18",
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/starlight": "^0.39.2",
     "@expressive-code/plugin-collapsible-sections": "^0.41.7",

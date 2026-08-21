@@ -2,8 +2,6 @@
 import { Products } from '@models/site.models.ts';
 import { allPages } from '~/content';
 import { getVersionFromURL, switchVersionWithFallback } from '~/util/path-utils';
-import { RELEASE_FAMILIES, familySlug } from '~/models/releases-table';
-import { UPGRADE_FAMILIES, getFamilySlug } from '~/models/upgrade-instructions';
 
 // Inline SVGs as raw strings so their `currentColor` flows from the parent's CSS `color`.
 const iconSources = import.meta.glob<string>('/src/assets/images/docs/product-selector/*.svg', {
@@ -17,44 +15,24 @@ const getIcon = (name: string) => iconSources[`/src/assets/images/docs/product-s
 // FAMILIES — single source of truth for what the selector renders.
 // Add or edit one entry to add/edit a product in the selector.
 // ────────────────────────────────────────────────────────────────────────────
-type Group = 'core' | 'addons' | 'ecosystem';
-
 interface Edition {
 	product: Products;
 	label: string;
 }
-interface Region {
-	product: Products;
-	label: string;
-	subtitle: string;
-}
 interface Family {
-	id: Products;
-	group: Group;
 	name: string;
-	tagline: string;
 	iconId: string;
 	editions: Edition[];
-	/** When defined, region row + popover render whenever the active edition
-	 * matches one of `options[].product`. */
-	regions?: { options: Region[] };
-	/** Edition to land on when this family is picked from the product dropdown.
-	 * Defaults to `editions[editions.length - 1]` (Professional/Cloud first). */
-	preferredEdition?: Products;
 }
 
 const FAMILIES: Family[] = [
 	{
-		id: Products.TBMQ,
-		group: 'ecosystem',
 		name: 'MQTT Broker',
-		tagline: 'Reliable messaging for massive fleets',
 		iconId: 'tbmq',
 		editions: [
 			{ product: Products.TBMQ, label: 'Community' },
 			{ product: Products.TBMQ_PE, label: 'Professional' },
 		],
-		preferredEdition: Products.TBMQ_PE,
 	},
 ];
 
@@ -64,41 +42,16 @@ const FAMILIES: Family[] = [
 const currentProduct = getVersionFromURL(Astro.url.pathname);
 const currentFamily =
 	FAMILIES.find((f) => f.editions.some((e) => e.product === currentProduct)) ??
-	// If currentProduct is a region variant (PAAS_EU), find the family by region match
-	FAMILIES.find((f) => f.regions?.options.some((r) => r.product === currentProduct)) ??
 	// Single-product site: root utility pages (search, newsletter-thanks) carry no
 	// product prefix in the URL, so no family matches — fall back to the sole family
 	// instead of crashing on `currentFamily.iconId`.
 	FAMILIES[0];
 
-// Build the existing-pages set used by switchVersionWithFallback (incl. dynamic pages).
 const existingPageIds = new Set(allPages.map((p) => p.id));
-for (const f of RELEASE_FAMILIES) {
-	const slug = familySlug(f.family);
-	existingPageIds.add(`docs/releases/releases-table/${slug}`);
-	existingPageIds.add(`docs/pe/releases/releases-table/${slug}`);
-}
-const upgradePlatforms = ['ubuntu', 'centos', 'windows', 'docker', 'docker-compose'];
-for (const fam of UPGRADE_FAMILIES) {
-	const slug = getFamilySlug(fam);
-	for (const platform of upgradePlatforms) {
-		existingPageIds.add(`docs/installation/upgrade-instructions/${platform}/${slug}`);
-		existingPageIds.add(`docs/pe/installation/upgrade-instructions/${platform}/${slug}`);
-	}
-}
 
 const href = (target: Products) => switchVersionWithFallback(Astro.url.pathname, target, existingPageIds);
 
-// Edition pill is "active" if its product matches current OR if it's the
-// regional trigger and current is one of its region variants (so the Cloud
-// pill stays highlighted when reading EU docs).
-const isEditionActive = (e: Edition): boolean => {
-	if (e.product === currentProduct) return true;
-	if (currentFamily.regions?.options.some((r) => r.product === currentProduct)) {
-		return e.product === currentFamily.regions.options[0]!.product;
-	}
-	return false;
-};
+const isEditionActive = (e: Edition): boolean => e.product === currentProduct;
 ---
 
 <product-selector>
