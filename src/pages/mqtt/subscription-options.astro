@@ -91,17 +91,19 @@ const faq: FaqItem[] = [
 			<text class="d-brklabel d-mid" x="330" y="155">later — a message matches the subscription</text>
 			<line class="d-line d-line--green" x1="510" y1="196" x2="153" y2="196" marker-end="url(#arGreen)"></line>
 			<rect class="d-chip d-chip--green" x="241" y="185" width="198" height="22" rx="11"></rect>
-			<text class="d-ctext d-ctext--green d-mid" x="340" y="200" style="font-size:11px">PUBLISH + Subscription Id 7</text>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="200" style="font-size:11px"
+				>PUBLISH + Subscription Id 7</text
+			>
 			<text class="d-note d-mid" x="330" y="228">Client routes by id 7 — no topic re-match needed</text>
 		</svg>
 	</MqttDiagram>
 
 	<h2>Subscription options and identifiers in TBMQ</h2>
 	<p>
-		TBMQ honors all four subscription options for MQTT 5.0 clients — capping delivered QoS, suppressing local echo,
-		preserving the RETAIN flag, and applying the retain-handling policy — and it supports subscription identifiers,
-		advertising them as available at connect and echoing the identifier on every matching message. You can inspect and
-		edit these per subscription from the
+		<a href="/">TBMQ</a> honors all four subscription options for MQTT 5.0 clients — capping delivered QoS, suppressing local
+		echo, preserving the RETAIN flag, and applying the retain-handling policy — and it supports subscription identifiers,
+		advertising them as available at connect and echoing the identifier on every matching message. You can inspect and edit
+		these per subscription from the
 		<a href="/docs/user-guide/ui/subscriptions/">Subscriptions page</a> in the UI, and the
 		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> lists them among the supported 5.0 features.
 	</p>

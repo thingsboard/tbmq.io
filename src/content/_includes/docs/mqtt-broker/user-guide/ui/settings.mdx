@@ -1,5 +1,7 @@
 import { Aside } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
 import ImageGallery from '~/components/ImageGallery.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import DocLink from '@components/DocLink.astro';
 
 TBMQ provides a dedicated Settings page for administrators to manage key system configurations from the UI.
@@ -20,8 +22,11 @@ The **Authentication Execution Order** setting controls the priority in which au
 The following rules apply:
 
 - Disabled providers are skipped.
-- The authentication flow stops at the first successful result or after all enabled providers are evaluated.
+- The authentication flow stops at the first successful result, or at an explicit rejection by a provider (for example, when the external HTTP service denies the client).
+- If no enabled provider authenticates the client, the connection is rejected.
 - If all providers are disabled, clients are authenticated without credential validation.
+
+For the complete evaluation semantics, see <DocLink product={props.product} path="security/overview#providers-execution-order" bold={false}>Providers execution order</DocLink>.
 
 <Aside>
   SCRAM authentication always follows the MQTT 5.0 specification and does not follow the configured execution order.
@@ -76,7 +81,7 @@ Configure global MQTT connectivity settings used across the TBMQ UI (default hos
 ### Base URL
 
 - **Base URL** — the public URL of this TBMQ instance. Used to generate links in emails and password-reset links. Should match the public domain and protocol (e.g., `https://tbmq.example.com`).
-- **Prohibit to use hostname from the client request headers** — when enabled, TBMQ ignores the hostname sent in client request headers and uses the configured Base URL instead. This setting should be enabled for production environments. May cause security issues when disabled.
+- **Prohibit to use hostname from the client request headers** — when enabled, TBMQ ignores the hostname sent in client request headers and uses the configured Base URL instead (disabled by default). This setting should be enabled for production environments. May cause security issues when disabled.
 
 ### Connectivity
 
@@ -93,6 +98,7 @@ The **default host** is `window.location.hostname` (the hostname from the browse
 
 - **Check connectivity** window — uses the MQTT connectivity settings to generate commands with the custom host and port.
 - **Add WebSocket Connection** window — uses the WS connectivity settings to generate a WebSocket URL.
+- **Getting started** card on the Home page.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/settings-connectivity-settings-1.png', alt: 'MQTT host changed to custom IP address', caption: 'The MQTT host is changed to custom IP address.' },
@@ -106,9 +112,17 @@ The **default host** is `window.location.hostname` (the hostname from the browse
 Configure additional settings for the <DocLink product={props.product} path="user-guide/ui/websocket-client">WebSocket Client</DocLink>:
 
 - **Log MQTT client activity** — when enabled, logs the following <a href="https://github.com/mqttjs/MQTT.js" target="_blank" rel="noopener noreferrer">MQTT.js</a> events to the browser developer console: Connect, Disconnect, Reconnect, Message, Error, End, Close, Packet receive, Packet send, Offline, and Outgoing empty.
-- **Maximum messages in WebSocket Client table** — controls the per-connection message limit persisted in browser memory.
+- **Maximum messages in WebSocket Client table** — controls the per-connection message limit persisted in browser memory. Changing this value clears the stored messages of all WebSocket connections.
 
 ## Mail server settings
 
 Configure the SMTP server used to send password reset emails.
 Refer to the <a href="https://thingsboard.io/docs/user-guide/ui/mail-settings/" target="_blank" rel="noopener noreferrer">ThingsBoard Mail Settings</a> documentation for setup instructions.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<Aside type="caution">
+  The Settings page is editable only by users with administrator rights — everyone else gets a read-only view of all
+  three tabs. The REST API enforces the same rule: reading settings requires the `READ` permission, saving them
+  requires `WRITE`. See <DocLink product={props.product} path="security/rbac">Roles and permissions</DocLink>.
+</Aside>
+</ShowFor>

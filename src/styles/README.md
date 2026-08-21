@@ -52,7 +52,6 @@ We use BEM (Block Element Modifier) naming convention:
 **Layout:**
 - `.container`, `.container-narrow`, `.container-wide`
 - `.section`, `.section-sm`, `.section-lg`
-- `.row`, `.col-*`
 
 **Components:**
 - `.feature-card`, `.product-card`, `.ecosystem-card`
@@ -165,7 +164,6 @@ $breakpoint-2xl: 1500px;
 
 ```scss
 @include button-base;     // Base button styles
-@include button-primary;  // Primary filled button
 @include button-outline;  // Outlined button
 ```
 

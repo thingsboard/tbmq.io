@@ -3,7 +3,6 @@ import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
 import { formatMarketingTitle } from '~/consts';
-import { getSectionFromPath } from '~/util/path-utils';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 
 interface Props {
@@ -15,7 +14,7 @@ interface Props {
 
 const { title, description, ogImage: ogImageProp, noIndex = false } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const pageTitle = formatMarketingTitle(title, getSectionFromPath(Astro.url.pathname));
+const pageTitle = formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 ---
 
@@ -48,7 +47,11 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 	:root {
 		--sl-main-pad: 0;
 		--sl-line-height: 1.5;
-		--color-text: #{$color-text-primary};
+		// Standalone document — BaseLayout's global token sheet isn't loaded here,
+		// so every theme token this page (and the shared CookieBanner) reads must
+		// be pinned locally to its light value, or the var() resolves to nothing.
+		// The mixin is the same light palette :root gets in _theme.scss.
+		@include light-theme-tokens;
 	}
 
 	.legal-page {
@@ -88,7 +91,7 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 		}
 
 		a {
-			color: #2a7dec;
+			color: var(--color-primary);
 			text-decoration: none;
 
 			&:hover {

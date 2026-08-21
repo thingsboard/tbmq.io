@@ -16,6 +16,8 @@ import { mqttBrokerProduct } from '~/data/installations';
 </BaseLayout>
 
 <style lang="scss">
+	@use '../../styles/variables' as *;
+
 	:global(#installations) {
 		color: #212529;
 		background-color: #fff;
@@ -25,9 +27,12 @@ import { mqttBrokerProduct } from '~/data/installations';
 		position: relative;
 		z-index: 4;
 		padding-top: var(--header-height, 80px);
-		background-color: #f4f8fe;
+		background-color: var(--color-bg-brand-tint);
 		overflow: hidden;
 
+		// This block styles ProductSection's markup via :global(); the same
+		// element's `.row`/`.col` grid rules live scoped inside
+		// src/components/Installations/ProductSection.astro — one div, two files.
 		:global(.install-content-header) {
 			flex-direction: row;
 			padding-top: 10px;
@@ -151,18 +156,18 @@ import { mqttBrokerProduct } from '~/data/installations';
 			}
 		}
 
-		:global(a.btn-blue),
-		:global(button.btn-blue) {
+		:global(a.btn-primary),
+		:global(button.btn-primary) {
 			min-width: 200px;
 			padding: 10px 50px;
-			background-color: #2a7dec;
-			color: #fff;
+			background-color: var(--color-brand);
+			color: var(--color-brand-contrast);
 			text-align: center;
 			font-size: 18px;
 			font-weight: 500;
 			outline: none;
 			border-radius: 4px;
-			border: solid 1px #2a7dec;
+			border: solid 1px var(--color-brand);
 			line-height: 28px;
 			letter-spacing: -0.03em;
 			text-decoration: none;
@@ -173,7 +178,7 @@ import { mqttBrokerProduct } from '~/data/installations';
 
 			&:global(.secondary) {
 				background-color: transparent;
-				color: #2a7dec;
+				color: var(--color-brand);
 			}
 
 			@media (max-width: 600px) {
@@ -208,13 +213,13 @@ import { mqttBrokerProduct } from '~/data/installations';
 						font-size: 26px;
 						line-height: 30px;
 						margin-right: 22px;
-						color: #2a7dec;
+						color: $color-primary;
 						display: inline-block;
 					}
 
 					:global(.item-text) {
 						:global(.item-title) {
-							color: #2a7dec;
+							color: $color-primary;
 							font-weight: 400;
 							font-size: 20px;
 							line-height: 32px;

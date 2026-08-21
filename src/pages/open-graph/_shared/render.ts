@@ -8,7 +8,7 @@ import { OG_FALLBACK } from '@root/consts';
 import { Card, type CardProps } from './Card';
 
 /** Bump when the template, fonts, or rendering pipeline changes — invalidates cache. */
-const TEMPLATE_VERSION = 6;
+const TEMPLATE_VERSION = 7; // 7: green-rebrand backdrop + slab top stop to $color-brand
 
 const CACHE_DIR = path.resolve('node_modules/.og-cache');
 const FONT_DIR = path.resolve('src/pages/open-graph/_fonts');

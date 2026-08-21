@@ -7,7 +7,6 @@ import { redirects } from './astro.redirects';
 import { sidebar } from './astro.sidebar';
 import { devServerFileWatcher } from './config/integrations/dev-server-file-watcher';
 import { sitemap } from './config/integrations/sitemap';
-import { rehypeBlogImages } from './config/plugins/rehype-blog-images';
 import { rehypeMdxIncludeHeadings } from './config/plugins/rehype-mdx-include-headings';
 import { rehypeTasklistEnhancer } from './config/plugins/rehype-tasklist-enhancer';
 import { EDIT_BASE_URL, PROD_ORIGIN } from './src/consts';
@@ -156,7 +155,7 @@ export default defineConfig({
                 // @ts-expect-error — `remark-smartypants` type is not matching Astro's for some reason even though they both use unified's `Plugin` type
                 [remarkSmartypants, { dashes: false }],
             ],
-            rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings(), rehypeBlogImages()],
+            rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings()],
         }),
     },
     image: {

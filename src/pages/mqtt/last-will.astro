@@ -123,9 +123,9 @@ const faq: FaqItem[] = [
 
 	<h2>Last Will in TBMQ</h2>
 	<p>
-		TBMQ supports Last Will messages, including the MQTT 5.0 will-delay interval and retained wills. When a connection
-		times out on keep-alive, TBMQ closes it and publishes the client's will if one was set; a session takeover by the
-		same client ID also publishes the will, unless the displaced client set a will-delay interval and the new connection
+		<a href="/">TBMQ</a> supports Last Will messages, including the MQTT 5.0 will-delay interval and retained wills. When
+		a connection times out on keep-alive, TBMQ closes it and publishes the client's will if one was set; a session takeover
+		by the same client ID also publishes the will, unless the displaced client set a will-delay interval and the new connection
 		resumes its session — in which case the pending will is cancelled. See the
 		<a href="/docs/user-guide/last-will/">Last Will guide</a> for the full behavior and configuration.
 	</p>

@@ -85,11 +85,10 @@ const faq: FaqItem[] = [
 
 	<h2>Payload format in TBMQ</h2>
 	<p>
-		TBMQ treats both descriptors as pass-through metadata: the Payload Format Indicator and Content Type a publisher
-		sets are carried through to every subscriber unchanged — including across TBMQ's Kafka-backed message persistence —
-		so your consumers can dispatch on them reliably. TBMQ does not reject a publish whose payload doesn't match its
-		declared format; it delivers the message and its descriptors as sent. See the
-		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> for the full list of supported MQTT 5.0
-		features.
+		<a href="/">TBMQ</a> treats both descriptors as pass-through metadata: the Payload Format Indicator and Content Type a
+		publisher sets are carried through to every subscriber unchanged — including across TBMQ's Kafka-backed message persistence
+		— so your consumers can dispatch on them reliably. TBMQ does not reject a publish whose payload doesn't match its declared
+		format; it delivers the message and its descriptors as sent. See the
+		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> for the full list of supported MQTT 5.0 features.
 	</p>
 </MqttTopicLayout>

@@ -10,18 +10,19 @@ interface Stat {
 const stats: Stat[] = [
 	{ value: '3M+', count: 3, suffix: 'M+', label: 'Messages/sec on a single node', href: '/performance/' },
 	{ value: '100M+', count: 100, suffix: 'M+', label: 'Concurrent MQTT connections', href: '/performance/' },
-	{ value: 'Zero', label: 'Message loss, by design', href: '#architecture-pillars' },
+	{ value: '0', label: 'Message loss, by design', href: '#architecture-pillars' },
 ];
 ---
 
 <section id="product-hero">
 	<div class="inner">
 		<p class="eyebrow">Why TBMQ</p>
-		<h1>The MQTT broker built for real IoT traffic</h1>
+		<h1 class="headline">The MQTT broker built for real IoT traffic</h1>
 		<p class="subtitle">
-			TBMQ is an open-source MQTT broker built by the ThingsBoard team from years of running IoT infrastructure at scale
-			— engineered so device publishing, high-volume application streams, and targeted commands each get a dedicated,
-			fault-tolerant processing path.
+			TBMQ is an open-source MQTT broker built by the ThingsBoard team for large-scale IoT deployments. It supports MQTT
+			5.0, 3.1.1 and 3.1, scales to 100 million concurrent connections across a masterless cluster, and uses Apache
+			Kafka to guarantee zero message loss. You can self-host TBMQ with Docker or Kubernetes, or run it as a managed
+			service.
 		</p>
 		<div class="buttons">
 			<a class="btn btn-white" href="/installations/">Try it now</a>
@@ -109,7 +110,7 @@ const stats: Stat[] = [
 		margin: 0 0 20px;
 	}
 
-	h1 {
+	.headline {
 		@include page-title;
 		color: $color-white;
 		margin: 0 0 24px;

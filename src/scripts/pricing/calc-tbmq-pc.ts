@@ -88,7 +88,7 @@ export function initMqpcCalc() {
 		html += row('White Labeling', '<span class="calc-result-badge">Enabled</span>');
 
 		if (showSlaUpgrade) {
-			html += `<div class="calc-result-row"><span class="calc-row-label">Uptime SLA:</span><span class="calc-row-value"><button type="button" class="mqpc-sla-upgrade" id="mqpc-sla-upgrade" title="Enable Multi-AZ for 99.99% SLA"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="12" cy="12" r="11" fill="var(--color-primary)"/><path d="M12 16V8M12 8L8 12M12 8L16 12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>${uptimeSla}${tip('The guaranteed minimum monthly uptime for the Private Cloud service, excluding scheduled maintenance.')}</span></div>`;
+			html += `<div class="calc-result-row"><span class="calc-row-label">Uptime SLA:</span><span class="calc-row-value"><button type="button" class="mqpc-sla-upgrade" id="mqpc-sla-upgrade" title="Enable Multi-AZ for 99.99% SLA"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="12" cy="12" r="11" fill="var(--color-brand)"/><path d="M12 16V8M12 8L8 12M12 8L16 12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>${uptimeSla}${tip('The guaranteed minimum monthly uptime for the Private Cloud service, excluding scheduled maintenance.')}</span></div>`;
 		} else {
 			html += `<div class="calc-result-row"><span class="calc-row-label">Uptime SLA:</span><span class="calc-row-value"><span id="mqpc-sla-anim-anchor" style="display:inline-flex"></span>${uptimeSla}${tip('The guaranteed minimum monthly uptime for the Private Cloud service, excluding scheduled maintenance.')}</span></div>`;
 		}
@@ -174,7 +174,7 @@ export function initMqpcCalc() {
 						const arrow = document.createElement('span');
 						arrow.style.display = 'inline-flex';
 						arrow.className = 'mqpc-sla-arrow-animated';
-						arrow.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="12" cy="12" r="11" fill="var(--color-primary)"/><path d="M12 16V8M12 8L8 12M12 8L16 12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+						arrow.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="12" cy="12" r="11" fill="var(--color-brand)"/><path d="M12 16V8M12 8L8 12M12 8L16 12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 						anchor.appendChild(arrow);
 						setTimeout(() => arrow.remove(), 500);
 					}

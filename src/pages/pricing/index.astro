@@ -885,15 +885,16 @@ const tbmqSubTabs = enrichTabs([
 
 	// ─── Pricing-specific CSS custom properties ───
 	:root {
-		--color-pricing-border: rgba(42, 125, 236, 0.16);
-		--color-pricing-shadow: 0 26px 40px 0 rgba(42, 125, 236, 0.08);
-		--color-pricing-bg-light: #f4f8fe;
+		--color-pricing-border: rgba(var(--color-brand-rgb), 0.16);
+		--color-pricing-shadow: 0 26px 40px 0 rgba(var(--color-brand-rgb), 0.08);
+		// Theme-aware brand tint (light: 5% brand over white; dark: brand wash),
+		// so no dark override is needed here.
+		--color-pricing-bg-light: var(--color-bg-brand-tint);
 	}
 
 	[data-theme='dark'] {
-		--color-pricing-border: rgba(42, 125, 236, 0.24);
+		--color-pricing-border: rgba(var(--color-brand-rgb), 0.24);
 		--color-pricing-shadow: 0 26px 40px 0 rgba(0, 0, 0, 0.25);
-		--color-pricing-bg-light: rgba(42, 125, 236, 0.06);
 	}
 
 	// Dark mode: tell Safari to use dark native controls (select dropdowns, etc.)

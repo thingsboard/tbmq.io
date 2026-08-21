@@ -1,4 +1,7 @@
+import { Aside } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
 import ImageGallery from '~/components/ImageGallery.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import DocLink from '@components/DocLink.astro';
 
 The TBMQ WebSocket Client is a browser-accessible tool for debugging and testing MQTT clients.
@@ -78,7 +81,7 @@ MQTT 5 adds the following settings:
 - **Max Packet Size** — maximum payload size (bytes) the client accepts from the broker.
 - **Topic Alias Maximum** — highest Topic Alias value the client accepts.
 - **Receive Maximum** — maximum concurrent QoS 1/2 messages.
-- **Request Response Information** — when true, the broker returns response information for publish operations.
+- **Request Response Information** — when true, the client asks the broker to return Response Information in the CONNACK, used for the request/response pattern.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/ws-connection-advanced-1.png', alt: 'Advanced connection settings', caption: 'Advanced settings of the connection.' },
@@ -116,9 +119,12 @@ Hover over the connection status label to view a history of status changes.
 The connection can have the following statuses:
 
 1. **Connected** — connection successfully established.
-2. **Disconnected** — client has closed the connection.
-3. **Reconnecting** — client is re-establishing a connection. Click **Cancel** to stop.
-4. **Connection failed** — connection could not be established (includes reason, e.g., authentication failure or session takeover).
+2. **Connecting** — connection is being established.
+3. **Disconnected** — client has closed the connection.
+4. **Reconnecting** — client is re-establishing a connection. Click **Cancel** to stop.
+5. **Connection failed** — connection could not be established (includes reason, e.g., authentication failure or session takeover).
+
+The transient statuses **Close**, **End**, and **Offline**, mapped from the corresponding MQTT.js events, may appear as well.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/ws-logs.png', alt: 'Connection status history on hover', caption: 'Connection status history on hover.' },
@@ -168,7 +174,7 @@ If the client is connected, TBMQ unsubscribes from the existing topic before sub
 - **Retain Handling** — `0` send at subscription time; `1` send only if subscription doesn't exist; `2` do not send.
 - **No local** — when true, broker won't forward this client's messages back to this connection.
 - **Color** — used to differentiate messages in the messages table.
-- **Subscription Identifier** — unique numeric identifier (greater than 0) for tracking the subscription.
+- **Subscription Identifier** — numeric identifier (1 to 268,435,455) sent to the broker when subscribing; the broker includes it in matching PUBLISH messages so the client can identify which subscription the message was matched against.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/ws-subscription-overview-1.png', alt: 'Subscription settings with MQTT 5 options', caption: 'Subscription settings with MQTT 5 options.' },
@@ -179,11 +185,12 @@ If the client is connected, TBMQ unsubscribes from the existing topic before sub
 The Messages table displays the most recent published and received messages. Each row shows:
 
 1. **Type** — Received or Published.
-2. **Topic** — the message topic.
-3. **QoS** — Quality of Service level.
-4. **Retain** — whether the message has the Retain flag set.
-5. **Payload** — preview of the message content. Click the **Info** icon to view the full payload and copy it.
-6. **Properties** — click to view additional MQTT 5 properties: User properties, Content type, Topic Alias, etc.
+2. **Time** — when the message was published or received.
+3. **Topic** — the message topic.
+4. **QoS** — Quality of Service level.
+5. **Retain** — whether the message has the Retain flag set.
+6. **Payload** — preview of the message content. Click the **Info** icon to view the full payload and copy it.
+7. **Properties** — click to view additional MQTT 5 properties: User properties, Content type, Topic Alias, etc.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/ws-table-msg-1.png', alt: 'Messages table with payload and properties access', caption: 'List of messages. Payload and message properties can be found in the actions section.' },
@@ -231,3 +238,11 @@ For **MQTT 5** clients, click the **Properties** button to configure additional 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/ws-publish-advanced-params.png', alt: 'MQTT 5 advanced publish properties', caption: 'MQTT 5 advanced publish properties.' },
 ]} />
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<Aside type="caution">
+  Adding and editing WebSocket connections and subscriptions are available only to users with administrator rights —
+  Viewers get a read-only view of the WebSocket Client. See
+  <DocLink product={props.product} path="security/rbac">Roles and permissions</DocLink>.
+</Aside>
+</ShowFor>

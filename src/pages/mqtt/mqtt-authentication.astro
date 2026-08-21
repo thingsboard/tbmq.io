@@ -100,14 +100,14 @@ const faq: FaqItem[] = [
 
 	<h2>Authentication in TBMQ</h2>
 	<p>
-		TBMQ ships pluggable authentication providers you can enable, disable, and order from the UI without restarting
+		<a href="/">TBMQ</a> ships pluggable authentication providers you can enable, disable, and order from the UI without restarting
 		(SCRAM is the exception — the broker handles it automatically per the MQTT 5.0 spec):
 		<a href="/docs/security/authentication/basic/">Basic</a>,
 		<a href="/docs/security/authentication/jwt/">JWT</a>,
 		<a href="/docs/security/authentication/scram/">SCRAM</a> (SCRAM-SHA-256/512 over the MQTT 5.0 AUTH packet),
 		<a href="/docs/security/authentication/x509/">X.509</a> client certificates, and an
-		<a href="/docs/security/authentication/http/">HTTP</a> provider that defers to your own service. To use an
-		OAuth 2.0 identity provider, have it issue a JWT the client presents. Once a client is authenticated, TBMQ then applies
+		<a href="/docs/security/authentication/http/">HTTP</a> provider that defers to your own service. To use an OAuth 2.0 identity
+		provider, have it issue a JWT the client presents. Once a client is authenticated, TBMQ then applies
 		<a href="/mqtt/mqtt-authorization/">authorization</a> rules.
 	</p>
 </MqttTopicLayout>

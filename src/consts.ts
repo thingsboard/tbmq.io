@@ -16,9 +16,6 @@ export const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 /** Global OG-card fallback for pages without a generated per-page card. */
 export const OG_FALLBACK = '/tbmq-og.png';
 
-/** Google Tag Manager container id, read by GtmHead + GtmNoscript. */
-export const GTM_ID = 'GTM-TFXSRSWK';
-
 /**
  * Google Programmable Search Engine id (`cx`) behind the header search modal
  * and the /docs/search/ + /docs/pe/search/ pages. The domain the results come
@@ -30,20 +27,14 @@ export const GOOGLE_CSE_CX = 'a0cca37fad72c4a8e';
 
 const SEP = ` ${TITLE_SEPARATOR} `;
 
-export const SECTION_LABELS: Record<string, string> = {
-	'/blog/': 'Blog',
-};
-
-export function formatSectionIndexTitle(section: string): string {
-	return `${section}${SEP}${SITE_NAME}`;
-}
-
-export function formatMarketingTitle(title: string, section?: string): string {
+// The blog-era section machinery (SECTION_LABELS / getSectionFromPath /
+// formatSectionIndexTitle and the `section` title segment) was removed with the
+// local blog — re-add a section registry when the site actually has a second
+// marketing section again.
+export function formatMarketingTitle(title: string): string {
 	// Strip any legacy " | ThingsBoard" baked into the title prop (some pages include it themselves)
 	const clean = title.replace(/\s*\|\s*ThingsBoard\s*$/i, '').trim();
-	if (!section) return `${clean}${SEP}${SITE_NAME}`;
-	if (clean === section) return formatSectionIndexTitle(section);
-	return `${clean}${SEP}${section}${SEP}${SITE_NAME}`;
+	return `${clean}${SEP}${SITE_NAME}`;
 }
 
 export function formatDocsTitle(pageTitle: string, productName: string, isIndex: boolean): string {

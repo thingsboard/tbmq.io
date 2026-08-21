@@ -1,62 +1,178 @@
+import { Aside } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
+import ShowFor from '~/components/ShowFor.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 
-The Sessions page lets you observe and analyze all sessions stored in the broker — both active online sessions and disconnected sessions of persistent clients.
+The **Sessions** page lists every session the broker holds — clients that are connected right now and the sessions of
+persistent clients that are currently offline. Use it to find a client by ID or IP, inspect the state TBMQ keeps for it,
+change its subscriptions, disconnect it, or clear its session.
 
-To view session details:
+For what a session is, what makes it persistent and how long it lives, see
+<DocLink product={props.product} path="concepts/sessions">Sessions</DocLink>. This page covers the UI.
 
-1. Open the **Sessions** page in the left-hand menu.
-2. Click on a table row to open the session details window.
+## Sessions table
 
-From the **Session Details** window you can:
-- **Disconnect a client** — click the **Disconnect client** button. Only `Connected` clients can be disconnected.
-- **Remove a session** — click the **Remove session** button. Only `Disconnected` clients can be removed.
+Open **Sessions** in the left-hand menu. Each row is one session:
+
+- **Connected at** — when the client established its current (or, for an offline session, its last) connection.
+- **Status** — `Connected` or `Disconnected`.
+- **Client ID** — the identifier the client sent in its `CONNECT` packet.
+- **Client IP** — the address the client connected from.
+- **Client type** — <DocLink product={props.product} path="user-guide/mqtt-client-type" bold={false}>DEVICE or APPLICATION</DocLink>.
+- **Subscriptions** — how many topic filters the session currently holds.
+- **Node ID** — the broker node serving the session.
+- **Disconnected at** — empty while the client is connected.
+- **Clean Start** — the flag the client sent in its `CONNECT` packet.
+
+The table is sorted by **Connected at**, newest first; click any column header to sort by it, and click a row to open
+the session details. Search filters by client ID using a case-insensitive substring match.
+
+The time-range selector defaults to **For all time**. When you narrow it, connected sessions are matched by their
+**Connected at** timestamp and disconnected ones by **Disconnected at**.
+
+### Filtering the table
+
+Click **Filter** to narrow the list by:
+
+- **Status** — `Connected`, `Disconnected`.
+- **Client type** — `Device`, `Application`.
+- **Clean Start** — `true`, `false`.
+- **Client ID** and **Client IP** — case-insensitive substring match.
+- **Subscriptions** — an operation (`equal`, `not equal`, `greater than`, `less than`, `greater or equal`,
+  `less or equal`) applied to the session's subscription count.
+- **Node ID** — one or more broker nodes.
+
+Click **Update** to apply the filter or **Reset** to clear it. Selecting both values of a two-value filter (for example
+both `Connected` and `Disconnected`) is the same as selecting neither — nothing is filtered out.
+
+### Acting on several sessions at once
+
+Select rows with the checkboxes, then use **Disconnect sessions** or **Remove sessions** in the toolbar that appears.
+Only connected sessions are disconnected and only disconnected sessions are removed — the rest of the selection is
+skipped. If nothing in the selection qualifies, TBMQ shows a message explaining why instead of the confirmation dialog.
+
+## Session details
+
+Click a table row to open the **Session details** window. Every field on the **Details** tab is read-only: it shows the
+state the client negotiated when it connected. The window also offers **Copy session ID** and a refresh icon that
+reloads the session from the broker.
+
+**Connection info**
+
+- **Status** — `Connected` or `Disconnected`.
+- **Keep Alive (seconds)** — how long the broker and the client may go without communicating before the session is
+  closed. `0` turns the mechanism off. See <DocLink product={props.product} path="user-guide/keep-alive">Keep alive</DocLink>.
+- **Connected at** — timestamp of the current or last connection.
+- **Disconnected at** — shown only for a disconnected session.
+
+**Session info**
+
+- **Node** — the broker node serving the session.
+- **Clean Start** — the flag from the `CONNECT` packet. The hint below it states whether the session is persistent.
+- **Session Expiry Interval (seconds)** — shown only for a disconnected session: how long the session information is
+  kept after the connection is lost.
+- **Session end** — shown only for a disconnected session that actually has an end: the disconnect time plus the
+  session expiry interval. Sessions that by protocol rules would never expire (MQTT 3.x `cleanSession=false`, or MQTT
+  5.0 `Clean Start = 0` with `Session Expiry Interval = 0`) use the administrative TTL instead —
+  `MQTT_CLIENT_SESSION_EXPIRY_TTL`, one week by default. If that TTL is disabled the field is not shown at all.
+
+**Client info**
+
+- **Client ID**, **Client IP** — each with a copy icon.
+- **Client type** — DEVICE or APPLICATION.
+- **MQTT version** — `MQTT 3.1`, `MQTT 3.1.1` or `MQTT 5`.
+- **Client credentials** — the label depends on how the client authenticated:
+
+| Field label | Value | Authentication |
+|---|---|---|
+| **Basic Client credentials** | name of the credentials | <DocLink product={props.product} path="security/authentication/basic" bold={false}>Basic</DocLink> |
+| **X.509 Client credentials** | name of the credentials | <DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509</DocLink> |
+| **Auth provider** | `JWT`, `HTTP` or `SCRAM` | <DocLink product={props.product} path="security/authentication/jwt" bold={false}>JWT</DocLink>, <DocLink product={props.product} path="security/authentication/http" bold={false}>HTTP</DocLink> or <DocLink product={props.product} path="security/authentication/scram" bold={false}>SCRAM</DocLink> |
+| **Unknown Client credentials** | `Unknown` | could not be resolved |
+
+For Basic and X.509 the field also offers an icon that opens the matching
+<DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials" bold={false}>client credentials</DocLink> entry.
+
+<Aside type="note">
+  The MQTT version and the credentials name are read from caches that TBMQ fills when the client connects and clears
+  when the session is cleared. Both fields fall back to `Unknown` if the entry is missing — for example for a session
+  that was already there before the broker started caching it, or after the credentials were deleted.
+</Aside>
+
+A warning appears above the fields when an APPLICATION client connected with `Clean Start = true` and
+`Session Expiry Interval = 0`. Such a client is not persistent, so nothing is stored for it while it is offline, which
+is almost never what an <DocLink product={props.product} path="user-guide/mqtt-client-type">APPLICATION client</DocLink>
+is for.
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/session-details-1.png', alt: 'Navigate to Sessions page and click on a table row', caption: 'Navigate to the Sessions page. Then click on the row of the table.' },
+]} />
+
+## Disconnecting a client and removing a session
+
+Both actions are at the top of the **Session details** window, and each is enabled only for the matching state:
+
+- **Disconnect client** — available while the session is `Connected`. TBMQ closes the connection on the node that serves
+  it. An MQTT 5.0 client is sent a `DISCONNECT` packet with reason code `0x98 Administrative action` first; MQTT 3.1.1
+  and 3.1 have no server-sent `DISCONNECT`, so the connection is simply closed. Because this is not a graceful
+  client-initiated disconnect, the client's
+  <DocLink product={props.product} path="user-guide/last-will" bold={false}>Last Will</DocLink> is published — after its
+  Will Delay Interval, if it set one. The session itself is kept, so a persistent client resumes its subscriptions and
+  queued messages when it reconnects.
+- **Remove session** — available while the session is `Disconnected`. It clears the session: the subscriptions and any
+  persisted messages are dropped. The broker rejects the request if the client has reconnected in the meantime.
+
+<ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/session-disconnect-1.png', alt: 'Click Disconnect client button to disconnect a connected client', caption: 'To disconnect client, click on the button "Disconnect client". Note, that only connected clients can be disconnected.' },
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/session-remove-1.png', alt: 'Click Remove session button to delete a disconnected session', caption: 'To delete client session click on the button "Remove session". Note, that only disconnected clients can be removed.' },
 ]} />
 
-## Session details
-
-The **Details** tab contains:
-
-- **Connected Status** — Connected or Disconnected.
-- **Connected At** — timestamp when the client connected.
-- **Disconnected At** — for persistent disconnected clients, timestamp when the client disconnected.
-- **Keep Alive** (seconds) — duration before the session is closed if no communication occurs.
-- **Node ID** — broker node to which the client is or was connected.
-- **Clean Start** — if true, the broker discards any previous session info and messages, and starts a new one.
-- **Session expiry interval** — for persistent disconnected clients, how long session information is retained after disconnection.
-- **Session end** — for persistent disconnected clients, when session data and messages will be removed.
-- **Client ID** — the identifier of the client.
-- **Client IP** — the IP address of the client.
-- **Client type** (<DocLink product={props.product} path="user-guide/mqtt-client-type">DEVICE or APPLICATION</DocLink>).
-- **Client Credentials** — the authentication source used for this session. Dynamically labeled as
-  <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink>,
-  <DocLink product={props.product} path="security/authentication/x509">X.509</DocLink>, or
-  "Auth provider" (for JWT, HTTP, and SCRAM). Labeled "Unknown Client Credentials" if the source cannot be identified (e.g., credentials deleted after connection).
-- **MQTT version** — MQTT 3.1 (3), MQTT 3.1.1 (4), or MQTT 5.0 (5).
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<Aside type="caution">
+  **Disconnect client**, **Remove session**, the credentials shortcut and the subscription editor are shown only to
+  users with administrator rights. Everyone else gets a read-only view of the session. The REST API enforces the same
+  rule: reading a session requires the `READ` permission, disconnecting or removing it requires `DELETE`. See
+  <DocLink product={props.product} path="security/rbac">Roles and permissions</DocLink>.
+</Aside>
+</ShowFor>
 
 ## Subscriptions
 
-The **Subscriptions** tab shows all subscriptions associated with a session:
+The **Subscriptions** tab lists the topic filters the session currently holds, with the subscription count in its
+header. Each row shows the **Topic Filter** and its **QoS**; the gear icon opens the **MQTT 5 Subscription Options**
+popover with the rest of the subscription:
 
-- **Topic filter** — the MQTT topic filter.
-- **QoS** — Quality of Service of the subscription.
-- **Retain as Published** — when true, messages keep the RETAIN flag they were published with.
-- **Retain Handling** — how the broker handles retained messages when the client subscribes:
-  - `0` — send retained messages at subscription time.
-  - `1` — send retained messages at subscription time if the subscription does not already exist.
-  - `2` — do not send retained messages at subscription time.
-- **No local** — when true, the broker will not forward messages from this client back to this connection.
-- **Subscription Identifier** — unique numerical value assigned to the subscription.
+- **Retain Handling** — whether retained messages are sent when the client subscribes:
+  - `0` — send retained messages at the time of the subscribe.
+  - `1` — send retained messages at subscribe only if the subscription does not currently exist.
+  - `2` — do not send retained messages at the time of the subscribe.
+- **No Local** — when on, messages published by this client are not forwarded back to it.
+- **Retain as Published** — when on, messages forwarded through this subscription keep the RETAIN flag they were
+  published with; when off, that flag is cleared.
+- **Subscription Identifier** — a value between `1` and `268435455` that the broker returns with every message matching
+  this subscription.
 
-While session details are read-only, subscriptions can be managed:
-- **Add** — click the **Add Subscription** button.
-- **Remove** — click the **Delete** icon for a specific subscription.
-- **Edit** — modify the topic filter or QoS and click **Update**.
+Unlike the details, subscriptions are editable:
+
+1. Click **Add subscription** to append a row (it starts at QoS 1), edit a topic filter or QoS in place, adjust the
+   MQTT 5 options behind the gear icon and click **Apply**, or use the delete icon to drop a subscription.
+2. Click **Update** at the bottom of the window to send the changes to the broker.
+
+TBMQ compares the submitted list with what the session already has and subscribes or unsubscribes the difference, so
+the list you save becomes the session's complete set of subscriptions. Topic filters are validated — single-level `+`
+and multi-level `#` wildcards are supported, and `#` must be the last character of the filter.
+
+<Aside type="caution">
+  Subscribing on the client's behalf is not the same as the client sending a `SUBSCRIBE` packet: no retained messages
+  are delivered for a subscription added here, whatever its Retain Handling option says.
+</Aside>
+
+<Aside type="note">
+  A shared subscription (`$share/...`) can be added to a persistent APPLICATION client only if a matching
+  <DocLink product={props.product} path="user-guide/ui/shared-subscriptions">application shared subscription</DocLink>
+  already exists; otherwise the update is rejected.
+</Aside>
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/session-subscriptions-1.png', alt: 'List of subscriptions for the session', caption: 'The list of subscriptions of the session.' },
@@ -65,19 +181,26 @@ While session details are read-only, subscriptions can be managed:
 
 ## Metrics
 
-The **Metrics** tab provides detailed insights into the MQTT message flow within the session:
+The **Metrics** tab shows the PUBLISH counters TBMQ keeps for the client, each with the time it was last updated.
+Directions are stated from the client's point of view:
 
-- **Received PUBLISH Messages** — total PUBLISH messages received by the client.
-- **Received QoS 0 Messages** — messages received with QoS 0 (AT_MOST_ONCE).
-- **Received QoS 1 Messages** — messages received with QoS 1 (AT_LEAST_ONCE).
-- **Received QoS 2 Messages** — messages received with QoS 2 (EXACTLY_ONCE).
-- **Sent PUBLISH Messages** — total PUBLISH messages sent by the client.
-- **Sent QoS 0 Messages** — messages sent with QoS 0.
-- **Sent QoS 1 Messages** — messages sent with QoS 1.
-- **Sent QoS 2 Messages** — messages sent with QoS 2.
+- **Received PUBLISH Messages** — PUBLISH packets the broker delivered to the client, plus a breakdown into
+  **Received QoS 0 / QoS 1 / QoS 2 Messages**.
+- **Sent PUBLISH Messages** — PUBLISH packets the client published to the broker, plus a breakdown into
+  **Sent QoS 0 / QoS 1 / QoS 2 Messages**.
 
-To clear the statistics, click the **Delete** icon in the top right corner of the Metrics tab.
+Packets are counted on the wire, so a redelivered message counts again. Use the refresh icon to reload the values and
+the **Clear** icon in the top right corner of the table to delete them.
+
+<Aside type="note">
+  These counters are accumulated in memory for connected clients and flushed to storage by the historical data report —
+  every minute by default (`HISTORICAL_DATA_REPORT_INTERVAL`), and not at all when it is switched off
+  (`HISTORICAL_DATA_REPORT_ENABLED=false`). They are dropped when the client disconnects, so counting restarts from zero
+  on the next connection and the stored values are overwritten on the following flush: read them as the current
+  connection's traffic, not as a lifetime total. Broker-wide counters live on the
+  <DocLink product={props.product} path="user-guide/ui/monitoring">Monitoring</DocLink> page.
+</Aside>
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/session-metrics-1.png', alt: 'Session metrics table with QoS counters. Click Delete icon to clear statistics.', caption: 'The list of subscription metrics. To clear the statistics, click on the "Delete" icon in the top right corner.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/session-metrics-1.png', alt: 'Session metrics table with QoS counters. Click Clear icon to delete the statistics.', caption: 'The statistics collected for the session. To clear them, click on the "Clear" icon in the top right corner.' },
 ]} />

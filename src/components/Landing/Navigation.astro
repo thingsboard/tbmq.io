@@ -1,5 +1,11 @@
 ---
-import { mainNavItems, allSubmenus, type SubMenu, type SubMenuItem } from '../../data/navigation';
+import {
+	mainNavItems,
+	allSubmenus,
+	type SubMenu,
+	type SubMenuItem,
+	type NavItem,
+} from '../../data/navigation';
 import NavIcon from './NavIcon.astro';
 
 interface Props {
@@ -7,47 +13,67 @@ interface Props {
 }
 
 const { platformQuery = '' } = Astro.props;
+
+const pathname = Astro.url.pathname; // trailingSlash:'always' → always ends with '/'
+const withSlash = (p: string) => (p.endsWith('/') ? p : `${p}/`);
+// Path prefixes that mark an item current: an explicit `matchPrefixes` wins outright;
+// otherwise the item's own (relative) href is unioned with the hrefs of its submenu
+// links, so new dropdown links pick up the highlight automatically. Only relative
+// paths take part — an absolute href (the external Blog) can never prefix a pathname.
+// Prefixes are slash-terminated so `/contact-us/` won't match `/contact-us-thanks/`.
+const currentPrefixes = (item: NavItem): string[] => {
+	if (item.matchPrefixes) return item.matchPrefixes.map(withSlash);
+	const submenu = allSubmenus.find((s) => s.id === item.submenuId);
+	const submenuHrefs = (submenu?.groups ?? []).flatMap((g) => g.items).map((i) => i.href);
+	return [item.href, ...submenuHrefs]
+		.filter((h): h is string => !!h && h.startsWith('/'))
+		.map(withSlash);
+};
+const isCurrent = (item: NavItem) => currentPrefixes(item).some((p) => pathname.startsWith(p));
+// 'page' only on an exact-href match; 'true' marks the broader current section.
+// Set on the link AND on submenu-only <span> items (aria-current is a global
+// attribute), and it doubles as the styling hook below — one source of truth
+// for the visual highlight and the assistive-tech state.
+const ariaCurrent = (item: NavItem): 'page' | 'true' | undefined =>
+	isCurrent(item) ? (pathname === item.href ? 'page' : 'true') : undefined;
 ---
 
 <nav class="head-menu">
 	<ul>
 		{
-			mainNavItems.map((item) => (
-				<li
-					class={`nav-${item.submenuId?.replace('nav-', '') || item.label.toLowerCase().replace(' ', '-')}`}
-					data-submenu-id={item.submenuId}
-				>
-					{item.href ? (
-						<a
-							class="main-menu-link"
-							id={
-								item.submenuId === 'nav-cases'
-									? 'use-cases-link'
-									: item.submenuId === 'nav-learn'
-										? 'learn-link'
-										: item.label === 'Device Library'
-											? 'devices-link'
-											: item.label === 'Blog'
-												? 'blog-link'
-												: undefined
-							}
-							href={
-								item.label === 'Device Library' ? `/device-library/${platformQuery}` : item.href
-							}
-							data-platform-query={item.label === 'Device Library' ? platformQuery : undefined}
-							target={item.target}
-							rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
-							style="cursor: pointer;"
-						>
-							{item.label}
-						</a>
-					) : (
-						<span class="main-menu-link" onclick={`listburg('${item.submenuId}')`}>
-							{item.label}
-						</span>
-					)}
-				</li>
-			))
+			mainNavItems.map((item) => {
+				return (
+					<li
+						class={`nav-${item.submenuId?.replace('nav-', '') || item.label.toLowerCase().replace(' ', '-')}`}
+						data-submenu-id={item.submenuId}
+					>
+						{item.href ? (
+							<a
+								class="main-menu-link"
+								aria-current={ariaCurrent(item)}
+								id={item.id}
+								href={
+									item.label === 'Device Library' ? `/device-library/${platformQuery}` : item.href
+								}
+								data-platform-query={item.label === 'Device Library' ? platformQuery : undefined}
+								target={item.target}
+								rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
+								style="cursor: pointer;"
+							>
+								{item.label}
+							</a>
+						) : (
+							<span
+								class="main-menu-link"
+								aria-current={ariaCurrent(item)}
+								onclick={`listburg('${item.submenuId}')`}
+							>
+								{item.label}
+							</span>
+						)}
+					</li>
+				);
+			})
 		}
 	</ul>
 
@@ -477,24 +503,26 @@ const { platformQuery = '' } = Astro.props;
 			initMobileSubmenu();
 		}
 
-		// Use Cases and Learn are the top-level items that have BOTH an `href`
-		// AND a submenu. On desktop the hover/`mouseenter` handler above shows
-		// the submenu fine and the click navigates to the hub page — but on
-		// mobile there is no hover, so the tap just navigates away without ever
-		// expanding the sub-list. Intercept the tap on mobile and route it
+		// Hub links: top-level items that have BOTH an `href` AND a submenu
+		// (currently Learn). On desktop the hover/`mouseenter` handler above
+		// shows the submenu fine and the click navigates to the hub page — but
+		// on mobile there is no hover, so the tap just navigates away without
+		// ever expanding the sub-list. Intercept the tap on mobile and route it
 		// through listburg() so the sub-items reveal inline like every other
-		// section.
-		const hubLinks: Array<[string, string]> = [
-			['use-cases-link', 'nav-cases'],
-			['learn-link', 'nav-learn'],
-		];
-		hubLinks.forEach(([linkId, submenuId]) => {
-			document.getElementById(linkId)?.addEventListener('click', (e) => {
-				if (!isMobile) return;
-				e.preventDefault();
-				listburg(submenuId);
+		// section. Derived from the rendered markup (a li[data-submenu-id] whose
+		// direct child link has an href), so a new hub item in navigation.ts
+		// picks this up without registration here.
+		document
+			.querySelectorAll<HTMLAnchorElement>('nav.head-menu > ul > li[data-submenu-id] > a[href]')
+			.forEach((link) => {
+				const submenuId = link.parentElement?.getAttribute('data-submenu-id');
+				if (!submenuId) return;
+				link.addEventListener('click', (e) => {
+					if (!isMobile) return;
+					e.preventDefault();
+					listburg(submenuId);
+				});
 			});
-		});
 
 		window.addEventListener('resize', () => {
 			const newIsMobile = burger && window.getComputedStyle(burger).display !== 'none';
@@ -625,7 +653,7 @@ const { platformQuery = '' } = Astro.props;
 								.group-name {
 									text-transform: uppercase;
 									font-weight: 500;
-									color: var(--color-primary);
+									color: var(--color-brand);
 									font-size: 14px;
 									line-height: normal;
 								}
@@ -640,7 +668,7 @@ const { platformQuery = '' } = Astro.props;
 						&:hover {
 							.sub-text {
 								span.item-heading {
-									color: var(--color-primary);
+									color: var(--color-brand);
 								}
 								p {
 									color: var(--color-text);
@@ -649,7 +677,7 @@ const { platformQuery = '' } = Astro.props;
 						}
 
 						&.prof-lnk:hover .sub-text span.item-heading {
-							color: #1f8b4d;
+							color: var(--color-brand);
 						}
 
 						&.com-lnk:hover .sub-text span.item-heading {
@@ -673,11 +701,11 @@ const { platformQuery = '' } = Astro.props;
 						}
 
 						&.mobile-pe-lnk:hover .sub-text span.item-heading {
-							color: #1f8b4d;
+							color: var(--color-brand);
 						}
 
 						&.mqtt-broker-lnk:hover .sub-text span.item-heading {
-							color: #1f8b4d;
+							color: var(--color-brand);
 						}
 
 						&:last-child {
@@ -735,7 +763,7 @@ const { platformQuery = '' } = Astro.props;
 						&.prof-lnk svg.nav-icon,
 						&.mobile-pe-lnk svg.nav-icon,
 						&.mqtt-broker-lnk svg.nav-icon {
-							color: #1f8b4d;
+							color: var(--color-brand);
 						}
 						&.edge-lnk svg.nav-icon {
 							color: #009688;
@@ -782,7 +810,7 @@ const { platformQuery = '' } = Astro.props;
 				}
 
 				&:hover a {
-					color: var(--color-primary);
+					color: var(--color-brand);
 				}
 			}
 
@@ -800,7 +828,7 @@ const { platformQuery = '' } = Astro.props;
 				color: var(--sl-color-white);
 
 				&:hover {
-					color: var(--color-primary);
+					color: var(--color-brand);
 				}
 			}
 		}
@@ -846,7 +874,7 @@ const { platformQuery = '' } = Astro.props;
 			position: absolute;
 			border-left: 4px solid transparent;
 			border-right: 4px solid transparent;
-			border-bottom: 4px solid var(--color-primary);
+			border-bottom: 4px solid var(--color-brand);
 			width: 8px;
 			height: 100%;
 			left: calc(50% - 4px);
@@ -858,13 +886,47 @@ const { platformQuery = '' } = Astro.props;
 
 		.line {
 			position: relative;
-			background-color: var(--color-primary);
+			background-color: var(--color-brand);
 			width: 0;
 			height: 100%;
 			left: 50%;
 			opacity: 0;
 			transition-duration: 0.2s;
 		}
+	}
+
+	// Persistent "current page" highlight for the active top-level section, in the
+	// brand green (--color-brand) — distinct from the blue link/hover accent, so the
+	// active section reads as a brand marker, not a hovered link. Keyed off
+	// `aria-current` (not `.active`, which the hover/indicator JS owns) so the
+	// visual highlight and the assistive-tech state are one attribute and can't
+	// drift. One low-specificity rule wins on every page a nav item targets,
+	// because those pages all use the solid/light header — the id-scoped
+	// white-text overrides only exist for the transparent dark-hero pages, which
+	// no nav item targets.
+	// Value-exact on purpose: a bare [aria-current] would also match
+	// aria-current="false", which is valid markup for "not current".
+	.head-menu ul li > a:is([aria-current='page'], [aria-current='true']),
+	.head-menu ul li > span.main-menu-link:is([aria-current='page'], [aria-current='true']) {
+		color: var(--color-brand);
+	}
+
+	// Underline is the hover cue for every top-level item — a colour cue alone
+	// can't cover the current item, which is already the brand green at rest.
+	// Scoped by .main-menu-link so dropdown sub-links keep their own hover.
+	.head-menu ul li > a.main-menu-link:hover,
+	.head-menu ul li > span.main-menu-link:hover {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+
+	// Mobile burger drawer: the per-page-id `#live-demo … opened-burger … a`
+	// rules in HeaderContent carry an id (1,3,3) and out-specify the rule above,
+	// so the drawer needs `!important` — consistent with that stylesheet's
+	// established pattern for defeating id/brand specificity.
+	.opened-burger .head-menu ul li > a:is([aria-current='page'], [aria-current='true']),
+	.opened-burger .head-menu ul li > span.main-menu-link:is([aria-current='page'], [aria-current='true']) {
+		color: var(--color-brand) !important;
 	}
 
 	// Responsive styles for navigation
@@ -1083,10 +1145,14 @@ const { platformQuery = '' } = Astro.props;
 	#mqtt-broker,
 	#pricing {
 		&.flip-nav header .head-menu ul {
+			// Hover colour for top-level items on flip-nav pages (`.active` is the
+			// class the hover/indicator JS owns, added on mouseenter) — brand green,
+			// so this id-scoped rule can't fight the aria-current highlight above
+			// when the hovered item happens to be the current one.
 			li.active a,
 			li.active span.main-menu-link {
 				opacity: 1;
-				color: $color-primary;
+				color: var(--color-brand);
 			}
 
 			a,
@@ -1110,9 +1176,13 @@ const { platformQuery = '' } = Astro.props;
 	// drawer looks identical regardless of the underlying nav theme.
 	.opened-burger .head-menu {
 		ul {
+			// Brand green, matching the desktop nav hover and the drawer's own
+			// current-item highlight (the id-scoped HeaderContent rules already
+			// paint this hover green on most pages — this fallback covered the
+			// rest in the old blue).
 			li:hover a,
 			li:hover span.main-menu-link {
-				color: $color-primary;
+				color: var(--color-brand);
 			}
 
 			a,

@@ -145,12 +145,12 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		&.active {
 			color: var(--color-text);
 			font-weight: $font-weight-semibold;
-			border-left-color: var(--color-primary);
+			border-left-color: var(--color-brand);
 			background: var(--color-bg-surface);
 
 			@include media-down(md) {
 				border-left-color: transparent;
-				border-bottom-color: var(--color-primary);
+				border-bottom-color: var(--color-brand);
 			}
 		}
 	}
@@ -177,7 +177,7 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		}
 
 		&.expanded {
-			border-color: var(--color-primary);
+			border-color: var(--color-brand);
 
 			.faq-chevron {
 				transform: rotate(180deg);
@@ -199,7 +199,7 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		color: var(--color-text);
 
 		&:hover .faq-question-text {
-			color: var(--color-primary);
+			color: var(--color-brand);
 		}
 	}
 
@@ -240,7 +240,7 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		margin-left: 6px;
 		cursor: pointer;
 		opacity: 0;
-		color: var(--color-primary);
+		color: var(--color-brand);
 		transition:
 			opacity 0.15s ease,
 			color 0.15s ease;
@@ -394,14 +394,14 @@ const { contextId, categories, visibleCount = 6 } = Astro.props;
 		border-radius: $radius-lg;
 		background: none;
 		cursor: pointer;
-		color: var(--color-primary);
+		color: var(--color-brand);
 		font-size: $font-size-sm;
 		font-weight: $font-weight-semibold;
 		transition: background-color 0.15s ease, border-color 0.15s ease;
 
 		&:hover {
 			background: var(--color-bg-light);
-			border-color: var(--color-primary);
+			border-color: var(--color-brand);
 		}
 
 		&.faq-load-more--used {

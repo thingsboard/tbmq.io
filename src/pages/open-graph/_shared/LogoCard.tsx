@@ -1,7 +1,7 @@
 // src/pages/open-graph/_shared/LogoCard.tsx
 //
 // Variant B: shared TBMQ-green slab with the stacked TBMQ lockup + optional
-// section name. Used for blog, marketing landings and collection indexes.
+// section name. Used for marketing landings and collection indexes.
 
 import { Background } from '@root/pages/open-graph/_shared/Background';
 import { Slab } from '@root/pages/open-graph/_shared/Slab';
@@ -20,11 +20,9 @@ export interface LogoCardProps {
 	/** Optional uppercase line above the title. Omit for self-explanatory titles. */
 	eyebrow?: string;
 	title: string;
-	/** Optional small line below the title — used for blog "By {Author}". */
-	authorLine?: string;
 }
 
-export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine }: LogoCardProps) {
+export function LogoCard({ sectionName, sectionTight, eyebrow, title }: LogoCardProps) {
 	const titleSize = pickTitleSize(title);
 	const sectionSize = sectionTight ? 22 : 26;
 	const sectionSpacing = sectionTight ? '0.14em' : '0.18em';
@@ -100,19 +98,6 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine
 				>
 					{title}
 				</div>
-				{authorLine && (
-					<div
-						style={{
-							marginTop: 26,
-							fontSize: 20,
-							fontWeight: 500,
-							opacity: 0.78,
-							display: 'flex',
-						}}
-					>
-						{authorLine}
-					</div>
-				)}
 			</div>
 
 			<div
