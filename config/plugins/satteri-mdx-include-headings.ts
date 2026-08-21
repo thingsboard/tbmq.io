@@ -22,6 +22,8 @@ interface IncludeState {
 	headingCount: number;
 	insertions: { afterIndex: number; headings: HeadingInfo[] }[];
 	patched: boolean;
+	/** Resolved once per document — the path can't change mid-compile. */
+	productId?: string;
 }
 
 /**
@@ -130,7 +132,10 @@ function extractHeadingsFromMdx(content: string, productId: string): HeadingInfo
 		}
 
 		if (!isInsideJsx) {
-			const match = line.match(/^(#{1,6})\s+(.+)$/);
+			// A heading may open a list item (`1. ### Title` inside <Steps>), which still
+			// renders as a real <h3> and so belongs in the TOC. Indent is capped at three
+			// spaces because a deeper one is an indented code block, not a heading.
+			const match = line.match(/^ {0,3}(?:(?:\d+[.)]|[-*+]) +)?(#{1,6})\s+(.+)$/);
 			if (match) {
 				collected.push({
 					line: i,
@@ -208,14 +213,19 @@ function withIncludeHeadings(base: HeadingInfo[], insertions: IncludeState['inse
  */
 function patchAstroHeadings(ctx: VisitorContext, state: IncludeState): void {
 	if (state.patched) return;
-	const astro = ctx.data.astro as { headings?: HeadingInfo[] } | undefined;
-	if (!astro) return;
+	// Seed the bag rather than bailing when it is absent: Sätteri's `heading-ids`
+	// runs after us and writes into whatever `ctx.data.astro` holds, so creating it
+	// keeps the injection working instead of silently dropping every heading.
+	const astro = (ctx.data.astro ??= {}) as { headings?: HeadingInfo[] };
 	state.patched = true;
 
 	let pageHeadings: HeadingInfo[] = astro.headings ?? [];
 	Object.defineProperty(astro, 'headings', {
 		configurable: true,
 		enumerable: true,
+		// Returns a fresh array each read, so this list is read-only by contract:
+		// every heading collector assigns (`astro.headings = …`) rather than pushing,
+		// and a push here would land in a throwaway.
 		get: () => withIncludeHeadings(pageHeadings, state.insertions),
 		set: (value: HeadingInfo[]) => {
 			pageHeadings = value;
@@ -275,16 +285,25 @@ export function satteriMdxIncludeHeadings() {
 				const filePath = state.imports.get(node.name);
 				if (!filePath) return;
 
-				const productId = getProductFromFilePath(ctx.fileURL ? fileURLToPath(ctx.fileURL) : '');
+				state.productId ??= getProductFromFilePath(ctx.fileURL ? fileURLToPath(ctx.fileURL) : '');
 
 				let content: string;
 				try {
 					content = fs.readFileSync(filePath, 'utf-8');
 				} catch {
-					return; // File not found, skip
+					// Vite resolves the import through the `@includes` alias while we resolve it
+					// from `process.cwd()`, so the two can disagree — the page still renders, it
+					// just loses its whole TOC. Say so rather than shipping a silent empty menu.
+					// (`ctx.report()` is not used here: Sätteri collects those diagnostics but
+					// nothing in @astrojs/markdown-satteri surfaces them.)
+					console.warn(
+						`[mdx-include-headings] cannot read ${filePath} for <${node.name}> — ` +
+							'that page will render with no table of contents'
+					);
+					return;
 				}
 
-				const headings = extractHeadingsFromMdx(content, productId);
+				const headings = extractHeadingsFromMdx(content, state.productId);
 				if (headings.length === 0) return;
 
 				state.insertions.push({ afterIndex: state.headingCount, headings });
