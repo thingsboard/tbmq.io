@@ -15,14 +15,7 @@ import {
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
-import {
-	devSafeOgImagePath,
-	DOCS_SUFFIX,
-	EDIT_BASE_URL,
-	formatDocsTitle,
-	OG_FALLBACK,
-	TITLE_SEPARATOR,
-} from '~/consts';
+import { DOCS_SUFFIX, EDIT_BASE_URL, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 // No alias covers `config/`; relative import is the only option here.
 import {
@@ -317,7 +310,7 @@ function updateHead(context: APIContext) {
 	// Marketing pages author their own `og:image` in frontmatter; only emit ours
 	// when none is present, else BaseLayout pages get a duplicate `og:image`.
 	if (!ogImage) {
-		const imageSrc = devSafeOgImagePath(getOgImageUrl(pathname) ?? OG_FALLBACK);
+		const imageSrc = getOgImageUrl(pathname) ?? OG_FALLBACK;
 		// Use request origin so dev shows localhost; in static build it equals context.site origin.
 		const canonicalImageSrc = new URL(imageSrc, context.url.origin).href;
 
