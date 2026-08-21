@@ -2,24 +2,7 @@ const defaultCategory = 'Learn';
 
 // Order is important here. Pages are tested to see if they *start* with one of
 // these paths and will return early when one matches.
-const categories = [
-	['guides/rss/', 'Recipes'],
-	['guides/backend/', 'Recipes'],
-	['guides/cms/', 'Recipes'],
-	['guides/deploy/', 'Recipes'],
-	['guides/media/', 'Recipes'],
-	['guides/integrations-guide/', 'Learn'],
-	['guides/migrate-to-astro/', 'Recipes'],
-	['guides/upgrade-to/', 'Upgrade Guides'],
-	['recipes/', 'Recipes'],
-	['reference/errors/', 'Error Reference'],
-	['reference/', 'Reference'],
-	['tutorial/', 'Tutorials'],
-	['tutorials/', 'Tutorials'],
-	// Upgrade instruction sub-pages (platform + version-family pages not listed in the sidebar)
-	['pe/installation/upgrade-instructions/', 'PE Upgrade Instruction Subpage'],
-	['installation/upgrade-instructions/', 'CE Upgrade Instruction Subpage'],
-] as const;
+const categories = [['reference/', 'Reference']] as const;
 
 /**
  * @param url URL for the current page.

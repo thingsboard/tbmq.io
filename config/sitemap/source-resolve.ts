@@ -4,54 +4,13 @@ import { getRepoRoot } from '../sitemap-source-registry';
 import { matchRouteComponent } from './route-match';
 
 /**
- * Resolves the repo-relative source file(s) a non-docs page is built from, so the
- * sitemap can git-date them. Docs are handled by the route-middleware registry;
- * everything else (marketing, blog, data-driven slug pages, dynamic docs) lands
- * here.
- */
-
-/**
- * Slug → the data file holding a page's content, for collections rendered by a
- * shared `[slug].astro`. Pointing at the per-item file means editing one item
- * moves only its `<lastmod>`, not every sibling's.
- *
- * These paths mirror the current data/content layout by hand. A folder rename or
- * a new data-driven collection must be reflected here — otherwise the page
- * silently falls back to dating the shared `.astro` template, with no build error.
- */
-const SITEMAP_DATA_RULES: { re: RegExp; file: (m: RegExpMatchArray) => string }[] = [
-	{ re: /^\/use-cases\/([^/]+)\/$/, file: (m) => `src/data/use-cases/${m[1]}.ts` },
-	{ re: /^\/case-studies\/([^/]+)\/$/, file: (m) => `src/data/case-studies/${m[1]}.ts` },
-	// Careers detail pages all live in one aggregated data file.
-	{ re: /^\/careers\/([^/]+)\/$/, file: () => `src/data/careers/jobs.ts` },
-	{ re: /^\/clients-feedback\/$/, file: () => `src/data/clients-feedback/index.ts` },
-	// Release-notes table: per-version notes include (globbed, so scanner-blind).
-	{
-		re: /^\/docs\/((?:edge\/pe|edge|pe|trendz)\/)?releases\/releases-table\/([^/]+)\/$/,
-		file: (m) => `src/content/_includes/docs/${m[1] ?? ''}releases/${m[2]}.mdx`,
-	},
-	// Upgrade steps render from a per-product data model, shared across versions.
-	{
-		re: /^\/docs\/(trendz\/)?(?:pe\/)?installation\/upgrade-instructions\/[^/]+\/[^/]+\/$/,
-		file: (m) => `src/models/${m[1] ? 'trendz-' : ''}upgrade-instructions.ts`,
-	},
-];
-
-/**
- * Repo-relative source file(s) for a non-docs page. A per-slug data rule pins the
- * item's content file; otherwise the route's `.astro` component plus the
- * data/JSON it imports for content. `[]` (→ no `<lastmod>`) when nothing maps.
+ * Repo-relative source file(s) a non-docs page is built from, so the sitemap can
+ * git-date them: the route's `.astro` component plus the data/JSON it imports for
+ * content. Docs are handled by the route-middleware registry; everything else
+ * (the marketing and MQTT-learn pages) lands here. `[]` (→ no `<lastmod>`) when
+ * nothing maps.
  */
 export function resolveNonDocSources(pathname: string): string[] {
-	for (const rule of SITEMAP_DATA_RULES) {
-		const match = pathname.match(rule.re);
-		if (!match) continue;
-		const file = rule.file(match);
-		// Trust the rule only if its file exists; greedy rules also match sibling
-		// URLs (e.g. `/blog/page/N/`), which fall through to the route component.
-		if (existsSync(join(getRepoRoot(), file))) return [file];
-		break;
-	}
 	const component = matchRouteComponent(pathname);
 	if (!component) return [];
 	return [component, ...scanContentImports(component)];
