@@ -510,11 +510,11 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
-					color: $color-white;
+					background-color: var(--color-brand);
+					color: var(--color-brand-contrast);
 
 					&:hover {
-						color: $color-primary;
+						color: var(--color-brand);
 						box-shadow: none;
 						background-color: var(--color-bg-surface);
 					}
@@ -560,11 +560,11 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
-					color: $color-white;
+					background-color: var(--color-brand);
+					color: var(--color-brand-contrast);
 
 					&:hover {
-						color: $color-primary;
+						color: var(--color-brand);
 						box-shadow: none;
 						// Theme-aware: in light mode this resolves to white, in
 						// dark mode to the dark surface — avoids a glaring
@@ -574,24 +574,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 						background-color: var(--color-bg-surface);
 					}
 				}
-			}
-		}
-	}
-
-	// Pages that opt into the docs-accent primary token for header buttons
-	// instead of the legacy brand blue. `:is()` matches both the default
-	// page state and the scrolled `.flip-nav` state — the `.flip-nav`
-	// variant in the list also bumps specificity so this rule beats the
-	// `#pricing.flip-nav header.header .n-button.try` rule above. Other
-	// marketing pages keep their brand-blue Try-it-now button.
-	html:is(#contact-us, #pricing, #pricing.flip-nav) header.header .n-button {
-		&.try {
-			background-color: var(--color-primary);
-			color: var(--sl-color-text-invert);
-
-			&:hover {
-				background-color: var(--color-primary-hover);
-				color: var(--sl-color-text-invert);
 			}
 		}
 	}
@@ -650,12 +632,12 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
-					color: $color-white;
+					background-color: var(--color-brand);
+					color: var(--color-brand-contrast);
 
 					&:hover {
-						background-color: $color-primary;
-						color: $color-white;
+						background-color: var(--color-brand);
+						color: var(--color-brand-contrast);
 						box-shadow: var(--shadow-primary);
 					}
 				}
@@ -665,7 +647,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 	// Dark-mode opened burger background — covers pages whose <html> id
 	// isn't enumerated in the landing-page list below (docs, device library,
-	// blog, etc.). Without this they fall back to Starlight's
+	// etc.). Without this they fall back to Starlight's
 	// `--sl-color-bg-sidebar` (`hsl(224 14% 16%)` ≈ `#23262f`) and the drawer
 	// reads as the same dark shade as page-level cards. Use the brightest
 	// project surface token so the drawer is visibly elevated above both the
@@ -722,7 +704,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 				li:hover a,
 				li:hover span.main-menu-link {
-					color: $color-primary;
+					color: var(--color-brand);
 				}
 			}
 
@@ -738,12 +720,12 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				}
 
 				&.try {
-					background-color: $color-primary;
-					color: $color-white;
+					background-color: var(--color-brand);
+					color: var(--color-brand-contrast);
 
 					&:hover {
-						background-color: $color-primary;
-						color: $color-white;
+						background-color: var(--color-brand);
+						color: var(--color-brand-contrast);
 						box-shadow: var(--shadow-primary);
 					}
 				}
@@ -845,7 +827,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	#use-cases,
 	#case-studies,
 	#hardware-partner-detail,
-	#blog,
 	#services {
 		header.header {
 			background-color: var(--color-bg-surface);
@@ -853,50 +834,13 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Pages that don't support dark theme — the theme toggle is hidden on
-	// these. Listed once and reused below in both the force-light scope
-	// (`:where(...)`) and the dark-tinting scope (`:not(:where(...))`) so a
-	// new product page only has to be added in one place.
+	// Pages that don't support dark theme, excluded from the dark-tinting scope
+	// below via :not(:where(...)). No force-light token override exists for them
+	// — none is reachable: every page with one of these ids is rendered with
+	// BaseLayout's `forceLightTheme` (SSR `data-theme="light"`, re-pinned before
+	// paint by ThemeProvider's force-light branch, theme toggle not rendered),
+	// so `html[data-theme='dark']` can never co-occur with these ids.
 	$no-dark-pages: '#home, #thingsboard-paas, #thingsboard-pe, #products, #development-services, #trainings, #trendz, #partners, #thingsboard-edge, #mqtt-broker, #mobile-app, #mobile-pe, #products-form, #company, #mediakit, #careers, #installations, #performance, #live-demo, #product, #choose-region, #google-iot-core-alternative, #mqtt-learn';
-
-	// Force light-theme styling for the header on pages that don't support
-	// dark theme. The theme toggle is hidden on these pages, but a user who
-	// switched to dark on a supported page would otherwise see the menu in
-	// dark mode here. We re-emit the light values for theme-aware tokens so
-	// the header (and its dropdown sub-menus) renders light, while leaving
-	// the global `[data-theme]` setting alone so it persists when the user
-	// navigates back to a dark-supporting page.
-	html[data-theme='dark']:where(#{$no-dark-pages}) header.header {
-		color-scheme: light;
-
-		// Re-emit light values for project theme tokens used by header + nav
-		--color-text: #{$color-text-primary};
-		--color-text-secondary: #{$color-text-secondary};
-		--color-text-muted: #{$color-text-muted};
-		--color-text-light: #{$color-text-light};
-		--color-bg: #{$color-bg-white};
-		--color-bg-surface: #{$color-bg-white};
-		--color-bg-light: #{$color-bg-light};
-		--color-bg-muted: #{$color-bg-muted};
-		--color-border: #{$color-border};
-		--color-border-light: #{$color-border-light};
-		--shadow-header: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
-		// Force the nav-icon tint back to the light brand-blue too, so dropdown
-		// icons match the rest of the force-light header on no-dark pages.
-		--menu-icon-color: #{$color-primary};
-
-		// Re-emit light values for Starlight tokens used by the header
-		--sl-color-white: hsl(224, 10%, 10%);
-		--sl-color-gray-1: hsl(224, 14%, 16%);
-		--sl-color-gray-2: hsl(224, 10%, 23%);
-		--sl-color-gray-3: hsl(224, 7%, 36%);
-		--sl-color-gray-5: hsl(224, 6%, 77%);
-		--sl-color-gray-6: hsl(224, 20%, 94%);
-		--sl-color-gray-7: hsl(224, 19%, 97%);
-		--sl-color-bg-sidebar: #{$color-bg-white};
-		--sl-color-hairline-light: #{$color-border};
-		--sl-color-hairline-shade: #{$color-border-light};
-	}
 
 	// Dark-theme tinting for the menu's dropdown content. Only applies on
 	// pages that support dark theme — pages in $no-dark-pages above are
@@ -911,18 +855,18 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	html[data-theme='dark']:not(:where(#{$no-dark-pages})) {
 		// Group label inside dropdowns (e.g. "SCADA", "IoT platforms")
 		.head-menu .sub-menu .group-name {
-			color: var(--color-primary) !important;
+			color: var(--color-brand) !important;
 		}
 
 		// Item heading at rest — keep the regular text colour so the hover
 		// state stays visible. Only the hover transitions to primary.
 
 		// Item heading on hover — overrides every product/use-case brand colour
-		// (#2a7dec, #1f8b4d, #305680, #009688, #7a4dc3, #2696f3 …) so the
-		// hover state keeps using the dark-mode primary.
+		// set by Navigation.astro's per-link rules, so the hover state keeps
+		// using the dark-mode primary.
 		.head-menu .sub-menu a:hover .sub-text h1,
 		.head-menu .sub-menu a:hover .sub-text span.item-heading {
-			color: var(--color-primary) !important;
+			color: var(--color-brand) !important;
 		}
 
 		// Top-level main menu link hover (Products / Services / Use Cases / …)
@@ -930,15 +874,15 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		.head-menu ul li:hover span.main-menu-link,
 		.head-menu ul li a:not([href]):hover,
 		.head-menu ul li span.main-menu-link:hover {
-			color: var(--color-primary) !important;
+			color: var(--color-brand) !important;
 		}
 
 		// Active-tab indicator (the underline + arrow under the hovered top item)
 		.head-menu .indicator .head-arrow {
-			border-bottom-color: var(--color-primary) !important;
+			border-bottom-color: var(--color-brand) !important;
 		}
 		.head-menu .indicator .line {
-			background-color: var(--color-primary) !important;
+			background-color: var(--color-brand) !important;
 		}
 
 		// Recolour the dropdown product/use-case icons for dark theme.

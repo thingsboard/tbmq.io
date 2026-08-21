@@ -28,7 +28,7 @@ const hasTwoColumns =
 					data.buttons.map((btn) => (
 						<a
 							id={btn.id}
-							class:list={['btn-blue', 'gtm_button', { secondary: btn.secondary }]}
+							class:list={['btn-primary', 'gtm_button', { secondary: btn.secondary }]}
 							href={btn.href}
 							target={btn.target}
 							rel={btn.target === '_blank' ? 'noopener noreferrer' : undefined}
@@ -126,6 +126,42 @@ const hasTwoColumns =
 		@include container;
 		max-width: 1400px;
 		padding: 0 15px 0 15px;
+	}
+
+	// Bootstrap-style grid, scoped to this component — its only consumer (a
+	// global `[class*='col']` version once leaked 15px gutters onto every
+	// substring match sitewide: nav dropdown `.column`s, ComparisonTable `col-*`
+	// cells). The gutter pair stays intact: `.row` pulls -15px, the column
+	// classes pay it back as padding. Two silent traps to know about: only
+	// `col-lg-7` is defined (other `col-lg-*` widths don't exist), and because
+	// the rules are Astro-scoped, `.row`/`.col` markup rendered by a *child*
+	// component won't pick them up. The rest of `.install-content-header`'s
+	// styling (typography, image parallax, buttons) lives in
+	// src/pages/installations/index.astro behind :global() — see the note there.
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		margin-left: -15px;
+		margin-right: -15px;
+	}
+
+	.col,
+	.col-lg-7 {
+		position: relative;
+		width: 100%;
+		padding-left: 15px;
+		padding-right: 15px;
+	}
+
+	.col {
+		flex: 1 0 0%;
+	}
+
+	@include media-up(lg) {
+		.col-lg-7 {
+			flex: 0 0 calc(7 / 12 * 100%);
+			max-width: calc(7 / 12 * 100%);
+		}
 	}
 
 	:global(.deploy) {

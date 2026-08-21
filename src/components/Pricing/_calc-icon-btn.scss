@@ -20,8 +20,8 @@
 		position: relative;
 
 		&:hover {
-			background: rgba(var(--color-primary-rgb), 0.1);
-			color: var(--color-primary);
+			background: rgba(var(--color-brand-rgb), 0.1);
+			color: var(--color-brand);
 		}
 
 		&.copied {

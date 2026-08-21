@@ -155,7 +155,7 @@ Registered in `astro.config.ts` (`rehypePlugins`):
 ### Pages vs Content
 
 - `src/content/docs/` — documentation pages rendered by Starlight (the TBMQ docs tree)
-- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing), `products/mqtt-broker/` (`privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `community/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`
+- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing), `products/` (`privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `community/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`. There is no local blog — the nav/footer `Blog` links point at thingsboard.io/blog externally.
 
 ### Typography & Design System
 
@@ -171,7 +171,7 @@ Key rules: **Never hardcode font values** — use the mixins. **Never use compil
 |---|---|---|
 | `SINGLE_REDIRECTS` | one-off `/docs/*` page rename | `{ oldPath: '...', target: '/docs/...' }` |
 | `CATCH_ALL_REDIRECTS` | `/docs/*` prefix rename (whole tree renamed 1:1) | prefix → `:splat` |
-| `DYNAMIC_REDIRECTS` | splat / `:placeholder` patterns that aren't a simple prefix rename | `/blog/category/:category/page/* → /blog/?category=:category` |
+| `DYNAMIC_REDIRECTS` | splat / `:placeholder` patterns that aren't a simple prefix rename | `/old-tree/:section/page/* → /new-tree/:section/` (currently empty) |
 | `NON_DOCS_REDIRECTS` | everything outside `/docs/*` (marketing, external targets) | `/old-landing/` → `/new-landing/` |
 
 **Workflow to add a redirect:**
@@ -196,14 +196,14 @@ Key rules: **Never hardcode font values** — use the mixins. **Never use compil
 Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg. Each content collection has its own static endpoint under `src/pages/open-graph/`. `_shared/Card.tsx` is a dispatcher over two variants — both carry the same TBMQ lockup on the same green slab, so docs and marketing cards read as one site.
 
 **Files:**
-- `src/pages/open-graph/_shared/Card.tsx` — dispatcher; `DocsCard.tsx` (docs pages) and `LogoCard.tsx` (blog, marketing, collection indexes)
+- `src/pages/open-graph/_shared/Card.tsx` — dispatcher; `DocsCard.tsx` (docs pages) and `LogoCard.tsx` (marketing, collection indexes)
 - `src/pages/open-graph/_shared/{Slab,StackedLogo,Background}.tsx` + `colors.ts` — shared slab, TBMQ lockup, backdrop, single `tbmq` gradient
 - `src/pages/open-graph/_assets/icons.ts` — `TBMQ_LOGO_WHITE`, cropped into mark + wordmark by `StackedLogo`
 - `src/pages/open-graph/_shared/page-data.ts` — resolves every page to card props (title, eyebrow, section)
 - `src/pages/open-graph/_shared/marketing-meta.ts` — `PREFIX_RULES` (slab word per URL prefix) + per-page overrides
 - `src/pages/open-graph/_shared/product-meta.ts` — `META_BY_PRODUCT` for docs cards
 - `src/pages/open-graph/_shared/render.ts` — Satori → Resvg pipeline + content-hash cache
-- `src/pages/open-graph/{collection}/[…].png.ts` — three static endpoints: **docs, blog, pages**
+- `src/pages/open-graph/{collection}/[…].png.ts` — two static endpoints: **docs, pages**
 - `src/util/ogContext.ts` — `prettifySegment` + `ACRONYMS`, section labels, `MARKETING_ALLOWLIST`
 - `src/util/getOgImageUrl.ts` — pathname → OG PNG URL aggregator
 
@@ -226,7 +226,7 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 ## Code Style
 
 - Tabs for indentation in code files; spaces for JSON, Markdown, MDX, YAML, TOML
-- Prettier with `prettier-plugin-astro`, printWidth 100, single quotes, trailing commas
+- Prettier with `prettier-plugin-astro`, printWidth 120, single quotes, trailing commas
 - ESLint flat config with TypeScript and Astro plugins
 
 ## CI Checks

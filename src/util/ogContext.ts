@@ -49,15 +49,6 @@ export function getSectionLabel(slug: string): string {
 	return prettifySegment(firstSegment);
 }
 
-/** Format a Date as 'Mon DD, YYYY' (e.g. 'Apr 28, 2026'). */
-export function formatBlogDate(date: Date): string {
-	return date.toLocaleDateString('en-US', {
-		year: 'numeric',
-		month: 'short',
-		day: '2-digit',
-	});
-}
-
 /**
  * Word-boundary truncate. Returns the original if shorter than max.
  * Adds an ellipsis character when cutting.

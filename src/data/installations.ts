@@ -61,21 +61,14 @@ export const mqttBrokerProduct: ProductData = {
 		'<b>TBMQ</b> is a highly scalable and durable <a href="/" target="_blank" rel="noopener noreferrer">MQTT message broker</a> built for real-time data processing across IoT ecosystems of any scale. It efficiently handles millions of concurrent client connections and processes millions of messages per second while maintaining low latency and reliable delivery. Designed for horizontal scalability, TBMQ seamlessly expands across cluster nodes to support massive deployments with millions of connected devices. <a href="/docs/pe/" target="_blank" rel="noopener noreferrer">Read more<span class="sr-only"> about TBMQ MQTT Broker</span></a>.',
 	buttons: [
 		{
-			id: 'TryItNow_TBMQ_Demo',
-			label: 'Live Demo',
-			href: 'https://demo.tbmq.io/signup',
-			target: '_blank',
-		},
-		{
 			id: 'TryItNow_TBMQ_Install_PE',
-			label: 'Start PE Trial',
+			label: 'Try for free',
 			href: '/docs/pe/installation/',
 			target: '_blank',
-			secondary: true,
 		},
 		{
 			id: 'TryItNow_TBMQ_Install_CE',
-			label: 'Download CE',
+			label: 'CE installation',
 			href: '/docs/installation/',
 			target: '_blank',
 			secondary: true,

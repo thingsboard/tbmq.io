@@ -191,6 +191,7 @@ const tbmqGroups = [
 	pageId="mqtt-broker"
 	gitHubPlatform={Products.TBMQ}
 	preloadLcpImage="/hero/tbmq-cover.webp"
+	openContentLinksInNewTab
 >
 	<main>
 		<Hero
@@ -199,7 +200,7 @@ const tbmqGroups = [
 			subtitle="Scalable, fault-tolerant, and durable messaging for millions of MQTT clients"
 			buttons={[
 				{ text: 'Try it now', href: '/installations/', variant: 'white' },
-				{ text: 'Get started', href: '/docs/getting-started/', variant: 'outline' },
+				{ text: 'Learn more', href: '/mqtt/', variant: 'outline' },
 			]}
 			anchorLink="#content"
 			backgroundImage="/hero/tbmq-cover.webp"
@@ -219,7 +220,6 @@ const tbmqGroups = [
 				<ComparisonTable
 					title="TBMQ feature comparison"
 					groups={tbmqGroups}
-					peColor="#1f8b4d"
 					centerTitle={true}
 					bgColor="#F2F8F4"
 					noSkew={true}
@@ -246,6 +246,6 @@ const tbmqGroups = [
 	}
 
 	:global(#mqtt-broker #content a:not(.btn)) {
-		color: #1f8b4d;
+		color: $color-brand;
 	}
 </style>

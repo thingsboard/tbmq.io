@@ -3,45 +3,30 @@
 // (loaded by Starlight's customCss config so it reaches every route).
 // DO NOT @use this file from component <style> blocks.
 // ============================================
+@use 'sass:color';
 @use 'variables' as *;
 
 :root {
-	// Colors - Primary — aligned to Starlight accent for consistency across docs and pages
-	--color-primary: var(--sl-color-text-accent, #{$color-primary});
-	--color-primary-hover: var(--sl-color-accent, #{$color-primary-hover});
-	--color-primary-dark: #{$color-primary-dark};
-	--color-primary-darker: #{$color-primary-darker};
-	--color-primary-rgb: 61, 80, 245;
+	// Theme-varying tokens (light values). The palette lives in the
+	// `light-theme-tokens` mixin (_variables.scss) because two more scopes
+	// re-emit it: LegalLayout's standalone document and the pinned-light
+	// cookie-policy page. The dark block below overrides the theme-varying
+	// subset.
+	@include light-theme-tokens;
 
-	// Brand indigo — the single brand colour for the header "Try it now" CTA, the
-	// footer subscribe button, and the promo banner. Adapts per theme (dark override
-	// below); -contrast is the on-indigo text colour. Hover darkens via NButton's
-	// filled overlay (no separate hover token). The Cloud product token aliases this.
-	--color-brand: #{$color-brand};
-	--color-brand-contrast: #{$color-white};
+	// Align the link blue to Starlight's accent token so docs and marketing
+	// links share one blue per theme (the accent ramp is left at its default
+	// indigo — links stay blue; buttons use the green --color-brand instead).
+	// Declared after the include so source order wins over the mixin's literal,
+	// which exists for the pinned-light scopes where this alias would resolve
+	// to the dark accent.
+	--color-primary: var(--sl-color-text-accent, #{$color-primary});
 
 	// Colors - Neutral
 	--color-white: #{$color-white};
 	--color-black: #{$color-black};
 	--color-dark: #{$color-dark};
 	--color-dark-alt: #{$color-dark-alt};
-
-	// Colors - Text
-	--color-text: #{$color-text-primary};
-	--color-text-secondary: #{$color-text-secondary};
-	--color-text-muted: #{$color-text-muted};
-	--color-text-light: #{$color-text-light};
-
-	// Colors - Background
-	--color-bg: #{$color-bg-white};
-	--color-bg-surface: #{$color-bg-white};
-	--color-bg-light: #{$color-bg-light};
-	--color-bg-dark: #{$color-bg-dark};
-	--color-bg-muted: #{$color-bg-muted};
-
-	// Colors - Border
-	--color-border: #{$color-border};
-	--color-border-light: #{$color-border-light};
 
 	// Colors - Semantic
 	--color-success: #{$color-success};
@@ -94,14 +79,8 @@
 	--radius-2xl: #{$radius-2xl};
 	--radius-full: #{$radius-full};
 
-	// Shadows
-	--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 1px 0 rgba(0, 0, 0, 0.07);
-	--shadow-md: 0 1px 8px 0 rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 3px 3px -2px rgba(0, 0, 0, 0.12);
-	--shadow-lg: 0 50px 50px -20px rgba(0, 0, 0, 0.15), 0 0 30px 0 rgba(0, 0, 0, 0.05);
+	// Shadows (theme-varying ones live in light-theme-tokens)
 	--shadow-xl: 0 30px 60px -30px rgba(0, 0, 0, 0.3), 0 50px 100px -20px rgba(0, 0, 0, 0.25);
-	--shadow-primary: 0 18px 16px -10px rgba(var(--color-primary-rgb), 0.25);
-	--shadow-header: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
-	--shadow-card: 0 50px 50px -20px rgba(0, 0, 0, 0.15), 0 0 30px 0 rgba(0, 0, 0, 0.04);
 
 	// Transitions
 	--transition-fast: #{$transition-fast};
@@ -117,38 +96,6 @@
 	--tb-main-background: rgba(48, 86, 128, 0.08);
 	--tb-main-color-filter: invert(37%) sepia(84%) saturate(891%) hue-rotate(184deg) brightness(105%) contrast(88%);
 	--imageBorderRadius: #{$radius-md};
-
-	// Colors - Products (light mode)
-	--color-product-ce: #305680;
-	--color-product-pe: #00695c;
-	--color-product-cloud: var(--color-brand); // aliases the brand indigo
-	--color-product-trendz: #5555ff;
-	--color-product-gw: #6d28d9;
-	--color-product-tbmq: #1f8b4d;
-
-	// Colors - Light-blue badge palette (the design system; complements Starlight's --sl-color-* badge tokens)
-	--color-light-blue-low: #d6e7e5;
-	--color-light-blue: #00695c;
-	--color-light-blue-high: #00423a;
-
-	// Colors - Edge teal badge palette (Material Teal — distinguished from PE's cooler light-blue)
-	--color-edge-low: #b2dfdb;
-	--color-edge: #009688;
-	--color-edge-high: #004d40;
-
-	// Menu icon tint — follows the project primary in both themes so the
-	// inline-SVG nav icons (`fill="currentColor"`) match the rest of the
-	// site's accent.
-	--menu-icon-color: var(--color-primary);
-
-	// Per-product brand accents for the nav dropdown (icon + heading hover);
-	// switch per theme so one reference serves light and dark.
-	--brand-ce: #305680;
-	--brand-cloud: #5fa8e8;
-	--brand-pe: #1f8b4d;
-	--brand-edge: #009688;
-	--brand-gateway: #7a4dc3;
-	--brand-trendz: #2696f3;
 }
 
 [data-theme='dark'] {
@@ -169,6 +116,9 @@
 	--color-border: #2e3035;
 	--color-border-light: #383a40;
 
+	// Colors - Background (brand-tinted surface, dark wash over the page bg)
+	--color-bg-brand-tint: rgba(var(--color-brand-rgb), 0.06);
+
 	// Shadows
 	--shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 1px 0 rgba(0, 0, 0, 0.2);
 	--shadow-md: 0 1px 8px 0 rgba(0, 0, 0, 0.4), 0 3px 4px 0 rgba(0, 0, 0, 0.3), 0 3px 3px -2px rgba(0, 0, 0, 0.25);
@@ -177,17 +127,24 @@
 	--shadow-header: 0 0 20px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.2);
 
 	// Colors - Products (dark mode)
+	// (--color-product-cloud keeps its :root alias of --color-brand, which itself
+	// re-resolves per theme — no dark copy needed.)
 	--color-product-ce: #78b4f5;
 	--color-product-pe: #3fd9d1;
-	--color-product-cloud: var(--color-brand); // aliases the brand indigo (dark)
 	--color-product-trendz: #8888ff;
 	--color-product-gw: #a78bfa;
-	--color-product-tbmq: #4cd983;
+	// (--color-product-tbmq keeps its :root alias of --color-brand, same as
+	// --color-product-cloud above.)
 
-	// Brand indigo (dark) — light lavender fill + navy text, matching the pricing
-	// "Get started" buttons.
+	// Brand green (dark) — light mint fill + navy text ($color-primary-darker,
+	// 9.4:1 on the mint), matching the pricing "Get started" buttons. -rgb is
+	// re-derived from the mint so the dark-mode tints and --shadow-primary glow
+	// track the fill they sit under instead of the light-mode green.
 	--color-brand: #{$color-brand-dark};
 	--color-brand-contrast: #{$color-primary-darker};
+	--color-brand-rgb:
+		#{color.channel($color-brand-dark, 'red', $space: rgb)}, #{color.channel($color-brand-dark, 'green', $space: rgb)},
+		#{color.channel($color-brand-dark, 'blue', $space: rgb)};
 
 	// Colors - Light-blue badge palette (dark mode)
 	--color-light-blue-low: #1d3739;
@@ -198,10 +155,6 @@
 	--color-edge-low: #103e39;
 	--color-edge: #4db6ac;
 	--color-edge-high: #a0d8d2;
-
-	// Menu icon tint — dark mode uses the project primary (which itself
-	// resolves to Starlight's accent-high ≈ #b3c7ff in dark theme).
-	--menu-icon-color: var(--color-primary);
 
 	// Per-product brand accents — lighter variants for the dark dropdown bg.
 	--brand-ce: #7da9d8;

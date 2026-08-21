@@ -1,6 +1,4 @@
 ---
-import SmartImage from '@components/SmartImage.astro';
-
 interface ComparisonRow {
 	label: string;
 	href?: string;
@@ -20,6 +18,8 @@ interface ComparisonGroup {
 interface Props {
 	title?: string;
 	groups: ComparisonGroup[];
+	/** PE column accent (heading, tick, links). Passed verbatim into an inline
+	 *  style, so CSS `var()` strings work as well as literals. */
 	peColor?: string;
 	centerTitle?: boolean;
 	bgColor?: string;
@@ -30,13 +30,37 @@ interface Props {
 const {
 	title = 'Feature comparison',
 	groups,
-	peColor = '#038f7e',
+	peColor = 'var(--color-brand)',
 	centerTitle = false,
 	bgColor = '#f4f4f4',
 	noSkew = false,
 	fixedMaxWidth = false,
 } = Astro.props;
 
+// The CE and PE columns share one shape; the header row and every body cell
+// render from this single descriptor so the two columns — and their visible
+// vs. sr-only edition labels — can't drift apart when a new cell state is added.
+// Only the three accessors vary per row; everything else is static config.
+const EDITION_COLUMNS = [
+	{
+		colClass: 'col-ce',
+		edition: 'Community Edition',
+		abbreviation: 'CE',
+		linkClass: 'cell-link',
+		included: (row: ComparisonRow) => row.ce,
+		text: (row: ComparisonRow) => row.ceText,
+		linkHref: (row: ComparisonRow) => row.ceLinkHref,
+	},
+	{
+		colClass: 'col-pe',
+		edition: 'Professional Edition',
+		abbreviation: 'PE',
+		linkClass: 'cell-link pe-link',
+		included: (row: ComparisonRow) => row.pe,
+		text: (row: ComparisonRow) => row.peText,
+		linkHref: (row: ComparisonRow) => row.peLinkHref,
+	},
+];
 ---
 
 <section
@@ -51,77 +75,83 @@ const {
 
 		<div class="comparison-header">
 			<div class="col-feature">Features</div>
-			<div class="col-ce">
-				<span class="long">Community Edition</span>
-				<span class="short">CE</span>
-			</div>
-			<div class="col-pe">
-				<span class="long">Professional Edition</span>
-				<span class="short">PE</span>
-			</div>
+			{
+				EDITION_COLUMNS.map((col) => (
+					<div class={col.colClass}>
+						<span class="long">{col.edition}</span>
+						<span class="short">{col.abbreviation}</span>
+					</div>
+				))
+			}
 		</div>
 
-		{groups.map((group) => (
-			<div class="comparison-group">
-				<div class="group-header">
-					<span>{group.category}</span>
+		{
+			groups.map((group) => (
+				<div class="comparison-group">
+					<div class="group-header">
+						<span>{group.category}</span>
+					</div>
+					{group.rows.map((row) => {
+						const Tag = row.href ? 'a' : 'div';
+						return (
+							<Tag
+								href={row.href}
+								target={row.href?.startsWith('http') ? '_blank' : undefined}
+								rel={row.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+								class="comparison-row"
+							>
+								<div class="col-feature">{row.label}</div>
+								{EDITION_COLUMNS.map((col) => (
+									<div class={col.colClass}>
+										{col.text(row) ? (
+											col.linkHref(row) ? (
+												<a href={col.linkHref(row)} target="_blank" rel="noopener noreferrer" class={col.linkClass}>
+													{col.text(row)}
+												</a>
+											) : (
+												<span>{col.text(row)}</span>
+											)
+										) : col.included(row) ? (
+											<>
+												{/* The tick inherits its column's accent via currentColor — see the
+												    .mark colour rules below — so it can't drift from the heading. */}
+												<svg class="mark" width="20" height="20" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+													<circle cx="9" cy="9" r="9" fill="currentColor" fill-opacity="0.08" />
+													<path
+														d="M4.92725 9.58194L7.25466 11.9093L13.0732 6.09082"
+														stroke="currentColor"
+														stroke-width="2"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+													/>
+												</svg>
+												<span class="sr-only">Included in {col.edition}</span>
+											</>
+										) : (
+											<>
+												<span class="empty" aria-hidden="true">
+													&nbsp;
+												</span>
+												<span class="sr-only">Not included in {col.edition}</span>
+											</>
+										)}
+									</div>
+								))}
+							</Tag>
+						);
+					})}
 				</div>
-				{group.rows.map((row) => {
-					const Tag = row.href ? 'a' : 'div';
-					return (
-						<Tag
-							href={row.href}
-							target={row.href?.startsWith('http') ? '_blank' : undefined}
-							rel={row.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-							class="comparison-row"
-						>
-							<div class="col-feature">{row.label}</div>
-							<div class="col-ce">
-								{row.ceText ? (
-									row.ceLinkHref ? (
-										<a href={row.ceLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link">{row.ceText}</a>
-									) : (
-										<span>{row.ceText}</span>
-									)
-								) : row.ce ? (
-									<SmartImage
-										src="/src/assets/images/landings/pe/blue-mark.svg"
-										alt="Available in Community Edition"
-										width="20"
-										height="20"
-									/>
-								) : (
-									<span class="empty" aria-hidden="true">&nbsp;</span>
-								)}
-							</div>
-							<div class="col-pe">
-								{row.peText ? (
-									row.peLinkHref ? (
-										<a href={row.peLinkHref} target="_blank" rel="noopener noreferrer" class="cell-link pe-link">{row.peText}</a>
-									) : (
-										<span>{row.peText}</span>
-									)
-								) : row.pe ? (
-									<SmartImage
-										src="/src/assets/images/landings/pe/green-mark.svg"
-										alt="Available in Professional Edition"
-										width="20"
-										height="20"
-									/>
-								) : (
-									<span class="empty" aria-hidden="true">&nbsp;</span>
-								)}
-							</div>
-						</Tag>
-					);
-				})}
-			</div>
-		))}
+			))
+		}
 	</div>
 </section>
 
 <style lang="scss">
 	@use '../../styles/variables' as *;
+
+	// CE column accent — one definition read by the heading and its tick, so the
+	// two can't drift apart (the PE pair shares --comparison-pe-color the same way).
+	$ce-accent: #0d417b;
 
 	.comparison-table {
 		position: relative;
@@ -238,7 +268,7 @@ const {
 			font-size: $font-size-2xl;
 			font-weight: $font-weight-medium;
 			line-height: 2.25rem;
-			color: #0d417b;
+			color: $ce-accent;
 
 			@media screen and (max-width: 900px) {
 				flex: 0.3;
@@ -260,7 +290,7 @@ const {
 			font-size: $font-size-2xl;
 			font-weight: $font-weight-medium;
 			line-height: 2.25rem;
-			color: var(--comparison-pe-color, #038f7e);
+			color: var(--comparison-pe-color);
 
 			@media screen and (max-width: 900px) {
 				flex: 0.3;
@@ -355,12 +385,10 @@ const {
 					line-height: 28px;
 				}
 
-				.col-ce,
-				.col-pe {
-					:global(img) {
-						width: 24px;
-						height: 24px;
-					}
+				.col-ce .mark,
+				.col-pe .mark {
+					width: 24px;
+					height: 24px;
 				}
 			}
 		}
@@ -395,15 +423,15 @@ const {
 			text-align: center;
 			overflow-wrap: break-word;
 
-			:global(img) {
+			.mark {
 				width: 20px;
 				height: 20px;
 				// `.col-ce` is itself a flex container, and the parent row has
 				// `min-width: 0` on this cell so the cell can collapse when a
 				// neighbour row contains an unbreakable token like
 				// "(MQTT/CoAP/HTTP/SNMP/LWM2M)". Without `flex-shrink: 0`,
-				// the img's default flex-shrink: 1 lets it shrink with the cell
-				// and the icon renders smaller in that row only.
+				// the svg's default flex-shrink: 1 lets it shrink with the cell
+				// and the tick renders smaller in that row only.
 				flex-shrink: 0;
 			}
 
@@ -426,6 +454,16 @@ const {
 			}
 		}
 
+		// Each column's tick takes its column accent (via currentColor on the
+		// inline svg): CE the navy its heading uses, PE whatever peColor is set to.
+		.col-ce .mark {
+			color: $ce-accent;
+		}
+
+		.col-pe .mark {
+			color: var(--comparison-pe-color);
+		}
+
 		.cell-link {
 			font-size: $font-size-sm;
 			color: $color-primary;
@@ -436,7 +474,7 @@ const {
 			}
 
 			&.pe-link {
-				color: var(--comparison-pe-color, #{$color-pe});
+				color: var(--comparison-pe-color);
 			}
 		}
 	}

@@ -149,9 +149,9 @@ const jsonLd = marketingJsonLd({
 
 		const setActive = (id: string) => {
 			links.forEach((a) => {
-				const on = a.getAttribute('href') === `#${id}`;
-				a.classList.toggle('is-active', on);
-				if (on) a.setAttribute('aria-current', 'true');
+				// aria-current doubles as the styling hook (same convention as the
+				// top nav) — one attribute carries both the visual and AT state.
+				if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true');
 				else a.removeAttribute('aria-current');
 			});
 		};
@@ -343,7 +343,7 @@ const jsonLd = marketingJsonLd({
 	:global(.learn-toc__link:hover) {
 		color: $color-text-primary;
 	}
-	:global(.learn-toc__link.is-active) {
+	:global(.learn-toc__link[aria-current='true']) {
 		color: $color-pe-link;
 		border-left-color: $color-pe;
 		font-weight: $font-weight-semibold;
@@ -386,7 +386,9 @@ const jsonLd = marketingJsonLd({
 			margin-bottom: 8px;
 		}
 		:global(a) {
-			color: $color-pe-link;
+			// The shared link blue — body prose links read as hyperlinks, like in
+			// the docs; green stays for the surrounding learn-hub chrome.
+			color: $color-primary;
 			text-decoration: underline;
 		}
 		:global(code) {

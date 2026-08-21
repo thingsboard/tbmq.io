@@ -1,7 +1,6 @@
 ---
 interface Props {
-	variant?: 'filled' | 'outlined' | 'text' | 'elevated' | 'tonal';
-	color?: 'primary' | 'warning' | 'danger' | 'success' | 'white';
+	variant?: 'filled' | 'outlined' | 'text';
 	size?: 'sm' | 'md' | 'lg';
 	href?: string;
 	type?: 'button' | 'submit' | 'reset';
@@ -17,7 +16,6 @@ interface Props {
 
 const {
 	variant = 'filled',
-	color = 'primary',
 	size = 'md',
 	href,
 	type = 'button',
@@ -34,7 +32,6 @@ const {
 const classes = [
 	'n-button',
 	`n-button--${variant}`,
-	`n-button--${color}`,
 	`n-button--${size}`,
 	pill && 'n-button--pill',
 	fullWidth && 'n-button--full-width',
@@ -88,13 +85,17 @@ const classes = [
 		cursor: pointer;
 		box-sizing: border-box;
 
-		// ---- Color tokens (default: primary / accent) ----
-		--_btn-color: var(--sl-color-text-accent);
-		--_btn-color-hover: var(--sl-color-accent);
-		--_btn-color-contrast: var(--sl-color-black);
-		--_btn-color-tonal-bg: var(--sl-color-accent-low);
-		--_btn-color-tonal-hover: var(--sl-color-accent-low);
-		--_btn-shadow: var(--shadow-primary);
+		// ---- Color tokens (brand green — the CTA colour) ----
+		// Decoupled from --sl-color-*accent* (the blue link accent) so buttons stay
+		// green while links stay blue. --color-brand-contrast pairs with the green
+		// fill in both themes (white on green in light, navy on mint in dark).
+		// The variants below read only these tokens, so a future second colour is
+		// one token block, not new rules. One consistent rule for the surface: no
+		// call sites, no code — the warning/danger/success/white colour blocks and
+		// the elevated/tonal variants were all removed on those grounds.
+		--_btn-color: var(--color-brand);
+		--_btn-color-contrast: var(--color-brand-contrast);
+		--_btn-subtle-bg: var(--sl-color-green-low);
 
 		// ---- Sizes ----
 		&--sm {
@@ -115,67 +116,22 @@ const classes = [
 			height: 54px;
 		}
 
-		// ---- Colors ----
-		&--primary {
-			--_btn-color: var(--sl-color-text-accent);
-			--_btn-color-hover: var(--sl-color-accent);
-			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-accent-low);
-			--_btn-color-tonal-hover: var(--sl-color-accent-low);
-			--_btn-shadow: var(--shadow-primary);
-		}
-
-		&--warning {
-			--_btn-color: var(--sl-color-orange-high);
-			--_btn-color-hover: var(--sl-color-orange);
-			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-orange-low);
-			--_btn-color-tonal-hover: var(--sl-color-orange-low);
-			--_btn-shadow: none;
-		}
-
-		&--danger {
-			--_btn-color: var(--sl-color-red-high);
-			--_btn-color-hover: var(--sl-color-red);
-			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-red-low);
-			--_btn-color-tonal-hover: var(--sl-color-red-low);
-			--_btn-shadow: none;
-		}
-
-		&--success {
-			--_btn-color: var(--sl-color-green-high);
-			--_btn-color-hover: var(--sl-color-green);
-			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-green-low);
-			--_btn-color-tonal-hover: var(--sl-color-green-low);
-			--_btn-shadow: none;
-		}
-
-		&--white {
-			--_btn-color: var(--sl-color-white);
-			--_btn-color-hover: var(--sl-color-gray-1);
-			--_btn-color-contrast: var(--sl-color-black);
-			--_btn-color-tonal-bg: var(--sl-color-gray-6);
-			--_btn-color-tonal-hover: var(--sl-color-gray-5);
-			--_btn-shadow: none;
-		}
-
 		// ---- Variants ----
 		&--filled {
 			background-color: var(--_btn-color);
 			color: var(--_btn-color-contrast);
-			// Use background-image overlay for darkening so text color stays crisp
-			background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0));
 
+			// Darken with color-mix so background-color (animatable) carries the
+			// hover easing — the old gradient overlay couldn't ease despite
+			// `transition: all`, because background-image is a discrete property.
 			&:hover {
-				background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15));
+				background-color: color-mix(in srgb, var(--_btn-color) 85%, black);
 				text-decoration: none;
 				color: var(--_btn-color-contrast);
 			}
 
 			&:active {
-				background-image: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
+				background-color: color-mix(in srgb, var(--_btn-color) 75%, black);
 				transition-duration: 0s;
 			}
 		}
@@ -185,14 +141,16 @@ const classes = [
 			color: var(--_btn-color);
 			border: 1px solid var(--_btn-color);
 
+			// color-mix over --_btn-color (not the brand-rgb triple) so the tint
+			// tracks whatever colour the outline actually uses.
 			&:hover {
-				background-color: rgba(var(--color-primary-rgb), 0.1);
+				background-color: color-mix(in srgb, var(--_btn-color) 10%, transparent);
 				color: var(--_btn-color);
 				text-decoration: none;
 			}
 
 			&:active {
-				background-color: rgba(var(--color-primary-rgb), 0.15);
+				background-color: color-mix(in srgb, var(--_btn-color) 15%, transparent);
 				color: var(--_btn-color);
 				transition-duration: 0s;
 			}
@@ -203,29 +161,7 @@ const classes = [
 			color: var(--_btn-color);
 
 			&:hover {
-				background-color: var(--_btn-color-tonal-bg);
-				text-decoration: none;
-			}
-		}
-
-		&--elevated {
-			background-color: var(--_btn-color);
-			color: var(--_btn-color-contrast);
-			box-shadow: var(--shadow-sm);
-
-			&:hover {
-				box-shadow: var(--shadow-md);
-				text-decoration: none;
-				color: var(--_btn-color-contrast);
-			}
-		}
-
-		&--tonal {
-			background-color: var(--_btn-color-tonal-bg);
-			color: var(--_btn-color);
-
-			&:hover {
-				background-color: var(--_btn-color-tonal-hover);
+				background-color: var(--_btn-subtle-bg);
 				text-decoration: none;
 			}
 		}

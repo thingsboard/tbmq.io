@@ -42,7 +42,7 @@ const categoryIcon: Record<string, string> = {
 				return (
 					<li>
 						{s === slug ? (
-							<span class="topic-series__item is-current" aria-current="page">
+							<span class="topic-series__item" aria-current="page">
 								{topic.navLabel}
 							</span>
 						) : (
@@ -141,7 +141,7 @@ const categoryIcon: Record<string, string> = {
 		color: $color-text-primary;
 		border-left-color: $color-text-secondary;
 	}
-	.topic-series__item.is-current {
+	.topic-series__item[aria-current='page'] {
 		color: var(--acc-ink);
 		border-left-color: var(--acc);
 		font-weight: $font-weight-semibold;

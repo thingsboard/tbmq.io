@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Landing/Header.astro';
 import Footer from '../components/Landing/Footer.astro';
+import OpenContentLinksInNewTab from '../components/OpenContentLinksInNewTab.astro';
 import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import GtmNoscript from '../components/GtmNoscript.astro';
@@ -9,7 +10,6 @@ import SeoMeta from '../components/SeoMeta.astro';
 import ThemeProvider from '../components/starlight/ThemeProvider.astro';
 import { Icon } from '@astrojs/starlight/components';
 import { formatMarketingTitle } from '~/consts';
-import { getSectionFromPath } from '~/util/path-utils';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 import '../styles/global.scss';
 import 'node_modules/@astrojs/starlight/style/props.css';
@@ -39,6 +39,8 @@ interface Props {
 	 * images will compete with the real LCP target for bandwidth.
 	 */
 	preloadLcpImage?: string;
+	/** Open all in-content links in a new tab (SEO request; see OpenContentLinksInNewTab). */
+	openContentLinksInNewTab?: boolean;
 }
 
 const {
@@ -60,11 +62,11 @@ const {
 	noIndex = false,
 	jsonLd,
 	preloadLcpImage,
+	openContentLinksInNewTab = false,
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const section = getSectionFromPath(Astro.url.pathname);
-const pageTitle = customTitle ? title : formatMarketingTitle(title, section);
+const pageTitle = customTitle ? title : formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 
 // Bridge for the Starlight `ThemeProvider` override (rendered in <head> below):
@@ -122,11 +124,13 @@ locals.bslForceLight = forceLightTheme;
 	<body>
 		<GtmNoscript />
 
-		{/* Theme-switcher icon palette (light/dark/auto) that `StarlightThemeProvider.updatePickers()`
+		{
+			/* Theme-switcher icon palette (light/dark/auto) that `StarlightThemeProvider.updatePickers()`
 		    clones into the theme-select label icon. Rendered here at the top of <body> instead of
 		    <head> because a warmed `astro dev` traps hoisted <style> blocks inside any <head>
 		    <template>, unstyling the page (https://github.com/withastro/astro/issues/16994).
-		    Only needed where the switcher exists (not on forceLightTheme pages). */}
+		    Only needed where the switcher exists (not on forceLightTheme pages). */
+		}
 		{
 			!forceLightTheme && (
 				<template id="theme-icons">
@@ -150,6 +154,8 @@ locals.bslForceLight = forceLightTheme;
 		<UtmTracker />
 
 		<slot />
+
+		{openContentLinksInNewTab && <OpenContentLinksInNewTab />}
 
 		<Footer />
 
