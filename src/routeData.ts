@@ -15,13 +15,7 @@ import {
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
-import {
-	DOCS_SUFFIX,
-	EDIT_BASE_URL,
-	formatDocsTitle,
-	OG_FALLBACK,
-	TITLE_SEPARATOR,
-} from '~/consts';
+import { DOCS_SUFFIX, EDIT_BASE_URL, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 // No alias covers `config/`; relative import is the only option here.
 import {
