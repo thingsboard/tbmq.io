@@ -1,14 +1,11 @@
-import { unified } from '@astrojs/markdown-remark';
+import { satteri } from '@astrojs/markdown-satteri';
 import starlight from '@astrojs/starlight';
 import { defineConfig, passthroughImageService, sharpImageService } from 'astro/config';
-import rehypeSlug from 'rehype-slug';
-import remarkSmartypants from 'remark-smartypants';
 import { redirects } from './astro.redirects';
 import { sidebar } from './astro.sidebar';
 import { devServerFileWatcher } from './config/integrations/dev-server-file-watcher';
 import { sitemap } from './config/integrations/sitemap';
-import { rehypeMdxIncludeHeadings } from './config/plugins/rehype-mdx-include-headings';
-import { rehypeTasklistEnhancer } from './config/plugins/rehype-tasklist-enhancer';
+import { satteriMdxIncludeHeadings } from './config/plugins/satteri-mdx-include-headings';
 import { EDIT_BASE_URL, PROD_ORIGIN } from './src/consts';
 
 import icon from 'astro-icon';
@@ -146,16 +143,12 @@ export default defineConfig({
     scopedStyleStrategy: 'where',
     compressHTML: false,
     markdown: {
-        // Astro 7 defaults to the Sätteri (Rust) pipeline, which does not run remark/rehype
-        // plugins. Our TOC injection (`rehype-mdx-include-headings`) and the other rehype
-        // plugins below require the unified pipeline, so we pin it explicitly.
-        processor: unified({
-            smartypants: false,
-            remarkPlugins: [
-                // @ts-expect-error — `remark-smartypants` type is not matching Astro's for some reason even though they both use unified's `Plugin` type
-                [remarkSmartypants, { dashes: false }],
-            ],
-            rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings()],
+        // Astro 7's Rust Markdown pipeline. Heading ids (formerly `rehype-slug`) are
+        // built in, and `smartPunctuation` replaces `remark-smartypants` — keep `dashes`
+        // off so "--" stays literal in CLI snippets, as it always has.
+        processor: satteri({
+            hastPlugins: satteriMdxIncludeHeadings(),
+            features: { smartPunctuation: { dashes: false } },
         }),
     },
     image: {
