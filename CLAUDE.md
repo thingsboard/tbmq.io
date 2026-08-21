@@ -8,9 +8,8 @@ This is the **TBMQ website** — the documentation and marketing site for **TBMQ
 
 **This repo is a downstream deployment derived from the full ThingsBoard site.** Only TBMQ content ships here (the TBMQ docs tree plus TBMQ marketing pages). This repo does **not** track full upstream merges — upstream changes are **cherry-picked** in when needed.
 
-The multi-product scaffolding inherited from upstream has been removed: the `Products` enum, `versions.ts`, the content schema types and `astro.sidebar.ts` are all TBMQ-only now, and the non-TBMQ components, assets and data files are deleted. Two things still linger:
+The multi-product scaffolding inherited from upstream has been removed: the `Products` enum, `versions.ts`, the content schema types and `astro.sidebar.ts` are all TBMQ-only now, and the non-TBMQ components, assets and data files are deleted. One thing still lingers:
 
-- `src/models/releases-table.ts` and `src/models/upgrade-instructions.ts` — stale ThingsBoard data, rendered nowhere (see "Releasing a New TBMQ Version").
 - Ukrainian locale scaffolding — inert but wired into live code (`src/util/path-utils.ts`, `src/routeData.ts`, `src/util/canonical.ts`, `src/util/getPageCategory.ts`, `translations: { uk }` in `astro.sidebar.ts`). It is the on-ramp if `uk` is ever enabled; leave it alone rather than half-removing it.
 
 The full upstream ThingsBoard site (all products/editions) is available as an additional working directory at `~/projects/thingsboard.io` for reference and cherry-picking. If something removed here is ever needed again, take the current upstream version from there rather than reviving a stale copy out of this repo's history.
@@ -236,7 +235,6 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 
 - `src/data/versions.ts` — bump `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`; docs code blocks and install commands pick these up.
 - Release notes are hand-written prose: add the new version's section to `src/content/_includes/docs/mqtt-broker/releases.mdx` (separate CE and PE-conditional blocks; the changelog page links there).
-- Do **not** edit `src/models/releases-table.ts` or `src/models/upgrade-instructions.ts` — they hold stale ThingsBoard (non-TBMQ) data, no TBMQ page renders their tables, and they're slated for removal.
 
 ## Code Style
 

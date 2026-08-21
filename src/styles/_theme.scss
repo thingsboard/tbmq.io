@@ -25,29 +25,9 @@
 	// Colors - Neutral
 	--color-white: #{$color-white};
 	--color-black: #{$color-black};
-	--color-dark: #{$color-dark};
-	--color-dark-alt: #{$color-dark-alt};
 
 	// Colors - Semantic
 	--color-success: #{$color-success};
-	--color-danger: #{$color-danger};
-	--color-warning: #{$color-warning};
-
-	// Typography
-	--font-family: #{$font-family-base};
-	--font-family-mono: #{$font-family-mono};
-
-	// Font sizes
-	--text-xs: #{$font-size-xs};
-	--text-sm: #{$font-size-sm};
-	--text-base: #{$font-size-base};
-	--text-lg: #{$font-size-lg};
-	--text-xl: #{$font-size-xl};
-	--text-2xl: #{$font-size-2xl};
-	--text-3xl: #{$font-size-3xl};
-	--text-4xl: #{$font-size-4xl};
-	--text-5xl: #{$font-size-5xl};
-	--text-6xl: #{$font-size-6xl};
 
 	// Heading sizes (also overrides Starlight --sl-text-h*)
 	--sl-text-h1: #{$font-size-h1};
@@ -56,36 +36,11 @@
 	--sl-text-h4: #{$font-size-h4};
 	--sl-text-h5: #{$font-size-h5};
 
-	// Spacing
-	--spacing-1: #{$spacing-1};
-	--spacing-2: #{$spacing-2};
-	--spacing-3: #{$spacing-3};
-	--spacing-4: #{$spacing-4};
-	--spacing-5: #{$spacing-5};
-	--spacing-6: #{$spacing-6};
-	--spacing-8: #{$spacing-8};
-	--spacing-10: #{$spacing-10};
-	--spacing-12: #{$spacing-12};
-	--spacing-16: #{$spacing-16};
-	--spacing-20: #{$spacing-20};
-	--spacing-24: #{$spacing-24};
-	--spacing-30: #{$spacing-30};
-
 	// Border radius
-	--radius-sm: #{$radius-sm};
 	--radius-md: #{$radius-md};
-	--radius-lg: #{$radius-lg};
-	--radius-xl: #{$radius-xl};
-	--radius-2xl: #{$radius-2xl};
-	--radius-full: #{$radius-full};
 
 	// Shadows (theme-varying ones live in light-theme-tokens)
 	--shadow-xl: 0 30px 60px -30px rgba(0, 0, 0, 0.3), 0 50px 100px -20px rgba(0, 0, 0, 0.25);
-
-	// Transitions
-	--transition-fast: #{$transition-fast};
-	--transition-base: #{$transition-base};
-	--transition-slow: #{$transition-slow};
 
 	// Layout
 	--header-height: #{$header-height};
@@ -93,9 +48,6 @@
 
 	// Legacy support (for old code)
 	--tb-main-color: #{$color-primary};
-	--tb-main-background: rgba(48, 86, 128, 0.08);
-	--tb-main-color-filter: invert(37%) sepia(84%) saturate(891%) hue-rotate(184deg) brightness(105%) contrast(88%);
-	--imageBorderRadius: #{$radius-md};
 }
 
 [data-theme='dark'] {
@@ -103,14 +55,11 @@
 	--color-text: #e4e5e7;
 	--color-text-secondary: #a1a2a8;
 	--color-text-muted: #8e8f95;
-	--color-text-light: #6e7079;
 
 	// Colors - Background
 	--color-bg: #141517;
 	--color-bg-surface: #1e1f23;
 	--color-bg-light: #262830;
-	--color-bg-dark: #111214;
-	--color-bg-muted: #1a1b1e;
 
 	// Colors - Border
 	--color-border: #2e3035;
@@ -127,14 +76,7 @@
 	--shadow-header: 0 0 20px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.2);
 
 	// Colors - Products (dark mode)
-	// (--color-product-cloud keeps its :root alias of --color-brand, which itself
-	// re-resolves per theme — no dark copy needed.)
-	--color-product-ce: #78b4f5;
-	--color-product-pe: #3fd9d1;
 	--color-product-trendz: #8888ff;
-	--color-product-gw: #a78bfa;
-	// (--color-product-tbmq keeps its :root alias of --color-brand, same as
-	// --color-product-cloud above.)
 
 	// Brand green (dark) — light mint fill + navy text ($color-primary-darker,
 	// 9.4:1 on the mint), matching the pricing "Get started" buttons. -rgb is
@@ -145,22 +87,4 @@
 	--color-brand-rgb:
 		#{color.channel($color-brand-dark, 'red', $space: rgb)}, #{color.channel($color-brand-dark, 'green', $space: rgb)},
 		#{color.channel($color-brand-dark, 'blue', $space: rgb)};
-
-	// Colors - Light-blue badge palette (dark mode)
-	--color-light-blue-low: #1d3739;
-	--color-light-blue: #3fd9d1;
-	--color-light-blue-high: #a4eeea;
-
-	// Colors - Edge teal badge palette (dark mode)
-	--color-edge-low: #103e39;
-	--color-edge: #4db6ac;
-	--color-edge-high: #a0d8d2;
-
-	// Per-product brand accents — lighter variants for the dark dropdown bg.
-	--brand-ce: #7da9d8;
-	--brand-cloud: #7dd3fc;
-	--brand-pe: #4ade80;
-	--brand-edge: #2dd4bf;
-	--brand-gateway: #a78bfa;
-	--brand-trendz: #60a5fa;
 }

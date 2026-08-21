@@ -176,15 +176,7 @@ locals.bslForceLight = forceLightTheme;
 		<script is:inline>
 			(function () {
 				const html = document.documentElement;
-				const pagesWithTransparentHeader = [
-					'home',
-					'thingsboard-paas',
-					'thingsboard-pe',
-					'thingsboard-edge',
-					'mqtt-broker',
-					'pricing',
-					'affiliate',
-				];
+				const pagesWithTransparentHeader = ['mqtt-broker', 'pricing'];
 				if (!pagesWithTransparentHeader.includes(html.id)) return;
 
 				const sentinel = document.getElementById('flip-nav-sentinel');

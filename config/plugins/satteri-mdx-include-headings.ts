@@ -80,7 +80,7 @@ function cleanHeadingText(raw: string): string {
 			.replace(/\*(.+?)\*/g, '$1')
 			.replace(/`(.+?)`/g, '$1')
 			.replace(/\[(.+?)\]\(.+?\)/g, '$1')
-			// Strip JSX/HTML tags (e.g. <ProductBadge/>, <Badge text="…" />). Open tags
+			// Strip JSX/HTML tags (e.g. <Badge text="…" />, <Icon name="…" />). Open tags
 			// keep their inner text, self-closing tags vanish entirely.
 			.replace(/<[^>]+\/>/g, '')
 			.replace(/<[^>]+>([\s\S]*?)<\/[^>]+>/g, '$1')

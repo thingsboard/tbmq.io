@@ -438,38 +438,20 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	// PAGE-SPECIFIC HEADER STYLES
 	// ============================================
 
-	// Products pages with always-solid header — persistent box-shadow.
-	// `#services` is intentionally excluded so its header uses a hairline
-	// border (defined in the use-cases / case-studies group above) instead
-	// of a drop shadow — matches the page design.
-	#products,
-	#development-services,
-	#trainings,
-	#trendz,
-	#mobile-app,
-	#mobile-pe,
-	#products-form,
+	// Marketing pages with an always-solid header — persistent box-shadow.
 	#contact-us,
 	#company,
-	#mediakit,
-	#careers,
 	#installations,
 	#performance,
 	#live-demo,
 	#product,
-	#choose-region,
-	#mqtt-learn,
-	#google-iot-core-alternative {
+	#mqtt-learn {
 		header.header {
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
 		}
 	}
 
 	// Landing pages with transparent header
-	#home,
-	#thingsboard-paas,
-	#thingsboard-pe,
-	#thingsboard-edge,
 	#mqtt-broker {
 		header.header {
 			background-color: transparent;
@@ -523,26 +505,14 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Mobile app pages, trendz, services, and product forms — non-transparent header, but hide divider + style buttons
-	#products,
-	#services,
-	#development-services,
-	#trainings,
-	#trendz,
-	#mobile-app,
-	#mobile-pe,
-	#products-form,
+	// Non-transparent header — hide the divider and style the buttons.
 	#contact-us,
 	#company,
-	#mediakit,
-	#careers,
 	#installations,
 	#performance,
 	#live-demo,
 	#product,
-	#choose-region,
-	#mqtt-learn,
-	#google-iot-core-alternative {
+	#mqtt-learn {
 		header.header {
 			.divider {
 				display: none;
@@ -589,10 +559,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	#home,
-	#thingsboard-paas,
-	#thingsboard-pe,
-	#thingsboard-edge,
 	#mqtt-broker {
 		&.flip-nav header.header {
 			.logo,
@@ -603,12 +569,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	}
 
 	// Scrolled header state (flip-nav)
-	#home,
-	#thingsboard-paas,
-	#thingsboard-pe,
-	#trendz,
-	#partners,
-	#thingsboard-edge,
 	#mqtt-broker,
 	#pricing {
 		&.flip-nav header.header {
@@ -645,9 +605,9 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Dark-mode opened burger background — covers pages whose <html> id
-	// isn't enumerated in the landing-page list below (docs, device library,
-	// etc.). Without this they fall back to Starlight's
+	// Dark-mode opened burger background — covers pages whose <html> id isn't
+	// enumerated in the landing-page list below (the docs tree renders with no
+	// id at all). Without this they fall back to Starlight's
 	// `--sl-color-bg-sidebar` (`hsl(224 14% 16%)` ≈ `#23262f`) and the drawer
 	// reads as the same dark shade as page-level cards. Use the brightest
 	// project surface token so the drawer is visibly elevated above both the
@@ -657,30 +617,15 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	}
 
 	// Mobile burger opened state for landing pages
-	#home,
-	#docs,
 	#common,
-	#thingsboard-paas,
-	#thingsboard-pe,
-	#products,
-	#services,
-	#development-services,
-	#trainings,
-	#trendz,
-	#thingsboard-edge,
 	#mqtt-broker,
-	#products-form,
 	#contact-us,
 	#company,
-	#mediakit,
-	#careers,
 	#installations,
 	#performance,
 	#live-demo,
 	#product,
-	#choose-region,
-	#mqtt-learn,
-	#google-iot-core-alternative {
+	#mqtt-learn {
 		header.header.opened-burger {
 			transition: all $transition-base;
 			background-color: var(--color-bg-light);
@@ -734,33 +679,15 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	}
 
 	// Hide search and theme toggle on landing pages
-	#home,
-	#thingsboard-paas,
-	#thingsboard-pe,
-	#products,
-	#services,
-	#development-services,
-	#trainings,
-	#trendz,
-	#partners,
-	#thingsboard-edge,
 	#mqtt-broker,
-	#mobile-app,
-	#mobile-pe,
 	#pricing,
-	#docs,
 	#common,
-	#products-form,
 	#company,
-	#mediakit,
-	#careers,
 	#installations,
 	#performance,
 	#live-demo,
 	#product,
-	#choose-region,
-	#mqtt-learn,
-	#google-iot-core-alternative {
+	#mqtt-learn {
 		search-button,
 		theme-toggle {
 			display: none;
@@ -768,10 +695,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	}
 
 	// Hide divider on pages where theme toggle is hidden but not already handled above
-	#trendz,
-	#partners,
-	#pricing,
-	#docs {
+	#pricing {
 		header.header {
 			.divider {
 				display: none;
@@ -822,25 +746,13 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Use-case & case-study pages: white background + bottom border
-	// (Services follows the same dark-mode pattern.)
-	#use-cases,
-	#case-studies,
-	#hardware-partner-detail,
-	#services {
-		header.header {
-			background-color: var(--color-bg-surface);
-			border-bottom: 1px solid var(--color-border);
-		}
-	}
-
 	// Pages that don't support dark theme, excluded from the dark-tinting scope
 	// below via :not(:where(...)). No force-light token override exists for them
 	// — none is reachable: every page with one of these ids is rendered with
 	// BaseLayout's `forceLightTheme` (SSR `data-theme="light"`, re-pinned before
 	// paint by ThemeProvider's force-light branch, theme toggle not rendered),
 	// so `html[data-theme='dark']` can never co-occur with these ids.
-	$no-dark-pages: '#home, #thingsboard-paas, #thingsboard-pe, #products, #development-services, #trainings, #trendz, #partners, #thingsboard-edge, #mqtt-broker, #mobile-app, #mobile-pe, #products-form, #company, #mediakit, #careers, #installations, #performance, #live-demo, #product, #choose-region, #google-iot-core-alternative, #mqtt-learn';
+	$no-dark-pages: '#mqtt-broker, #company, #installations, #performance, #live-demo, #product, #mqtt-learn';
 
 	// Dark-theme tinting for the menu's dropdown content. Only applies on
 	// pages that support dark theme — pages in $no-dark-pages above are

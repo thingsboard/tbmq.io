@@ -121,6 +121,8 @@ const { mode = 'page' } = Astro.props;
 </div>
 
 <script>
+	import { FORMSPREE_CONTACT } from '~/data/formspree';
+
 	// ── Floating label: mark empty selects ──────────────────────────────────
 	function updateSelectEmpty(select: HTMLSelectElement) {
 		if (select.value === '') {
@@ -303,7 +305,7 @@ const { mode = 'page' } = Astro.props;
 		if (!form) return;
 
 		// Set Formspree action
-		form.action = 'https://formspree.io/f/xrbnqnna';
+		form.action = FORMSPREE_CONTACT;
 
 		const renderedAt = form.querySelector<HTMLInputElement>('.form-rendered-at');
 		if (renderedAt) renderedAt.value = String(Math.floor(Date.now() / 1000));
