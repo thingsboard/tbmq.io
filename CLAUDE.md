@@ -212,7 +212,7 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 - `SKIP_OG=true` (used by `pnpm build:fast`) makes `renderCard` return the global fallback instead of running Satori. There is deliberately no "production build with SKIP_OG" guard — it keyed on a Netlify variable that never fires on Cloudflare Pages, and the only scripts that set `SKIP_OG` are local verification builds.
 - Pages outside `MARKETING_ALLOWLIST` (or otherwise unmapped) fall back to the global OG image via `SeoMeta.astro`. Only `/404/` and `/contact-us-thanks/` do so today.
 - Capitalisation of any label derived from a URL segment goes through `prettifySegment` — add to its `ACRONYMS` map rather than hand-casing, or you get "Mqtt".
-- To inspect a card without the slow full build: run `pnpm dev`, read the page's `og:image` URL out of its HTML, and fetch it — Satori runs on demand, so you get the real card (the URL needs the dev trailing slash, see below).
+- To inspect a card without the slow full build: run `pnpm dev`, read the page's `og:image` URL out of its HTML, and fetch it as-is — Satori runs on demand, so you get the real card.
 - OG card URLs are clean `.png` paths in dev and production alike (Astro 7 fixed the old dev-server 404 on dynamic `.png` routes under `trailingSlash: 'always'`; the `devSafeOgImagePath()` workaround was removed with the Astro 7 upgrade). The global fallback path lives in `src/consts.ts` as `OG_FALLBACK`.
 
 **To add a new marketing landing to OG generation:** add its pathname to `MARKETING_ALLOWLIST` in `src/util/ogContext.ts` **and** a matching `PREFIX_RULES` entry in `marketing-meta.ts` (the build throws on an allowlisted pathname with no rule), then rebuild.
