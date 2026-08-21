@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import GithubSlugger from 'github-slugger';
+import type { HastPluginDefinition, HastVisitorContext } from 'satteri';
 
 const INCLUDES_ALIAS = '@includes/';
 const INCLUDES_DIR = path.resolve(process.cwd(), 'src/content/_includes');
@@ -26,31 +27,7 @@ interface IncludeState {
 	productId?: string;
 }
 
-/**
- * Sätteri's plugin types live in the `satteri` package, which is a transitive
- * dependency and therefore not importable under pnpm's strict layout, so the
- * few shapes we touch are declared structurally.
- */
-interface VisitorContext {
-	readonly data: Record<string, unknown>;
-	readonly fileURL: URL | undefined;
-}
-
-interface EsmNode {
-	parseExpression(): { body: unknown[] } | null;
-}
-
-interface JsxFlowNode {
-	name: string | null;
-}
-
-interface ImportDeclarationLike {
-	type: string;
-	source?: { value?: unknown };
-	specifiers?: { type: string; local?: { name?: string } }[];
-}
-
-function getState(ctx: VisitorContext): IncludeState {
+function getState(ctx: HastVisitorContext): IncludeState {
 	let state = ctx.data[STATE_KEY] as IncludeState | undefined;
 	if (!state) {
 		state = { imports: new Map(), headingCount: 0, insertions: [], patched: false };
@@ -90,7 +67,7 @@ function cleanHeadingText(raw: string): string {
 }
 
 /**
- * Extract headings from raw MDX include content, with two enhancements over a
+ * Extract headings from raw MDX include content, with three enhancements over a
  * simple line-by-line regex:
  *
  * 1. Markdown headings (### …) that appear inside JSX expression blocks { … }
@@ -100,6 +77,9 @@ function cleanHeadingText(raw: string): string {
  *    page's product matches the tag's `exclude`/`showFor` attributes. The tag's
  *    `id` prop is used directly as the slug (matching the id rendered by the
  *    component).
+ *
+ * 3. A heading opening a list item (`1. ### Title` inside <Steps>) is picked up —
+ *    it renders as a real heading, so it belongs in the TOC.
  *
  * Headings are returned in document order.
  */
@@ -164,11 +144,11 @@ function extractHeadingsFromMdx(content: string, productId: string): HeadingInfo
 		const levelMatch = attrs.match(/level=\{?(\d)\}?/);
 		const depth = levelMatch ? parseInt(levelMatch[1]) : 3;
 
-		// exclude="ce" → skip for product 'ce'
+		// exclude="mqtt-broker-pe" → skip for PE
 		const excludeMatch = attrs.match(/exclude="([^"]+)"/);
 		const excludeList = excludeMatch ? excludeMatch[1].split(',').map((s) => s.trim()) : [];
 
-		// showFor="pe,paas" → only include for those products
+		// showFor="mqtt-broker-pe" → only include for PE
 		const showForMatch = attrs.match(/showFor="([^"]+)"/);
 		const showForList = showForMatch ? showForMatch[1].split(',').map((s) => s.trim()) : null;
 
@@ -195,7 +175,7 @@ function extractHeadingsFromMdx(content: string, productId: string): HeadingInfo
 }
 
 function withIncludeHeadings(base: HeadingInfo[], insertions: IncludeState['insertions']): HeadingInfo[] {
-	if (insertions.length === 0) return base;
+	if (insertions.length === 0) return [...base];
 	const result = [...base];
 	// Insert in reverse order so earlier splice indices stay valid
 	for (let i = insertions.length - 1; i >= 0; i--) {
@@ -210,13 +190,30 @@ function withIncludeHeadings(base: HeadingInfo[], insertions: IncludeState['inse
  * accessor instead: `heading-ids` writes the page headings through the setter,
  * and whoever reads the list at the end of the compile gets it with the include
  * headings spliced in at the positions recorded during our pass.
+ *
+ * The full `hastPlugins` order, as of Starlight 0.41.7 / markdown-satteri 0.3.6:
+ * syntax highlighting → **our two plugins** → Starlight's (`satteriRtlCodeSupportPlugin`,
+ * then `satteriHeadingIdsPlugin` and `satteriAutolinkHeadingsPlugin`, appended by
+ * `applyStarlightMarkdownPlugins`) → Astro's image marker → Astro's `heading-ids`.
+ * So **two** heading-id collectors run after us, each assigning its own full list —
+ * hence the accessor rather than a read. Starlight's is registered only when
+ * `markdown.headingLinks` is on (the default); with it off there is just Astro's.
+ * Verify against the installed Starlight before trusting this list — nothing checks it.
  */
-function patchAstroHeadings(ctx: VisitorContext, state: IncludeState): void {
+function patchAstroHeadings(ctx: HastVisitorContext, state: IncludeState): void {
 	if (state.patched) return;
 	// Seed the bag rather than bailing when it is absent: Sätteri's `heading-ids`
 	// runs after us and writes into whatever `ctx.data.astro` holds, so creating it
 	// keeps the injection working instead of silently dropping every heading.
-	const astro = (ctx.data.astro ??= {}) as { headings?: HeadingInfo[] };
+	// `@astrojs/markdown-satteri` always seeds this before any plugin runs, so this is
+	// a belt-and-braces path — seed the whole shape, because Astro's own image plugins
+	// read `localImagePaths`/`remoteImagePaths` off it and a partial object breaks them.
+	const astro = (ctx.data.astro ??= {
+		frontmatter: {},
+		headings: [],
+		localImagePaths: new Set<string>(),
+		remoteImagePaths: new Set<string>(),
+	});
 	state.patched = true;
 
 	let pageHeadings: HeadingInfo[] = astro.headings ?? [];
@@ -244,14 +241,14 @@ function patchAstroHeadings(ctx: VisitorContext, state: IncludeState): void {
  * before it meets the first component — counts headings and records the positions.
  */
 export function satteriMdxIncludeHeadings() {
-	const collectImports = {
+	const collectImports: HastPluginDefinition = {
 		name: 'mdx-include-imports',
-		mdxjsEsm: (node: EsmNode, ctx: VisitorContext) => {
+		mdxjsEsm: (node, ctx) => {
 			const program = node.parseExpression();
 			if (!program) return;
 
 			const state = getState(ctx);
-			for (const statement of program.body as ImportDeclarationLike[]) {
+			for (const statement of program.body) {
 				if (statement.type !== 'ImportDeclaration') continue;
 				const source = statement.source?.value;
 				if (typeof source !== 'string' || !source.startsWith(INCLUDES_ALIAS) || !source.endsWith('.mdx')) {
@@ -267,19 +264,19 @@ export function satteriMdxIncludeHeadings() {
 		},
 	};
 
-	const collectHeadings = {
+	const collectHeadings: HastPluginDefinition = {
 		name: 'mdx-include-headings',
 		element: {
 			filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-			visit: (_node: unknown, ctx: VisitorContext) => {
+			visit: (_node, ctx) => {
 				getState(ctx).headingCount++;
 			},
 		},
 		// An empty filter matches every component, which is what we need: the local
 		// name an include is imported under differs from page to page.
 		mdxJsxFlowElement: {
-			filter: [] as string[],
-			visit: (node: JsxFlowNode, ctx: VisitorContext) => {
+			filter: [],
+			visit: (node, ctx) => {
 				const state = getState(ctx);
 				if (!node.name) return;
 				const filePath = state.imports.get(node.name);
@@ -303,6 +300,9 @@ export function satteriMdxIncludeHeadings() {
 					return;
 				}
 
+				// Deliberately unmemoised: every include is imported by at most two stubs (one CE,
+				// one PE), so a `(path, productId)` cache would be hit once each — and it would
+				// need explicit invalidation under dev watch to avoid serving stale headings.
 				const headings = extractHeadingsFromMdx(content, state.productId);
 				if (headings.length === 0) return;
 

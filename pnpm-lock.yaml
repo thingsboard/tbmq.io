@@ -12,14 +12,14 @@ importers:
         specifier: ^0.9.10
         version: 0.9.10(prettier-plugin-astro@0.14.1)(prettier@3.8.3)(typescript@5.6.2)
       '@astrojs/markdown-satteri':
-        specifier: 0.3.5
-        version: 0.3.5
+        specifier: 0.3.6
+        version: 0.3.6
       '@astrojs/sitemap':
         specifier: ^3.7.3
         version: 3.7.3
       '@astrojs/starlight':
         specifier: ^0.41.7
-        version: 0.41.7(@astrojs/markdown-remark@7.2.2)(astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))(typescript@5.6.2)
+        version: 0.41.7(astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))(typescript@5.6.2)
       '@expressive-code/plugin-collapsible-sections':
         specifier: ^0.44.1
         version: 0.44.1
@@ -55,8 +55,8 @@ importers:
         specifier: ^8.59.1
         version: 8.59.1(eslint@9.39.4(jiti@2.3.3))(typescript@5.6.2)
       astro:
-        specifier: ^7.2.2
-        version: 7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
+        specifier: 7.2.3
+        version: 7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
       astro-icon:
         specifier: ^1.1.5
         version: 1.1.5
@@ -99,6 +99,9 @@ importers:
       satori:
         specifier: ^0.26.0
         version: 0.26.0
+      satteri:
+        specifier: ^0.9.1
+        version: 0.9.5
       typescript:
         specifier: 5.6.2
         version: 5.6.2
@@ -209,6 +212,9 @@ packages:
   '@astrojs/internal-helpers@0.10.2':
     resolution: {integrity: sha512-yt7fMgPYqSM4Tmr+taTW6Per+hjJ8Pk6lA1PAcDyqzOt8HzJ6Kje5WzCxA2Sd+9wsUW7uhkLeoTMK0cXPwH9rQ==}
 
+  '@astrojs/internal-helpers@0.10.3':
+    resolution: {integrity: sha512-HIx/t1NywcqSTFaVwZh15n8JsC3YQdCaJZDaTS/aurYTEvNiWDXUGS3Z9uQX3bFB+B1pCgN/nljckkzYTpHZ2w==}
+
   '@astrojs/language-server@2.16.10':
     resolution: {integrity: sha512-87VQ/5GSdHlRnUA+hGuerYyIGAj+9RbZmATyuKLEUePinUXhQ5YkRnRrHhOD9sSi5JOErLjrLkHnfZFEvGrV8w==}
     hasBin: true
@@ -224,8 +230,8 @@ packages:
   '@astrojs/markdown-remark@7.2.2':
     resolution: {integrity: sha512-FGfmK84zSNcrsBd0dl1gXE9JvZYElp8EXQa2jpHVAxG4deGKAp43wspxFupjADJX7MSsMRHwYCnfT6EyVmgeFQ==}
 
-  '@astrojs/markdown-satteri@0.3.5':
-    resolution: {integrity: sha512-CvWVEFAbay7YO+i9SaqDJubipA5ckiVB89QWoMJ5XC0m5CtFg8JwZ7Kau6X9sYY7FZURH0w2l03ISH2jOS/RDQ==}
+  '@astrojs/markdown-satteri@0.3.6':
+    resolution: {integrity: sha512-kkeWP4Lh6Do/qz2R0DIAtPWCh6WPr1J4UrzDItVmHMK1HwyLHxG4JxM8uBNavhD7ivGOO9BUTsAP5D7ppa68CA==}
 
   '@astrojs/mdx@7.0.5':
     resolution: {integrity: sha512-wEM/HH1RiEntyPVagdiF+yArzfcYLKBB0C1RZspVidKZ97rRMbaqP1Nbl/GR0sJs8zwaceqxRymw8aOKKJRdYw==}
@@ -1167,6 +1173,9 @@ packages:
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
+  '@types/hast@3.0.5':
+    resolution: {integrity: sha512-rp/ezSWaD1m44dPKICGhiskI13nVr7qTloFwDa/IYkhhf5nzwP+zIQcIJh3WIFSBOy/H1PzB40jPjMDksN4F+g==}
+
   '@types/js-yaml@4.0.9':
     resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
 
@@ -1362,12 +1371,12 @@ packages:
   astro-icon@1.1.5:
     resolution: {integrity: sha512-CJYS5nWOw9jz4RpGWmzNQY7D0y2ZZacH7atL2K9DeJXJVaz7/5WrxeyIxO8KASk1jCM96Q4LjRx/F3R+InjJrw==}
 
-  astro@7.2.2:
-    resolution: {integrity: sha512-OvLWCpXpb43lVYcWzSBJ0sk44qcEYYRZCjadtalLfAwb2RaC3P/zT+blZykBw/o6suw6sQQkn00ugN36akD8Mw==}
+  astro@7.2.3:
+    resolution: {integrity: sha512-CDf55Cw2nOev5BAM72yn7JQMpK/ByTY5tLSybbHbtZNSiMKk0OeyvCjA2foEUXfHXbATpHQQPBgfuXL8PdofcA==}
     engines: {node: '>=22.12.0', npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
     peerDependencies:
-      '@astrojs/markdown-remark': 7.2.2
+      '@astrojs/markdown-remark': 7.2.3
     peerDependenciesMeta:
       '@astrojs/markdown-remark':
         optional: true
@@ -2994,14 +3003,18 @@ packages:
     resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
     engines: {node: '>=20.18.1'}
 
+  undici@8.10.0:
+    resolution: {integrity: sha512-HvltHd7avK13QIw/oLe4qoOLyoVSoafqJ2jYOrtMRBkbYT31eiBQ8O0ehRKZiEZCMEyLFQNIADpgCWC5fALvYQ==}
+    engines: {node: '>=22.19.0'}
+
   unicode-trie@2.0.0:
     resolution: {integrity: sha512-x7bc76x0bm4prf1VLg79uhAzKw8DVboClSN5VxJuQ+LKDOVEW9CdH+VY7SP+vX7xCYQqzzgQpFqz15zeLvAtZQ==}
 
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
 
-  unifont@0.7.4:
-    resolution: {integrity: sha512-oHeis4/xl42HUIeHuNZRGEvxj5AaIKR+bHPNegRq5LV1gdc3jundpONbjglKpihmJf+dswygdMJn3eftGIMemg==}
+  unifont@0.7.5:
+    resolution: {integrity: sha512-ULe/Cs+ZIsq+dcFofNkhqielCrUJnb5mr+Yc4EBM2VlL+6OZR6+cjtI2mT1bJvRBrVncqHAbLURxmPLcCXzWMg==}
 
   unist-util-find-after@5.0.0:
     resolution: {integrity: sha512-amQa0Ep2m6hE2g72AugUItjbuM8X8cGQnFoHk0pGfrFeT9GZhzN5SW8nRsiGKK7Aif4CrACPENkA6P/Lw6fHGQ==}
@@ -3440,10 +3453,21 @@ snapshots:
 
   '@astrojs/internal-helpers@0.10.2':
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       js-yaml: 4.3.1
       picomatch: 4.0.4
+      retext-smartypants: 6.2.0
+      shiki: 4.0.2
+      smol-toml: 1.6.1
+      unified: 11.0.5
+
+  '@astrojs/internal-helpers@0.10.3':
+    dependencies:
+      '@types/hast': 3.0.5
+      '@types/mdast': 4.0.4
+      js-yaml: 4.3.1
+      picomatch: 4.0.5
       retext-smartypants: 6.2.0
       shiki: 4.0.2
       smol-toml: 1.6.1
@@ -3497,21 +3521,21 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/markdown-satteri@0.3.5':
+  '@astrojs/markdown-satteri@0.3.6':
     dependencies:
-      '@astrojs/internal-helpers': 0.10.2
+      '@astrojs/internal-helpers': 0.10.3
       '@astrojs/prism': 4.0.2
       github-slugger: 2.0.0
       hast-util-from-html: 2.0.3
       satteri: 0.9.5
 
-  '@astrojs/mdx@7.0.5(@astrojs/markdown-satteri@0.3.5)(astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))':
+  '@astrojs/mdx@7.0.5(@astrojs/markdown-satteri@0.3.6)(astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))':
     dependencies:
       '@astrojs/internal-helpers': 0.10.2
       '@astrojs/markdown-remark': 7.2.2
       '@mdx-js/mdx': 3.1.1
       acorn: 8.16.0
-      astro: 7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
+      astro: 7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
       es-module-lexer: 2.1.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
@@ -3523,7 +3547,7 @@ snapshots:
       unist-util-visit: 5.1.0
       vfile: 6.0.3
     optionalDependencies:
-      '@astrojs/markdown-satteri': 0.3.5
+      '@astrojs/markdown-satteri': 0.3.6
     transitivePeerDependencies:
       - supports-color
 
@@ -3537,17 +3561,17 @@ snapshots:
       stream-replace-string: 2.0.0
       zod: 4.3.6
 
-  '@astrojs/starlight@0.41.7(@astrojs/markdown-remark@7.2.2)(astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))(typescript@5.6.2)':
+  '@astrojs/starlight@0.41.7(astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))(typescript@5.6.2)':
     dependencies:
-      '@astrojs/markdown-satteri': 0.3.5
-      '@astrojs/mdx': 7.0.5(@astrojs/markdown-satteri@0.3.5)(astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))
+      '@astrojs/markdown-satteri': 0.3.6
+      '@astrojs/mdx': 7.0.5(@astrojs/markdown-satteri@0.3.6)(astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))
       '@astrojs/sitemap': 3.7.3
       '@pagefind/default-ui': 1.5.2
       '@types/hast': 3.0.4
       '@types/js-yaml': 4.0.9
       '@types/mdast': 4.0.4
-      astro: 7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
-      astro-expressive-code: 0.44.1(astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))
+      astro: 7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
+      astro-expressive-code: 0.44.1(astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))
       bcp-47: 2.1.0
       hast-util-from-html: 2.0.3
       hast-util-select: 6.0.4
@@ -3569,8 +3593,6 @@ snapshots:
       unified: 11.0.5
       unist-util-visit: 5.1.0
       vfile: 6.0.3
-    optionalDependencies:
-      '@astrojs/markdown-remark': 7.2.2
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -4006,7 +4028,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdx': 2.0.13
       acorn: 8.16.0
       collapse-white-space: 2.1.0
@@ -4241,7 +4263,7 @@ snapshots:
       '@shikijs/primitive': 4.0.2
       '@shikijs/types': 4.0.2
       '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-to-html: 9.0.5
 
   '@shikijs/engine-javascript@4.0.2':
@@ -4263,7 +4285,7 @@ snapshots:
     dependencies:
       '@shikijs/types': 4.0.2
       '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   '@shikijs/themes@4.0.2':
     dependencies:
@@ -4272,7 +4294,7 @@ snapshots:
   '@shikijs/types@4.0.2':
     dependencies:
       '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   '@shikijs/vscode-textmate@10.0.2': {}
 
@@ -4299,6 +4321,10 @@ snapshots:
   '@types/estree@1.0.8': {}
 
   '@types/hast@3.0.4':
+    dependencies:
+      '@types/unist': 3.0.3
+
+  '@types/hast@3.0.5':
     dependencies:
       '@types/unist': 3.0.3
 
@@ -4546,9 +4572,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  astro-expressive-code@0.44.1(astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)):
+  astro-expressive-code@0.44.1(astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)):
     dependencies:
-      astro: 7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
+      astro: 7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
       rehype-expressive-code: 0.44.1
       url-extras: 0.1.0
 
@@ -4560,11 +4586,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  astro@7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3):
+  astro@7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3):
     dependencies:
       '@astrojs/compiler-rs': 0.3.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)
-      '@astrojs/internal-helpers': 0.10.2
-      '@astrojs/markdown-satteri': 0.3.5
+      '@astrojs/internal-helpers': 0.10.3
+      '@astrojs/markdown-satteri': 0.3.6
       '@astrojs/telemetry': 3.3.3
       '@capsizecss/unpack': 4.0.0
       '@clack/prompts': 1.2.0
@@ -4599,16 +4625,16 @@ snapshots:
       p-queue: 9.2.0
       package-manager-detector: 1.6.0
       piccolore: 0.1.3
-      picomatch: 4.0.4
+      picomatch: 4.0.5
       semver: 7.7.4
       shiki: 4.0.2
       smol-toml: 1.6.1
       svgo: 4.0.1
       tinyclip: 0.1.12
       tinyexec: 1.1.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       ultrahtml: 1.6.0
-      unifont: 0.7.4
+      unifont: 0.7.5
       unstorage: 1.17.5
       vite: 8.2.1(@types/node@24.12.2)(esbuild@0.28.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3)
       vitefu: 1.1.3(vite@8.2.1(@types/node@24.12.2)(esbuild@0.28.2)(jiti@2.3.3)(sass@1.99.0)(yaml@2.8.3))
@@ -4616,7 +4642,6 @@ snapshots:
       yargs-parser: 22.0.0
       zod: 4.3.6
     optionalDependencies:
-      '@astrojs/markdown-remark': 7.2.2
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -5238,12 +5263,12 @@ snapshots:
 
   hast-util-embedded@3.0.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-is-element: 3.0.0
 
   hast-util-format@1.1.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-embedded: 3.0.0
       hast-util-minify-whitespace: 1.0.1
       hast-util-phrasing: 3.0.1
@@ -5262,7 +5287,7 @@ snapshots:
 
   hast-util-from-parse5@8.0.3:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       devlop: 1.1.0
       hastscript: 9.0.1
@@ -5273,19 +5298,19 @@ snapshots:
 
   hast-util-has-property@3.0.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   hast-util-is-body-ok-link@3.0.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   hast-util-is-element@3.0.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   hast-util-minify-whitespace@1.0.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-embedded: 3.0.0
       hast-util-is-element: 3.0.0
       hast-util-whitespace: 3.0.0
@@ -5293,11 +5318,11 @@ snapshots:
 
   hast-util-parse-selector@4.0.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   hast-util-phrasing@3.0.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-embedded: 3.0.0
       hast-util-has-property: 3.0.0
       hast-util-is-body-ok-link: 3.0.1
@@ -5305,7 +5330,7 @@ snapshots:
 
   hast-util-raw@9.1.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       '@ungap/structured-clone': 1.3.0
       hast-util-from-parse5: 8.0.3
@@ -5341,7 +5366,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       comma-separated-tokens: 2.0.3
       devlop: 1.1.0
       estree-util-attach-comments: 3.0.0
@@ -5360,7 +5385,7 @@ snapshots:
 
   hast-util-to-html@9.0.5:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       ccount: 2.0.1
       comma-separated-tokens: 2.0.3
@@ -5375,7 +5400,7 @@ snapshots:
   hast-util-to-jsx-runtime@2.3.6:
     dependencies:
       '@types/estree': 1.0.8
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       comma-separated-tokens: 2.0.3
       devlop: 1.1.0
@@ -5394,7 +5419,7 @@ snapshots:
 
   hast-util-to-parse5@8.0.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       comma-separated-tokens: 2.0.3
       devlop: 1.1.0
       property-information: 7.1.0
@@ -5408,14 +5433,14 @@ snapshots:
 
   hast-util-to-text@4.0.2:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       hast-util-is-element: 3.0.0
       unist-util-find-after: 5.0.0
 
   hast-util-whitespace@3.0.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   hastscript@9.0.1:
     dependencies:
@@ -5724,7 +5749,7 @@ snapshots:
   mdast-util-mdx-expression@2.0.1:
     dependencies:
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
@@ -5735,7 +5760,7 @@ snapshots:
   mdast-util-mdx-jsx@3.2.0:
     dependencies:
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       '@types/unist': 3.0.3
       ccount: 2.0.1
@@ -5762,7 +5787,7 @@ snapshots:
   mdast-util-mdxjs-esm@2.0.1:
     dependencies:
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
@@ -5777,7 +5802,7 @@ snapshots:
 
   mdast-util-to-hast@13.2.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       '@ungap/structured-clone': 1.3.0
       devlop: 1.1.0
@@ -6393,27 +6418,27 @@ snapshots:
 
   rehype-parse@9.0.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-from-html: 2.0.3
       unified: 11.0.5
 
   rehype-raw@7.0.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-raw: 9.1.0
       vfile: 6.0.3
 
   rehype-recma@1.0.0:
     dependencies:
       '@types/estree': 1.0.8
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-to-estree: 3.1.3
     transitivePeerDependencies:
       - supports-color
 
   rehype-stringify@10.0.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       hast-util-to-html: 9.0.5
       unified: 11.0.5
 
@@ -6462,7 +6487,7 @@ snapshots:
 
   remark-rehype@11.1.2:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       mdast-util-to-hast: 13.2.1
       unified: 11.0.5
@@ -6579,7 +6604,7 @@ snapshots:
   satteri@0.9.5:
     dependencies:
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       '@types/unist': 3.0.3
     optionalDependencies:
@@ -6643,7 +6668,7 @@ snapshots:
       '@shikijs/themes': 4.0.2
       '@shikijs/types': 4.0.2
       '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
 
   sisteransi@1.0.5: {}
 
@@ -6816,6 +6841,8 @@ snapshots:
 
   undici@7.25.0: {}
 
+  undici@8.10.0: {}
+
   unicode-trie@2.0.0:
     dependencies:
       pako: 0.2.9
@@ -6831,11 +6858,11 @@ snapshots:
       trough: 2.2.0
       vfile: 6.0.3
 
-  unifont@0.7.4:
+  unifont@0.7.5:
     dependencies:
       css-tree: 3.2.1
-      ofetch: 1.5.1
       ohash: 2.0.11
+      undici: 8.10.0
 
   unist-util-find-after@5.0.0:
     dependencies:

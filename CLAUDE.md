@@ -143,7 +143,14 @@ The file holds exactly three constants: `TBMQ_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`
 
 ### Custom Plugins
 
-Markdown runs on **Sätteri**, Astro 7's Rust pipeline (`markdown.processor` in `astro.config.ts`), not remark/rehype. Sätteri plugins are not unified transformers: each declares visitor subscriptions (`element`, `mdxJsxFlowElement`, `mdxjsEsm`, …) with a `filter` array — an **empty** filter matches every node of that type — and gets its own document-order pass. Ordering matters, and there is more in the chain than our own plugins. The final `hastPlugins` order is: syntax highlighting → **our plugins** → Starlight's (RTL code support, its own `satteriHeadingIdsPlugin`, then `satteriAutolinkHeadingsPlugin`, appended by `applyStarlightMarkdownPlugins`) → Astro's image marker → Astro's `heading-ids`. So **two** separate heading-id collectors run after us, each accumulating its own full list and assigning it to `astro.headings`; the last write wins. Anything needing the finished heading list must therefore hook `ctx.data.astro.headings` rather than read it, and must not assume it is the only writer or that its own count matches a collector's. Per-document state belongs on `ctx.data` (fresh per page); the plugin objects themselves are reused across pages.
+Markdown runs on **Sätteri**, Astro 7's Rust pipeline (`markdown.processor` in `astro.config.ts`), not remark/rehype. Sätteri plugins are not unified transformers: each declares visitor subscriptions (`element`, `mdxJsxFlowElement`, `mdxjsEsm`, …) with a `filter` array — an **empty** filter matches every node of that type — and gets its own document-order pass.
+
+Two invariants matter, and neither is obvious from a plugin's signature:
+
+- **Our plugins are not the last writer of `astro.headings`.** Starlight and Astro each append their own heading-id collector *after* every user plugin, and each assigns a full list, so the last write wins. Anything needing the finished heading list must hook `ctx.data.astro.headings` rather than read it, and must not assume its own count matches a collector's. The exact plugin order is recorded next to `patchAstroHeadings` in `config/plugins/satteri-mdx-include-headings.ts` — that is where it can be checked against the installed Starlight, so it lives there rather than here.
+- **Per-document state belongs on `ctx.data`** (fresh per page); the plugin objects themselves are reused across pages.
+
+Plugin and visitor types come from the `satteri` package (an explicit devDependency for exactly this reason) — don't re-declare them structurally, or a shape change upstream turns into a silently empty TOC instead of a type error.
 
 - `config/plugins/satteri-mdx-include-headings.ts` — extracts headings from `_includes` MDX files and injects them into the page TOC; supports `<ConditionalHeading>` for product-conditional headings
 - `config/plugins/expressive-code-max-lines.mjs` — powers the `maxLines`/`collapsible` code-block meta options
@@ -160,7 +167,7 @@ Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-
 >link text</a>
 ```
 
-— reads as a Markdown blockquote to Sätteri, which abandons the tag and fails the build with `mdx-jsx:unexpected-character`. Keep the `>` on the last attribute's line (`rel="…">link text</a>`). Multi-line attributes are fine; only the leading bracket breaks. The old JS pipeline silently tolerated it, so this pattern exists in older content — `pnpm lint:toc` and any build will catch it.
+— reads as a Markdown blockquote to Sätteri, which abandons the tag and fails the build with `mdx-jsx:unexpected-character`. Keep the `>` on the last attribute's line (`rel="…">link text</a>`). Multi-line attributes are fine; only the leading bracket breaks. The old JS pipeline silently tolerated it, so this pattern exists in older content — any build will catch it (`lint:toc` cannot: it runs against a `dist/`, which a failed build never produces).
 
 `pnpm lint:toc` guards the include-TOC injection: it asserts against a built `dist/` that known `_includes` headings (and a PE-only `<ConditionalHeading>`) actually reached the rendered TOC. That failure mode is invisible to every other check — `lint:linkcheck` only validates fragments that exist, so a TOC that vanished entirely produces no links and no errors.
 
