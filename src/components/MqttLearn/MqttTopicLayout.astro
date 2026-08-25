@@ -244,15 +244,20 @@ const jsonLd = marketingJsonLd({
 	.learn-hero__dot {
 		color: $color-border;
 	}
+	// The measure is wide enough that the longest topic title (~50 chars) lands
+	// on two lines and a short one ("What Is an MQTT Broker?") stays on one;
+	// `balance` keeps a two-line title from splitting 45 chars + 1 word.
 	.learn-hero__title {
 		font-size: 40px;
 		line-height: 1.15;
 		font-weight: $font-weight-semibold;
 		color: $color-text-primary;
 		margin: 0;
-		max-width: 20ch;
+		max-width: 26ch;
+		text-wrap: balance;
 		@include media-up(md) {
 			font-size: 46px;
+			max-width: 34ch;
 		}
 	}
 
