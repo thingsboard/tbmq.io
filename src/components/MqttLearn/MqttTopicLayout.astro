@@ -76,10 +76,6 @@ const jsonLd = marketingJsonLd({
 
 		<div class="learn-layout">
 			<aside class="learn-side">
-				<nav class="learn-toc" aria-label="On this page">
-					{/* Populated client-side by the scrollspy script (Task 6). Empty + hidden without JS. */}
-				</nav>
-				<div class="learn-side__divider" aria-hidden="true"></div>
 				<TopicSeriesNav slug={slug} />
 			</aside>
 
@@ -91,6 +87,9 @@ const jsonLd = marketingJsonLd({
 			</div>
 
 			<div class="learn-rail">
+				<nav class="learn-toc" aria-label="On this page">
+					{/* Populated client-side by the scrollspy script. Empty + hidden without JS. */}
+				</nav>
 				<HowTbmqBlock text={topic.tbmqTieIn} />
 			</div>
 		</div>
@@ -103,8 +102,8 @@ const jsonLd = marketingJsonLd({
 </BaseLayout>
 
 <script>
-	// Build the left TOC rail from the page's body H2s and highlight the active
-	// section on scroll. Progressive enhancement: no JS → the rail stays empty
+	// Build the right-rail TOC from the page's body H2s and highlight the active
+	// section on scroll. Progressive enhancement: no JS → the nav stays empty
 	// (and is display:none < lg anyway), content unaffected.
 	function buildLearnToc() {
 		const toc = document.querySelector('.learn-toc') as HTMLElement | null;
@@ -257,7 +256,7 @@ const jsonLd = marketingJsonLd({
 		}
 	}
 
-	// 3-column body: TOC · content · TBMQ rail. Collapses to 1 column < lg.
+	// 3-column body: series nav · content · TOC + TBMQ rail. Collapses to 1 column < lg.
 	.learn-layout {
 		max-width: 1394px;
 		margin: 0 auto;
@@ -281,9 +280,8 @@ const jsonLd = marketingJsonLd({
 			margin: 0;
 		}
 	}
-	// Left column: the scrollspy TOC plus the in-category series nav below it.
-	// Hidden below lg (like the TOC always was), so the block never shows on the
-	// single-column mobile layout.
+	// Left column: the in-category series nav. Hidden below lg, so the block
+	// never shows on the single-column mobile layout.
 	.learn-side {
 		display: none;
 		@include media-up(lg) {
@@ -293,27 +291,28 @@ const jsonLd = marketingJsonLd({
 			align-self: start;
 		}
 	}
-	// Rule between the TOC and the series nav — only when the JS-built TOC has
-	// content, so the series nav sits flush at the top when there is no TOC.
-	.learn-side__divider {
-		display: none;
-		height: 1px;
-		background: $color-border;
-		margin: $spacing-6 0;
-	}
-	.learn-toc[data-ready='true'] ~ .learn-side__divider {
-		display: block;
-	}
+	// Right column: the scrollspy TOC above the TBMQ tie-in card.
 	.learn-rail {
 		max-width: 760px;
 		margin: 0 auto;
 		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: $spacing-6;
 		@include media-up(lg) {
 			max-width: none;
 			margin: 0;
 			position: sticky;
 			top: calc(#{$header-height} + #{$spacing-6});
 			align-self: start;
+		}
+	}
+	// The rail itself still renders on mobile (for the TBMQ card), but a TOC at
+	// the very bottom of a single-column page is useless — keep it lg-only.
+	.learn-toc {
+		display: none;
+		@include media-up(lg) {
+			display: block;
 		}
 	}
 	.learn-foot {
