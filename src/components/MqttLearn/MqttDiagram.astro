@@ -206,6 +206,10 @@ const { caption, label } = Astro.props;
 
 	.mqtt-diagram-modal {
 		border: none;
+		// The `* { margin: 0 }` reset in _base.scss outranks the UA's
+		// `dialog { margin: auto }` — the rule that actually centres a modal dialog
+		// inside its `inset: 0` box. Without this the modal pins to the top-left.
+		margin: auto;
 		padding: 0;
 		max-width: 96vw;
 		max-height: 94vh;
@@ -227,10 +231,18 @@ const { caption, label } = Astro.props;
 		overflow: auto;
 	}
 	dialog.mqtt-diagram-modal .mqtt-diagram-modal__body > svg {
-		width: min(1080px, 90vw);
+		// Track the width the modal actually offers — its own 96vw cap less the
+		// inner's 28px side padding — not a raw vw fraction. Any figure looser than
+		// that spills horizontally on viewports under ~1400px and trips the
+		// `overflow: auto` scrollbar on __body.
+		width: min(1400px, calc(96vw - 60px));
 		max-width: none;
 		min-width: 0;
 		height: auto;
+		// Diagram viewBoxes are 680 wide and up to 348 tall, so the tallest one at
+		// 1400px would run past a short viewport. Cap the height and let the viewBox
+		// ratio pull the width back down instead of handing the reader a scrollbar.
+		max-height: calc(94vh - 108px);
 	}
 	.mqtt-diagram-modal__close {
 		position: absolute;
