@@ -123,18 +123,6 @@ mobile-starlight-toc a[aria-current='true'] {
 	color: var(--color-brand);
 }
 
-// Note asides: Starlight paints them with its blue ramp; repaint in brand
-// green. Starlight's own green ramp is a yellowish hue 101, visibly
-// off-brand, so the trio derives from the brand tokens instead (the -rgb
-// token flips to the dark-mode mint, keeping the fill legible in both
-// themes). Deliberately note-only: tip keeps Starlight's purple so the two
-// variants stay distinguishable, and caution/danger keep orange/red.
-.starlight-aside--note {
-	--sl-color-asides-text-accent: var(--color-brand);
-	--sl-color-asides-border: var(--color-brand);
-	background-color: rgba(var(--color-brand-rgb), 0.12);
-}
-
 // <Tabs> underline: the selected tab's 2px bottom border is the blue
 // --sl-tab-color-border. Two components render tabs — Starlight's own
 // user-component and our fork (src/components/Tabs.astro) — both as
