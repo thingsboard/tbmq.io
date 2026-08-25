@@ -122,3 +122,26 @@ starlight-toc a[aria-current='true'],
 mobile-starlight-toc a[aria-current='true'] {
 	color: var(--color-brand);
 }
+
+// Note + tip asides: Starlight paints them with its blue and purple ramps.
+// Repaint both in brand green — Starlight's own green ramp is a yellowish
+// hue 101, visibly off-brand, so the trio derives from the brand tokens
+// instead (the -rgb token flips to the dark-mode mint, keeping the fill
+// legible in both themes). The two variants keep their distinct icons;
+// caution/danger keep their semantic orange/red.
+.starlight-aside--note,
+.starlight-aside--tip {
+	--sl-color-asides-text-accent: var(--color-brand);
+	--sl-color-asides-border: var(--color-brand);
+	background-color: rgba(var(--color-brand-rgb), 0.12);
+}
+
+// <Tabs> underline: the selected tab's 2px bottom border is the blue
+// --sl-tab-color-border. Two components render tabs — Starlight's own
+// user-component and our fork (src/components/Tabs.astro) — both as
+// <starlight-tabs>, so one rule here repaints both and the fork stays
+// diff-clean against upstream. The .tablist-wrapper hop keeps specificity
+// above their scoped `.tab :where()[role='tab'][aria-selected='true']`.
+starlight-tabs .tablist-wrapper [role='tab'][aria-selected='true'] {
+	--sl-tab-color-border: var(--color-brand);
+}
