@@ -35,14 +35,6 @@ This guide covers setting up TBMQ in cluster mode using Minikube.
 <Code code={cloneCmdPe} lang="bash" />
 </ShowFor>
 
-## Installation
-
-Run the installation script:
-
-```bash
-./k8s-install-tbmq.sh
-```
-
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
 
@@ -55,7 +47,17 @@ choose a pay-as-you-go subscription or a perpetual license, and use the calculat
 <Aside>
   Throughout this guide, the license key is referred to as **YOUR_LICENSE_KEY_HERE**.
 </Aside>
+</ShowFor>
 
+## Installation
+
+Run the installation script:
+
+```bash
+./k8s-install-tbmq.sh
+```
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="configure-the-license-key" showFor="mqtt-broker-pe">Configure the license key</ConditionalHeading>
 
 Create a Kubernetes secret with your license key:
