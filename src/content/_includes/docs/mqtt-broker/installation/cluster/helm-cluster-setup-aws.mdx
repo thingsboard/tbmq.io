@@ -4,6 +4,7 @@ import { Products } from '~/models/site.models';
 import ShowFor from '~/components/ShowFor.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { TBMQ_BRANCH, TBMQ_PE_VER } from '~/data/versions';
+import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
 
 export const clusterYmlCmd = `curl -o cluster.yml https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/k8s/helm/aws/cluster.yml`;
 
@@ -41,6 +42,18 @@ To deploy a TBMQ cluster using Helm on EKS, you need the following tools install
 Afterward, configure your Access Key, Secret Key, and default region.
 To get Access and Secret keys, follow <a href="https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html" target="_blank" rel="noopener noreferrer">this guide</a>.
 The default region should be the ID of the region where you'd like to deploy the cluster.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
+
+Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the
+<a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>,
+choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
+
+<LicenseTrial />
+
+You will apply the key later, in [Configure license and broker images](#configure-license-and-broker-images).
+</ShowFor>
 
 ## Configure your Kubernetes environment
 

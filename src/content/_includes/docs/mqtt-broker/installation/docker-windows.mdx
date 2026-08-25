@@ -4,6 +4,7 @@ import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 import { TBMQ_VER, TBMQ_BRANCH } from '~/data/versions';
+import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
 
 export const installCmdCe = `Invoke-WebRequest -Uri "https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/msa/tbmq/configs/windows/tbmq-install-and-run.ps1" \`
 -OutFile ".\\tbmq-install-and-run.ps1"; .\\tbmq-install-and-run.ps1`;
@@ -149,8 +150,10 @@ For cluster installation, see the <DocLink product={props.product} path="install
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
 
-Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the <a href="/pricing/?section=tbmq-options" target="_blank" rel="noopener noreferrer">Pricing page</a>,
+Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the <a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>,
 choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
+
+<LicenseTrial />
 
 <Aside>
   Throughout this guide, the license key is referred to as **YOUR_LICENSE_KEY_HERE**.

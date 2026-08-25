@@ -1,7 +1,13 @@
 import InstallationCardGrid from '~/components/InstallationCardGrid.astro';
 import Tabs    from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
+import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<LicenseTrial />
+</ShowFor>
 
 <Tabs defaultTab="on-premises" urlParam="installationType">
   <TabItem label="Live Demo" id="live-demo" icon="tabler:device-analytics">
