@@ -280,7 +280,12 @@ const ariaCurrent = (item: NavItem): 'page' | 'true' | undefined =>
 										<div class="column">
 											{group.name && <p class="group-name">{group.name}</p>}
 											{group.items.map((item: SubMenuItem) => (
-												<a class={item.linkClass} href={item.href}>
+												<a
+													class={item.linkClass}
+													href={item.href}
+													target={item.target}
+													rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
+												>
 													{item.icon && (
 														<NavIcon src={item.icon} size={24} alt={`${item.heading} icon`} />
 													)}

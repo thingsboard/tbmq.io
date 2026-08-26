@@ -39,7 +39,6 @@ interface PrefixRule {
 const PREFIX_RULES: PrefixRule[] = [
 	{ prefix: '/pricing/', section: { sectionName: 'Pricing' } },
 	{ prefix: '/community/', section: { sectionName: 'Community' } },
-	{ prefix: '/company/', section: { sectionName: 'Company' } },
 	{ prefix: '/contact-us/', section: { sectionName: 'Contact' } },
 	{ prefix: '/cookie-policy/', section: { sectionName: 'Legal' } },
 	{ prefix: '/installations/', section: { sectionName: 'Installations' } },

@@ -20,6 +20,7 @@ export interface SubMenuItem {
 	heading: string;
 	description?: string;
 	linkClass?: string;
+	target?: string;
 }
 
 export interface SubMenuGroup {
@@ -53,10 +54,11 @@ export const companySubmenu: SubMenu = {
 		{
 			items: [
 				{
-					href: '/company/',
+					href: 'https://thingsboard.io/company/',
 					icon: '/src/assets/images/landings/nav/about-s-icon.svg',
 					heading: 'Our company',
 					linkClass: 'small-link',
+					target: '_blank',
 				},
 				{
 					href: '/contact-us/',

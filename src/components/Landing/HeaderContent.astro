@@ -440,7 +440,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 	// Marketing pages with an always-solid header — persistent box-shadow.
 	#contact-us,
-	#company,
 	#installations,
 	#performance,
 	#live-demo,
@@ -507,7 +506,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 	// Non-transparent header — hide the divider and style the buttons.
 	#contact-us,
-	#company,
 	#installations,
 	#performance,
 	#live-demo,
@@ -620,7 +618,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	#common,
 	#mqtt-broker,
 	#contact-us,
-	#company,
 	#installations,
 	#performance,
 	#live-demo,
@@ -682,7 +679,6 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	#mqtt-broker,
 	#pricing,
 	#common,
-	#company,
 	#installations,
 	#performance,
 	#live-demo,
@@ -752,7 +748,7 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 	// BaseLayout's `forceLightTheme` (SSR `data-theme="light"`, re-pinned before
 	// paint by ThemeProvider's force-light branch, theme toggle not rendered),
 	// so `html[data-theme='dark']` can never co-occur with these ids.
-	$no-dark-pages: '#mqtt-broker, #company, #installations, #performance, #live-demo, #product, #mqtt-learn';
+	$no-dark-pages: '#mqtt-broker, #installations, #performance, #live-demo, #product, #mqtt-learn';
 
 	// Dark-theme tinting for the menu's dropdown content. Only applies on
 	// pages that support dark theme — pages in $no-dark-pages above are
