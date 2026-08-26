@@ -39,8 +39,6 @@ Before proceeding, ensure you have an active TBMQ license. If you don't have one
 <a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>,
 choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
 
-<LicenseTrial />
-
 You will apply the key later, in [Configure license and broker images](#configure-license-and-broker-images).
 </ShowFor>
 
@@ -211,6 +209,8 @@ section of the chart documentation.
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 
 <ConditionalHeading level={3} id="configure-license-and-broker-images" showFor="mqtt-broker-pe">Configure license and broker images</ConditionalHeading>
+
+<LicenseTrial />
 
 The chart defaults point at the open-source broker and Integration Executor images. Switch both to the PE variants
 and provide a license.
