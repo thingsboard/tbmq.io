@@ -195,6 +195,14 @@ const features = [
 	.feature-row {
 		padding: 40px $spacing-6;
 
+		// FeatureBlockSection carries its own 5rem vertical padding for
+		// standalone use; in this stacked list the rows provide the rhythm,
+		// so strip the inner vertical padding at every width — it used to be
+		// stripped only ≥1500px, tripling the row gaps on smaller screens.
+		:global(.main-div) {
+			padding-block: 0;
+		}
+
 		@media screen and (min-width: 1500px) {
 			:global(.main-div) {
 				max-width: 1400px;
