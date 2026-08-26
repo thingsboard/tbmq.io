@@ -16,8 +16,10 @@ const stats: Stat[] = [
 
 <section id="product-hero">
 	<div class="inner">
-		<p class="eyebrow">Why TBMQ</p>
-		<h1 class="headline">The MQTT broker built for real IoT traffic</h1>
+		<h1 class="hero-title">
+			<span class="eyebrow">Why TBMQ</span>
+			<span class="headline">The MQTT broker built for real IoT traffic</span>
+		</h1>
 		<p class="subtitle">
 			TBMQ is an open-source MQTT broker built by the ThingsBoard team for large-scale IoT deployments. It supports MQTT
 			5.0, 3.1.1 and 3.1, scales to 100 million concurrent connections across a masterless cluster, and uses Apache
@@ -101,16 +103,23 @@ const stats: Stat[] = [
 		text-align: center;
 	}
 
+	.hero-title {
+		margin: 0;
+	}
+
 	.eyebrow {
+		display: block;
 		text-transform: uppercase;
 		letter-spacing: 0.16em;
 		font-size: 14px;
+		line-height: $line-height-base;
 		font-weight: $font-weight-semibold;
 		color: $color-pe-hover;
 		margin: 0 0 20px;
 	}
 
 	.headline {
+		display: block;
 		@include page-title;
 		color: $color-white;
 		margin: 0 0 24px;
