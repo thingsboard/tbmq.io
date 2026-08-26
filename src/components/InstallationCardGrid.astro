@@ -197,8 +197,10 @@ const processedItems = items.map((item) => {
 		color: inherit;
 	}
 
-	/* Icon area */
+	/* Icon area. Icons drawn with `fill="currentColor"` (the TBMQ mark) pick up the
+	   brand green; third-party logos carry their own fills and ignore this. */
 	.ic-card__icon {
+		color: var(--color-brand);
 		width: auto;
 		height: 2.25rem;
 		display: flex;
