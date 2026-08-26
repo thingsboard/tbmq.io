@@ -1,4 +1,4 @@
-# TBMQ Website & Docs
+# TBMQ Docs
 
 Source for [tbmq.io](https://tbmq.io/) — the website and documentation for **TBMQ**, the open-source MQTT broker by ThingsBoard. Built with [Astro](https://astro.build/) and [Starlight](https://starlight.astro.build/).
 
