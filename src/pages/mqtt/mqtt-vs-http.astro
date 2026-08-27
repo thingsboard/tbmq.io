@@ -1,0 +1,147 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Is MQTT better than HTTP for IoT?',
+		a: 'For frequent, small, bidirectional device messaging, usually yes — MQTT’s persistent connection and pub/sub model push updates instantly with far less overhead than repeated HTTP requests. HTTP remains a fine choice for occasional request/response calls and REST APIs.',
+	},
+	{
+		q: 'Does MQTT use HTTP?',
+		a: 'No. MQTT is its own protocol that runs directly over TCP (and can be tunneled over WebSocket). It does not sit on top of HTTP, though MQTT over WebSocket does start with an HTTP upgrade handshake.',
+	},
+	{
+		q: 'Why is MQTT more efficient than HTTP?',
+		a: 'MQTT has a tiny fixed header (as little as 2 bytes) and reuses one long-lived connection, so it avoids HTTP’s larger headers and the cost of opening a connection per request. Over many small messages that overhead adds up.',
+	},
+	{
+		q: 'Can MQTT and HTTP be used together?',
+		a: 'Yes, and they often are: devices talk to the broker over MQTT for real-time messaging, while dashboards and integrations use HTTP/REST APIs to read state or configure the system.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-vs-http" faq={faq}>
+	<p>
+		HTTP powers the web; MQTT powers device fleets. Both move data between machines, but they were designed for opposite
+		situations — one for occasional page and API requests, the other for a constant stream of small messages to and from
+		many devices.
+	</p>
+
+	<h2>Two different models</h2>
+	<p>
+		HTTP is <strong>request/response</strong>: a client asks and the server answers, and to get anything new it has to
+		ask again — polling. Even over a persistent HTTP connection, nothing arrives until the client requests it. MQTT is
+		<strong>publish/subscribe</strong>: a client opens one long-lived connection to a
+		<a href="/mqtt/mqtt-broker/">broker</a>, and the broker <strong>pushes</strong> messages the instant they're published.
+		No polling, no reconnection per message.
+	</p>
+
+	<MqttDiagram caption="Pull on request versus push over one persistent connection">
+		<svg viewBox="0 0 680 230" role="img" aria-label="HTTP request-response versus MQTT publish-subscribe">
+			<line x1="340" y1="16" x2="340" y2="214" stroke="#eef0f3" stroke-width="1"></line>
+			<!-- HTTP -->
+			<text class="d-panelttl d-mid" x="170" y="26">HTTP — request / response (pull)</text>
+			<rect class="d-actor" x="40" y="42" width="96" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="88"
+				y="61"
+				style="font-size:12px">Client</text
+			>
+			<rect class="d-actor" x="244" y="42" width="96" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="292"
+				y="61"
+				style="font-size:12px">Server</text
+			>
+			<line class="d-life" x1="88" y1="72" x2="88" y2="200"></line><line
+				class="d-life"
+				x1="292"
+				y1="72"
+				x2="292"
+				y2="200"></line>
+			<line class="d-line" x1="88" y1="98" x2="289" y2="98" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="190"
+				y="92"
+				style="font-size:11px">GET /data</text
+			>
+			<line class="d-line" x1="292" y1="128" x2="91" y2="128" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="190"
+				y="122"
+				style="font-size:11px">200 OK</text
+			>
+			<line class="d-line" x1="88" y1="158" x2="289" y2="158" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="190"
+				y="152"
+				style="font-size:11px">GET /data</text
+			>
+			<text class="d-note d-mid" x="190" y="190">client must poll for anything new</text>
+			<!-- MQTT -->
+			<text class="d-panelttl d-mid" x="510" y="26" style="fill:#166c37">MQTT — publish / subscribe (push)</text>
+			<rect class="d-actor" x="368" y="96" width="80" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="408"
+				y="115"
+				style="font-size:12px">Device</text
+			>
+			<rect class="d-actor d-actor--hero" x="470" y="96" width="82" height="30" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="511"
+				y="115"
+				style="font-size:12px">Broker</text
+			>
+			<rect class="d-actor" x="574" y="96" width="72" height="30" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="610"
+				y="115"
+				style="font-size:12px">App</text
+			>
+			<line class="d-line d-line--green" x1="448" y1="111" x2="467" y2="111" marker-end="url(#arGreen)"></line>
+			<line class="d-line d-line--green" x1="552" y1="111" x2="571" y2="111" marker-end="url(#arGreen)"></line>
+			<text class="d-ctext d-ctext--green d-mid" x="459" y="88" style="font:600 10.5px ui-monospace,monospace"
+				>publish</text
+			>
+			<text class="d-ctext d-ctext--green d-mid" x="562" y="88" style="font:600 10.5px ui-monospace,monospace"
+				>push</text
+			>
+			<text class="d-note d-mid" x="510" y="158">broker pushes the instant a message arrives</text>
+			<text class="d-note d-mid" x="510" y="176">— no polling</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>MQTT vs HTTP at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>MQTT</th><th>HTTP</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Model</td><td>Publish/subscribe (push)</td><td>Request/response (pull)</td></tr>
+				<tr><td>Connection</td><td>One long-lived connection</td><td>Client-initiated per exchange</td></tr>
+				<tr><td>Header overhead</td><td>Tiny (from 2 bytes)</td><td>Larger text headers per request</td></tr>
+				<tr><td>Real-time updates</td><td>Server push, instant</td><td>Client must poll</td></tr>
+				<tr><td>Delivery guarantees</td><td><a href="/mqtt/qos/">QoS</a> 0 / 1 / 2</td><td>Application-defined</td></tr>
+				<tr><td>Best for</td><td>Frequent small device messages</td><td>APIs, documents, occasional calls</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>When to use which</h2>
+	<p>
+		Use <strong>MQTT</strong> when many devices exchange frequent, small messages and need low-latency push — telemetry, presence,
+		commands. Use <strong>HTTP</strong> for request/response interactions: REST APIs, file downloads, and occasional calls
+		where a persistent connection isn't worth it. They coexist happily — devices on MQTT, dashboards and integrations on HTTP.
+		For moving that device stream into a backend pipeline, see <a href="/mqtt/mqtt-vs-kafka/">MQTT vs Kafka</a>.
+	</p>
+
+	<h2>MQTT in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> speaks MQTT, including <a href="/docs/user-guide/mqtt-over-ws/">MQTT over WebSocket</a>, so
+		even browser apps get real-time push instead of polling an HTTP endpoint.
+	</p>
+</MqttTopicLayout>

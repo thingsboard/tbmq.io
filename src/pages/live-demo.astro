@@ -1,0 +1,59 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import LiveDemoHero from '@components/LiveDemo/LiveDemoHero.astro';
+import DashboardTour from '@components/LiveDemo/DashboardTour.astro';
+import ConnectCard from '@components/LiveDemo/ConnectCard.astro';
+import ProductionCta from '@components/LiveDemo/ProductionCta.astro';
+import ScrollReveal from '@components/ScrollReveal.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+
+const title = 'Free Public MQTT Broker – Live Online Demo';
+const description =
+	'Try TBMQ, the open-source MQTT broker, online. Explore the dashboard or connect any MQTT client to our free public broker at demo.tbmq.io — no signup required.';
+const jsonLd = marketingJsonLd({
+	path: '/live-demo/',
+	name: title,
+	description,
+	breadcrumb: 'Live Demo',
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="live-demo"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt="TBMQ live demo — try the open-source MQTT broker online"
+	openContentLinksInNewTab
+>
+	<main>
+		<LiveDemoHero />
+		<DashboardTour />
+		<ConnectCard />
+		<ProductionCta />
+	</main>
+	<ScrollReveal />
+</BaseLayout>
+
+<style lang="scss">
+	@use '../styles/variables' as *;
+
+	:global(#live-demo) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+
+		// Offset in-page anchor jumps (e.g. the hero's "Connect a client ↓")
+		// so the target section clears the fixed header instead of hiding under it.
+		scroll-padding-top: calc(#{$header-height} + 24px);
+	}
+
+	// Animate in-page anchor scrolls, but honor users who prefer reduced motion.
+	@media (prefers-reduced-motion: no-preference) {
+		:global(#live-demo) {
+			scroll-behavior: smooth;
+		}
+	}
+</style>

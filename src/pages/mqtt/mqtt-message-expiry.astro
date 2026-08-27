@@ -1,0 +1,82 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the Session Expiry Interval in MQTT 5.0?',
+		a: 'A value the client sends at connect that tells the broker how many seconds to keep the session — subscriptions and queued messages — after the client disconnects. Zero means discard the session immediately on disconnect; a large value keeps it for a long time. It replaces MQTT 3.1.1’s all-or-nothing clean-session flag.',
+	},
+	{
+		q: 'What is the Message Expiry Interval?',
+		a: 'A per-message lifetime in seconds. If a message is still waiting to be delivered when its interval elapses, the broker discards it instead of delivering something stale. When the broker does deliver a delayed message, it lowers the remaining interval by the time the message spent waiting.',
+	},
+	{
+		q: 'What is the difference between session expiry and message expiry?',
+		a: 'Session expiry bounds how long the whole session (subscriptions plus its message queue) survives after the client goes offline. Message expiry bounds how long a single message stays valid. A session can outlive individual messages inside it.',
+	},
+	{
+		q: 'How did MQTT 3.1.1 handle this?',
+		a: 'It didn’t, really. MQTT 3.1.1 had only the clean-session flag: either the session was dropped immediately on disconnect, or kept indefinitely. There was no per-message expiry at all.',
+	},
+	{
+		q: 'What happens if I set session expiry to zero?',
+		a: 'The session ends the moment the client disconnects — subscriptions and any queued messages are dropped. This is the MQTT 5.0 equivalent of a clean session, useful for clients that never need to resume state.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-message-expiry" faq={faq}>
+	<p>
+		MQTT 5.0 gives you two independent expiry controls that MQTT 3.1.1 lacked: how long a disconnected client’s
+		<strong>session</strong> is kept, and how long an individual <strong>message</strong> stays valid. Together they stop
+		the broker from hoarding stale state and stale data.
+	</p>
+
+	<h2>Session Expiry Interval</h2>
+	<p>
+		When a client connects, it can set a Session Expiry Interval — the number of seconds the broker should keep its
+		<a href="/mqtt/persistent-session/">session</a> after it disconnects. Reconnect within that window and the broker restores
+		your subscriptions and delivers whatever queued up while you were away. Miss it, and the session (and its queue) is discarded.
+		Setting it to zero means “clean up as soon as I disconnect”.
+	</p>
+
+	<MqttDiagram caption="Session Expiry decides how long the broker keeps a disconnected client’s session">
+		<svg
+			viewBox="0 0 680 200"
+			role="img"
+			aria-label="Session expiry timeline: after a client disconnects, the broker keeps its session for the Session Expiry Interval; reconnecting inside that window resumes the session, and once it elapses the session and queued messages are discarded"
+		>
+			<text class="d-head d-mid" x="340" y="26">A client disconnects — how long does its session survive?</text>
+			<rect x="150" y="122" width="300" height="30" rx="6" style="fill:#eaf7ef;stroke:#bfe3cd"></rect>
+			<text class="d-feat d-mid" x="300" y="142">session held for the Session Expiry Interval</text>
+			<line class="d-line" x1="60" y1="110" x2="616" y2="110" marker-end="url(#arGray)"></line>
+			<text class="d-tiny" x="596" y="100">time</text>
+			<circle cx="150" cy="110" r="5" style="fill:#63656c"></circle>
+			<text class="d-note d-mid" x="150" y="92" style="font-size:11px">disconnect</text>
+			<circle cx="330" cy="110" r="5" style="fill:#17bb52"></circle>
+			<text class="d-yes d-mid" x="330" y="90" style="font-size:11.5px">reconnect → resume ✓</text>
+			<circle cx="450" cy="110" r="5" style="fill:#d64545"></circle>
+			<text class="d-no d-mid" x="486" y="90" style="font-size:11.5px">expiry ✗</text>
+			<text class="d-danger d-mid" x="450" y="178" style="font-size:11px">session &amp; queued messages discarded</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Message Expiry Interval</h2>
+	<p>
+		A publisher can stamp an individual message with a Message Expiry Interval — how long it stays worth delivering. If
+		the message is still queued for an offline subscriber when the interval runs out, the broker drops it rather than
+		delivering something out of date. When the broker does deliver a delayed message, it decrements the remaining
+		interval by the time the message spent waiting, so downstream clients see an honest time-to-live.
+	</p>
+
+	<h2>Expiry in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> honors both intervals. It caps the session expiry interval at one week, so a forgotten client can’t
+		hold a session forever, and when it delivers a queued message it reduces the message’s remaining expiry by the time it
+		waited in the broker. See the
+		<a href="/docs/user-guide/clean-persistent-sessions/">clean vs persistent sessions guide</a> for how this ties into session
+		handling.
+	</p>
+</MqttTopicLayout>

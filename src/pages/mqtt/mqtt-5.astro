@@ -1,0 +1,179 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnCardGrid from '@components/MqttLearn/LearnCardGrid.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the difference between MQTT 5.0 and MQTT 3.1.1?',
+		a: 'MQTT 5.0 keeps the same lightweight publish/subscribe core as 3.1.1 but adds richer control and diagnostics: reason codes and reason strings on every acknowledgement, user properties (custom metadata), topic aliases, session and message expiry, flow control, and standardized shared subscriptions.',
+	},
+	{
+		q: 'Is MQTT 5.0 backward compatible with 3.1.1?',
+		a: 'Not on the wire — the packet formats differ, so a client and broker must agree on the version at connect. But the model is the same, and brokers like TBMQ speak both, so 3.1.1 and 5.0 clients can run against the same broker side by side during a migration.',
+	},
+	{
+		q: 'What are user properties in MQTT 5.0?',
+		a: 'Arbitrary key/value pairs you can attach to messages and control packets, similar to HTTP headers. They let you carry application metadata — a message type, a tenant ID, a trace token — without encoding it into the topic or payload.',
+	},
+	{
+		q: 'What are reason codes in MQTT 5.0?',
+		a: 'Numeric result codes returned on acknowledgements (CONNACK, PUBACK, SUBACK, DISCONNECT, and more), often with a human-readable reason string. In 3.1.1 a failure was largely opaque; in 5.0 the broker can say exactly why something was refused.',
+	},
+	{
+		q: 'Should new projects use MQTT 5.0?',
+		a: 'Generally yes. New deployments benefit from the better error reporting, expiry controls, and flow control, and all current major brokers support it. Choose 3.1.1 only when a constrained device or library you must use does not implement 5.0.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-5" faq={faq}>
+	<p>
+		MQTT 5.0 is the current version of the protocol, released in 2019. It doesn't reinvent MQTT — the lightweight
+		pub/sub core is unchanged — but it fills in the gaps that large, production IoT deployments kept running into:
+		opaque errors, no per-message metadata, and no built-in flow control.
+	</p>
+
+	<h2>What MQTT 5.0 adds</h2>
+	<LearnCardGrid
+		cards={[
+			{
+				href: '/mqtt/mqtt-reason-codes/',
+				title: 'Reason codes & reason strings',
+				blurb: 'Acknowledgements now explain why something failed, instead of a bare success or fail.',
+			},
+			{
+				href: '/mqtt/mqtt-user-properties/',
+				title: 'User properties',
+				blurb: 'Attach custom key/value metadata to messages and packets, like application-level headers.',
+			},
+			{
+				href: '/mqtt/mqtt-payload-format/',
+				title: 'Payload format & content type',
+				blurb: 'Flag a payload as UTF-8 text or bytes and label it with a MIME-like content type.',
+			},
+			{
+				href: '/mqtt/mqtt-message-expiry/',
+				title: 'Session & message expiry',
+				blurb: 'Bound how long a session survives after disconnect and how long a queued message stays valid.',
+			},
+			{
+				href: '/mqtt/mqtt-topic-alias/',
+				title: 'Topic aliases',
+				blurb: 'Replace a long topic string with a short integer for the rest of a connection, cutting bandwidth.',
+			},
+			{
+				href: '/mqtt/mqtt-flow-control/',
+				title: 'Flow control',
+				blurb: 'A client advertises how many unacknowledged messages it will accept, so the broker can’t overwhelm it.',
+			},
+			{
+				href: '/mqtt/shared-subscriptions/',
+				title: 'Shared subscriptions',
+				blurb: 'Standardized load balancing across a group of consumers.',
+			},
+			{
+				href: '/mqtt/mqtt-request-response/',
+				title: 'Request / response',
+				blurb: 'A response-topic and correlation-data convention for RPC-style exchanges over pub/sub.',
+			},
+		]}
+	/>
+
+	<MqttDiagram caption="5.0 turns an opaque failure code into a precise, human-readable reason">
+		<svg viewBox="0 0 680 232" role="img" aria-label="MQTT 3.1.1 opaque failure versus MQTT 5.0 reason codes">
+			<text class="d-glabel" x="40" y="26">MQTT 3.1.1</text>
+			<rect class="d-actor" x="150" y="14" width="96" height="28" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="198"
+				y="32"
+				style="font-size:12px">Client</text
+			>
+			<rect class="d-actor d-actor--hero" x="470" y="14" width="96" height="28" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="518"
+				y="32"
+				style="font-size:12px">Broker</text
+			>
+			<line class="d-life" x1="198" y1="42" x2="198" y2="96"></line><line
+				class="d-life"
+				x1="518"
+				y1="42"
+				x2="518"
+				y2="96"></line>
+			<line class="d-line" x1="198" y1="64" x2="515" y2="64" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="326"
+				y="53"
+				width="64"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="358" y="68">CONNECT</text>
+			<line class="d-line" x1="518" y1="90" x2="201" y2="90" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="286"
+				y="79"
+				width="144"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="358" y="94">CONNACK — code 5</text><text
+				class="d-note"
+				x="540"
+				y="94">opaque</text
+			>
+			<line x1="40" y1="118" x2="640" y2="118" stroke="#eef0f3" stroke-width="1"></line>
+			<text class="d-glabel" x="40" y="146" style="fill:#166c37">MQTT 5.0</text>
+			<rect class="d-actor" x="150" y="134" width="96" height="28" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="198"
+				y="152"
+				style="font-size:12px">Client</text
+			>
+			<rect class="d-actor d-actor--hero" x="470" y="134" width="96" height="28" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="518"
+				y="152"
+				style="font-size:12px">Broker</text
+			>
+			<line class="d-life" x1="198" y1="162" x2="198" y2="220"></line><line
+				class="d-life"
+				x1="518"
+				y1="162"
+				x2="518"
+				y2="220"></line>
+			<line class="d-line" x1="198" y1="184" x2="515" y2="184" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="326"
+				y="173"
+				width="64"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="358" y="188">CONNECT</text>
+			<line class="d-line" x1="518" y1="210" x2="201" y2="210" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="252"
+				y="199"
+				width="212"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="358" y="214">CONNACK 0x87 + reason string</text><text
+				class="d-note"
+				x="540"
+				y="214"
+				style="fill:#4f7d63">explainable</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Should you upgrade from 3.1.1?</h2>
+	<p>
+		For new projects, prefer 5.0 — the diagnostics and control alone are worth it, and libraries and brokers broadly
+		support it. Because the two versions share the same model, most deployments migrate gradually, running 3.1.1 and 5.0
+		clients against the same broker until everything is moved over.
+	</p>
+
+	<h2>MQTT 5.0 in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> supports the full range of MQTT 3.1, 3.1.1, and 5.0 on the same broker. Its 5.0 implementation includes
+		reason codes, user properties, topic aliases, session and message expiry, flow control, enhanced authentication, and the
+		subscription options and identifiers from the spec. See the
+		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> for the complete list of supported 5.0 features.
+	</p>
+</MqttTopicLayout>

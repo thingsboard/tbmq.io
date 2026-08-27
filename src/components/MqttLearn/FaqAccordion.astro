@@ -1,0 +1,96 @@
+---
+export interface FaqItem {
+	q: string;
+	a: string;
+}
+interface Props {
+	items: FaqItem[];
+}
+const { items } = Astro.props;
+
+// Answers may carry inline <code>/<strong> markup for special fields and emphasis; it renders as HTML.
+// The FAQPage JSON-LD uses the tag-stripped plain text (structured data must not contain markup).
+const stripTags = (a: string) => a.replace(/<[^>]+>/g, '');
+
+const faqJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: items.map((it) => ({
+		'@type': 'Question',
+		name: it.q,
+		acceptedAnswer: { '@type': 'Answer', text: stripTags(it.a) },
+	})),
+};
+---
+
+{
+	items.length > 0 && (
+		<section class="faq">
+			<h2 class="faq__title">Frequently asked questions</h2>
+			{items.map((it) => (
+				<details class="faq__item">
+					<summary class="faq__q">{it.q}</summary>
+					<p class="faq__a" set:html={it.a} />
+				</details>
+			))}
+			<script is:inline type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+		</section>
+	)
+}
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.faq {
+		margin-top: $spacing-12;
+	}
+	.faq__title {
+		font-size: 24px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0 0 $spacing-5;
+	}
+	.faq__item {
+		border-bottom: 1px solid $color-border;
+		padding: 16px 0;
+	}
+	.faq__q {
+		font-size: 17px;
+		font-weight: $font-weight-medium;
+		color: $color-text-primary;
+		cursor: pointer;
+		list-style: none;
+		&::-webkit-details-marker {
+			display: none;
+		}
+		&::before {
+			content: '+';
+			display: inline-block;
+			width: 20px;
+			color: $color-pe-dark;
+			font-weight: $font-weight-bold;
+		}
+	}
+	details[open] .faq__q::before {
+		content: '\2212'; // minus sign
+	}
+	.faq__a {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 12px 0 0 20px;
+
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 0.9em;
+			background: $color-bg-light;
+			padding: 2px 6px;
+			border-radius: 3px;
+			color: $color-text-primary;
+		}
+		:global(strong) {
+			font-weight: $font-weight-semibold;
+			color: $color-text-primary;
+		}
+	}
+</style>

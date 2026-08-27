@@ -1,12 +1,11 @@
 // src/pages/open-graph/_shared/LogoCard.tsx
 //
-// Variant B: shared brand-blue slab with the stacked TB logo + optional section
-// name. Used for blog, marketing landings, case studies, use cases, device library.
+// Variant B: shared TBMQ-green slab with the stacked TBMQ lockup + optional
+// section name. Used for marketing landings and collection indexes.
 
-import { html } from 'satori-html';
-import { TB_STACKED_LOGO } from '@root/pages/open-graph/_assets/icons';
 import { Background } from '@root/pages/open-graph/_shared/Background';
 import { Slab } from '@root/pages/open-graph/_shared/Slab';
+import { StackedLogo } from '@root/pages/open-graph/_shared/StackedLogo';
 import { pickTitleSize } from '@root/pages/open-graph/_shared/text-block';
 
 const TEXT_COLOR = '#ffffff';
@@ -21,39 +20,9 @@ export interface LogoCardProps {
 	/** Optional uppercase line above the title. Omit for self-explanatory titles. */
 	eyebrow?: string;
 	title: string;
-	/** Optional small line below the title — used for blog "By {Author}". */
-	authorLine?: string;
 }
 
-/** Stacked TB logo, cropped to its content bbox via tight viewBox. */
-function StackedLogo() {
-	// Crop the source SVG to its content bbox (151,36,135,127) and force explicit
-	// pixel dimensions (Satori's Yoga layout doesn't honour `width:100%`).
-	// The source SVG also wraps the icon in `<g clip-path="url(#clip0_…)">` with
-	// an empty `<clipPath>` in `<defs>` — strip it so the content actually renders.
-	const W = 180;
-	const H = Math.round((W * 127) / 135);
-	const svg = TB_STACKED_LOGO
-		.replace(
-			/<svg[^>]*viewBox="0 0 436 200"[^>]*>/,
-			`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="151 36 135 127">`,
-		)
-		.replace(/\s*clip-path="url\(#[^"]+\)"/g, '');
-	return (
-		<div
-			style={{
-				width: W,
-				height: H,
-				display: 'flex',
-				alignSelf: 'center',
-			}}
-		>
-			{html(svg)}
-		</div>
-	);
-}
-
-export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine }: LogoCardProps) {
+export function LogoCard({ sectionName, sectionTight, eyebrow, title }: LogoCardProps) {
 	const titleSize = pickTitleSize(title);
 	const sectionSize = sectionTight ? 22 : 26;
 	const sectionSpacing = sectionTight ? '0.14em' : '0.18em';
@@ -72,7 +41,7 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine
 			}}
 		>
 			<Background />
-			<Slab cls="brand">
+			<Slab cls="tbmq">
 				<StackedLogo />
 				{sectionName && (
 					<div
@@ -129,19 +98,6 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine
 				>
 					{title}
 				</div>
-				{authorLine && (
-					<div
-						style={{
-							marginTop: 26,
-							fontSize: 20,
-							fontWeight: 500,
-							opacity: 0.78,
-							display: 'flex',
-						}}
-					>
-						{authorLine}
-					</div>
-				)}
 			</div>
 
 			<div
@@ -156,7 +112,7 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine
 					display: 'flex',
 				}}
 			>
-				thingsboard.io
+				tbmq.io
 			</div>
 		</div>
 	);

@@ -3,6 +3,7 @@ import { Products } from '~/models/site.models';
 import ShowFor from '~/components/ShowFor.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { TBMQ_PE_VER } from '~/data/versions';
+import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
 
 export const peImagesYaml = `tbmq:
   image:
@@ -26,6 +27,16 @@ To deploy a TBMQ cluster using Helm in Minikube, you need the following tools in
 - <a href="https://helm.sh/docs/intro/install/" target="_blank" rel="noopener noreferrer">Helm</a>
 - <a href="https://kubernetes.io/docs/tasks/tools/" target="_blank" rel="noopener noreferrer">kubectl</a>
 - <a href="https://kubernetes.io/docs/tasks/tools/#minikube" target="_blank" rel="noopener noreferrer">Minikube</a>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
+
+Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the
+<a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>,
+choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
+
+You will apply the key later, in [Configure license and broker images](#configure-license-and-broker-images).
+</ShowFor>
 
 ## Configure your Kubernetes environment
 
@@ -169,6 +180,8 @@ section of the chart documentation.
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 
 <ConditionalHeading level={3} id="configure-license-and-broker-images" showFor="mqtt-broker-pe">Configure license and broker images</ConditionalHeading>
+
+<LicenseTrial />
 
 The chart defaults point at the open-source broker and Integration Executor images. Switch both to the PE variants
 and provide a license.

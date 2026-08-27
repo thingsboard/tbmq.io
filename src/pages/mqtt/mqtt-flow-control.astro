@@ -1,0 +1,89 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is MQTT flow control?',
+		a: 'A mechanism in MQTT 5.0 that limits how many unacknowledged QoS 1 and QoS 2 messages can be in flight at once. Each side advertises a Receive Maximum; the sender must pause once that many messages are awaiting acknowledgement, and resume as acknowledgements come back.',
+	},
+	{
+		q: 'What is Receive Maximum?',
+		a: 'The MQTT 5.0 property that carries the flow-control limit. When a receiver advertises Receive Maximum = N, the sender may have at most N unacknowledged QoS 1/2 PUBLISH packets outstanding to it at any moment.',
+	},
+	{
+		q: 'Does flow control apply to QoS 0 messages?',
+		a: 'No. QoS 0 messages are never acknowledged, so they are not counted against Receive Maximum. Flow control only governs QoS 1 and QoS 2 traffic.',
+	},
+	{
+		q: 'Why does flow control matter?',
+		a: 'It stops a fast sender from overwhelming a slower receiver. Without a bound, a burst of publishes could exhaust a constrained client’s memory or buffers; Receive Maximum applies natural backpressure instead.',
+	},
+	{
+		q: 'Is flow control available in MQTT 3.1.1?',
+		a: 'Not as an explicit protocol feature. MQTT 3.1.1 has no Receive Maximum, so any in-flight limits were broker- or client-specific rather than negotiated. MQTT 5.0 standardizes it.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-flow-control" faq={faq}>
+	<p>
+		A fast publisher can send messages quicker than a slow consumer can handle them. <a href="/mqtt/mqtt-5/">MQTT 5.0</a
+		>
+		adds <strong>flow control</strong> so the receiver can push back — capping how many unacknowledged messages the sender
+		may have in flight at once.
+	</p>
+
+	<h2>How flow control works</h2>
+	<p>
+		At connect, each side advertises a <strong>Receive Maximum</strong>: the number of <a href="/mqtt/qos/">QoS</a> 1 and
+		QoS 2 messages it is willing to have outstanding without acknowledgement. The sender may keep sending until that many
+		are unacknowledged, then it must wait. As each PUBACK (or PUBCOMP for QoS 2) arrives, a slot frees up and the sender can
+		send another. QoS 0 messages aren’t acknowledged, so they don’t count.
+	</p>
+
+	<MqttDiagram
+		caption="Flow control caps unacknowledged messages in flight — the sender pauses when the window is full"
+	>
+		<svg
+			viewBox="0 0 680 284"
+			role="img"
+			aria-label="MQTT flow control: a client may have only Receive Maximum unacknowledged QoS 1 publishes in flight; it pauses when the window is full and resumes as acknowledgements arrive"
+		>
+			<rect class="d-actor" x="90" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="150" y="46">Client</text>
+			<rect class="d-actor d-actor--hero" x="450" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="510" y="46">Broker</text>
+			<line class="d-life" x1="150" y1="58" x2="150" y2="272"></line>
+			<line class="d-life" x1="510" y1="58" x2="510" y2="272"></line>
+			<line class="d-line" x1="150" y1="86" x2="507" y2="86" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="292" y="75" width="76" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="330" y="90">PUBLISH 1</text>
+			<line class="d-line" x1="150" y1="112" x2="507" y2="112" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="292" y="101" width="76" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="330" y="116">PUBLISH 2</text>
+			<line class="d-line" x1="150" y1="138" x2="507" y2="138" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="292" y="127" width="76" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="330" y="142">PUBLISH 3</text>
+			<text class="d-note" x="522" y="118" style="font-size:11px">3 in flight</text>
+			<line class="d-brk" x1="70" y1="166" x2="590" y2="166"></line>
+			<text class="d-brklabel d-mid" x="330" y="161">window full — Receive Maximum = 3 (example) — client waits</text>
+			<line class="d-line d-line--green" x1="510" y1="198" x2="153" y2="198" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="290" y="187" width="80" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="330" y="202">PUBACK 1</text>
+			<line class="d-line" x1="150" y1="238" x2="507" y2="238" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="292" y="227" width="76" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="330" y="242">PUBLISH 4</text>
+			<text class="d-note" x="522" y="244" style="font-size:11px">slot freed</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Flow control in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> enables flow control and advertises a Receive Maximum of <strong>1000</strong>, so a client may
+		have up to 1000 unacknowledged QoS 1/2 publishes in flight to the broker before it must wait for acknowledgements.
+		(The diagram uses 3 just to make the window easy to see.) See the
+		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> for supported 5.0 features.
+	</p>
+</MqttTopicLayout>

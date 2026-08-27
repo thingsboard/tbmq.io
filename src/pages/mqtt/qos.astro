@@ -1,0 +1,196 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What are the three MQTT QoS levels?',
+		a: 'QoS 0 (<strong>at most once</strong>) sends a message a single time with no acknowledgement. QoS 1 (<strong>at least once</strong>) retransmits until the receiver confirms it, so the message always arrives but may duplicate. QoS 2 (<strong>exactly once</strong>) uses a four-packet handshake so the message is delivered once and only once.',
+	},
+	{
+		q: 'Which QoS level should I use?',
+		a: 'Use QoS 0 for frequent, disposable readings where an occasional gap is harmless. Use QoS 1 for data that must arrive and whose consumers can tolerate or de-duplicate repeats — <strong>it is the common default</strong>. Reserve QoS 2 for messages where duplicate processing would cause real harm, such as billing events or actuation commands.',
+	},
+	{
+		q: 'Does higher QoS mean the message is more secure?',
+		a: 'No. QoS controls <strong>delivery reliability, not security</strong>. Encryption and access control come from TLS, authentication, and topic authorization — a separate layer from QoS.',
+	},
+	{
+		q: 'What happens if the publisher and subscriber use different QoS levels?',
+		a: 'The broker delivers each message at the <strong>lower of the two levels</strong>. A subscriber that subscribes at QoS 2 still only receives QoS 1 if the publisher published at QoS 1, so design for the level actually delivered rather than the level requested.',
+	},
+	{
+		q: 'Is QoS 2 exactly-once guaranteed end to end?',
+		a: 'QoS 2 guarantees exactly-once <strong>between each pair of hops</strong> — publisher to broker, and broker to subscriber. True end-to-end exactly-once requires <strong>both the publisher and the subscriber</strong> to use QoS 2.',
+	},
+];
+---
+
+<MqttTopicLayout slug="qos" faq={faq}>
+	<p>
+		Not every message needs the same delivery promise. A temperature reading that arrives every second can afford to be
+		dropped occasionally; a command that switches off a pump cannot. MQTT lets the sender pick that promise per message
+		through its Quality of Service (QoS) level.
+	</p>
+
+	<h2>The three QoS levels</h2>
+	<p>
+		Each level trades reliability against the number of network round-trips it costs. The higher the guarantee, the more
+		packets and broker state involved.
+	</p>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:bolt" title="QoS 0">
+			<strong>At most once.</strong> The message is sent a single time with no acknowledgement — fastest and lightest, but
+			a message is lost if the connection drops.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:refresh" title="QoS 1">
+			<strong>At least once.</strong> The sender retransmits until it receives a <code>PUBACK</code>. The message always
+			arrives, but a lost acknowledgement causes a re-send (flagged <code>DUP</code>), so consumers must be
+			<strong>idempotent</strong> — safe to handle the same message twice.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:shield-check" title="QoS 2">
+			<strong>Exactly once.</strong> A four-packet handshake (<code>PUBLISH</code> → <code>PUBREC</code> →
+			<code>PUBREL</code> → <code>PUBCOMP</code>) guarantees the message is delivered a single time — strongest
+			guarantee, highest overhead.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<MqttDiagram caption="More packets buy a stronger delivery guarantee">
+		<svg viewBox="0 0 680 250" role="img" aria-label="The three QoS delivery handshakes">
+			<!-- column dividers -->
+			<line x1="235" y1="20" x2="235" y2="230" stroke="#eef0f3" stroke-width="1"></line><line
+				x1="455"
+				y1="20"
+				x2="455"
+				y2="230"
+				stroke="#eef0f3"
+				stroke-width="1"></line>
+			<!-- QoS 0 -->
+			<text class="d-glabel d-mid" x="117" y="34">QoS 0</text><text class="d-tiny d-mid" x="117" y="50"
+				>at most once</text
+			>
+			<line class="d-life" x1="72" y1="62" x2="72" y2="120"></line><line
+				class="d-life"
+				x1="162"
+				y1="62"
+				x2="162"
+				y2="120"></line>
+			<line class="d-line" x1="72" y1="86" x2="159" y2="86" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="117"
+				y="80"
+				style="font-size:10.5px">PUBLISH</text
+			>
+			<text class="d-note d-mid" x="117" y="112" style="font-size:10.5px">no ack</text>
+			<!-- QoS 1 -->
+			<text class="d-glabel d-mid" x="345" y="34">QoS 1</text><text class="d-tiny d-mid" x="345" y="50"
+				>at least once</text
+			>
+			<line class="d-life" x1="300" y1="62" x2="300" y2="150"></line><line
+				class="d-life"
+				x1="390"
+				y1="62"
+				x2="390"
+				y2="150"></line>
+			<line class="d-line" x1="300" y1="86" x2="387" y2="86" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="345"
+				y="80"
+				style="font-size:10.5px">PUBLISH</text
+			>
+			<line class="d-line d-line--green" x1="390" y1="118" x2="303" y2="118" marker-end="url(#arGreen)"></line><text
+				class="d-ctext--green d-mid"
+				x="345"
+				y="112"
+				style="font:600 10.5px ui-monospace,monospace">PUBACK</text
+			>
+			<text class="d-note d-mid" x="345" y="142" style="font-size:10.5px">may duplicate</text>
+			<!-- QoS 2 -->
+			<text class="d-glabel d-mid" x="567" y="34">QoS 2</text><text class="d-tiny d-mid" x="567" y="50"
+				>exactly once</text
+			>
+			<line class="d-life" x1="522" y1="62" x2="522" y2="222"></line><line
+				class="d-life"
+				x1="612"
+				y1="62"
+				x2="612"
+				y2="222"></line>
+			<line class="d-line" x1="522" y1="86" x2="609" y2="86" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="567"
+				y="80"
+				style="font-size:10.5px">PUBLISH</text
+			>
+			<line class="d-line d-line--green" x1="612" y1="120" x2="525" y2="120" marker-end="url(#arGreen)"></line><text
+				class="d-ctext--green d-mid"
+				x="567"
+				y="114"
+				style="font:600 10.5px ui-monospace,monospace">PUBREC</text
+			>
+			<line class="d-line" x1="522" y1="154" x2="609" y2="154" marker-end="url(#arGray)"></line><text
+				class="d-ctext d-mid"
+				x="567"
+				y="148"
+				style="font-size:10.5px">PUBREL</text
+			>
+			<line class="d-line d-line--green" x1="612" y1="188" x2="525" y2="188" marker-end="url(#arGreen)"></line><text
+				class="d-ctext--green d-mid"
+				x="567"
+				y="182"
+				style="font:600 10.5px ui-monospace,monospace">PUBCOMP</text
+			>
+			<text class="d-note d-mid" x="567" y="214" style="font-size:10.5px">no loss, no dupes</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>QoS at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>QoS 0</th><th>QoS 1</th><th>QoS 2</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Guarantee</td><td>At most once</td><td>At least once</td><td>Exactly once</td></tr>
+				<tr><td>Duplicates possible</td><td>No</td><td>Yes</td><td>No</td></tr>
+				<tr><td>Packets per message</td><td>1</td><td>2</td><td>4</td></tr>
+				<tr><td>Relative overhead</td><td>Lowest</td><td>Medium</td><td>Highest</td></tr>
+				<tr
+					><td>Queued for offline clients</td><td>No</td><td>Yes (persistent session)</td><td
+						>Yes (persistent session)</td
+					></tr
+				>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Choosing a level</h2>
+	<p>
+		Match the level to the message's value. Use <strong>QoS 0</strong> for high-frequency sensor data where the next value
+		is seconds away; <strong>QoS 1</strong> for telemetry and state changes that must reach the backend but can be de-duplicated;
+		and <strong>QoS 2</strong> for the small subset — financial events, actuation, billing — where duplicate processing causes
+		real harm. Most fleets run QoS 1 as the default and reserve QoS 2 for the few messages that need it.
+	</p>
+	<p>
+		One subtlety: QoS 1 and QoS 2 messages are only queued for an offline client when that client uses a
+		<a href="/mqtt/persistent-session/">persistent session</a>. With a clean session, undelivered messages are discarded
+		on disconnect regardless of QoS.
+	</p>
+
+	<h2>QoS in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> supports all three QoS levels. When a publisher and subscriber request different levels, TBMQ delivers
+		at the
+		<strong>lower of the two</strong> — so a QoS 2 subscription does not guarantee exactly-once if the publisher sent at QoS
+		0 or 1.
+	</p>
+	<p>
+		For durability, TBMQ acknowledges a QoS 1 or QoS 2 publish only after the message is persisted to its internal Kafka
+		backbone — so an accepted message survives a broker-node failure. TBMQ's shipped Kafka defaults use
+		<code>acks=1</code> and a replication factor of 1, so to also survive the loss of a Kafka node you run a replicated Kafka
+		cluster. See the <a href="/docs/user-guide/qos/">QoS reference</a> for the full delivery model and
+		<a href="/docs/user-guide/clean-persistent-sessions/">Sessions</a> for how queued messages are stored per client type.
+	</p>
+</MqttTopicLayout>

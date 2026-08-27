@@ -1,0 +1,166 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is a persistent session in MQTT?',
+		a: 'A session where the broker keeps a client’s subscriptions and queues its QoS 1 and QoS 2 messages while it is offline, then restores everything on reconnect. The client does not need to resubscribe and does not miss messages sent during the outage.',
+	},
+	{
+		q: 'What is the difference between clean session and clean start?',
+		a: 'Clean Session is the MQTT 3.1.1 flag: set to 1 for a fresh, non-persistent session; 0 to resume a persistent one. MQTT 5.0 splits that into Clean Start (whether to start fresh on this connect) and a separate Session Expiry Interval (how long the session survives after disconnect).',
+	},
+	{
+		q: 'Do QoS 0 messages get queued in a persistent session?',
+		a: 'No. Only QoS 1 and QoS 2 messages are queued for an offline client. QoS 0 messages are never stored — they are discarded if the subscriber is not connected, even in a persistent session.',
+	},
+	{
+		q: 'How long does a persistent session last?',
+		a: 'In MQTT 5.0 the Session Expiry Interval controls it: 0 clears the session immediately on disconnect, a number of seconds sets a timed expiry, and the maximum value keeps it indefinitely. In MQTT 3.1.1 a persistent session lives until the client reconnects with Clean Session = 1.',
+	},
+	{
+		q: 'Do persistent sessions use broker storage?',
+		a: 'Yes. Retaining subscriptions and queued messages costs storage per client, so at large scale the broker must persist them efficiently. This is exactly what session expiry and per-client-type storage strategies are for.',
+	},
+];
+---
+
+<MqttTopicLayout slug="persistent-session" faq={faq}>
+	<p>
+		Devices drop off networks constantly — a truck enters a tunnel, a sensor's battery dips, a gateway reboots. A
+		persistent session is how MQTT makes those gaps invisible: the broker holds the client's state and its missed
+		messages until it comes back.
+	</p>
+
+	<h2>How sessions work</h2>
+	<p>
+		A session is the server-side state the broker keeps for a client: its active subscriptions, in-flight QoS 1/2
+		acknowledgements, and — for persistent sessions — messages queued while it was offline. Whether that state survives
+		a disconnect is what separates a <strong>persistent</strong> session from a <strong>non-persistent</strong> (clean) one.
+	</p>
+	<p>
+		A clean session exists only for the life of the connection: the broker creates it on connect and discards it on
+		disconnect, so the next connect starts from scratch. A persistent session is retained across the disconnect — on
+		reconnect the broker resumes it, the client does not resubscribe, and any messages that arrived while it was offline
+		are delivered in order.
+	</p>
+
+	<MqttDiagram caption="Subscriptions preserved and offline messages replayed on reconnect">
+		<svg viewBox="0 0 680 320" role="img" aria-label="Persistent session queues offline messages">
+			<rect class="d-actor" x="92" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="150"
+				y="36">Device</text
+			>
+			<rect class="d-actor d-actor--hero" x="472" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="530"
+				y="36">Broker</text
+			>
+			<line class="d-life" x1="150" y1="50" x2="150" y2="300"></line><line
+				class="d-life"
+				x1="530"
+				y1="50"
+				x2="530"
+				y2="300"></line>
+			<line class="d-line" x1="150" y1="80" x2="527" y2="80" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="248"
+				y="69"
+				width="184"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="84">SUBSCRIBE sensors/#</text><text
+				class="d-note"
+				x="540"
+				y="84">stored</text
+			>
+			<line class="d-brk" x1="60" y1="112" x2="620" y2="112"></line><rect
+				x="222"
+				y="102"
+				width="236"
+				height="20"
+				rx="10"
+				fill="#fbeeee"></rect><text class="d-brklabel d-mid" x="340" y="115" style="fill:#c23b3b"
+				>device goes offline (network drop)</text
+			>
+			<rect class="d-chip d-chip--green" x="404" y="136" width="122" height="20" rx="10"></rect><text
+				class="d-ctext d-ctext--green d-mid"
+				x="465"
+				y="150"
+				style="font-size:11px">msg 1 → queued</text
+			>
+			<rect class="d-chip d-chip--green" x="404" y="162" width="122" height="20" rx="10"></rect><text
+				class="d-ctext d-ctext--green d-mid"
+				x="465"
+				y="176"
+				style="font-size:11px">msg 2 → queued</text
+			>
+			<text class="d-note" x="150" y="152" style="text-anchor:middle">held for the</text><text
+				class="d-note"
+				x="150"
+				y="168"
+				style="text-anchor:middle">offline session</text
+			>
+			<line class="d-line" x1="150" y1="204" x2="527" y2="204" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="235"
+				y="193"
+				width="210"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="208">CONNECT (resume session)</text>
+			<line class="d-line d-line--green" x1="530" y1="244" x2="153" y2="244" marker-end="url(#arGreen)"></line><rect
+				class="d-chip d-chip--green"
+				x="243"
+				y="233"
+				width="194"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-ctext--green d-mid" x="340" y="248">msg 1, msg 2 (in order)</text><text
+				class="d-note"
+				x="540"
+				y="248">delivered</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Clean vs persistent at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>Non-persistent (clean)</th><th>Persistent</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>MQTT 3.1.1 flag</td><td>Clean Session = 1</td><td>Clean Session = 0</td></tr>
+				<tr><td>MQTT 5.0</td><td>Clean Start = 1 and Session Expiry = 0</td><td>Session Expiry &gt; 0</td></tr>
+				<tr><td>Subscriptions after disconnect</td><td>Discarded</td><td>Preserved</td></tr>
+				<tr><td>Offline QoS 1/2 messages</td><td>Discarded</td><td>Queued, delivered on reconnect</td></tr>
+				<tr><td>Best for</td><td>Dashboards, stateless tools</td><td>Devices on flaky links, backend consumers</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Persistent sessions in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> stores persistent-session state differently depending on the
+		<a href="/docs/user-guide/mqtt-client-type/">client type</a>, because devices and backend consumers have very
+		different scaling profiles:
+	</p>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:device-mobile" title="DEVICE clients">
+			keep their offline message queue in <strong>Redis</strong> — fast, low-latency reads suited to millions of devices with
+			moderate per-client volume.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:server" title="APPLICATION clients">
+			get a <strong>dedicated Kafka topic</strong>, a durable log that scales to high throughput and long retention
+			without broker memory pressure.
+		</LearnIconRow>
+	</LearnIconRows>
+	<p>
+		In MQTT 5.0 the session-expiry interval bounds how long an offline session is kept, so stale sessions don't
+		accumulate. For the full model, see the
+		<a href="/docs/user-guide/clean-persistent-sessions/">clean vs persistent sessions</a> guide.
+	</p>
+</MqttTopicLayout>

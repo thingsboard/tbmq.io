@@ -75,17 +75,12 @@ const { mode = 'page' } = Astro.props;
 					<label for="subject" class="select-label">
 						<select class="form-control select" name="subject" id="subject">
 							<option value="" disabled selected hidden>Select Subject</option>
+							<option value="TBMQ">Sales Inquiry</option>
 							<option value="Technical Support">Technical Support</option>
-							<option value="ThingsBoard Products">ThingsBoard Products</option>
 							<option value="Private Cloud">Private Cloud</option>
 							<option value="Deployment Options">Deployment Options</option>
-							<option value="Custom Development Service">Custom Development Service</option>
-							<option value="Training">Training</option>
-							<option value="Professional Services">Professional Services</option>
 							<option value="Partnership">Partnership</option>
-							<option value="Press or Analyst Inquiry">Press or Analyst Inquiry</option>
 							<option value="General Feedback">General Feedback</option>
-							<option value="TBMQ">TBMQ</option>
 							<option value="Other">Other</option>
 						</select>
 						<p>Subject</p>
@@ -126,6 +121,8 @@ const { mode = 'page' } = Astro.props;
 </div>
 
 <script>
+	import { FORMSPREE_CONTACT } from '~/data/formspree';
+
 	// ── Floating label: mark empty selects ──────────────────────────────────
 	function updateSelectEmpty(select: HTMLSelectElement) {
 		if (select.value === '') {
@@ -287,7 +284,10 @@ const { mode = 'page' } = Astro.props;
 		const message = params.get('message');
 		if (subject) {
 			const sel = form.querySelector<HTMLSelectElement>('select[name="subject"]');
-			if (sel) {
+			// Ignore values that don't match an option (e.g. legacy links to
+			// removed subjects) — assigning them would blank the select instead
+			// of keeping the default.
+			if (sel && Array.from(sel.options).some((o) => o.value === subject)) {
 				sel.value = subject;
 				updateSelectEmpty(sel);
 			}
@@ -305,7 +305,7 @@ const { mode = 'page' } = Astro.props;
 		if (!form) return;
 
 		// Set Formspree action
-		form.action = 'https://formspree.io/f/xrbnqnna';
+		form.action = FORMSPREE_CONTACT;
 
 		const renderedAt = form.querySelector<HTMLInputElement>('.form-rendered-at');
 		if (renderedAt) renderedAt.value = String(Math.floor(Date.now() / 1000));
@@ -570,21 +570,24 @@ const { mode = 'page' } = Astro.props;
 			width: 100%;
 			min-width: 150px;
 			height: 44px;
-			// Use Starlight's accent token in both themes — it's saturated
-			// purple-blue in light mode, light-blue in dark mode. Pair with
-			// `text-invert` so text contrast flips automatically (white text
-			// on light-mode bg, near-black text on dark-mode bg).
-			background-color: var(--color-primary);
-			color: var(--sl-color-text-invert);
+			// Brand green — this is a CTA, so it uses --color-brand (not the blue
+			// link accent) with the paired -contrast text token.
+			background-color: var(--color-brand);
+			color: var(--color-brand-contrast);
 			font-size: 16px;
 			font-weight: 500;
 			border: none;
 			border-radius: 6px;
 			cursor: pointer;
+			// Same hover treatment as NButton's filled variant: darken the fill with
+			// color-mix so background-color (an animatable property) carries the
+			// easing — a gradient overlay can't, background-image is discrete and
+			// the hover snaps. NButton eases via `transition: all` on `.n-button`;
+			// this button isn't one, so it needs its own transition.
 			transition: background-color 0.2s;
 
 			&:hover {
-				background-color: var(--color-primary-hover);
+				background-color: color-mix(in srgb, var(--color-brand) 85%, black);
 			}
 		}
 	}

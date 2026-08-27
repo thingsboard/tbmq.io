@@ -1,0 +1,52 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import ProductHero from '@components/Product/ProductHero.astro';
+import TrafficPatterns from '@components/Product/TrafficPatterns.astro';
+import ArchitecturePillars from '@components/Product/ArchitecturePillars.astro';
+import BuiltOn from '@components/Product/BuiltOn.astro';
+import Compliance from '@components/Product/Compliance.astro';
+import ProductCta from '@components/Product/ProductCta.astro';
+import ScrollReveal from '@components/ScrollReveal.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+
+const title = 'TBMQ — Open-source MQTT Broker for IoT at Scale';
+const description =
+	'Run an open-source MQTT broker that handles 100M+ concurrent connections and 3M+ messages/sec. Kafka-backed durability, zero message loss. Self-host free.';
+const jsonLd = marketingJsonLd({
+	path: '/product/',
+	name: title,
+	description,
+	breadcrumb: 'Product',
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="product"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt="TBMQ distributed MQTT broker architecture — built to scale to 100M connections"
+	openContentLinksInNewTab
+>
+	<main>
+		<ProductHero />
+		<TrafficPatterns />
+		<ArchitecturePillars />
+		<BuiltOn />
+		<Compliance />
+		<ProductCta />
+	</main>
+	<ScrollReveal />
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	:global(#product) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+	}
+</style>

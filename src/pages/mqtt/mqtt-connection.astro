@@ -1,0 +1,117 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the difference between CONNECT and CONNACK?',
+		a: 'CONNECT is the first packet a client sends to open a session; it carries the client ID, clean-start flag, keep-alive, optional credentials and Last Will. CONNACK is the broker’s reply: it reports whether the connection was accepted (a reason code) and whether an existing session was resumed (the session-present flag).',
+	},
+	{
+		q: 'What is the session-present flag?',
+		a: 'A flag in CONNACK that tells the client whether the broker already had stored session state for it (subscriptions and queued messages) and resumed it, versus starting a fresh session. It lets the client know if it needs to re-subscribe.',
+	},
+	{
+		q: 'What happens if the CONNECT is rejected?',
+		a: 'The broker returns a CONNACK with a non-zero reason code (for example, bad credentials or an unsupported protocol version) and then closes the network connection. In MQTT 3.1.1 these are return codes; MQTT 5.0 uses richer reason codes.',
+	},
+	{
+		q: 'Does a client send CONNECT every time it wants to publish?',
+		a: 'No. CONNECT is sent once, at the start of the connection. It must be the first packet; sending a second CONNECT on the same connection is a protocol violation. After CONNACK, the client can publish and subscribe freely until it disconnects.',
+	},
+	{
+		q: 'What is clean start?',
+		a: 'The CONNECT flag that decides whether the broker starts a brand-new session or resumes a stored one. It works together with the session expiry interval — see the persistent sessions guide.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-connection" faq={faq}>
+	<p>
+		Before an <a href="/mqtt/mqtt-client/">MQTT client</a> can publish or subscribe, it must open a session with the
+		<a href="/mqtt/mqtt-broker/">broker</a>. That always begins with a two-packet handshake: the client sends a
+		<strong>CONNECT</strong> and the broker replies with a <strong>CONNACK</strong>.
+	</p>
+
+	<h2>The connection handshake</h2>
+	<p>
+		CONNECT must be the very first packet on the connection. The broker validates it — protocol version, credentials,
+		client ID — and answers with CONNACK. Only after a successful CONNACK is the session open.
+	</p>
+
+	<MqttDiagram caption="Every MQTT session opens with a CONNECT / CONNACK handshake">
+		<svg
+			viewBox="0 0 680 270"
+			role="img"
+			aria-label="MQTT connection handshake: the client sends CONNECT and the broker replies with CONNACK, after which the session is open"
+		>
+			<rect class="d-actor" x="110" y="28" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="170" y="50">Client</text>
+			<rect class="d-actor d-actor--hero" x="450" y="28" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="510" y="50">Broker</text>
+			<line class="d-life" x1="170" y1="62" x2="170" y2="258"></line>
+			<line class="d-life" x1="510" y1="62" x2="510" y2="258"></line>
+			<line class="d-line" x1="170" y1="96" x2="507" y2="96" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="300" y="85" width="80" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="100">CONNECT</text>
+			<text class="d-note d-mid" x="340" y="124" style="font-size:11px"
+				>client ID · clean start · keep-alive · Will · username / password</text
+			>
+			<line class="d-line d-line--green" x1="510" y1="162" x2="173" y2="162" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="298" y="151" width="84" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="166">CONNACK</text>
+			<text class="d-note d-mid" x="340" y="190" style="font-size:11px">reason code · session-present flag</text>
+			<line class="d-brk" x1="80" y1="220" x2="600" y2="220"></line>
+			<text class="d-note d-mid" x="340" y="244" style="fill:#166c37"
+				>Connection open — the client can now PUBLISH and SUBSCRIBE</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>What CONNECT carries</h2>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:id" title="Client ID">
+			the client’s unique identity — see <a href="/mqtt/mqtt-client-id/">client ID</a>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:refresh" title="Clean start / clean session">
+			whether to resume a stored session or begin fresh — see <a href="/mqtt/persistent-session/">persistent sessions</a
+			>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:heartbeat" title="Keep-alive interval">
+			the heartbeat the client promises to maintain — see <a href="/mqtt/keep-alive/">keep-alive</a>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:file-alert" title="Last Will">
+			an optional message the broker publishes if the client drops unexpectedly — see
+			<a href="/mqtt/last-will/">Last Will &amp; Testament</a>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:key" title="Username / password">
+			optional credentials for <a href="/mqtt/security/">authentication</a>.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<h2>What CONNACK returns</h2>
+	<p>
+		CONNACK carries two things that matter to the client: a <strong>reason code</strong> (accepted, or why it was refused)
+		and the <strong>session-present flag</strong>, which tells the client whether the broker resumed an existing session
+		or started a new one. If session-present is false, a client that expected a persistent session knows it must
+		re-subscribe.
+	</p>
+	<p>
+		In MQTT 5.0, CONNACK can also carry broker-negotiated properties — an assigned client ID, a
+		<a href="/mqtt/keep-alive/">server keep-alive</a>, the session expiry the broker will honor, and limits such as
+		receive maximum and topic alias maximum — so the client learns the terms of the connection up front. MQTT 3.1.1
+		returns only the return code and session-present bit.
+	</p>
+
+	<h2>Connections in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> accepts CONNECTs for MQTT 3.1, 3.1.1 and 5.0, honors Clean Start and reports the session-present
+		flag, and authenticates each CONNECT before the session opens. It also enforces one live connection per client ID — a
+		second CONNECT with the same ID takes over the session (see <a href="/mqtt/mqtt-client-id/">client take-over</a>).
+		For the supported protocol details, see the <a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> and the
+		<a href="/docs/user-guide/clean-persistent-sessions/">sessions guide</a>.
+	</p>
+</MqttTopicLayout>

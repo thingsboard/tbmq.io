@@ -1,0 +1,87 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is mutual TLS (mTLS)?',
+		a: 'A TLS handshake where both sides present a certificate. The broker proves its identity as usual, and the client also presents an X.509 certificate, so the handshake authenticates both ends at once instead of just encrypting the channel.',
+	},
+	{
+		q: 'How does the broker identify a client from its certificate?',
+		a: 'It verifies the certificate chains to a trusted certificate authority (CA), then reads an identifier from the certificate — commonly the common name (CN) — and matches it against its stored client credentials.',
+	},
+	{
+		q: 'Is a password needed with client certificates?',
+		a: 'No. The certificate is the credential. Because identity is established during the TLS handshake, no username or password is sent, which removes the risk of leaked or reused passwords.',
+	},
+	{
+		q: 'What happens if the certificate is untrusted or expired?',
+		a: 'The TLS handshake fails before any MQTT packet is exchanged, so the connection never reaches the broker’s MQTT layer. Expired, revoked, or untrusted-CA certificates are all rejected at the handshake.',
+	},
+	{
+		q: 'When should I use client certificates over passwords?',
+		a: 'When you provision devices with unique identities and want strong, per-device authentication without managing passwords — common in larger or higher-security fleets. It pairs naturally with a device-provisioning process that issues each device a certificate.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-client-certificates" faq={faq}>
+	<p>
+		Passwords can leak, be reused, or be hard to rotate across a big fleet. <strong
+			>Client certificate authentication</strong
+		>
+		avoids them entirely: the client proves who it is with an X.509 certificate during the
+		<a href="/mqtt/mqtt-tls/">TLS</a> handshake. It’s one of the <a href="/mqtt/mqtt-authentication/">authentication</a>
+		methods, and the strongest of the common ones.
+	</p>
+
+	<h2>How mutual TLS works</h2>
+	<p>
+		Ordinary (one-way) TLS has only the broker present a certificate. <strong>Mutual TLS</strong> adds a second step: the
+		broker asks the client for its certificate too. The client sends its X.509 certificate, the broker checks it chains to
+		a trusted CA, and identifies the client from a field in the certificate — typically the common name (CN). No password
+		is ever exchanged.
+	</p>
+
+	<MqttDiagram caption="Mutual TLS: the client presents its own certificate, and the broker identifies it by the CN">
+		<svg
+			viewBox="0 0 680 258"
+			role="img"
+			aria-label="Mutual TLS handshake: the client sends ClientHello, the broker responds with its certificate and requests one, the client presents its certificate, and the broker validates it and identifies the client by its common name"
+		>
+			<rect class="d-actor" x="110" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="170" y="46">Client</text>
+			<rect class="d-actor d-actor--hero" x="450" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="510" y="46">Broker</text>
+			<line class="d-life" x1="170" y1="58" x2="170" y2="242"></line>
+			<line class="d-life" x1="510" y1="58" x2="510" y2="242"></line>
+			<line class="d-line" x1="170" y1="86" x2="507" y2="86" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="270" y="75" width="140" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="90">TLS ClientHello</text>
+			<line class="d-line" x1="510" y1="114" x2="173" y2="114" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="196" y="103" width="288" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="118" style="font-size:11px">ServerHello + cert + request client cert</text>
+			<line class="d-line d-line--green" x1="170" y1="150" x2="507" y2="150" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="266" y="139" width="148" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="154">Client certificate</text>
+			<text class="d-note d-mid" x="340" y="180" style="font-size:11px">broker verifies the chain and reads the CN</text
+			>
+			<line class="d-line d-line--green" x1="510" y1="210" x2="173" y2="210" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="238" y="199" width="204" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="214" style="font-size:11px"
+				>authenticated as CN=sensor-1</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Client certificates in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> supports X.509 client certificate authentication over a mutual-TLS listener. It matches the certificate’s
+		common name (CN) against stored credentials, either by exact value or a regular expression, so you can map a whole family
+		of device certificates to one credential rule. See the
+		<a href="/docs/security/authentication/x509/">X.509 authentication guide</a> and
+		<a href="/mqtt/mqtt-tls/">MQTT over TLS</a> for the underlying transport.
+	</p>
+</MqttTopicLayout>

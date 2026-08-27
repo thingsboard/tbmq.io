@@ -1,0 +1,130 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the main difference between MQTT and AMQP?',
+		a: 'MQTT is a lightweight publish/subscribe protocol for connecting large numbers of constrained devices. AMQP is a heavier, feature-rich protocol built around queues and exchanges for enterprise application-to-application messaging with strong routing and transactional guarantees.',
+	},
+	{
+		q: 'Is MQTT or AMQP better for IoT?',
+		a: 'MQTT is usually the better fit for device connectivity: it has minimal overhead, tolerates unreliable networks, and scales to huge fleets. AMQP shines in the backend, integrating enterprise systems that need rich routing and transactions.',
+	},
+	{
+		q: 'Do MQTT and AMQP interoperate?',
+		a: 'Not directly — they are different wire protocols. Some brokers speak both, and you can bridge them (for example MQTT at the edge, AMQP between backend services), but a plain MQTT client cannot talk to a plain AMQP broker.',
+	},
+	{
+		q: 'Which has more overhead, MQTT or AMQP?',
+		a: 'AMQP. Its richer feature set and framing make it heavier on the wire and on constrained devices, whereas MQTT’s fixed header starts at just 2 bytes.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-vs-amqp" faq={faq}>
+	<p>
+		MQTT and AMQP are both open messaging standards, and both use a broker — but they were designed for different ends
+		of the system. MQTT optimizes for reaching enormous numbers of devices over flaky networks; AMQP optimizes for rich,
+		reliable messaging between backend applications.
+	</p>
+
+	<h2>What each is for</h2>
+	<p>
+		<strong>MQTT</strong> is a minimal <a href="/mqtt/what-is-mqtt/">publish/subscribe</a> protocol: a client connects to
+		a <a href="/mqtt/mqtt-broker/">broker</a>, publishes to topics, and subscribes to topics. That simplicity is the
+		point — it keeps the protocol tiny and easy to run on constrained hardware. <strong>AMQP</strong> (the Advanced Message
+		Queuing Protocol) is a broader protocol with explicit <strong>queues</strong>, <strong>exchanges</strong>, and
+		routing rules, plus transactions and fine-grained delivery control, aimed at enterprise integration. Those queues
+		and exchanges describe <strong>AMQP 0-9-1</strong>, the model popularized by RabbitMQ and what most people mean by
+		“AMQP”; <strong>AMQP 1.0</strong> is a separate, later standard that defines the wire protocol without those broker-level
+		concepts.
+	</p>
+
+	<MqttDiagram caption="MQTT routes by topic; AMQP (0-9-1) routes through exchanges and queues">
+		<svg
+			viewBox="0 0 680 190"
+			role="img"
+			aria-label="MQTT versus AMQP routing: MQTT has a publisher send to a topic-matching broker that delivers to subscribers, while AMQP has a producer publish to an exchange that routes to a queue that a consumer reads"
+		>
+			<text class="d-panelttl d-mid" x="340" y="26">MQTT — a topic-matching broker</text>
+			<rect class="d-actor" x="60" y="42" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="120" y="63">Publisher</text>
+			<rect class="d-actor d-actor--hero" x="280" y="42" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="63">Broker</text>
+			<rect class="d-actor" x="500" y="42" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="560" y="63">Subscriber</text>
+			<line class="d-line" x1="180" y1="59" x2="278" y2="59" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="196" y="48" width="66" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="229" y="63" style="font-size:11px">publish</text>
+			<line class="d-line d-line--green" x1="400" y1="59" x2="498" y2="59" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="416" y="48" width="66" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="449" y="63" style="font-size:11px">deliver</text>
+			<text class="d-note d-mid" x="340" y="92"
+				>One broker matches each message to subscribers by topic — no queues</text
+			>
+			<line x1="16" y1="104" x2="664" y2="104" stroke="#eef0f3" stroke-width="1"></line>
+			<text class="d-panelttl d-mid" x="340" y="120">AMQP — producer → exchange → queue → consumer</text>
+			<rect class="d-actor" x="20" y="134" width="100" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="70" y="155">Producer</text>
+			<rect class="d-actor" x="200" y="134" width="100" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="250" y="155">Exchange</text>
+			<rect class="d-actor" x="380" y="134" width="100" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="430" y="155">Queue</text>
+			<rect class="d-actor" x="560" y="134" width="100" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="610" y="155">Consumer</text>
+			<line class="d-line" x1="120" y1="151" x2="198" y2="151" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="131" y="140" width="58" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="160" y="155" style="font-size:11px">publish</text>
+			<line class="d-line" x1="300" y1="151" x2="378" y2="151" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="312" y="140" width="54" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="339" y="155" style="font-size:11px">route</text>
+			<line class="d-line d-line--green" x1="480" y1="151" x2="558" y2="151" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="489" y="140" width="60" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="519" y="155" style="font-size:11px">consume</text>
+			<text class="d-note d-mid" x="340" y="184"
+				>An exchange routes to queues via bindings; consumers read from queues</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>MQTT vs AMQP at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>MQTT</th><th>AMQP</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Primary use</td><td>Device connectivity at the edge</td><td>Enterprise app-to-app messaging</td></tr>
+				<tr><td>Model</td><td>Publish/subscribe on topics</td><td>Queues &amp; exchanges with routing</td></tr>
+				<tr><td>Weight</td><td>Very lightweight (2-byte header)</td><td>Heavier, richer framing</td></tr>
+				<tr><td>Typical clients</td><td>Millions of constrained devices</td><td>Fewer backend services</td></tr>
+				<tr
+					><td>Delivery control</td><td><a href="/mqtt/qos/">QoS</a> 0 / 1 / 2</td><td
+						>Acks, transactions, flow control</td
+					></tr
+				>
+				<tr
+					><td>Strength</td><td>Scale &amp; simplicity over poor networks</td><td>Rich routing &amp; reliability</td
+					></tr
+				>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>When to use which</h2>
+	<p>
+		Reach for <strong>MQTT</strong> when the job is connecting devices — telemetry, commands, presence — especially at large
+		scale or over unreliable links. Reach for <strong>AMQP</strong> when the job is integrating enterprise applications that
+		need sophisticated routing, queuing, and transactional guarantees. Many architectures use both: MQTT from the devices
+		in, AMQP between services in the back. For the edge-to-backend streaming pattern specifically, see
+		<a href="/mqtt/mqtt-vs-kafka/">MQTT vs Kafka</a> and <a href="/mqtt/mqtt-vs-http/">MQTT vs HTTP</a>.
+	</p>
+
+	<h2>MQTT in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> is a purpose-built <a href="/docs/">MQTT broker</a> focused on connecting massive device fleets —
+		not a general-purpose AMQP message broker. When you need MQTT at scale, that focus is the advantage.
+	</p>
+</MqttTopicLayout>

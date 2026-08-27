@@ -13,20 +13,24 @@ It acts as a **bridge** between TBMQ and external applications, ensuring reliabl
 4. **External service receives the request** and processes the data.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-http-integration.png', alt: 'TBMQ HTTP integration data flow', caption: 'TBMQ HTTP integration data flow' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-http-integration.svg',
+    alt: 'HTTP integration data flow: devices exchange MQTT(S) traffic with TBMQ; TBMQ passes matched messages over TCP(TLS) to the HTTP integration running inside the TBMQ Integration Executor; the integration pushes them to the external HTTP endpoint over HTTP(S). The executor does the pushing, never the broker itself.',
+    caption: 'Devices → TBMQ → Integration Executor → external HTTP endpoint',
+  },
 ]} />
 
 ## Prerequisites
 
-- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance.
-- An external service ready to receive HTTP requests (e.g., <a href="/docs/paas/why-thingsboard/" target="_blank" rel="noopener noreferrer">ThingsBoard Cloud</a>).
+- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance, **version 2.1 or later**, with the <DocLink product={props.product} path="integrations/#tbmq-integration-executor">TBMQ Integration Executor</DocLink> service running. Without a reachable executor, saving an integration fails with a validation timeout.
+- An external service ready to receive HTTP requests (e.g., <a href="https://thingsboard.io/docs/paas/why-thingsboard/" target="_blank" rel="noopener noreferrer">ThingsBoard Cloud</a>).
 - A client capable of publishing MQTT messages (e.g., <DocLink product={props.product} path="user-guide/ui/websocket-client">TBMQ WebSocket Client</DocLink>).
 
-## Create ThingsBoard Integration
+## Prepare the external HTTP endpoint
 
-In this tutorial, **ThingsBoard** is used as the external HTTP service. Any other HTTP-compatible service can be used instead.
+This step happens on the receiving side, not in TBMQ. This tutorial uses **ThingsBoard** as the external HTTP service; any other HTTP-compatible service works the same way, and if you already have an endpoint URL you can skip ahead to [creating the TBMQ integration](#create-tbmq-http-integration).
 
-Follow the <a href="/docs/paas/user-guide/integrations/http/" target="_blank" rel="noopener noreferrer">ThingsBoard HTTP Integration Guide</a> to create an integration on ThingsBoard Cloud.
+Follow the <a href="https://thingsboard.io/docs/paas/user-guide/integrations/http/" target="_blank" rel="noopener noreferrer">ThingsBoard HTTP Integration Guide</a> to create an integration on ThingsBoard Cloud.
 
 Once created:
 
@@ -42,8 +46,8 @@ Once created:
 <Steps>
 1. Go to the **Integrations** page and click the **"+"** button.
 2. Select **HTTP** as the integration type and click **Next**.
-3. On the **Topic Filters** step, click **Next** to subscribe to the default topic `tbmq/#`.
-4. In the **Configuration** step, paste the **Endpoint URL** from the ThingsBoard Integration.
+3. On the **Filters and events** step, keep the default **Topic filters** entry `tbmq/#`, leave **Lifecycle events** empty, and click **Next**.
+4. In the **Configuration** step, paste the **Endpoint URL** you copied above.
 5. Open **Advanced settings** and set **Payload content type** to `JSON`.
 6. Click **Add** to save the integration.
 </Steps>
@@ -64,6 +68,8 @@ Once created:
 
 Topic filters define **MQTT-based subscriptions** that trigger the integration. When TBMQ receives a message matching a configured topic filter, the integration processes it and forwards the data to the external system.
 
+Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two.
+
 For example, with the topic filter `tbmq/devices/+/status`, any of the following messages will trigger the integration:
 
 ```plaintext
@@ -73,23 +79,55 @@ tbmq/devices/gateway-01/status
 
 ## Configuration
 
-| Field | Description |
-|---|---|
-| **Send only message payload** | If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and additional properties is sent. |
-| **Endpoint URL** | The external service URL where HTTP requests are sent. |
-| **Request Method** | Supported: `GET`, `POST`, `PUT`, `DELETE`. |
-| **Credentials** | **Anonymous**, **Basic Authentication** (username + password), or **PEM-based authentication**. |
-| **Headers** | Key-value pairs added to the HTTP request headers. |
-| **Payload Content Type** | Format of the request body: `JSON`, `Text`, `Binary (Base64)`. |
-| **Send as binary on parsing error** | If enabled, messages failing JSON or Text parsing are sent as binary. If disabled, they are not sent. |
-| **Read Timeout** | Maximum time to wait for a response before timing out. |
-| **Max Parallel Requests** | Limits the number of concurrent HTTP requests. |
-| **Max Response Size** | Maximum allowed size for incoming responses. |
-| **Metadata** | Custom metadata attached to forwarded messages. |
+| Field | Default | Description |
+|---|---|---|
+| **Send only message payload** | off | If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and additional properties is sent. |
+| **Endpoint URL** | — | The external service URL where HTTP requests are sent. Required. |
+| **Request method** | `POST` | One of `POST`, `PUT`, `GET`, `DELETE`. Only `POST` and `PUT` carry a request body — with `GET` or `DELETE` the request is sent without the message. |
+| **Credentials type** | `Anonymous` | `Anonymous`, `Basic` (username + password), or `PEM` (certificate-based). |
+| **Headers** | `Content-Type: application/json` | Key-value pairs added to the HTTP request headers. At least one header is required. |
+| **Payload content type** | `Binary` | How the message payload is formatted: `JSON`, `Text`, or `Binary`. Binary means the payload is Base64-encoded. |
+| **Send as binary on parsing error** | on | If enabled, a payload that fails `JSON` or `Text` parsing is sent as binary instead. If disabled, such a message is not sent at all and is counted as a failure. |
+| **Read timeout in millis** | `0` | Maximum time to wait for a response. `0` means no timeout. |
+| **Max number of parallel requests** | `0` | Caps in-flight HTTP requests. `0` means no limit. |
+| **Max response size (in KB)** | `256` | Memory used to buffer the response body before it is handed to the integration. |
+| **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
 
-## Events
+<Aside type="caution">
+  **Max number of parallel requests** and **Read timeout in millis** interact: the read timeout is also how long a message waits for a free slot. If you cap parallel requests while leaving the read timeout at `0`, a message that arrives when all slots are busy fails immediately instead of queueing. Set a non-zero read timeout whenever you set a parallel limit.
+</Aside>
 
-TBMQ logs integration-related events for debugging and troubleshooting:
+### Request body
+
+**Send only message payload** decides whether the endpoint receives the bare payload or the full envelope, and **Payload content type** decides how the payload itself is encoded:
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-http-payload-encoding.svg',
+    alt: 'How an outgoing integration payload is built: the raw payload {"temperature":25} is first encoded per the Payload content type — JSON keeps it as is, Text sends it as an escaped string, Binary sends it Base64-encoded. The encoded value is then placed according to Send only message payload: when on, the body is the encoded payload alone; when off, it is a JSON envelope with payload, topicName, clientId and eventType fields. If encoding fails because the payload is not valid JSON or not text, Send as binary on parsing error either falls back to Base64 binary or the message is not sent and counted as failed.',
+    caption: 'Payload content type encodes the payload; Send only message payload decides what wraps it',
+  },
+]} />
+
+A [client lifecycle event](#client-lifecycle-events) never goes through this: it has no MQTT payload to encode and is always sent as its own JSON object.
+
+## Client lifecycle events
+
+Besides the messages matched by topic filters, this integration can deliver <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>client lifecycle events</DocLink> — a client connecting, disconnecting, changing its subscriptions, or failing authentication or authorization.
+
+Pick the event types on the **Filters and events** step while creating the integration, or add them later:
+
+<Steps>
+1. Open the integration on the **Integrations** page and click the **Toggle edit mode** button (pencil icon).
+2. Click the **Lifecycle events** field to list the available event types, then select the ones you need: **Client connected**, **Client disconnected**, **Client subscribed**, **Client unsubscribed**, **Client authentication failed**, **Client authorization failed**, **Client connection failed**. Each one is added as a chip; remove it with its **x**.
+3. Click **Apply changes**.
+</Steps>
+
+Events are sent to the same **Endpoint URL** as messages, as a JSON request body. **Send only message payload**, **Payload content type**, and **Send as binary on parsing error** apply to message payloads only — an event is always delivered as JSON.
+
+## Integration events
+
+These are the **integration's own** events, recorded inside TBMQ for debugging and troubleshooting. They are not the client lifecycle events described above: those are about MQTT clients and are delivered to your HTTP endpoint, while these describe the integration itself and never leave TBMQ.
 
 - **Lifecycle Events** — logs events such as `Started`, `Created`, `Updated`, `Stopped`.
 - **Statistics** — insights into integration performance, including processed message counts and error rates.
@@ -107,7 +145,8 @@ TBMQ logs integration-related events for debugging and troubleshooting:
 1. Navigate to the **WebSocket Client** page.
 2. Select **WebSocket Default Connection** (or any working connection) and click **Connect**. Verify the connection status shows `Connected`.
 3. Set the **Topic** field to `tbmq/http-integration` to match the integration's topic filter `tbmq/#`.
-4. Click the **Send** icon to publish the message.
+4. Leave the pre-filled **Payload** `{"temperature": 25}` as is — it is what the endpoint receives below.
+5. Click the **Send** icon to publish the message.
 </Steps>
 
 <ImageGallery product={props.product} images={[
@@ -150,7 +189,7 @@ You should see an event with status **OK** and a payload similar to:
 | `payload` | Content of the MQTT message. |
 | `topicName` | MQTT topic to which the message was published. |
 | `clientId` | ID of the MQTT client that published the message. |
-| `eventType` | Type of MQTT event. `PUBLISH_MSG` is the only supported type. |
+| `eventType` | Type of event. `PUBLISH_MSG` for a forwarded message; a [client lifecycle event](#client-lifecycle-events) carries its own type instead. |
 | `qos` | Quality of Service level of the incoming message. |
 | `retain` | Whether the message has the Retain flag set. |
 | `tbmqIeNode` | Node ID of the Integration Executor that handled the message. |

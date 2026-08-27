@@ -56,4 +56,4 @@ This mechanism ensures that only one instance of a client is active at any given
 It is also a normal part of session management — for example, a device that reboots and reconnects will resume its session without the previous connection blocking it.
 If the original client was disconnected without the broker's knowledge (e.g., due to a half-open TCP connection), the new connection forcefully closes the outdated session and establishes a fresh one.
 
-Note that client take-over does **not** trigger the Last Will of the displaced connection, as the session itself continues under the new network connection.
+Whether client take-over publishes the displaced connection's Last Will depends on its will delay. With no will delay set — the default, and always the case for MQTT 3.1.1 — the broker publishes the Last Will when the take-over closes the old connection. Only if the displaced MQTT 5.0 session had a will delay interval **and** the new connection resumes that session (non–clean start) is the pending will cancelled instead, treating the take-over as continuity.

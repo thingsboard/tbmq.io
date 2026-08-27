@@ -1,5 +1,7 @@
 import { Aside } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
 import ImageGallery from '~/components/ImageGallery.astro';
+import ShowFor from '~/components/ShowFor.astro';
 import DocLink from '@components/DocLink.astro';
 
 The Application Shared Subscription entity enables the <DocLink product={props.product} path="user-guide/shared-subscriptions">Shared Subscriptions</DocLink> feature for **APPLICATION** clients,
@@ -15,7 +17,7 @@ Administrators can manage shared subscriptions via the Web UI or <DocLink produc
 
 ## Add shared subscription
 
-1. Open the **Shared Subscriptions** page and click the **plus icon**.
+1. Open **Shared subscriptions → Application entities** in the left-hand menu and click the **plus icon**.
 2. Fill in the following fields:
    - **Name** — any display name, e.g., "Application Shared Subscription".
    - **Topic filter** — the actual MQTT topic filter (wildcards `#` and `+` are supported). If your full shared subscription topic filter is `$share/group1/city/+/home/#`, set this field to `city/+/home/#`. **Cannot be changed after creation and must be unique.**
@@ -37,13 +39,20 @@ After creation, a dedicated Kafka topic is created using the following naming co
 
 Where `/` → `.`, `#` → `mlw` (multi-level wildcard), `+` → `slw` (single-level wildcard).
 
-If the topic filter contains special characters beyond alphanumerics, a hash is used instead:
+If the topic filter contains characters other than letters, digits, `/`, `+`, and `#`, a SHA-256 hash of the filter is used instead:
 
 ```
 tbmq.msg.app.shared.$TOPIC_FILTER_HASH
 ```
 
-This behavior is controlled by `TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION` (enabled by default). When disabled, Kafka topics are not created for topic filters with special characters.
+This behavior is controlled by `TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION` (enabled by default). When disabled, the character replacement is applied without validation, so a topic filter with special characters may produce an invalid Kafka topic name.
+
+## Manage Kafka topics
+
+Two actions in the top right corner of the page manage the Kafka topics of all Application Shared Subscriptions at once:
+
+- **Sync Kafka topics** — creates the missing Kafka topics; existing topics are kept.
+- **Delete Kafka topics** — permanently purges the Kafka topics of all Application Shared Subscriptions and may disrupt message flow. Shown only when Kafka topic deletion is enabled.
 
 ## Edit shared subscription
 
@@ -64,5 +73,16 @@ Only the **Name** field can be edited after creation.
 ]} />
 
 <Aside type="caution">
-  When a shared subscription is deleted, the corresponding Kafka topic is also deleted. This requires <code>TB_KAFKA_ENABLE_TOPIC_DELETION=true</code>.
+  When a shared subscription is deleted, the corresponding Kafka topic is also deleted. This requires <code>TB_KAFKA_ENABLE_TOPIC_DELETION=true</code> (the default); when disabled, TBMQ keeps the topic and simply stops using it.
 </Aside>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The shared subscription details page also includes an **Audit logs** tab listing the <DocLink product={props.product} path="security/audit-log">audit log</DocLink> entries related to the entity.
+
+<Aside type="caution">
+  Adding, editing, and deleting shared subscriptions, as well as the Kafka topic actions, are available only to users
+  with administrator rights — Viewers get a read-only view. The REST API enforces the same rule with the `READ`,
+  `WRITE`, `CREATE`, and `DELETE` permissions. See
+  <DocLink product={props.product} path="security/rbac">Roles and permissions</DocLink>.
+</Aside>
+</ShowFor>

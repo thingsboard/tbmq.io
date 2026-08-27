@@ -13,12 +13,12 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-payg-buy',
 				question: 'How can I buy a self-managed subscription?',
-				answer: `<p>To purchase a self-managed subscription, you can acquire a license through your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Each license comes with a unique activation key, which allows you to deploy and run the system by following our detailed <a target="_blank" href="/docs/mqtt-broker/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
+				answer: `<p>To purchase a self-managed subscription, you can acquire a license through your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Each license comes with a unique activation key, which allows you to deploy and run the system by following our detailed <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
 			},
 			{
 				id: 'tbmq-payg-license-meaning',
 				question: 'What does it mean to get the license?',
-				answer: `<p>Licensing is applicable to self-hosted platform versions only. Each license comes with a unique license key (activation code) that is automatically generated in your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Using this license key, you can deploy and run the system by following our detailed <a target="_blank" href="/docs/mqtt-broker/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
+				answer: `<p>Licensing is applicable to self-hosted platform versions only. Each license comes with a unique license key (activation code) that is automatically generated in your <a target="_blank" href="https://license.thingsboard.io/" rel="noopener noreferrer">License Server</a> account. Using this license key, you can deploy and run the system by following our detailed <a target="_blank" href="/docs/installation/" rel="noopener noreferrer">installation guides</a>.</p>`,
 			},
 			{
 				id: 'tbmq-payg-plans',
@@ -61,7 +61,7 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-payg-features',
 				question: 'Are all TBMQ features included in the subscription?',
-				answer: `<p>Yes, all core TBMQ features are included. The only exception to the comprehensive feature set is White Labeling, which is available as an optional add-on that can be purchased separately.</p>`,
+				answer: `<p>Yes, all core TBMQ features are included. Two optional add-ons can be purchased separately: White Labeling (full customization of the broker interface to match your branding) and Priority Help Desk (an elevated, high-priority support queue).</p>`,
 			},
 			{
 				id: 'tbmq-payg-multi-location',
@@ -225,7 +225,7 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-payg-internet-connection',
 				question: 'Do I need an internet connection to use the self-managed license?',
-				answer: `<p>Yes, an internet connection is required for periodic license verification. The system checks the license once per hour, and if the connection is not restored within 24 hours, the platform may shut down. This process ensures proper license management while allowing temporary connectivity issues. For more details, please refer to the license check <a target="_blank" href="/docs/license-server/what-is-license-server/#architecture" rel="noopener noreferrer">description</a>.</p>`,
+				answer: `<p>Yes, an internet connection is required for periodic license verification. The system checks the license once per hour, and if the connection is not restored within 24 hours, the platform may shut down. This process ensures proper license management while allowing temporary connectivity issues. For more details, please refer to the license check <a target="_blank" href="https://thingsboard.io/docs/license-server/what-is-license-server/#architecture" rel="noopener noreferrer">description</a>.</p>`,
 			},
 			{
 				id: 'tbmq-payg-offline',
@@ -240,7 +240,7 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-payg-ha',
 				question: 'Does TBMQ support high-availability (HA) setups?',
-				answer: `<p>Yes, High Availability (HA) is supported and can be achieved through TBMQ services and database replication. Please note that each TBMQ replica will require a separate license.</p>`,
+				answer: `<p>Yes, High Availability (HA) is supported and can be achieved through TBMQ services and database replication. Please note that each additional TBMQ node must be covered by a licensed Production or Development Instance.</p>`,
 			},
 			{
 				id: 'tbmq-payg-backup',
@@ -277,7 +277,7 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 				id: 'tbmq-payg-vulnerability-matrix',
 				question:
 					'Where can I find the logged vulnerability fixes matrix: version + list of fixes?',
-				answer: `<p>Please stay tuned with our <a target="_blank" href="/docs/mqtt-broker/pe/releases/" rel="noopener noreferrer">Release notes</a>. Critical vulnerabilities or security issues are mentioned in separate line items. Less threatful vulnerabilities appear as a single record (“Vulnerability fixes”) stating that, at the release date, the version is free of known HIGH and some MEDIUM CVEs.</p>`,
+				answer: `<p>Please stay tuned with our <a target="_blank" href="/docs/pe/releases/" rel="noopener noreferrer">Release notes</a>. Critical vulnerabilities or security issues are mentioned in separate line items. Less threatful vulnerabilities appear as a single record (“Vulnerability fixes”) stating that, at the release date, the version is free of known HIGH and some MEDIUM CVEs.</p>`,
 			},
 		],
 	},
@@ -303,7 +303,7 @@ export const tbmqSelfManagedPaygFaq: FaqCategory[] = [
 			{
 				id: 'tbmq-payg-switch-to-perp',
 				question: 'Can I switch from a subscription license to a perpetual license?',
-				answer: `<p>Customer may cancel the subscription and purchase a perpetual license. The remain costs from terminated subscription plan (if remain) will be deducted from Total cost for the perpetual license. The perpetual license is non-refundable. Once purchased, it cannot be canceled.</p>`,
+				answer: `<p>Customer may cancel the subscription and purchase a perpetual license. The remaining costs from the terminated subscription plan (if any) will be deducted from the total cost for the perpetual license. The perpetual license is non-refundable. Once purchased, it cannot be canceled.</p>`,
 			},
 		],
 	},

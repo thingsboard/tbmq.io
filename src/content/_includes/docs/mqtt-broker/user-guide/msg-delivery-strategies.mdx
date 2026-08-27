@@ -12,7 +12,18 @@ TBMQ uses this to offer two configurable **delivery strategies**:
 - **Write and flush for each message**
 - **Buffer messages and flush periodically or by count**
 
-Both strategies apply independently to <DocLink product={props.product} path="user-guide/mqtt-client-type">DEVICE clients (persistent and non-persistent) and APPLICATION clients (persistent)</DocLink>.
+The strategy is chosen independently for each of the three outbound delivery paths:
+
+| Delivery path | Setting | Default |
+|---|---|---|
+| **Direct** — non-persistent sessions, plus persistent sessions receiving at QoS 0, regardless of <DocLink product={props.product} path="user-guide/mqtt-client-type">client type</DocLink> | `MQTT_MSG_WRITE_AND_FLUSH` | `true` — flush per message |
+| **Persistent DEVICE** — served from Redis | `MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH` | `true` — flush per message |
+| **Persistent APPLICATION** — served from the client's own Kafka topic | `MQTT_APP_MSG_WRITE_AND_FLUSH` | `false` — buffered |
+
+<Aside type="caution">
+  All three settings are read once at startup — the APPLICATION strategy even selects a different implementation bean
+  based on its value. Changing any of them requires a **broker restart**; they cannot be tuned at runtime.
+</Aside>
 
 ## Write and flush for each message
 
@@ -27,7 +38,8 @@ TBMQ calls `writeAndFlush()` for every outgoing message.
 `write()` queues the message without flushing. TBMQ triggers a flush when:
 
 - The buffer reaches the configured message count (`buffered-msg-count`).
-- The session has been idle longer than `idle-session-flush-timeout-ms` — for Device clients only.
+- More than `idle-session-flush-timeout-ms` has passed since the last flush — direct and persistent DEVICE paths only.
+- The current Kafka batch is fully processed — persistent APPLICATION path only.
 
 **When to use:** High-throughput or bursty workloads where I/O efficiency and scalability are priorities.
 
@@ -35,70 +47,101 @@ TBMQ calls `writeAndFlush()` for every outgoing message.
 
 ## Configuration
 
-### Device clients
+### Non-persistent and persistent DEVICE subscribers
+
+These two paths share one buffering implementation, each with its own pair of settings:
 
 ```yaml
-# Write-and-flush for non-persistent DEVICE subscribers.
-# Set to false to enable buffering.
-write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
-# Messages buffered before flush. Used when MQTT_MSG_WRITE_AND_FLUSH=false
-buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
-
-# Write-and-flush for persistent DEVICE subscribers.
-# Set to false to enable buffering.
-persistent-session.device.write-and-flush: "${MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH:true}"
-# Messages buffered before flush. Used when MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH=false
-persistent-session.device.buffered-msg-count: "${MQTT_PERSISTENT_BUFFERED_MSG_COUNT:5}"
+mqtt:
+  # Enables or disables immediate flush of each message published to non-persistent subscribers.
+  # When disabled, messages are buffered and flushed periodically.
+  write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
+  # Number of messages buffered in the channel before the flush is made.
+  # Used when MQTT_MSG_WRITE_AND_FLUSH = false.
+  buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
+  persistent-session:
+    device:
+      persisted-messages:
+        # Enables or disables immediate flush of each message published to persistent DEVICE subscribers.
+        write-and-flush: "${MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH:true}"
+        # Number of messages buffered in the channel before the flush is made.
+        # Used when MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH = false.
+        buffered-msg-count: "${MQTT_PERSISTENT_BUFFERED_MSG_COUNT:5}"
 ```
 
-When buffering is enabled for Device clients, TBMQ maintains a cache of active session states.
-The parameters below control the cache and the background flusher:
+When **either** of these two flags is `false`, TBMQ builds a cache of active session states and starts a background
+flusher. When both are `true` — the default — neither the cache nor the scheduler is created at all, so buffered
+delivery adds no overhead. The parameters below control the cache and the flusher:
 
 ```yaml
-# Maximum number of session entries in the flush state cache.
-# When the cache is full, least-recently-used sessions are evicted and their buffers flushed.
-session-cache-max-size: "${MQTT_BUFFERED_CACHE_MAX_SIZE:10000}"
-# Time in milliseconds after which an inactive session entry expires and its buffer is flushed.
-# A session is considered inactive if it receives no new messages during this period.
-# Default: 5 minutes
-session-cache-expiration-ms: "${MQTT_BUFFERED_CACHE_EXPIRY_MS:300000}"
-# Interval in milliseconds at which the background scheduler checks sessions for flushing.
-# A smaller value results in more frequent flush checks.
-scheduler-execution-interval-ms: "${MQTT_BUFFERED_SCHEDULER_INTERVAL_MS:100}"
-# Maximum idle time in milliseconds before a session's buffer is automatically flushed.
-# A flush occurs when the buffer limit is reached or when this timeout elapses.
-idle-session-flush-timeout-ms: "${MQTT_BUFFERED_IDLE_FLUSH_MS:200}"
+mqtt:
+  buffered-delivery:
+    # Maximum number of session entries stored in the flush state cache.
+    # When the cache exceeds this size, the least recently used sessions are evicted
+    # and their pending message buffers are flushed automatically.
+    session-cache-max-size: "${MQTT_BUFFERED_CACHE_MAX_SIZE:10000}"
+    # Expiry time for an inactive session entry in the flush cache (in ms).
+    # A session is considered inactive if it receives no new messages during this period.
+    # Upon expiration, the session is evicted from the cache and its buffer is flushed.
+    # Defaults to 5 minutes.
+    session-cache-expiration-ms: "${MQTT_BUFFERED_CACHE_EXPIRY_MS:300000}"
+    # Interval at which the scheduler checks all sessions in the cache for potential flushing (in ms).
+    scheduler-execution-interval-ms: "${MQTT_BUFFERED_SCHEDULER_INTERVAL_MS:100}"
+    # Maximum time a session can remain idle before its message buffer is automatically flushed (in ms).
+    idle-session-flush-timeout-ms: "${MQTT_BUFFERED_IDLE_FLUSH_MS:200}"
 ```
 
-For Device clients, buffered delivery works as follows:
+Buffered delivery on these paths works as follows:
 
-1. **Session buffer creation** — TBMQ stores a `SessionFlushState` object in the cache with the buffered message count, last flush timestamp, and the client's Netty channel context.
-2. **Write without flush** — each outgoing message increments the buffer count using `channel.write()`.
-3. **Flush trigger** — a flush occurs when the buffer count reaches the threshold, the session is idle beyond `idle-session-flush-timeout-ms`, or the session is evicted from cache.
-4. **Background flusher** — a scheduler periodically scans the cache and flushes idle session buffers.
-5. **Shutdown handling** — on service shutdown, TBMQ flushes all buffered sessions to prevent message loss.
+1. **Session buffer creation** — TBMQ stores a flush-state entry in the cache, keyed by session ID, holding the buffered
+   message count, the last flush timestamp, and the client's Netty channel context.
+2. **Write without flush** — each outgoing PUBLISH is written with `channel.write()` and increments the buffer count.
+   Only PUBLISH packets are buffered on these two paths: PUBREL, the second phase of a QoS 2 delivery, and retained
+   messages sent in response to a SUBSCRIBE are always flushed immediately.
+3. **Count-based flush** — a flush is triggered once the count reaches `buffered-msg-count`, after which the counter resets.
+4. **Time-based flush** — the background scheduler runs every `scheduler-execution-interval-ms` and flushes any session
+   whose buffer is non-empty and whose **last flush** was more than `idle-session-flush-timeout-ms` ago.
+5. **Eviction flush** — a session evicted from the cache, by size pressure or after `session-cache-expiration-ms` of
+   inactivity, has its buffer flushed on the way out.
+6. **Shutdown handling** — on service shutdown, TBMQ flushes all buffered sessions to prevent message loss.
 
-### Application clients
+<Aside>
+  Step 4 bounds worst-case added latency: a buffered message waits at most `idle-session-flush-timeout-ms` plus one
+  scheduler tick — about **300 ms** with the defaults — before it is flushed, even if no further messages arrive.
+  Lower `MQTT_BUFFERED_IDLE_FLUSH_MS` if that is too high for your workload.
+</Aside>
+
+If sessions are evicted because the cache is full, the broker logs an `INFO` message —
+`Client session was evicted due to cache size limit` — followed by the configured limit. Seeing it often means
+`MQTT_BUFFERED_CACHE_MAX_SIZE` is below your concurrent subscriber count and should be raised.
+
+### Persistent APPLICATION subscribers
 
 ```yaml
-# Write-and-flush for persistent APPLICATION subscribers.
-# Defaults to false (buffering enabled) for throughput efficiency.
-write-and-flush: "${MQTT_APP_MSG_WRITE_AND_FLUSH:false}"
-# Messages buffered before flush. Used when MQTT_APP_MSG_WRITE_AND_FLUSH=false
-buffered-msg-count: "${MQTT_APP_BUFFERED_MSG_COUNT:10}"
+mqtt:
+  persistent-session:
+    app:
+      persisted-messages:
+        # Enables or disables immediate flush of each message published to persistent APPLICATION subscribers.
+        write-and-flush: "${MQTT_APP_MSG_WRITE_AND_FLUSH:false}"
+        # Number of messages buffered in the channel before the flush is made.
+        # Used when MQTT_APP_MSG_WRITE_AND_FLUSH = false.
+        buffered-msg-count: "${MQTT_APP_BUFFERED_MSG_COUNT:10}"
 ```
 
-For Application clients, buffered delivery is applied during message processing in batches:
+This path does not use the shared cache or the scheduler. Each APPLICATION client is processed in a dedicated consumer
+thread that polls a batch of messages from the client's own Kafka topic, so flushing can be controlled per client inside
+the batch:
 
-1. Messages are written to the Netty channel using `write()` without an immediate flush.
-2. A flush is triggered after a configured number of messages — `buffered-msg-count`, default: 10 — have been written.
-3. Once the entire batch is processed, any remaining unflushed messages are flushed explicitly.
+1. Each message in the batch — both PUBLISH and PUBREL packets — is written to the Netty channel without an immediate flush.
+2. A flush is triggered every `buffered-msg-count` messages (default: 10). The counter is local to the batch and
+   restarts at zero on every poll, so a value larger than the batch — polls are capped by the consumer's
+   `max.poll.records`, **200** by default for a client's own topic — never fires a flush of its own.
+3. When the batch finishes, any remaining unflushed messages are flushed explicitly.
 
-This approach avoids idle-time-based flushing and is optimized for high-throughput, batched delivery scenarios.
-
-Each Application client is processed in a dedicated consumer thread that polls messages from a dedicated Kafka topic,
-allowing TBMQ to control flushing independently per client.
-This design provides precise batching and flushing without requiring shared caches or background schedulers.
+Because a flush always happens at the end of every batch, there is no idle-timeout mechanism here: a message is never
+left buffered waiting for more traffic. This is why buffering is the **default** for APPLICATION clients but not for the
+other two paths.
 
 ## Choosing a strategy
 
@@ -125,9 +168,11 @@ This design provides precise batching and flushing without requiring shared cach
 
 **Tuning tips:**
 
-- Start with `buffered-msg-count` between **five to 10** and adjust based on profiling.
-- For Device clients, tune `idle-session-flush-timeout-ms` to balance delay against timely delivery.
-- Monitor logs for cache evictions and flush timings to identify bottlenecks.
+- Start with `buffered-msg-count` between **5** and **10** and adjust based on profiling.
+- On the direct and persistent DEVICE paths, tune `idle-session-flush-timeout-ms` to balance delay against timely
+  delivery — it is the ceiling on how long a message can sit buffered.
+- Watch the broker log for flush-state cache evictions caused by the size limit, and raise
+  `MQTT_BUFFERED_CACHE_MAX_SIZE` if they are frequent.
 - If messages are frequently delayed in low-throughput setups, enable immediate flushing.
 
 <Aside>

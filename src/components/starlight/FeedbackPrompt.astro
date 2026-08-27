@@ -328,11 +328,11 @@ const options = ['yes', 'no'] as const;
 	}
 
 	.feedback-reason:has(.feedback-reason-input:checked) {
-		border-color: var(--sl-color-text-accent);
+		border-color: var(--color-brand);
 	}
 
 	.feedback-reason:has(.feedback-reason-input:focus-visible) {
-		outline: 2px solid var(--sl-color-text-accent);
+		outline: 2px solid var(--color-brand);
 		outline-offset: 2px;
 	}
 
@@ -359,7 +359,7 @@ const options = ['yes', 'no'] as const;
 	}
 
 	.feedback-reason:has(.feedback-reason-input:checked) .feedback-reason-ring {
-		border-color: var(--sl-color-text-accent);
+		border-color: var(--color-brand);
 		border-width: 2px;
 	}
 
@@ -367,7 +367,7 @@ const options = ['yes', 'no'] as const;
 		width: 0.5rem;
 		height: 0.5rem;
 		border-radius: 50%;
-		background: var(--sl-color-text-accent);
+		background: var(--color-brand);
 		transform: scale(0);
 		transition: transform 0.15s ease;
 	}
@@ -400,8 +400,8 @@ const options = ['yes', 'no'] as const;
 
 	.feedback-textarea:focus {
 		outline: none;
-		border-color: var(--sl-color-text-accent);
-		box-shadow: 0 0 0 1px var(--sl-color-text-accent);
+		border-color: var(--color-brand);
+		box-shadow: 0 0 0 1px var(--color-brand);
 	}
 
 	.feedback-honeypot {
@@ -419,8 +419,8 @@ const options = ['yes', 'no'] as const;
 		padding: 0 1rem;
 		border: 0;
 		border-radius: 0.5rem;
-		background: var(--sl-color-text-accent);
-		color: var(--sl-color-bg);
+		background: var(--color-brand);
+		color: var(--color-brand-contrast);
 		font: inherit;
 		font-size: 0.8125rem;
 		font-weight: 500;

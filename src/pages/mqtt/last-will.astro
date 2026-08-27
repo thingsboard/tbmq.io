@@ -1,0 +1,132 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the Last Will and Testament in MQTT?',
+		a: 'A message a client hands to the broker when it connects — a topic, payload, QoS, and retain flag. If the client later disconnects ungracefully, the broker publishes that message on its behalf, letting the rest of the system know the client dropped off.',
+	},
+	{
+		q: 'When does the broker publish the Last Will?',
+		a: 'On an ungraceful disconnect: an I/O error, a keep-alive timeout, or the network connection closing without a proper DISCONNECT packet. A clean DISCONNECT does not trigger the will — the broker discards it instead.',
+	},
+	{
+		q: 'What is the will delay interval in MQTT 5.0?',
+		a: 'It tells the broker to wait a set number of seconds after an ungraceful disconnect before publishing the will. If the client reconnects within that window, the will is never sent — which prevents false alarms from brief network flaps.',
+	},
+	{
+		q: 'How is Last Will used for presence detection?',
+		a: 'Pair it with a retained status topic. The client publishes a retained "online" on connect and registers a will of retained "offline". Any subscriber then sees the current state immediately, and the broker flips it to "offline" automatically if the client vanishes.',
+	},
+	{
+		q: 'Does reconnecting with the same client ID trigger the will?',
+		a: 'It depends on the will delay. Without a will-delay interval — the default, and always the case in MQTT 3.1.1 — a takeover closes the old connection ungracefully and the broker publishes its will. Only if the displaced MQTT 5.0 client set a will-delay interval and the new connection resumes the session before it elapses does the broker cancel the pending will instead.',
+	},
+];
+---
+
+<MqttTopicLayout slug="last-will" faq={faq}>
+	<p>
+		A device that loses power or drops its connection can't announce that it's gone — it's simply silent. MQTT's Last
+		Will and Testament (LWT) solves that by having the broker speak for a client that disconnects unexpectedly.
+	</p>
+
+	<h2>How Last Will works</h2>
+	<p>
+		When a client connects, it can register a will as part of the <code>CONNECT</code> packet: a topic, a payload, a QoS level,
+		and a retain flag. The broker holds onto it. If the client then disconnects <strong>ungracefully</strong> — an I/O error,
+		a <a href="/mqtt/keep-alive/">keep-alive</a> timeout, or the connection dropping without a proper
+		<code>DISCONNECT</code> — the broker publishes the will message on the client's behalf. A clean
+		<code>DISCONNECT</code> suppresses the will and removes it from the session.
+	</p>
+
+	<MqttDiagram caption="The broker speaks for a client that vanishes without a clean disconnect">
+		<svg viewBox="0 0 680 292" role="img" aria-label="Last Will fires on ungraceful disconnect">
+			<rect class="d-actor" x="92" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-mid"
+				x="150"
+				y="36">Client</text
+			>
+			<rect class="d-actor d-actor--hero" x="472" y="14" width="116" height="34" rx="8"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="530"
+				y="36">Broker</text
+			>
+			<line class="d-life" x1="150" y1="50" x2="150" y2="272"></line><line
+				class="d-life"
+				x1="530"
+				y1="50"
+				x2="530"
+				y2="272"></line>
+			<line class="d-line" x1="150" y1="80" x2="527" y2="80" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="238"
+				y="69"
+				width="204"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="84">CONNECT (will registered)</text><text
+				class="d-note"
+				x="540"
+				y="84">will stored</text
+			>
+			<line class="d-line" x1="150" y1="116" x2="527" y2="116" marker-end="url(#arGray)"></line><rect
+				class="d-chip"
+				x="250"
+				y="105"
+				width="180"
+				height="22"
+				rx="11"></rect><text class="d-ctext d-mid" x="340" y="120">PUBLISH state "online"</text><text
+				class="d-note"
+				x="540"
+				y="120">retained</text
+			>
+			<line class="d-brk" x1="60" y1="150" x2="620" y2="150"></line><rect
+				x="210"
+				y="140"
+				width="260"
+				height="20"
+				rx="10"
+				fill="#fbeeee"></rect><text class="d-brklabel d-mid" x="340" y="153" style="fill:#c23b3b"
+				>connection lost — no DISCONNECT</text
+			>
+			<line class="d-line d-line--red" x1="530" y1="188" x2="647" y2="188" marker-end="url(#arRed)"></line><rect
+				class="d-chip"
+				x="338"
+				y="177"
+				width="188"
+				height="22"
+				rx="11"
+				style="stroke:#e6b3b3"></rect><text class="d-ctext d-mid" x="432" y="192" style="fill:#c23b3b"
+				>PUBLISH state "offline"</text
+			><text class="d-danger" x="588" y="207" style="font-size:11px;text-anchor:middle">to subscribers</text>
+			<text class="d-note d-mid" x="328" y="192" style="text-anchor:end">the will fires:</text>
+			<text class="d-note d-mid" x="340" y="234">a graceful DISCONNECT would remove the will instead</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Will delay (MQTT 5.0)</h2>
+	<p>
+		MQTT 5.0 adds a <strong>will delay interval</strong>: the broker waits a configured number of seconds before
+		publishing the will. If the client reconnects within that window, the will never fires. This is what keeps a brief
+		cellular flap or a quick restart from raising a false "device offline" alarm.
+	</p>
+
+	<h2>The presence pattern</h2>
+	<p>
+		The most common use of LWT is presence detection, and it pairs naturally with
+		<a href="/mqtt/retained-messages/">retained messages</a>: a client publishes a retained <code>online</code> to a status
+		topic when it connects, and registers a will that publishes a retained <code>offline</code> to the same topic. Subscribers
+		always see the current state, and the broker flips it to offline the instant the client vanishes.
+	</p>
+
+	<h2>Last Will in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> supports Last Will messages, including the MQTT 5.0 will-delay interval and retained wills. When
+		a connection times out on keep-alive, TBMQ closes it and publishes the client's will if one was set; a session takeover
+		by the same client ID also publishes the will, unless the displaced client set a will-delay interval and the new connection
+		resumes its session — in which case the pending will is cancelled. See the
+		<a href="/docs/user-guide/last-will/">Last Will guide</a> for the full behavior and configuration.
+	</p>
+</MqttTopicLayout>

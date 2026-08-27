@@ -1,0 +1,189 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import LearnTypeCards from '@components/MqttLearn/LearnTypeCards.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Is an MQTT broker a server?',
+		a: 'Yes. The broker is the <strong>central server</strong> in an MQTT deployment. Every client connects to it, and it is responsible for receiving published messages and forwarding them to the right subscribers.',
+	},
+	{
+		q: 'What is the difference between an MQTT broker and an MQTT client?',
+		a: 'A client is any device or application that publishes or subscribes; the broker is the <strong>single hub</strong> they all connect to. Clients never talk to each other directly — the broker routes every message between them.',
+	},
+	{
+		q: 'Do I need a broker to use MQTT?',
+		a: 'Yes. MQTT is a broker-centric publish/subscribe protocol, so <strong>a broker is required</strong>. There is no peer-to-peer mode; publishers and subscribers are decoupled through the broker.',
+	},
+	{
+		q: 'What are examples of MQTT brokers?',
+		a: 'There are many open-source and commercial brokers. <strong>TBMQ</strong> is an open-source MQTT broker built by ThingsBoard for very large-scale deployments.',
+	},
+	{
+		q: 'How many devices can an MQTT broker handle?',
+		a: 'It depends on the broker and its architecture. Lightweight single-node brokers handle thousands to hundreds of thousands of connections; clustered brokers like TBMQ are designed to scale to <strong>100M+ concurrent connections</strong>.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-broker" faq={faq}>
+	<p>
+		If <a href="/mqtt/what-is-mqtt/">MQTT</a> is the language IoT devices speak, the broker is the switchboard they all call
+		into. It is the one component every client connects to, and it is what makes MQTT's decoupled publish/subscribe model
+		work.
+	</p>
+
+	<h2>What an MQTT broker does</h2>
+	<p>
+		Clients don't send messages to each other — they send them to <strong>topics</strong> on the broker. When a message is
+		published, the broker finds every client subscribed to a matching topic and delivers a copy to each one. A single publish
+		can fan out to many subscribers, and a subscriber can receive from many publishers, all without any of them knowing about
+		the others.
+	</p>
+
+	<MqttDiagram caption="The broker decouples publishers from subscribers and fans each message out">
+		<svg viewBox="0 0 680 264" role="img" aria-label="Broker routing one publish to many subscribers">
+			<text class="d-tiny d-mid" x="95" y="20">PUBLISHERS</text><text class="d-tiny d-mid" x="590" y="20"
+				>SUBSCRIBERS</text
+			>
+			<rect class="d-actor" x="30" y="40" width="130" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="95"
+				y="63">Sensor A</text
+			>
+			<rect class="d-actor" x="30" y="103" width="130" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="95"
+				y="126">Sensor B</text
+			>
+			<rect class="d-actor" x="30" y="166" width="130" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="95"
+				y="189">App X</text
+			>
+			<rect class="d-actor d-actor--hero" x="255" y="58" width="170" height="126" rx="12"></rect><text
+				class="d-alabel d-alabel--hero d-mid"
+				x="340"
+				y="84"
+				style="font-size:14px;letter-spacing:.04em">BROKER</text
+			>
+			<text class="d-feat d-mid" x="340" y="110">match topic</text><text class="d-feat d-mid" x="340" y="129"
+				>apply QoS</text
+			><text class="d-feat d-mid" x="340" y="148">auth + ACLs</text><text class="d-feat d-mid" x="340" y="167"
+				>manage session</text
+			>
+			<rect class="d-actor" x="520" y="40" width="140" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="590"
+				y="63">Dashboard</text
+			>
+			<rect class="d-actor" x="520" y="103" width="140" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="590"
+				y="126">Service</text
+			>
+			<rect class="d-actor" x="520" y="166" width="140" height="36" rx="9"></rect><text
+				class="d-alabel d-mid"
+				x="590"
+				y="189">Logger</text
+			>
+			<path class="d-line" d="M160 58 C210 58 205 104 252 112" marker-end="url(#arGray)"></path><path
+				class="d-line"
+				d="M160 121 L252 121"
+				marker-end="url(#arGray)"></path><path
+				class="d-line"
+				d="M160 184 C210 184 205 138 252 130"
+				marker-end="url(#arGray)"></path><text class="d-tiny d-mid" x="182" y="105">publish</text>
+			<path class="d-line d-line--green" d="M425 112 C472 104 470 58 517 58" marker-end="url(#arGreen)"></path><path
+				class="d-line d-line--green"
+				d="M425 121 L517 121"
+				marker-end="url(#arGreen)"></path><path
+				class="d-line d-line--green"
+				d="M425 130 C472 138 470 184 517 184"
+				marker-end="url(#arGreen)"></path><text class="d-tiny d-mid" x="483" y="105" style="fill:#4f7d63">route</text>
+			<text class="d-note d-mid" x="340" y="222">one publish in → many deliveries out</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>What the broker manages</h2>
+	<p>Beyond routing, the broker owns the state and rules of the whole system:</p>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:plug-connected" title="Connections">
+			accepting clients over TCP, TLS, and <a href="/mqtt/websocket/">WebSocket</a>, and keeping them alive with <a
+				href="/mqtt/keep-alive/">keep-alive</a
+			>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:sitemap" title="Subscriptions & topic matching">
+			tracking who is subscribed to what, including <a href="/mqtt/topics/">wildcard</a> subscriptions.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:shield-check" title="Delivery guarantees">
+			honoring each message's <a href="/mqtt/qos/">QoS</a> level.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:database" title="State">
+			<a href="/mqtt/retained-messages/">retained messages</a>, <a href="/mqtt/last-will/">last will</a>, and <a
+				href="/mqtt/persistent-session/">persistent sessions</a
+			> for offline clients.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:lock" title="Security">
+			<a href="/mqtt/security/">authenticating</a> clients and authorizing which topics each may use.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<h2>Types of MQTT brokers</h2>
+	<p>Brokers come in a few flavors, and the right one depends on how much you want to run yourself:</p>
+	<LearnTypeCards
+		cards={[
+			{
+				icon: 'tabler:brand-open-source',
+				title: 'Open-source',
+				text: 'Free and self-hosted — you deploy and scale it. Ideal for prototyping, full control, and integrating into your own stack.',
+				highlight: true,
+				badge: "You're here — TBMQ",
+			},
+			{
+				icon: 'tabler:building-skyscraper',
+				title: 'Commercial',
+				text: 'Enterprise builds that add clustering, management dashboards, advanced security, and SLA-backed support.',
+			},
+			{
+				icon: 'tabler:cloud',
+				title: 'Cloud / MQTT-as-a-Service',
+				text: 'Fully managed offerings where the provider handles deployment, scaling, and uptime, so you run no infrastructure yourself.',
+			},
+			{
+				icon: 'tabler:cpu',
+				title: 'Embedded',
+				text: 'Lightweight brokers that run on a gateway or inside an application for local, offline-first processing at the edge.',
+			},
+		]}
+	/>
+	<p>
+		<a href="/product/">TBMQ</a> is open-source, with a professional edition and a managed private-cloud option — so you
+		can start self-hosted and move to managed hosting later without switching brokers.
+	</p>
+
+	<h2>What to look for in a broker</h2>
+	<p>
+		Brokers differ most in how far they scale and how they persist data. For production IoT, the questions that matter
+		are: how many concurrent connections and how much throughput it sustains, whether it clusters horizontally, which
+		MQTT versions it supports (such as 3.1.1 and 5.0), how it persists messages for offline clients, and what
+		authentication and authorization it offers. For the long run, also weigh the strength of its community or commercial
+		support and the total cost of running it.
+	</p>
+
+	<h2>The broker in TBMQ</h2>
+	<p>
+		<a href="/product/">TBMQ</a> is an open-source MQTT broker built by the
+		<a href="https://thingsboard.io/" target="_blank" rel="noopener noreferrer">ThingsBoard</a> team, supporting MQTT 3.1,
+		3.1.1, and 5.0 and engineered to scale to 100M+ concurrent connections on a single cluster by using Kafka as its internal
+		backbone. The
+		<a href="/docs/user-guide/mqtt-broker/">TBMQ broker guide</a> covers what sets it apart and how its DEVICE and APPLICATION
+		clients differ. To see how the pieces fit together, the
+		<a href="/docs/architecture/">architecture overview</a> walks through the design, and
+		<a href="/docs/getting-started/">getting started</a> spins one up in minutes.
+	</p>
+</MqttTopicLayout>

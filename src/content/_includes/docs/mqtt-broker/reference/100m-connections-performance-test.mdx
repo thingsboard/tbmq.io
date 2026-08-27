@@ -1,15 +1,16 @@
 import DocLink from '@components/DocLink.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 
-An essential attribute of an MQTT broker is receiving published messages, filtering by topic, and distributing them
-to subscribers — a procedure that becomes critical under substantial workloads. This article demonstrates how TBMQ
-cluster reliably handles **100 million** connected clients while managing a throughput of **6M MQTT publish messages
-per second**.
+A core job of an MQTT broker is to receive published messages, filter them by topic, and distribute them to
+subscribers — work that becomes critical under substantial workloads. This article demonstrates how a TBMQ cluster
+reliably handles **100 million** connected clients while sustaining **6M MQTT PUBLISH packets per second** across
+both directions.
 
 <ImageGallery product={props.product} images={[
   {
-    src: '/src/assets/images/docs/mqtt-broker/reference/perf-tests/mqtt-broker-perf-tests.png',
-    alt: 'TBMQ performance test overview', caption: 'TBMQ performance test overview',
+    src: '/src/assets/images/docs/mqtt-broker/reference/perf-tests/tbmq-perf-test-diagram.svg',
+    alt: '100M connections test topology: 100M connected MQTT devices publish 3M msg/sec at QoS 1 — 114 bytes per message — into a TBMQ cluster of 25 nodes (64 vCPU, 256 GiB RAM each) with 9 Kafka brokers and a PostgreSQL instance; 500 persistent APPLICATION clients consume 3M msg/sec, 6k msg/sec each, for 6M msg/sec across both directions.',
+    caption: '100M connections test topology — 25-node cluster, 3M msg/sec in and out',
   },
 ]} />
 
@@ -27,24 +28,26 @@ The test emulated smart tracker devices sending 5-field messages of approximatel
 { "lat": 40.761894, "long": -73.970455, "speed": 55.5, "fuel": 92, "batLvl": 81 }
 ```
 
-**Publishers:** 500 groups × 200k total publishers = 6k msg/sec per group, publishing to topics in the format
-`CountryCode/RandomString/GroupId/ClientId`, creating **100M unique topics**.
+**Publishers:** 500 groups of 200k publishers each — **100M publishers** in total, producing 6k msg/sec per group.
+Each publishes to its own topic in the format `CountryCode/RandomString/GroupId/ClientId`, creating
+**100M unique topics**.
 
 **Subscribers:** 500 APPLICATION subscriber groups, each with a single persistent subscriber using the topic filter
 `CountryCode/RandomString/GroupId/+`, receiving 6k msg/sec.
 
 The TBMQ cluster sustained **100,000,500 connections** and handled **6M messages per second** (3M incoming × 2 for
-publish + delivery). Over the 1-hour test, 3M incoming msg/sec resulted in 10,800M total messages processed.
+publish + delivery). Over the 1-hour test, 3M incoming msg/sec added up to 10,800M messages published.
 
 Including a warm-up phase (6 iterations × 100M publishers × 1 message each = 600M warm-up messages in ~7 min),
 the grand total was **11,400M messages** — approximately **1TB** stored in the `tbmq.msg.all` Kafka topic.
 
 The test agent orchestrates the provisioning of MQTT clients, allowing flexible configuration of their count.
-Clients operate persistently, continuously publishing time series data over MQTT to designated topics. The agent
-also provisions subscriber clients that subscribe by topic filter to receive the published messages.
+Publisher clients stay connected for the whole run, continuously publishing time series data over MQTT to designated
+topics. The agent also provisions subscriber clients that subscribe by topic filter to receive the published messages.
 
-Each of the 500 APPLICATION subscribers received **22.8M messages** in its dedicated per-client Kafka topic. With
-only APPLICATION clients, PostgreSQL handled only a few operations per second — Kafka was the sole persistence layer.
+Each of the 500 APPLICATION subscribers received **22.8M messages** in its dedicated per-client Kafka topic. Because
+every subscriber was an APPLICATION client, Kafka was the only persistence layer in the message path and PostgreSQL
+handled just a few operations per second.
 
 > **Tip:** to plan and manage Kafka disk space, adjust the
 > <a href="https://kafka.apache.org/documentation/#brokerconfigs_log.retention.bytes" target="_blank" rel="noopener noreferrer">size retention policy</a> and
@@ -169,11 +172,11 @@ kubectl port-forward tb-broker-0 9999:9999
 
 ## Lessons learned
 
-- TBMQ cluster has capacity to process even higher loads.
+- The TBMQ cluster had capacity to process even higher loads.
 - Kafka provides reliable, highly available message processing.
 - No direct communication between TBMQ nodes enables horizontal scaling.
-- Employing QoS 0 would further elevate the message rate, but QoS 1 was chosen to demonstrate a more practical
-  setup. QoS 1 is widely favored as it balances message delivery speed and reliability.
+- Using QoS 0 would push the message rate higher still, but QoS 1 was chosen to demonstrate a more practical setup.
+  QoS 1 is widely favored as it balances message delivery speed and reliability.
 - TBMQ excels at fan-in, P2P, and fan-out scenarios at both small and large scale.
 
 ## Challenges faced during testing
@@ -226,7 +229,7 @@ can reduce costs significantly):
 - PostgreSQL database to store MQTT client credentials and client session states
 - Kafka queue to persist messages
 
-At this message rate and size, the initial `tbmq.msg.all` Kafka topic receives approximately **~1 TB** of data
+At this message rate and size, the entry-point `tbmq.msg.all` Kafka topic receives approximately **~1 TB** of data
 per hour, and each subscriber topic receives around **~1.6 GB** per hour. It is not necessary to store data for
 an extended period — TBMQ distributes messages among subscribers and optionally stores them temporarily for
 offline clients. Configure an appropriate storage size and adjust the size and period retention policies for
@@ -283,6 +286,6 @@ to deploy TBMQ on AWS.
 
 ## Conclusion
 
-This test demonstrates TBMQ cluster's capability to process 6M messages per second from diverse devices while
+This test demonstrates the TBMQ cluster's capability to process 6M messages per second from diverse devices while
 handling 100M concurrent connections. TBMQ excels in high-throughput scenarios and scales both vertically and
 horizontally. Follow the project on <a href="https://github.com/thingsboard/tbmq" target="_blank" rel="noopener noreferrer">GitHub</a> for future performance updates.

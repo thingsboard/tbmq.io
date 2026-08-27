@@ -1,5 +1,7 @@
 ---
+
 ---
+
 <!-- Google Tag Manager -->
 <script is:inline>
 	window.dataLayer = window.dataLayer || [];
@@ -18,13 +20,16 @@
 				j.async = true;
 				j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
 				f.parentNode.insertBefore(j, f);
-			})(window, document, 'script', 'dataLayer', 'GTM-TGBNQXN');
+			})(window, document, 'script', 'dataLayer', 'GTM-TFXSRSWK');
 		};
 
 		if (new URL(window.location.href).searchParams.has('gtm_debug')) {
 			loadGtm();
 		} else {
-			(window.__deferOnInteraction || ((cb) => cb()))(loadGtm);
+			// 5s idle fallback (vs the 2.5s default) so tag-manager JS lands
+			// after the LCP paint window for visitors who never interact.
+			// Full tier schedule: DeferredLoadTrigger.astro.
+			(window.__deferOnInteraction || ((cb) => cb()))(loadGtm, 5000);
 		}
 	}
 </script>

@@ -1,8 +1,10 @@
 ---
 title: Troubleshooting
-description: "Diagnose and resolve common ThingsBoard issues: rule-engine performance, logs, Prometheus metrics, Grafana dashboards, and OAuth2 configuration."
+description: Diagnose TBMQ problems — reading logs, Kafka consumer lag, and playbooks for connection, delivery, latency, and resource issues.
+wrapTableCode: true
 ---
-import PageComponent from '@includes/docs/troubleshooting.mdx'
+
+import PageContent from '@includes/docs/mqtt-broker/troubleshooting.mdx'
 import { Products } from '~/models/site.models'
 
-<PageComponent product={Products.CE}/>
+<PageContent product={Products.TBMQ}/>

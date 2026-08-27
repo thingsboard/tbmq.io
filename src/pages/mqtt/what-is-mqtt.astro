@@ -1,0 +1,151 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnFeatureGrid from '@components/MqttLearn/LearnFeatureGrid.astro';
+import LearnCardGrid from '@components/MqttLearn/LearnCardGrid.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What does MQTT stand for?',
+		a: 'MQTT originally stood for <strong>Message Queuing Telemetry Transport</strong>. Today it is simply the protocol name — it is not tied to any specific message-queue product.',
+	},
+	{
+		q: 'Is MQTT open source?',
+		a: 'MQTT is an <strong>open OASIS and ISO standard</strong>, not a product, so anyone can implement it. There are many open-source brokers and clients, including the open-source TBMQ broker.',
+	},
+	{
+		q: 'What port does MQTT use?',
+		a: 'MQTT uses TCP port <code>1883</code> by default, and <code>8883</code> for MQTT over TLS. Over WebSocket the port varies by broker — TBMQ uses <code>8084</code> for WS and <code>8085</code> for WSS.',
+	},
+	{
+		q: 'Is MQTT secure?',
+		a: 'MQTT itself is a messaging protocol; security is added by running it over <strong>TLS</strong> for encryption, plus <strong>authentication and topic authorization</strong> enforced at the broker.',
+	},
+	{
+		q: 'What is an MQTT broker?',
+		a: 'The broker is the <strong>central server</strong> that receives every published message and routes it to the clients subscribed to the matching topic. TBMQ is one example of an MQTT broker.',
+	},
+];
+
+const whyFeatures = [
+	{
+		icon: 'tabler:feather',
+		title: 'Lightweight',
+		text: 'A compact fixed header — just 2 bytes at minimum — keeps overhead and battery use low.',
+	},
+	{
+		icon: 'tabler:refresh-alert',
+		title: 'Resilient',
+		text: 'Persistent connections, QoS levels, and Last Will messages handle flaky links gracefully.',
+	},
+	{
+		icon: 'tabler:topology-star-3',
+		title: 'Scalable',
+		text: 'The decoupled pub/sub model lets one broker fan a message out to many subscribers efficiently.',
+	},
+	{
+		icon: 'tabler:database',
+		title: 'Stateful when needed',
+		text: 'Persistent sessions and retained messages keep clients in sync across reconnects.',
+	},
+];
+
+const conceptCards = [
+	{ href: '/mqtt/mqtt-broker/', title: 'MQTT broker', blurb: 'The central server that routes every message.' },
+	{ href: '/mqtt/mqtt-client/', title: 'MQTT clients', blurb: 'The devices and apps that publish and subscribe.' },
+	{ href: '/mqtt/publish-subscribe/', title: 'Publish/subscribe', blurb: 'The messaging model MQTT is built on.' },
+	{ href: '/mqtt/topics/', title: 'Topics & wildcards', blurb: 'How messages are addressed and matched.' },
+	{ href: '/mqtt/mqtt-connection/', title: 'Connection (CONNECT)', blurb: 'How a client opens a session.' },
+	{ href: '/mqtt/mqtt-client-id/', title: 'Client ID', blurb: 'How the broker identifies each client.' },
+	{ href: '/mqtt/mqtt-packets/', title: 'MQTT packets', blurb: 'The control packets clients and brokers exchange.' },
+	{
+		href: '/mqtt/qos/',
+		title: 'Quality of Service (QoS)',
+		blurb: 'At-most-once, at-least-once, exactly-once delivery.',
+	},
+	{ href: '/mqtt/retained-messages/', title: 'Retained messages', blurb: 'The last known value on a topic.' },
+	{ href: '/mqtt/last-will/', title: 'Last Will & Testament', blurb: 'Signalling ungraceful disconnects.' },
+	{ href: '/mqtt/persistent-session/', title: 'Persistent sessions', blurb: 'Queuing messages for offline clients.' },
+	{ href: '/mqtt/mqtt-5/', title: 'MQTT 5.0', blurb: 'The latest version and what it adds.' },
+	{ href: '/mqtt/shared-subscriptions/', title: 'Shared subscriptions', blurb: 'Load-balancing consumers.' },
+	{ href: '/mqtt/security/', title: 'Security', blurb: 'TLS, authentication, and authorization.' },
+];
+---
+
+<MqttTopicLayout slug="what-is-mqtt" faq={faq}>
+	<h2>How MQTT works</h2>
+	<p>
+		MQTT follows a <strong>publish/subscribe</strong> model instead of the request/response model of HTTP. Clients never talk
+		to each other directly. Instead, a publisher sends a message to a
+		<a href="/mqtt/topics/">topic</a> on a central <strong>broker</strong>, and the broker forwards that message to
+		every client that has subscribed to the topic. Publishers and subscribers are fully decoupled — they don't need to
+		know about each other, run at the same time, or even know how many receivers exist.
+	</p>
+	<p>
+		A typical setup has three roles: <strong>publishers</strong> (for example, sensors sending readings),
+		<strong>subscribers</strong> (for example, a dashboard or backend service), and the
+		<strong>broker</strong> that connects them. A single client can both publish and subscribe.
+	</p>
+	<p>
+		For the protocol-level details — the MQTT control packet types, their structure, and how messages flow through the
+		broker — see the <a href="/docs/user-guide/mqtt-protocol/">MQTT protocol reference</a> in the
+		<a href="/docs/">TBMQ docs</a>.
+	</p>
+
+	<MqttDiagram caption="A publisher sends one message to a topic; the broker delivers a copy to every subscriber">
+		<svg
+			viewBox="0 0 680 300"
+			role="img"
+			aria-label="MQTT publish/subscribe: a publisher sends one message to a topic on the broker, which delivers a copy to every subscriber"
+		>
+			<text class="d-tiny d-mid" x="92" y="20">PUBLISHER</text>
+			<text class="d-tiny d-mid" x="588" y="20">SUBSCRIBERS</text>
+			<rect class="d-actor" x="28" y="124" width="128" height="46" rx="10"></rect>
+			<text class="d-alabel d-mid" x="92" y="152">Thermostat</text>
+			<rect class="d-actor d-actor--hero" x="256" y="96" width="168" height="104" rx="12"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="128" style="font-size:14px;letter-spacing:.04em"
+				>BROKER</text
+			>
+			<rect class="d-chip d-chip--green" x="278" y="146" width="124" height="26" rx="13"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="164">home/temp</text>
+			<rect class="d-actor" x="524" y="40" width="138" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="593" y="67">Dashboard</text>
+			<rect class="d-actor" x="524" y="120" width="138" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="593" y="147">Data logger</text>
+			<rect class="d-actor" x="524" y="200" width="138" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="593" y="227">Phone app</text>
+			<path class="d-line" d="M156 148 L253 148" marker-end="url(#arGray)"></path>
+			<text class="d-tiny" x="176" y="140">publish</text>
+			<path class="d-line d-line--green" d="M424 148 C474 148 472 62 521 62" marker-end="url(#arGreen)"></path>
+			<path class="d-line d-line--green" d="M424 148 L521 142" marker-end="url(#arGreen)"></path>
+			<path class="d-line d-line--green" d="M424 148 C474 148 472 222 521 222" marker-end="url(#arGreen)"></path>
+			<text class="d-tiny" x="464" y="140" style="fill:#4f7d63">copy</text>
+			<text class="d-note d-mid" x="340" y="270">One message in → a copy to every subscriber</text>
+			<text class="d-note d-mid" x="340" y="290" style="fill:#8a8d94"
+				>Publisher and subscribers share only the topic — never each other</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Why MQTT is used for IoT</h2>
+	<p>
+		MQTT was designed for constrained devices and unreliable networks, which is exactly the environment most IoT fleets
+		live in. Its advantages:
+	</p>
+	<LearnFeatureGrid features={whyFeatures} />
+
+	<h2>MQTT vs HTTP</h2>
+	<p>
+		HTTP is request/response: a client asks, the server answers, and the connection is typically short-lived. That's a
+		poor fit for pushing frequent, small updates to many devices. MQTT keeps a long-lived connection open and pushes
+		messages the instant they're published, with far less per-message overhead. See <a href="/mqtt/mqtt-vs-http/"
+			>MQTT vs HTTP</a
+		> for a fuller comparison. For moving that device data into backend analytics pipelines, MQTT is often paired with a streaming
+		platform — see <a href="/mqtt/mqtt-vs-kafka/">MQTT vs Kafka</a>.
+	</p>
+
+	<h2>Core MQTT concepts</h2>
+	<p>Once the pub/sub basics click, these are the concepts worth knowing next:</p>
+	<LearnCardGrid cards={conceptCards} />
+</MqttTopicLayout>

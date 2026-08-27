@@ -62,7 +62,7 @@ export function initMqpCalc() {
 		html += row('Included Throughput', `${fN(MQP.includedThroughput)} msg/sec`, "Amount of throughput covered by the perpetual license base price.");
 		html += row('Included Prod Instances', fN(MQP.includedProdInstances), "Number of production instances covered by the perpetual license base price.");
 		html += row('White Labeling', '<span class="calc-result-badge">Enabled</span>');
-		html += row('Support', '<span style="color:var(--color-primary);font-weight:500">Priority Help Desk</span>', 'Prioritized ticket handling via a high-priority queue managed by the expert team.');
+		html += row('Support', '<span style="color:var(--color-brand);font-weight:500">Priority Help Desk</span>', 'Prioritized ticket handling via a high-priority queue managed by the expert team.');
 		html += row('Base Price', fmt(MQP.basePrice), 'One-time license fee before extras and add-ons.');
 		if (eS > 0) html += row('Extra Sessions', fN(eS), "Sessions exceeding the perpetual license included number (requires one-time fee).");
 		if (sCost > 0) html += row('Extra Sessions Cost', fmt(sCost), `${fN(eS)} extra sessions × ${fmt(MQP.extraSessionsPrice)}/session`);

@@ -1,0 +1,116 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface TypeCard {
+	/** astro-icon tabler name, e.g. 'tabler:cloud' */
+	icon: string;
+	title: string;
+	/** plain text — no inline markup */
+	text: string;
+	/** green "you're here" treatment (gradient + green border) */
+	highlight?: boolean;
+	/** optional badge shown top-right, e.g. "You're here — TBMQ" */
+	badge?: string;
+}
+interface Props {
+	cards: TypeCard[];
+}
+const { cards } = Astro.props;
+---
+
+<div class="learn-type-grid">
+	{
+		cards.map((c) => (
+			<div class:list={['learn-type', { 'learn-type--here': c.highlight }]}>
+				{c.badge && <span class="learn-type__badge">{c.badge}</span>}
+				<span class:list={['learn-type__ic', { 'is-neutral': !c.highlight }]}>
+					<Icon name={c.icon} />
+				</span>
+				<span class="learn-type__title">{c.title}</span>
+				<span class="learn-type__text">{c.text}</span>
+			</div>
+		))
+	}
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.learn-type-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-4;
+		margin: $spacing-4 0 $spacing-6;
+		@include media-up(sm) {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+	.learn-type {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: $radius-xl;
+		padding: 20px 22px;
+		transition:
+			border-color $transition-fast,
+			box-shadow $transition-fast,
+			transform $transition-fast;
+		&:hover {
+			border-color: $color-pe;
+			box-shadow: var(--shadow-sm);
+		}
+	}
+	.learn-type--here {
+		border-color: $color-pe;
+		background: linear-gradient(160deg, $color-bg-white, rgba($color-pe, 0.08));
+	}
+	// Lift is motion, so gate it behind reduced-motion.
+	@media (prefers-reduced-motion: no-preference) {
+		.learn-type:hover {
+			transform: translateY(-2px);
+		}
+	}
+	.learn-type__ic {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 38px;
+		height: 38px;
+		border-radius: $radius-lg;
+		background: rgba($color-pe, 0.1);
+		color: $color-pe-link;
+		margin-bottom: 12px;
+		&.is-neutral {
+			background: $color-bg-light;
+			color: $color-text-secondary;
+		}
+	}
+	:global(.learn-type__ic svg) {
+		width: 20px;
+		height: 20px;
+	}
+	.learn-type__title {
+		font-size: 16px;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin-bottom: 5px;
+	}
+	.learn-type__text {
+		font-size: 14.5px;
+		line-height: 1.55;
+		color: $color-text-secondary;
+	}
+	.learn-type__badge {
+		position: absolute;
+		top: 16px;
+		right: 16px;
+		font-size: 11px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-dark;
+		background: rgba($color-pe, 0.14);
+		border-radius: 6px;
+		padding: 3px 9px;
+	}
+</style>

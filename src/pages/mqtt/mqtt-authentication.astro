@@ -1,0 +1,113 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'How does MQTT authentication work?',
+		a: 'The client includes a credential in its CONNECT packet — a username and password, or a token in the password field — and the broker validates it before accepting the connection. If it fails, the broker returns a CONNACK failure reason code and closes the connection.',
+	},
+	{
+		q: 'What authentication methods does MQTT support?',
+		a: 'The protocol carries a username and password field, which brokers use for password auth or to carry tokens like JWT. MQTT 5.0 adds enhanced authentication (the AUTH packet) for challenge-response schemes such as SCRAM. X.509 client certificates authenticate during the TLS handshake instead.',
+	},
+	{
+		q: 'What is SCRAM authentication?',
+		a: 'SCRAM (Salted Challenge Response Authentication Mechanism) is a challenge-response scheme where the client proves it knows the password without ever sending the password itself. In MQTT it runs over the MQTT 5.0 enhanced-authentication AUTH packet.',
+	},
+	{
+		q: 'Does MQTT support OAuth 2.0?',
+		a: 'Not directly as a client auth method. The usual pattern is to have your OAuth 2.0 / OpenID Connect identity provider issue a JWT, and the MQTT client presents that JWT to the broker in the CONNECT password field.',
+	},
+	{
+		q: 'What is the difference between authentication and authorization?',
+		a: 'Authentication proves who the client is at connect time. Authorization decides what that authenticated client may do — which topics it can publish to or subscribe from. They are separate steps.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-authentication" faq={faq}>
+	<p>
+		Encryption with <a href="/mqtt/mqtt-tls/">TLS</a> hides the connection, but the broker still needs to know
+		<em>who</em> is connecting. <strong>Authentication</strong> is the step where a client proves its identity on
+		<a href="/mqtt/mqtt-connection/">CONNECT</a>, and the broker accepts or refuses it.
+	</p>
+
+	<h2>How authentication works</h2>
+	<p>
+		The client presents a credential — a username and password, or a token carried in the password field — and the
+		broker validates it before the session opens. A broker typically supports several methods and picks one per client.
+		If validation fails, the broker replies with a failure <a href="/mqtt/mqtt-reason-codes/">reason code</a> and closes the
+		connection.
+	</p>
+
+	<MqttDiagram
+		caption="The broker checks one pluggable credential per client, then accepts or refuses the CONNECT — X.509 resolves during the TLS handshake and SCRAM over the AUTH exchange, simplified here"
+	>
+		<svg
+			viewBox="0 0 680 250"
+			role="img"
+			aria-label="MQTT authentication: several credential methods feed the broker's authentication check, which either accepts the connection with CONNACK success or refuses it"
+		>
+			<text class="d-tiny" x="30" y="20">CREDENTIAL</text>
+			<rect class="d-chip" x="30" y="28" width="128" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="94" y="45">Basic</text>
+			<rect class="d-chip" x="30" y="62" width="128" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="94" y="79">JWT</text>
+			<rect class="d-chip" x="30" y="96" width="128" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="94" y="113">SCRAM</text>
+			<rect class="d-chip" x="30" y="130" width="128" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="94" y="147">X.509</text>
+			<rect class="d-chip" x="30" y="164" width="128" height="26" rx="7"></rect>
+			<text class="d-ctext d-mid" x="94" y="181">HTTP</text>
+			<path class="d-line" d="M158 41 C230 41 220 118 286 118" marker-end="url(#arGray)"></path>
+			<path class="d-line" d="M158 75 C220 75 224 118 286 118" marker-end="url(#arGray)"></path>
+			<path class="d-line" d="M158 109 L286 118" marker-end="url(#arGray)"></path>
+			<path class="d-line" d="M158 143 C220 143 224 118 286 118" marker-end="url(#arGray)"></path>
+			<path class="d-line" d="M158 177 C230 177 220 118 286 118" marker-end="url(#arGray)"></path>
+			<rect class="d-actor d-actor--hero" x="290" y="80" width="132" height="78" rx="12"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="356" y="112">Broker</text>
+			<text class="d-feat d-mid" x="356" y="134">verify credential</text>
+			<line class="d-line d-line--green" x1="422" y1="108" x2="516" y2="92" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="516" y="76" width="140" height="30" rx="8"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="586" y="95">✓ CONNACK 0x00</text>
+			<line class="d-line d-line--red" x1="422" y1="130" x2="516" y2="150" marker-end="url(#arRed)"></line>
+			<rect class="d-chip" x="516" y="140" width="140" height="30" rx="8" style="stroke:#e3b3b3"></rect>
+			<text class="d-ctext d-mid" x="586" y="159" style="fill:#c23b3b">✗ CONNACK 0x86</text>
+			<text class="d-tiny d-mid" x="586" y="186">bad user name / password</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Common authentication methods</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>Method</th><th>How the client proves identity</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Basic</td><td>Client ID, username and password in the <code>CONNECT</code> packet</td></tr>
+				<tr><td>JWT</td><td>A signed JSON Web Token carried in the password field</td></tr>
+				<tr><td>SCRAM</td><td>A salted challenge-response — the password never crosses the wire (MQTT 5.0)</td></tr>
+				<tr>
+					<td><a href="/mqtt/mqtt-client-certificates/">X.509</a></td>
+					<td>A client certificate presented during the TLS handshake (mutual TLS)</td>
+				</tr>
+				<tr><td>HTTP</td><td>Credentials validated by an external HTTP service you control</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Authentication in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> ships pluggable authentication providers you can enable, disable, and order from the UI without restarting
+		(SCRAM is the exception — the broker handles it automatically per the MQTT 5.0 spec):
+		<a href="/docs/security/authentication/basic/">Basic</a>,
+		<a href="/docs/security/authentication/jwt/">JWT</a>,
+		<a href="/docs/security/authentication/scram/">SCRAM</a> (SCRAM-SHA-256/512 over the MQTT 5.0 AUTH packet),
+		<a href="/docs/security/authentication/x509/">X.509</a> client certificates, and an
+		<a href="/docs/security/authentication/http/">HTTP</a> provider that defers to your own service. To use an OAuth 2.0 identity
+		provider, have it issue a JWT the client presents. Once a client is authenticated, TBMQ then applies
+		<a href="/mqtt/mqtt-authorization/">authorization</a> rules.
+	</p>
+</MqttTopicLayout>

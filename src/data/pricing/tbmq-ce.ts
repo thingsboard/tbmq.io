@@ -12,5 +12,5 @@ export const tbmqCeData: CommunityEditionData = {
 		'Community support',
 	],
 	ctaText: 'Install',
-	ctaHref: '/docs/mqtt-broker/installation/',
+	ctaHref: '/docs/installation/',
 };

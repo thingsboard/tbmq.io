@@ -18,22 +18,30 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 4. **Kafka consumers process the message** in downstream systems.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-kafka-integration.png', alt: 'TBMQ Kafka integration data flow', caption: 'TBMQ Kafka integration data flow' },
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-kafka-integration.svg',
+    alt: 'Kafka integration data flow: devices exchange MQTT(S) traffic with TBMQ; TBMQ passes matched messages over TCP(TLS) to the Kafka integration running inside the TBMQ Integration Executor; the integration produces them to an external Kafka cluster over TCP(TLS) — a cluster separate from the one TBMQ uses internally.',
+    caption: 'Devices → TBMQ → Integration Executor → external Kafka cluster',
+  },
 ]} />
 
 ## Prerequisites
 
-- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance.
-- An external Kafka cluster ready to receive messages (e.g., **Confluent Cloud**).
+- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance, **version 2.1 or later**, with the <DocLink product={props.product} path="integrations/#tbmq-integration-executor">TBMQ Integration Executor</DocLink> service running. Without a reachable executor, saving an integration fails with a validation timeout.
+- An external Kafka cluster ready to receive messages (e.g., <a href="https://www.confluent.io/confluent-cloud/" target="_blank" rel="noopener noreferrer">Confluent Cloud</a>).
 - A client capable of publishing MQTT messages (e.g., <DocLink product={props.product} path="user-guide/ui/websocket-client">TBMQ WebSocket Client</DocLink>).
+
+<Aside type="caution">
+  This integration targets a Kafka cluster **of your own**, separate from the Kafka that TBMQ uses internally for its own message flow. Do not point it at TBMQ's internal cluster — an integration writing into it does not feed data back into the broker and only puts load on infrastructure the broker depends on.
+</Aside>
 
 ## Create TBMQ Kafka Integration
 
 <Steps>
 1. Go to the **Integrations** page and click the **"+"** button.
 2. Select **Kafka** as the integration type and click **Next**.
-3. On the **Topic Filters** step, click **Next** to subscribe to the default topic `tbmq/#`.
-4. In the **Configuration** step, enter the **Bootstrap servers** (Kafka broker addresses). See below for common and Confluent Cloud configurations.
+3. On the **Filters and events** step, keep the default **Topic filters** entry `tbmq/#`, leave **Lifecycle events** empty, and click **Next**.
+4. In the **Configuration** step, enter the **Bootstrap servers** (Kafka broker addresses). See below for common and Confluent Cloud configurations. Leave **Topic** at its default `tbmq.messages` — that is the topic this tutorial reads from at the end.
 5. Click **Add** to save the integration.
 </Steps>
 
@@ -47,7 +55,7 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 
 <Tabs>
   <TabItem label="Common / Docker">
-    Specify the bootstrap server address (e.g., `localhost:9092` for a local broker). The screenshot below shows the basic configuration for establishing a connection between TBMQ and a Kafka broker.
+    Specify the bootstrap server address of your own Kafka cluster (e.g., `localhost:9092` for a broker you run locally — not TBMQ's internal Kafka, which uses the same address in the default deployments). The screenshot below shows the basic configuration for establishing a connection between TBMQ and a Kafka broker.
 
     <ImageGallery product={props.product} images={[
       { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/add-kafka-integration-4.png', alt: 'Bootstrap servers configuration for common/Docker Kafka setup', caption: 'Bootstrap servers configuration for common/Docker Kafka setup' },
@@ -99,6 +107,8 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 
 Topic filters define **MQTT-based subscriptions** that trigger the integration. When TBMQ receives a message matching a configured topic filter, the integration processes it and forwards the data to the Kafka cluster.
 
+Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two.
+
 For example, with the topic filter `tbmq/devices/+/status`, any of the following messages will trigger the integration:
 
 ```plaintext
@@ -108,26 +118,43 @@ tbmq/devices/gateway-01/status
 
 ## Configuration
 
-| Field | Description |
-|---|---|
-| **Send only message payload** | If enabled, only the raw message payload is forwarded. If disabled, TBMQ wraps the payload in a JSON object with additional metadata. |
-| **Bootstrap servers** | Kafka broker addresses (comma-separated list of hostnames/IPs and ports). |
-| **Topic** | The Kafka topic where messages will be published. |
-| **Key** | (Optional) Used for partitioning. Kafka hashes the key to consistently assign messages to the same partition. |
-| **Client ID prefix** | (Optional) Prefix for the Kafka client ID. Default: `tbmq-ie-kafka-producer`. |
-| **Automatically retry times if fails** | Number of retries before marking a message as failed. |
-| **Produces batch size in bytes** | Maximum batch size before sending messages to Kafka. |
-| **Time to buffer locally (ms)** | Time to buffer messages locally before sending. |
-| **Client buffer max size in bytes** | Maximum memory allocated for buffering messages before sending. |
-| **Number of acknowledgments** | Kafka acknowledgment mode: `all`, `1`, `0`. |
-| **Compression** | Compression algorithm: `none`, `gzip`, `snappy`, `lz4`, `zstd`. |
-| **Other properties** | Additional Kafka producer configuration as key-value pairs. |
-| **Kafka headers** | Custom headers added to Kafka messages. |
-| **Metadata** | Custom metadata attached to forwarded messages. |
+| Field | Default | Description |
+|---|---|---|
+| **Send only message payload** | off | If enabled, only the raw message payload is forwarded. If disabled, TBMQ wraps the payload in a JSON object with additional metadata. |
+| **Bootstrap servers** | `localhost:9092` | Kafka broker addresses (comma-separated list of hostnames/IPs and ports). Required. |
+| **Topic** | `tbmq.messages` | The Kafka topic where messages will be published. Required. |
+| **Key** | — | Optional record key. If set, Kafka hashes it so records with the same key land on the same partition. If left empty, Kafka's sticky partitioner picks a partition and switches only when the batch is full. The integration never sets a partition explicitly. |
+| **Client ID prefix** | `tbmq-ie-kafka-producer` | Prefix for the Kafka client ID. The full ID is `prefix-integrationId-executorServiceId`, so each executor's producer is distinguishable in the Kafka cluster. |
+| **Automatically retry times if fails** | `0` | Producer-level retries for a record whose send fails with a transient error (`retries`). |
+| **Produces batch size in bytes** | `16384` | Maximum batch size before records are sent (`batch.size`). |
+| **Time to buffer locally (ms)** | `0` | How long to wait for more records before sending a batch (`linger.ms`). |
+| **Client buffer max size in bytes** | `33554432` | Total memory for buffering records waiting to be sent (`buffer.memory`). |
+| **Number of acknowledgments** | `-1` | `acks` — `0` (no acknowledgment), `1` (leader only), or `all` / `-1` (all in-sync replicas, the default and safest). |
+| **Compression** | `none` | Compression algorithm: `none`, `gzip`, `snappy`, `lz4`, `zstd`. |
+| **Other properties** | — | Additional Kafka producer configuration as key-value pairs — this is where SASL/SSL settings go. |
+| **Kafka headers** | — | Custom headers added to every record. |
+| **Charset encoding** | `UTF-8` | Charset used to encode the **Kafka headers** values: `US-ASCII`, `ISO-8859-1`, `UTF-8`, `UTF-16BE`, `UTF-16LE`, or `UTF-16`. |
+| **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
 
-## Events
+With **Send only message payload** enabled, the record value is the payload alone — as UTF-8 text if it is valid UTF-8, Base64-encoded otherwise.
 
-TBMQ logs integration-related events for debugging and troubleshooting:
+## Client lifecycle events
+
+Besides the messages matched by topic filters, this integration can deliver <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>client lifecycle events</DocLink> — a client connecting, disconnecting, changing its subscriptions, or failing authentication or authorization.
+
+Pick the event types on the **Filters and events** step while creating the integration, or add them later:
+
+<Steps>
+1. Open the integration on the **Integrations** page and click the **Toggle edit mode** button (pencil icon).
+2. Click the **Lifecycle events** field to list the available event types, then select the ones you need: **Client connected**, **Client disconnected**, **Client subscribed**, **Client unsubscribed**, **Client authentication failed**, **Client authorization failed**, **Client connection failed**. Each one is added as a chip; remove it with its **x**.
+3. Click **Apply changes**.
+</Steps>
+
+Events are published to the same **Topic** as messages, using the configured **Key**, **Kafka headers**, and producer settings. **Send only message payload** applies to message payloads only — an event is always published as its full JSON body.
+
+## Integration events
+
+These are the **integration's own** events, recorded inside TBMQ for debugging and troubleshooting. They are not the client lifecycle events described above: those are about MQTT clients and are published to your Kafka topic, while these describe the integration itself and never leave TBMQ.
 
 - **Lifecycle Events** — logs events such as `Started`, `Created`, `Updated`, `Stopped`.
 - **Statistics** — insights into integration performance, including processed message counts and error rates.
@@ -145,7 +172,8 @@ TBMQ logs integration-related events for debugging and troubleshooting:
 1. Navigate to the **WebSocket Client** page.
 2. Select **WebSocket Default Connection** (or any working connection) and click **Connect**. Verify the connection status shows `Connected`.
 3. Set the **Topic** field to `tbmq/kafka-integration` to match the integration's topic filter `tbmq/#`.
-4. Click the **Send** icon to publish the message.
+4. Leave the pre-filled **Payload** `{"temperature": 25}` as is — it is what lands in the Kafka topic below.
+5. Click the **Send** icon to publish the message.
 </Steps>
 
 <ImageGallery product={props.product} images={[
@@ -182,7 +210,7 @@ If successful, the message should be available in your Kafka service under the t
 | `payload` | Base64-encoded content of the MQTT message (e.g., `"eyJ0ZW1wZXJhdHVyZSI6MjV9"` decodes to `{"temperature": 25}`). |
 | `topicName` | MQTT topic to which the message was published. |
 | `clientId` | ID of the MQTT client that published the message. |
-| `eventType` | Type of MQTT event. `PUBLISH_MSG` is the only supported type. |
+| `eventType` | Type of event. `PUBLISH_MSG` for a forwarded message; a [client lifecycle event](#client-lifecycle-events) carries its own type instead. |
 | `qos` | Quality of Service level of the incoming message. |
 | `retain` | Whether the message has the Retain flag set. |
 | `tbmqIeNode` | Node ID of the Integration Executor that handled the message. |

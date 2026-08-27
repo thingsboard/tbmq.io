@@ -1,0 +1,108 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Can MQTT replace Kafka?',
+		a: 'Usually no. MQTT connects devices over unreliable networks; Kafka stores and streams high-throughput event data for backend processing. Most architectures use MQTT at the edge and Kafka in the data center rather than choosing one.',
+	},
+	{
+		q: 'Does Kafka support MQTT?',
+		a: 'Kafka does not speak MQTT natively. You bridge them with an MQTT broker or connector. TBMQ is Kafka-backed internally and can forward MQTT messages into Kafka topics.',
+	},
+	{
+		q: 'How do I connect MQTT to Kafka?',
+		a: 'Run an MQTT broker that publishes incoming messages to Kafka, or use a Kafka connector. TBMQ has a built-in Kafka integration that forwards incoming MQTT messages to your own Kafka topics, so you don’t have to run a separate bridge.',
+	},
+	{
+		q: 'Is MQTT faster than Kafka?',
+		a: 'They optimize for different things. MQTT minimizes per-message overhead and latency for many small device messages; Kafka maximizes sustained throughput and durable retention for backend streams.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-vs-kafka" faq={faq}>
+	<h2>What each one is for</h2>
+	<p>
+		<strong>MQTT</strong> is a messaging <em>protocol</em>. It connects large numbers of devices to a broker over
+		constrained, unreliable networks and pushes small messages with minimal overhead.
+		<strong>Apache Kafka</strong> is a distributed <em>event-streaming platform</em> — a durable, replayable log that backend
+		systems use to move and process high-throughput data. One lives at the edge; the other lives in the data center.
+	</p>
+
+	<MqttDiagram caption="MQTT connects devices at the edge; the central broker forwards into Kafka in the data center">
+		<svg
+			viewBox="0 0 680 160"
+			role="img"
+			aria-label="MQTT and Kafka pipeline: edge devices connect over MQTT to the central TBMQ broker, which forwards messages into Kafka for durable, replayable backend streams in the data center"
+		>
+			<text class="d-tiny d-mid" x="71" y="22">EDGE</text>
+			<text class="d-tiny d-mid" x="429" y="22">DATA CENTER</text>
+			<path class="d-brk" d="M16 30 L16 36 L126 36 L126 30" fill="none"></path>
+			<path class="d-brk" d="M195 30 L195 36 L663 36 L663 30" fill="none"></path>
+			<rect class="d-actor" x="16" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="71" y="92">Devices</text>
+			<rect class="d-actor d-actor--hero" x="195" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="250" y="92">TBMQ broker</text>
+			<rect class="d-actor" x="374" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="429" y="92">Kafka</text>
+			<rect class="d-actor" x="553" y="64" width="110" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="608" y="92">Backend apps</text>
+			<line class="d-line d-line--green" x1="126" y1="88" x2="192" y2="88" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="134" y="77" width="50" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="159" y="92" style="font-size:11px">MQTT</text>
+			<line class="d-line" x1="305" y1="88" x2="371" y2="88" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="308" y="77" width="56" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="336" y="92" style="font-size:11px">bridge</text>
+			<line class="d-line" x1="484" y1="88" x2="550" y2="88" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="486" y="77" width="58" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="515" y="92" style="font-size:11px">consume</text>
+			<text class="d-note d-mid" x="340" y="140"
+				>The broker bridges MQTT from the edge into Kafka&apos;s durable, replayable log</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>MQTT vs Kafka at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>MQTT</th><th>Apache Kafka</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Type</td><td>Pub/sub messaging protocol</td><td>Distributed event-streaming log</td></tr>
+				<tr
+					><td>Primary use</td><td>Device connectivity at the edge</td><td>Backend data pipelines &amp; analytics</td
+					></tr
+				>
+				<tr><td>Clients</td><td>Millions of lightweight devices</td><td>Fewer high-throughput services</td></tr>
+				<tr><td>Network</td><td>Unreliable, low-bandwidth</td><td>Reliable data-center links</td></tr>
+				<tr
+					><td>Retention / replay</td><td>Last value only (retain flag); no replay</td><td
+						>Core feature — durable, replayable log</td
+					></tr
+				>
+				<tr><td>Delivery</td><td>QoS 0 / 1 / 2</td><td>At-least-once / exactly-once (config)</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>When to use which</h2>
+	<p>
+		Use <strong>MQTT</strong> when you need to connect and command devices in the field — telemetry, presence, low-latency
+		control. Use <strong>Kafka</strong> when you need to durably store, buffer, and process large streams of events across
+		backend services. Choosing "MQTT or Kafka" is usually the wrong question.
+	</p>
+
+	<h2>Using them together</h2>
+	<p>
+		The common pattern is a pipeline: devices publish over MQTT to a broker, and the broker forwards that data into
+		Kafka for storage, stream processing, and analytics. This gives you MQTT's edge-friendly connectivity <em>and</em> Kafka's
+		durable, replayable backbone. <a href="/">TBMQ</a> is built on exactly this idea — it uses Kafka internally for durability
+		and can bridge MQTT traffic straight into your own Kafka topics via its <a href="/docs/integrations/kafka/"
+			>Kafka integration</a
+		>.
+	</p>
+</MqttTopicLayout>

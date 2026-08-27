@@ -1,0 +1,206 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const highlights = [
+	{
+		icon: 'tabler:users',
+		variant: 'green',
+		title: 'Client sessions',
+		text: 'Inspect connected clients, their subscriptions, and session state in real time.',
+	},
+	{
+		icon: 'tabler:shield-lock',
+		variant: 'blue',
+		title: 'Authentication',
+		text: 'See how MQTT client credentials are configured — basic username/password and X.509 certificate authentication.',
+	},
+	{
+		icon: 'tabler:chart-line',
+		variant: 'purple',
+		title: 'Monitoring',
+		text: 'Live throughput and connection metrics on the built-in dashboards.',
+	},
+];
+---
+
+<section id="ld-dashboard">
+	<div class="inner">
+		<p class="kicker reveal">Explore the dashboard</p>
+		<h2 class="reveal">See the full management UI</h2>
+		<p class="lead reveal">
+			Create a free demo account to log in to the TBMQ web interface and explore how the broker is administered,
+			monitored, and scaled — the same UI you get in production.
+		</p>
+		<div class="grid">
+			{
+				highlights.map((h, i) => (
+					<div class:list={['feature', h.variant, 'reveal']} style={`--reveal-delay: ${i * 90}ms`}>
+						<span class="feature-icon-wrap">
+							<Icon name={h.icon} class="feature-icon" />
+						</span>
+						<h3>{h.title}</h3>
+						<p>{h.text}</p>
+					</div>
+				))
+			}
+		</div>
+		<a class="btn btn-primary reveal" href="https://demo.tbmq.io/signup" target="_blank" rel="noopener noreferrer">
+			Create free demo account
+			<Icon name="tabler:arrow-up-right" class="btn-icon" />
+		</a>
+		<p class="note reveal">A free account is required to access the web dashboard.</p>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#ld-dashboard {
+		background-color: $color-white;
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		font-size: 14px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-dark;
+		margin: 0 0 16px;
+	}
+
+	h2 {
+		@include section-title;
+		margin: 0 0 20px;
+		text-wrap: balance;
+	}
+
+	.lead {
+		@include text-m;
+		color: $color-text-secondary;
+		max-width: 680px;
+		margin: 0 0 56px;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 32px;
+		width: 100%;
+		margin-bottom: 56px;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.feature {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		text-align: left;
+		gap: 12px;
+		padding: 24px 22px;
+		border-radius: 16px;
+		border: 1px solid $color-border-dark;
+		background: var(--blk-tint);
+		transition:
+			transform $transition-fast,
+			box-shadow $transition-fast;
+
+		&:hover {
+			transform: translateY(-3px);
+			box-shadow: 0 7px 32px rgba(20, 26, 23, 0.08);
+		}
+
+		&.green {
+			--blk-tint: rgba(23, 187, 82, 0.08);
+			--blk-acc: #{$color-pe-dark};
+			--blk-ink: #{$color-pe-link};
+		}
+
+		&.blue {
+			--blk-tint: #eaf1fb;
+			--blk-acc: #2f74d0;
+			--blk-ink: #12447c;
+		}
+
+		&.purple {
+			--blk-tint: #f0edfd;
+			--blk-acc: #7a5af0;
+			--blk-ink: #3f2e8a;
+		}
+
+		h3 {
+			@include card-title;
+			margin: 0;
+			color: var(--blk-ink);
+		}
+
+		p {
+			@include text-s;
+			color: $color-text-secondary;
+			margin: 0;
+		}
+	}
+
+	.feature-icon-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 11px;
+		background: $color-white;
+		border: 1px solid $color-border-dark;
+		color: var(--blk-acc);
+	}
+
+	:global(.feature-icon) {
+		width: 24px;
+		height: 24px;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 28px;
+		line-height: 44px;
+		border-radius: 8px;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		transition: 0.3s;
+
+		&.btn-primary {
+			background-color: $color-pe-dark;
+			color: $color-white;
+
+			&:hover {
+				background-color: $color-pe-link;
+			}
+		}
+	}
+
+	:global(.btn-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+
+	.note {
+		@include text-s;
+		color: $color-text-muted;
+		margin: 16px 0 0;
+	}
+</style>

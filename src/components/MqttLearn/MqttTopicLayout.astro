@@ -1,0 +1,429 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+import { getTopic, topicHref } from '~/data/mqttLearn';
+import QuickAnswer from './QuickAnswer.astro';
+import TopicSeriesNav from './TopicSeriesNav.astro';
+import HowTbmqBlock from './HowTbmqBlock.astro';
+import RelatedTopics from './RelatedTopics.astro';
+import LearnCta from './LearnCta.astro';
+import FaqAccordion, { type FaqItem } from './FaqAccordion.astro';
+
+interface Props {
+	slug: string;
+	faq?: FaqItem[];
+}
+const { slug, faq = [] } = Astro.props;
+const topic = getTopic(slug);
+
+const title = topic.title;
+const description = topic.seoDescription;
+const jsonLd = marketingJsonLd({
+	path: topicHref(slug),
+	name: title,
+	description,
+	breadcrumb: topic.navLabel,
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="mqtt-learn"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt={title}
+>
+	<main class="learn-page">
+		<div class="learn-hero-band">
+			<div class="learn-hero-band__inner">
+				<nav class="breadcrumb" aria-label="Breadcrumb">
+					<a href="/">Home</a>
+					<span aria-hidden="true">/</span>
+					<a href="/mqtt/">Learn</a>
+					<span aria-hidden="true">/</span>
+					<span aria-current="page">{topic.navLabel}</span>
+				</nav>
+
+				<header class="learn-hero">
+					<div class="learn-hero__eyebrow-row">
+						<p class="learn-hero__eyebrow">{topic.eyebrow}</p>
+						<span class="learn-hero__readtime">
+							<span class="learn-hero__dot" aria-hidden="true">·</span>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								width="14"
+								height="14"
+								aria-hidden="true"
+							>
+								<circle cx="12" cy="12" r="9"></circle>
+								<path d="M12 7v5l3 2"></path>
+							</svg>
+							{topic.readingMinutes} min read
+						</span>
+					</div>
+					<h1 class="learn-hero__title">{topic.title}</h1>
+				</header>
+
+				<QuickAnswer text={topic.quickAnswer} />
+			</div>
+		</div>
+
+		<div class="learn-layout">
+			<aside class="learn-side">
+				<TopicSeriesNav slug={slug} />
+			</aside>
+
+			<div class="learn-main">
+				<div class="learn-body">
+					<slot />
+				</div>
+				<FaqAccordion items={faq} />
+			</div>
+
+			<div class="learn-rail">
+				<nav class="learn-toc" aria-label="On this page">
+					{/* Populated client-side by the scrollspy script. Empty + hidden without JS. */}
+				</nav>
+				<HowTbmqBlock text={topic.tbmqTieIn} />
+			</div>
+		</div>
+
+		<div class="learn-foot">
+			<RelatedTopics slug={slug} />
+			<LearnCta />
+		</div>
+	</main>
+</BaseLayout>
+
+<script>
+	// Build the right-rail TOC from the page's body H2s and highlight the active
+	// section on scroll. Progressive enhancement: no JS → the nav stays empty
+	// (and is display:none < lg anyway), content unaffected.
+	function buildLearnToc() {
+		const toc = document.querySelector('.learn-toc') as HTMLElement | null;
+		const body = document.querySelector('.learn-body') as HTMLElement | null;
+		if (!toc || !body || toc.dataset.ready) return;
+
+		const heads = Array.from(body.querySelectorAll('h2'));
+		if (!heads.length) return;
+
+		const slugify = (s: string) =>
+			s
+				.toLowerCase()
+				.trim()
+				.replace(/[^\w]+/g, '-')
+				.replace(/^-+|-+$/g, '');
+
+		const used = new Set<string>();
+		const links: HTMLAnchorElement[] = [];
+
+		heads.forEach((h) => {
+			const base = h.id || slugify(h.textContent || '');
+			if (!base) return;
+			let id = base;
+			let n = 2;
+			while (used.has(id)) id = `${base}-${n++}`;
+			used.add(id);
+			h.id = id;
+
+			const a = document.createElement('a');
+			a.href = `#${id}`;
+			a.className = 'learn-toc__link';
+			a.textContent = h.textContent || '';
+			links.push(a);
+		});
+		if (!links.length) return;
+
+		const title = document.createElement('p');
+		title.className = 'learn-toc__title';
+		title.textContent = 'On this page';
+		toc.append(title, ...links);
+		toc.dataset.ready = 'true';
+
+		const setActive = (id: string) => {
+			links.forEach((a) => {
+				// aria-current doubles as the styling hook (same convention as the
+				// top nav) — one attribute carries both the visual and AT state.
+				if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true');
+				else a.removeAttribute('aria-current');
+			});
+		};
+
+		// Assumes default Astro navigation (no transition:persist on .learn-toc):
+		// on page change the old nodes + observer are detached and GC'd, and the
+		// fresh .learn-toc has no dataset.ready, so it rebuilds cleanly.
+		const io = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((e) => {
+					if (e.isIntersecting) setActive((e.target as HTMLElement).id);
+				});
+			},
+			{ rootMargin: '-96px 0px -70% 0px' }
+		);
+		heads.forEach((h) => io.observe(h));
+
+		// Seed the first section active on load — the tall hero band keeps every
+		// h2 below the observer's active band until the user scrolls, so without
+		// this the TOC renders with nothing highlighted on arrival.
+		setActive(links[0].getAttribute('href')!.slice(1));
+	}
+
+	buildLearnToc();
+</script>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.learn-page {
+		background: var(--color-bg-surface);
+		padding-bottom: $spacing-20;
+	}
+
+	// Full-bleed tinted hero band: breadcrumb + eyebrow + H1 + quick answer.
+	.learn-hero-band {
+		position: relative;
+		padding: calc(#{$header-height} + #{$spacing-12}) 0 $spacing-12;
+		background:
+			radial-gradient(760px 420px at 50% -40px, rgba($color-pe, 0.12), rgba($color-pe, 0) 68%), var(--color-bg-surface);
+		border-bottom: 1px solid $color-border;
+	}
+	.learn-hero-band__inner {
+		max-width: 1394px;
+		margin: 0 auto;
+		padding: 0 $spacing-6;
+	}
+
+	.breadcrumb {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		font-size: 14px;
+		color: $color-text-muted;
+		margin-bottom: $spacing-8;
+		a {
+			color: $color-text-secondary;
+			text-decoration: none;
+			&:hover {
+				color: $color-pe-link;
+			}
+		}
+	}
+	.learn-hero {
+		margin-bottom: $spacing-8;
+	}
+	.learn-hero__eyebrow-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 0 12px;
+	}
+	.learn-hero__eyebrow {
+		font-size: 13px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-pe-link;
+		margin: 0;
+	}
+	.learn-hero__readtime {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-text-muted;
+	}
+	.learn-hero__dot {
+		color: $color-border;
+	}
+	// The measure is wide enough that the longest topic title (~50 chars) lands
+	// on two lines and a short one ("What Is an MQTT Broker?") stays on one;
+	// `balance` keeps a two-line title from splitting 45 chars + 1 word.
+	.learn-hero__title {
+		font-size: 40px;
+		line-height: 1.15;
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+		margin: 0;
+		max-width: 26ch;
+		text-wrap: balance;
+		@include media-up(md) {
+			font-size: 46px;
+			max-width: 34ch;
+		}
+	}
+
+	// 3-column body: series nav · content · TOC + TBMQ rail. Collapses to 1 column < lg.
+	.learn-layout {
+		max-width: 1394px;
+		margin: 0 auto;
+		padding: $spacing-12 $spacing-6 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-10;
+		@include media-up(lg) {
+			grid-template-columns: 230px minmax(0, 1fr) 300px;
+			gap: $spacing-12;
+			align-items: start;
+		}
+	}
+	.learn-main {
+		min-width: 0;
+		max-width: 760px;
+		margin: 0 auto;
+		width: 100%;
+		@include media-up(lg) {
+			max-width: none;
+			margin: 0;
+		}
+	}
+	// Left column: the in-category series nav. Hidden below lg, so the block
+	// never shows on the single-column mobile layout.
+	.learn-side {
+		display: none;
+		@include media-up(lg) {
+			display: block;
+			position: sticky;
+			top: calc(#{$header-height} + #{$spacing-6});
+			align-self: start;
+		}
+	}
+	// Right column: the scrollspy TOC above the TBMQ tie-in card.
+	.learn-rail {
+		max-width: 760px;
+		margin: 0 auto;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: $spacing-6;
+		@include media-up(lg) {
+			max-width: none;
+			margin: 0;
+			position: sticky;
+			top: calc(#{$header-height} + #{$spacing-6});
+			align-self: start;
+		}
+	}
+	// The rail itself still renders on mobile (for the TBMQ card), but a TOC at
+	// the very bottom of a single-column page is useless — keep it lg-only.
+	.learn-toc {
+		display: none;
+		@include media-up(lg) {
+			display: block;
+		}
+	}
+	.learn-foot {
+		max-width: 1394px;
+		margin: 0 auto;
+		padding: 0 $spacing-6;
+	}
+
+	// TOC links are created by JS, so they need :global styling.
+	.learn-toc__title {
+		font-size: 12px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-text-muted;
+		margin: 0 0 12px;
+	}
+	:global(.learn-toc__link) {
+		display: block;
+		font-size: 14px;
+		line-height: 1.4;
+		color: $color-text-muted;
+		padding: 6px 0 6px 14px;
+		border-left: 2px solid $color-border;
+		text-decoration: none;
+	}
+	:global(.learn-toc__link:hover) {
+		color: $color-text-primary;
+	}
+	:global(.learn-toc__link[aria-current='true']) {
+		color: $color-pe-link;
+		border-left-color: $color-pe;
+		font-weight: $font-weight-semibold;
+	}
+	:global(.learn-toc__link:focus-visible) {
+		outline: 2px solid $color-pe;
+		outline-offset: 2px;
+	}
+
+	// Shared prose styling for the <slot /> body of every learn page.
+	.learn-body {
+		:global(h2) {
+			font-size: 28px;
+			font-weight: $font-weight-semibold;
+			color: $color-text-primary;
+			margin: $spacing-10 0 $spacing-4;
+			scroll-margin-top: calc(#{$header-height} + #{$spacing-4});
+		}
+		:global(h3) {
+			font-size: 20px;
+			font-weight: $font-weight-semibold;
+			color: $color-text-primary;
+			margin: $spacing-6 0 $spacing-3;
+		}
+		:global(p) {
+			font-size: 17px;
+			line-height: 1.75;
+			color: $color-text-secondary;
+			margin: 0 0 $spacing-4;
+		}
+		:global(ul),
+		:global(ol) {
+			font-size: 17px;
+			line-height: 1.75;
+			color: $color-text-secondary;
+			margin: 0 0 $spacing-4;
+			padding-left: 24px;
+		}
+		:global(li) {
+			margin-bottom: 8px;
+		}
+		:global(a) {
+			// The shared link blue — body prose links read as hyperlinks, like in
+			// the docs; green stays for the surrounding learn-hub chrome.
+			color: $color-primary;
+			text-decoration: underline;
+		}
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 0.9em;
+			background: $color-bg-light;
+			padding: 2px 6px;
+			border-radius: 3px;
+			color: $color-text-primary;
+		}
+		:global(table) {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 0 0 $spacing-6;
+			font-size: 15px;
+		}
+		:global(th),
+		:global(td) {
+			border: 1px solid $color-border;
+			padding: 10px 14px;
+			text-align: left;
+			vertical-align: top;
+			color: $color-text-secondary;
+		}
+		:global(th) {
+			background: $color-bg-light;
+			color: $color-text-primary;
+			font-weight: $font-weight-semibold;
+		}
+		:global(.overflow-x) {
+			overflow-x: auto;
+		}
+	}
+</style>

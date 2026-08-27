@@ -5,18 +5,14 @@ interface Props {
 	platform?: Products;
 }
 
-const { platform = Products.CE } = Astro.props;
+const { platform = Products.TBMQ } = Astro.props;
 
-const repoMap: Partial<Record<Products, string>> = {
-	[Products.CE]: 'thingsboard/thingsboard',
-	[Products.GW]: 'thingsboard/thingsboard-gateway',
-	[Products.EDGE]: 'thingsboard/thingsboard-edge',
-	[Products.EDGE_PE]: 'thingsboard/thingsboard-edge',
+const repoMap: Record<Products, string> = {
 	[Products.TBMQ]: 'thingsboard/tbmq',
 	[Products.TBMQ_PE]: 'thingsboard/tbmq',
 };
 
-const repo = repoMap[platform] ?? 'thingsboard/thingsboard';
+const repo = repoMap[platform];
 const link = `https://github.com/${repo}`;
 ---
 
@@ -43,8 +39,9 @@ const link = `https://github.com/${repo}`;
 </div>
 
 <script>
-	// Defer via `__deferOnInteraction` (GTM's system); 3s fallback > GTM's 2.5s keeps GTM first.
-	const DEFER_MS = 3000;
+	// Defer via `__deferOnInteraction` (GTM's system); 5.5s fallback > GTM's 5s
+	// keeps GTM first. Full tier schedule: DeferredLoadTrigger.astro.
+	const DEFER_MS = 5500;
 
 	type DeferFn = (cb: () => void, fallbackMs?: number) => void;
 

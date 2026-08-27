@@ -1,31 +1,25 @@
 // src/pages/open-graph/_shared/colors.ts
 //
-// Three-stop gradient per slab class. Top → middle → bottom (vertical).
-// `brand` is the default ThingsBoard core colour, reused by CE docs and by all
-// logo-card slabs (blog, marketing, case studies, use cases, device library).
+// The OG palette. Three-stop slab gradient (top → middle → bottom, vertical)
+// plus the backdrop network colours used by Background.tsx. Every card — docs
+// pages and all logo-card slabs (marketing, collection indexes) — uses the
+// single `tbmq` slab.
 
-export type SlabClass =
-	| 'brand'
-	| 'pe'
-	| 'cloud'
-	| 'edge'
-	| 'tbmq'
-	| 'trendz'
-	| 'mobile'
-	| 'gateway'
-	| 'license';
+export type SlabClass = 'tbmq';
 
 export const SLAB_GRADIENTS: Record<SlabClass, [string, string, string]> = {
-	brand:   ['#305680', '#264466', '#182a3f'],
-	pe:      ['#00695C', '#00574b', '#003c33'],
-	cloud:   ['#2A7DEC', '#1f5fb7', '#173f7a'],
-	edge:    ['#009688', '#00766a', '#054c44'],
-	tbmq:    ['#1F8B4D', '#166e3c', '#0c4525'],
-	trendz:  ['#2696F3', '#1572be', '#0d4a7e'],
-	mobile:  ['#3a6190', '#2c4c70', '#1c3148'],
-	gateway: ['#7a4dc4', '#5d3a99', '#3b246a'],
-	license: ['#1F8B4D', '#166e3c', '#0c4525'],
+	// Top stop is $color-brand (keep in sync with src/styles/_variables.scss).
+	tbmq: ['#1a7f46', '#166e3c', '#0c4525'],
 };
+
+// Backdrop network (Background.tsx): node dots/lines are the dark-theme mint
+// ($color-brand-dark — keep in sync with src/styles/_variables.scss), the
+// sparse accents are orange, and the glow is a deep translucent green.
+export const NETWORK_COLORS = {
+	node: '#7ee0a0',
+	accent: '#ff5722',
+	glow: 'rgba(22,110,60,0.55)',
+} as const;
 
 /** Build the CSS background string for a slab class. */
 export function slabBackground(cls: SlabClass): string {

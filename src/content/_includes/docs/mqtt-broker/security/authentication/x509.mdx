@@ -59,6 +59,13 @@ The **Skip certificate validity check for client certificates** parameter contro
   Enabling this setting weakens the certificate-based security model. It may be acceptable in isolated testing or trust-controlled environments, but is not recommended for production deployments.
 </Aside>
 
+### Client authentication
+
+The **Client authentication** setting controls whether the broker asks for — or insists on — a certificate from the client during the TLS handshake:
+
+- **Requested** (default) — the broker requests a client certificate, but the TLS handshake still completes if the client does not present one. Suitable when X.509 is one of several enabled providers.
+- **Required** — the client must present a certificate; otherwise the TLS handshake is aborted. This enforces true mutual (two-way) TLS.
+
 ## Credentials matching
 
 The X.509 Certificate Chain credentials have a **"Use certificate CN regex"** option that controls how credentials are matched.
@@ -129,6 +136,8 @@ Where:
 This allows clients to connect with a certificate containing `example_1` in its CN to publish only to topics that start with `example_pub_topic/` and
 subscribe to topics that start with `example_sub_topic/`. Clients with a certificate containing `example_2` are allowed to publish and subscribe to any topic.
 
+The `pubAuthRulePatterns` and `subAuthRulePatterns` may also include the `${cn}` placeholder, which TBMQ substitutes at connection time with the client certificate's Common Name — enabling per-device rules such as `${cn}/data/.*`.
+
 <Aside type="note">
   If either **pubAuthRulePatterns** or **subAuthRulePatterns** is set to `null` or an empty list (`[]`), the client will not be able to publish to or subscribe to any topics.
 </Aside>
@@ -143,7 +152,7 @@ subscribe to topics that start with `example_sub_topic/`. Clients with a certifi
 
 ## Example
 
-X.509 certificates are used to set up <a href="https://en.wikipedia.org/wiki/Mutual_authentication" target="_blank" rel="noopener noreferrer">mutual</a> (two-way) authentication for MQTT over TLS.
+X.509 certificates are used to set up <a href="https://en.wikipedia.org/wiki/Mutual_authentication" target="_blank" rel="noopener noreferrer">mutual</a> (two-way) authentication for MQTT over TLS. Set **Client authentication** to **Required** (see [above](#client-authentication)) if the broker should reject connections that do not present a client certificate.
 There are two strategies that can be used for establishing a connection between the client and TBMQ:
 
 - **X.509 Certificate chain** — configure TBMQ to trust all client certificates from a specific trust anchor (intermediate certificate). This feature eliminates the need for manual certificate updates on each MQTT client credential when certificate rotation occurs.

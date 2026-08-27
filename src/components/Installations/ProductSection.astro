@@ -9,11 +9,6 @@ interface Props {
 
 const { data } = Astro.props;
 
-// Only ThingsBoard Cloud (the default tab) carries the page <h1>; the other
-// product tabs are also in the DOM (just display:none), so their titles render
-// as <h2> to keep a single <h1> per page.
-const TitleTag = data.id === 'thingsboard-cloud' ? 'h1' : 'h2';
-
 const hasDeployGroups = data.deployGroups.length > 0;
 const hasTwoColumns =
 	hasDeployGroups &&
@@ -23,8 +18,8 @@ const hasTwoColumns =
 
 <div class="section-container">
 	<div class:list={['install-content-header', 'row', { 'margin-bottom': hasDeployGroups }]}>
-		<div class="install-content-description">
-			<TitleTag>{data.title}</TitleTag>
+		<div class="install-content-description col-lg-7">
+			<h1>{data.title}</h1>
 			<div class="install-content-details">
 				<p set:html={data.description} />
 			</div>
@@ -33,7 +28,7 @@ const hasTwoColumns =
 					data.buttons.map((btn) => (
 						<a
 							id={btn.id}
-							class:list={['btn-blue', 'gtm_button', { secondary: btn.secondary }]}
+							class:list={['btn-primary', 'gtm_button', { secondary: btn.secondary }]}
 							href={btn.href}
 							target={btn.target}
 							rel={btn.target === '_blank' ? 'noopener noreferrer' : undefined}
@@ -44,8 +39,8 @@ const hasTwoColumns =
 				}
 			</div>
 		</div>
-		<div class="install-content-image margin-mobile">
-			<div class:list={['image-content', { 'width-85': data.id === 'thingsboard-trendz' }]}>
+		<div class="col d-flex align-items-center justify-content-center margin-mobile">
+			<div class="image-content">
 				{
 					data.heroImages.map((img) => (
 						<SmartImage
@@ -133,6 +128,42 @@ const hasTwoColumns =
 		padding: 0 15px 0 15px;
 	}
 
+	// Bootstrap-style grid, scoped to this component — its only consumer (a
+	// global `[class*='col']` version once leaked 15px gutters onto every
+	// substring match sitewide: nav dropdown `.column`s, ComparisonTable `col-*`
+	// cells). The gutter pair stays intact: `.row` pulls -15px, the column
+	// classes pay it back as padding. Two silent traps to know about: only
+	// `col-lg-7` is defined (other `col-lg-*` widths don't exist), and because
+	// the rules are Astro-scoped, `.row`/`.col` markup rendered by a *child*
+	// component won't pick them up. The rest of `.install-content-header`'s
+	// styling (typography, image parallax, buttons) lives in
+	// src/pages/installations/index.astro behind :global() — see the note there.
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		margin-left: -15px;
+		margin-right: -15px;
+	}
+
+	.col,
+	.col-lg-7 {
+		position: relative;
+		width: 100%;
+		padding-left: 15px;
+		padding-right: 15px;
+	}
+
+	.col {
+		flex: 1 0 0%;
+	}
+
+	@include media-up(lg) {
+		.col-lg-7 {
+			flex: 0 0 calc(7 / 12 * 100%);
+			max-width: calc(7 / 12 * 100%);
+		}
+	}
+
 	:global(.deploy) {
 		position: relative;
 		padding-bottom: 100px;
@@ -208,6 +239,8 @@ const hasTwoColumns =
 
 	:global(.deployment-cards) {
 		display: grid;
+		// Pack as many ~290px cards as fit: 2 per narrow PE column, more in the
+		// full-width Trendz column, 1 on mobile — without cards ballooning.
 		grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
 		gap: 20px;
 	}

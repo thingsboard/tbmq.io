@@ -4,9 +4,13 @@ import DocLink from '@components/DocLink.astro';
 White labeling lets you tailor your TBMQ instance to match your brand — particularly useful for companies delivering IoT solutions to their customers.
 Configure your company name, upload your logo, and choose color palettes.
 
+The **White labeling** page has three tabs: **General** for the management UI, **Login** for the login page, and
+<DocLink product={props.product} path="image-gallery">Image gallery</DocLink> for the logo and icon assets both tabs draw from.
+Editing these settings requires the <DocLink product={props.product} path="security/rbac">Administrator</DocLink> role — a Viewer sees them read-only.
+
 ## Customize TBMQ web interface
 
-To configure your **logo** and **color scheme**, go to the **White labeling** page.
+To configure your **logo** and **color scheme**, go to the **White labeling** page and open the **General** tab.
 
 <ImageGallery product={props.product} images={[
   {
@@ -15,12 +19,16 @@ To configure your **logo** and **color scheme**, go to the **White labeling** pa
   },
 ]} />
 
-On the **General** tab you can configure:
+The tab provides the following settings:
 
-- **Application title** — custom page title displayed in the browser tab.
-- **Favicon** — replace the default website icon with your own.
+- **Application title** — custom page title displayed in the browser tab. Up to 255 characters.
+- **Website icon** — replace the default browser tab icon with your own.
 - **Logo** — replace the default logo in the upper left corner with your company logo.
-- **Logo height** — resize the logo.
+- **Logo height, px** — resize the logo.
+
+For the **Website icon** and **Logo**, either **Browse from gallery** to pick an asset from the
+<DocLink product={props.product} path="image-gallery">Image gallery</DocLink> — so the same file can be reused and updated in
+one place — or **Set link** to reference an external image URL.
 
 <ImageGallery product={props.product} images={[
   {
@@ -40,7 +48,9 @@ On the **General** tab you can configure:
 ]} />
 
 - **Advanced CSS** — apply custom CSS to any element of the TBMQ interface. See [Advanced CSS](#advanced-css) below.
-- **Show/hide platform name and version** — when enabled, the platform name and version appear in the lower left corner.
+- **Hide connectivity dialog** and **Hide Getting Started page** — hide the check-connectivity dialog and the Getting Started page.
+- **Show platform name and version** — when enabled, reveals the required **Platform Name** and **Platform version** fields
+  (defaulting to `TBMQ` and the current broker version) and displays their values in the lower left corner.
 
 <ImageGallery product={props.product} images={[
   {
@@ -49,7 +59,7 @@ On the **General** tab you can configure:
   },
 ]} />
 
-The customized interface:
+Use **Preview** to try the result before saving, and **Reset to default** to discard all customizations. The customized interface:
 
 <ImageGallery product={props.product} images={[
   {
@@ -97,12 +107,14 @@ ng-component::-webkit-scrollbar-thumb {
 
 On the **Login** tab, configure the TBMQ login page:
 
-- Enter the registered domain name. For details, see <DocLink product={props.product} path="security/domains/#domain-registration">Domain registration</DocLink>.
-- Disable hostname usage from request headers (recommended).
-- Enter a custom application title.
-- Replace the default website icon and logo.
-- Define the primary and accent color palettes.
-- Set the page background color.
+- **Domain name** — select an already registered domain or create a new one inline. For details, see <DocLink product={props.product} path="security/domains/#domain-registration">Domain registration</DocLink>.
+- **Base URL** — the absolute URL of the instance, used in generated links. Prefilled from the selected domain, for example `https://mqtt.mycompany.com`.
+- **Prohibit to use hostname from the client request headers** — enable this in production, so the broker uses the configured **Base URL** instead of trusting the request headers.
+- **Application title**, **Website icon**, and **Logo** — the same branding fields as on the **General** tab.
+- **Primary palette** and **Accent palette** — the login page color scheme.
+- **Dark foreground** — switch the login form text and icons to dark, for use with a light background.
+- **Page background color** — the color behind the login form.
+- **Show platform name and version** — as on the **General** tab, plus **Platform name and version position**, which places the values either under the logo or at the bottom of the login form.
 
 Once done, save the changes.
 

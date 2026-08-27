@@ -1,36 +1,12 @@
 export enum Products {
-	CE = 'CE',
-	PE = 'PE',
-	PAAS = 'PAAS',
-	PAAS_EU = 'PAAS_EU',
-	EDGE = 'EDGE',
-	EDGE_PE = 'EDGE_PE',
-	GW = 'GW',
-	LICENSE = 'LICENSE',
-	IOT_HUB = 'IOT_HUB',
-	TRENDZ = 'TRENDZ',
-	MOBILE = 'MOBILE',
-	MOBILE_PE = 'MOBILE_PE',
 	TBMQ = 'TBMQ',
 	TBMQ_PE = 'TBMQ_PE',
 }
 
 /** Maps each product to its docs URL prefix (the segment after /docs/). */
 export const productDocsPrefix: Record<Products, string> = {
-	[Products.CE]: '',
-	[Products.PE]: 'pe/',
-	[Products.PAAS]: 'paas/',
-	[Products.PAAS_EU]: 'paas/eu/',
-	[Products.EDGE]: 'edge/',
-	[Products.EDGE_PE]: 'edge/pe/',
-	[Products.GW]: 'iot-gateway/',
-	[Products.LICENSE]: 'license-server/',
-	[Products.IOT_HUB]: 'iot-hub/',
-	[Products.TRENDZ]: 'trendz/',
-	[Products.MOBILE]: 'mobile/',
-	[Products.MOBILE_PE]: 'mobile/pe/',
-	[Products.TBMQ]: 'mqtt-broker/',
-	[Products.TBMQ_PE]: 'mqtt-broker/pe/',
+	[Products.TBMQ]: '',
+	[Products.TBMQ_PE]: 'pe/',
 };
 
 /** Returns the docs prefix for the given product (e.g. 'pe/' for PE, '' for CE). */
@@ -42,10 +18,4 @@ export function getDocsPrefix(product: Products): string {
 export function docsLink(product: Products, path: string): string {
 	const normalizedPath = path === '' ? '' : (path.endsWith('/') ? path : path + '/');
 	return `/docs/${productDocsPrefix[product]}${normalizedPath}`;
-}
-
-/** Builds a full docs link: /docs/{prefix}{path}/ */
-export function docLink(title: string, product: Products, path: string): string {
-	const normalizedPath = path === '' ? '' : (path.endsWith('/') ? path : path + '/');
-	return `<a href="/docs/${productDocsPrefix[product]}${normalizedPath}">${title}</a>`;
 }

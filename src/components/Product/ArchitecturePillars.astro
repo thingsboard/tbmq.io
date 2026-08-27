@@ -1,0 +1,140 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import MessageFlowDiagram from '@components/Product/MessageFlowDiagram.astro';
+import { Icon } from 'astro-icon/components';
+
+const pillars = [
+	{
+		icon: 'tabler:shield-check',
+		title: 'No message loss by design',
+		text: "TBMQ doesn't acknowledge a publish until Kafka has durably stored it. If a node fails mid-flight, another resumes from Kafka — nothing is lost between acknowledgment and delivery.",
+	},
+	{
+		icon: 'tabler:search',
+		title: 'Subscription matching at any scale',
+		text: "Subscriptions live in an in-memory trie, so matching a topic to its subscribers costs the same whether the broker holds a thousand subscriptions or a million — lookup scales with the topic's depth, not the total subscriber count.",
+	},
+	{
+		icon: 'tabler:arrows-split-2',
+		title: 'Separate paths for publishers and subscribers',
+		text: 'DEVICE clients (Redis-backed) and APPLICATION clients (dedicated Kafka topic + consumer thread) are processed independently, so a device spike never delays application delivery.',
+	},
+	{
+		icon: 'tabler:topology-star-3',
+		title: 'Symmetric cluster, no coordinator',
+		text: 'Every node is identical — no master, no leader election. State is shared through Kafka, so new nodes join and rebalance with zero downtime.',
+	},
+];
+---
+
+<section id="architecture-pillars">
+	<div class="inner">
+		<SectionHeader
+			class="reveal"
+			title="Distributed MQTT broker architecture that backs the numbers"
+			subtitle="TBMQ's throughput and resilience are consequences of its design — not a lucky benchmark run."
+		/>
+		<MessageFlowDiagram />
+		<div class="pillars">
+			{
+				pillars.map((p, i) => (
+					<div class="pillar reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<div class="pillar-head">
+							<Icon name={p.icon} class="pillar-icon" />
+							<h3 class="pillar-title">{p.title}</h3>
+						</div>
+						<p class="pillar-text">{p.text}</p>
+					</div>
+				))
+			}
+		</div>
+		<a class="arch-link reveal" href="/docs/architecture/">
+			See the full architecture
+			<Icon name="tabler:arrow-right" class="link-icon" />
+		</a>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#architecture-pillars {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-surface);
+		scroll-margin-top: calc(#{$header-height} + 24px);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.pillars {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 40px 48px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.pillar {
+		border-left: 3px solid $color-pe-dark;
+		padding-left: 24px;
+	}
+
+	.pillar-head {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 10px;
+	}
+
+	:global(.pillar-icon) {
+		width: 26px;
+		height: 26px;
+		flex-shrink: 0;
+		color: $color-pe;
+	}
+
+	.pillar-title {
+		font-size: 22px;
+		font-weight: $font-weight-semibold;
+		line-height: 1.3;
+		color: $color-text-primary;
+		margin: 0;
+	}
+
+	.pillar-text {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0;
+	}
+
+	.arch-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: 56px;
+		font-size: 18px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.link-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>

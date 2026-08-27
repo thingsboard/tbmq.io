@@ -12,14 +12,14 @@ This section describes the build tools required to compile TBMQ from source.
 
 ### Java
 
-TBMQ is built using Java 17. Install OpenJDK 17:
+TBMQ is built using Java 25. Install OpenJDK 25:
 
 ```bash
 sudo apt update
-sudo apt install openjdk-17-jdk-headless
+sudo apt install openjdk-25-jdk-headless
 ```
 
-Configure your operating system to use OpenJDK 17 by default. Set the default version with the following command:
+Configure your operating system to use OpenJDK 25 by default. Set the default version with the following command:
 
 ```bash
 sudo update-alternatives --config java
@@ -34,7 +34,7 @@ java -version
 Expected output:
 
 ```text
-openjdk version "17.0.xx"
+openjdk version "25.0.xx"
 OpenJDK Runtime Environment (...)
 OpenJDK 64-Bit Server VM (build ...)
 ```
@@ -48,7 +48,7 @@ sudo apt install maven
 ```
 
 <Aside type="caution">
-  Maven installation may set Java 7 as the default JVM on some Linux systems. If that happens, follow the <a href="#java">Java instructions</a> above to restore Java 17 as the default.
+  Maven installation may set Java 7 as the default JVM on some Linux systems. If that happens, follow the <a href="#java">Java instructions</a> above to restore Java 25 as the default.
 </Aside>
 
 ## Source code

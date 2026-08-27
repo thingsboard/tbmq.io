@@ -1,0 +1,155 @@
+---
+import { getTopic, topicHref, categoryForSlug } from '~/data/mqttLearn';
+
+interface Props {
+	slug: string;
+}
+const { slug } = Astro.props;
+const category = categoryForSlug(slug);
+
+// Same per-category glyphs as the hub grid (TopicGrid.astro), so the block reads
+// as the sidebar echo of the section the reader arrived from.
+const categoryIcon: Record<string, string> = {
+	fundamentals: '<path d="M4 5h10v14H4zM14 5h6v14h-6z"></path>',
+	connections: '<path d="M9 15 15 9M8 12l-2 2a3 3 0 0 0 4 4l2-2M16 12l2-2a3 3 0 0 0-4-4l-2 2"></path>',
+	'mqtt-5': '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"></path>',
+	security: '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"></path>',
+	comparisons: '<path d="M4 8h13l-3-3M20 16H7l3 3"></path>',
+};
+---
+
+<nav class={`topic-series c-${category.accent}`} aria-label={`${category.label} guides`}>
+	<a class="topic-series__head" href={`/mqtt/#${category.id}`}>
+		<span class="topic-series__icon" aria-hidden="true">
+			<svg
+				width="14"
+				height="14"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.1"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				set:html={categoryIcon[category.id]}
+			/>
+		</span>
+		{category.label}
+	</a>
+	<ul class="topic-series__list">
+		{
+			category.slugs.map((s) => {
+				const topic = getTopic(s);
+				return (
+					<li>
+						{s === slug ? (
+							<span class="topic-series__item" aria-current="page">
+								{topic.navLabel}
+							</span>
+						) : (
+							<a class="topic-series__item" href={topicHref(s)}>
+								{topic.navLabel}
+							</a>
+						)}
+					</li>
+				);
+			})
+		}
+	</ul>
+</nav>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	// Per-category accent, mirroring the hub grid (TopicGrid.astro). `--acc-line`
+	// is the dashed-frame colour (accent at ~0.5 alpha); the page is
+	// forceLightTheme, so these light-locked hues are safe to hardcode.
+	.c-green {
+		--acc: #{$color-pe};
+		--acc-ink: #{$color-pe-link};
+		--acc-tint: #eaf7ef;
+		--acc-line: rgba(23, 187, 82, 0.5);
+	}
+	.c-blue {
+		--acc: #2f74d0;
+		--acc-ink: #12447c;
+		--acc-tint: #eaf1fb;
+		--acc-line: rgba(47, 116, 208, 0.5);
+	}
+	.c-purple {
+		--acc: #7a5af0;
+		--acc-ink: #3f2e8a;
+		--acc-tint: #f0edfd;
+		--acc-line: rgba(122, 90, 240, 0.5);
+	}
+	.c-amber {
+		--acc: #d98a25;
+		--acc-ink: #7a4d0b;
+		--acc-tint: #fbf1de;
+		--acc-line: rgba(217, 138, 37, 0.5);
+	}
+	.c-teal {
+		--acc: #159e8a;
+		--acc-ink: #0b5c50;
+		--acc-tint: #e3f5f1;
+		--acc-line: rgba(21, 158, 138, 0.5);
+	}
+
+	.topic-series {
+		padding: 14px 14px 6px;
+		border: 1px dashed var(--acc-line);
+		border-radius: 12px;
+		background: linear-gradient(180deg, var(--acc-tint), transparent);
+	}
+
+	.topic-series__head {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		margin: 2px 0 12px;
+		font-size: 12px;
+		font-weight: $font-weight-bold;
+		letter-spacing: 0.04em;
+		color: var(--acc-ink);
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+	.topic-series__icon {
+		display: inline-flex;
+		flex: none;
+	}
+
+	.topic-series__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.topic-series__item {
+		display: block;
+		font-size: 14px;
+		line-height: 1.35;
+		padding: 7px 0 7px 14px;
+		border-left: 2px solid $color-border;
+		text-decoration: none;
+		color: $color-text-muted;
+	}
+	a.topic-series__item:hover {
+		color: $color-text-primary;
+		border-left-color: $color-text-secondary;
+	}
+	.topic-series__item[aria-current='page'] {
+		color: var(--acc-ink);
+		border-left-color: var(--acc);
+		font-weight: $font-weight-semibold;
+		background: var(--acc-tint);
+		border-radius: 0 4px 4px 0;
+	}
+	.topic-series__item:focus-visible {
+		outline: 2px solid var(--acc);
+		outline-offset: 2px;
+	}
+</style>

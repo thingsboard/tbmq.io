@@ -21,9 +21,10 @@ TBMQ also supports extracting role-based authorization patterns and client type 
 These values determine the client's type (`DEVICE` or `APPLICATION`) and which topics they are allowed to publish or subscribe to.
 
 The client is granted access only if the signature is valid and all required claims pass validation.
+If any check fails, the JWT provider does not authenticate the client — TBMQ moves on to the next enabled provider in the execution order and refuses the connection only if none authenticate it.
 
 <Aside type="note">
-  TBMQ performs JWT validation only at the time of connection. If the token expires while the client is already connected, the client remains connected until it disconnects. However, any reconnection attempt with an expired token will be rejected immediately.
+  TBMQ performs JWT validation only at the time of connection. If the token expires while the client is already connected, the client remains connected until it disconnects. However, a reconnection attempt with an expired token fails JWT validation.
 </Aside>
 
 ## Configure provider
@@ -71,7 +72,7 @@ This is often used in internal systems or when tokens are issued by a trusted se
   },
 ]} />
 
-Supported JWT-standard HMAC algorithms: **HS256, HS384, HS512**. The secret should match the one used to sign the tokens.
+Supported JWT-standard HMAC algorithms: **HS256, HS384, HS512**. The secret should match the one used to sign the tokens, and must be at least 32 bytes long.
 
 ### Public key (PEM)
 
@@ -92,7 +93,7 @@ Supported key types: **RSA, EC, and Ed25519**. Make sure the uploaded key matche
 
 JWKS (JSON Web Key Set) allows TBMQ to fetch a list of public keys from a remote endpoint.
 This is especially useful when using identity providers that rotate signing keys automatically.
-TBMQ will periodically download and cache keys from the endpoint and use them to verify incoming tokens.
+TBMQ will periodically download and cache keys from the endpoint and use them to verify incoming tokens. The refresh interval is configurable, with a minimum of 300 seconds.
 
 <ImageGallery product={props.product} images={[
   {
@@ -129,7 +130,7 @@ Before anything else, TBMQ checks a few standard claims embedded in the JWT:
 - `exp` (expiration) — ensures the token is not expired.
 - `nbf` (not before) — ensures the token is currently valid.
 
-If the token is expired or not yet valid, the client connection is rejected immediately.
+If the token is expired or not yet valid, JWT validation fails (and, as noted above, TBMQ then falls through to the next enabled provider).
 These checks happen automatically and do not require any configuration.
 
 ### Authentication claims (optional)
@@ -231,7 +232,7 @@ To better understand how default and dynamic authorization rules work together, 
   {
     src: '/src/assets/images/docs/mqtt-broker/security/auth-providers/jwt/configure-jwt-authorization.png',
     alt: 'Configure JWT default and dynamic authorization rules',
-    caption: 'The JWT claim "pub_rules" restricts publish access to "devices/.*/data", while claim "sub_rules" expands subscribe access to include "alerts/.*".',
+    caption: 'The JWT claim "pub_rules" restricts publish access to "devices/.*/data"; the "sub_rules" claim replaces the subscribe rule, listing "sensors/.*" and "alerts/.*".',
   },
 ]} />
 
@@ -247,7 +248,9 @@ A client connects with a JWT that includes these claims:
 In this case:
 
 - The `pub_rules` claim overrides the default publish rule and **restricts** access to `devices/.*/data` only.
-- The `sub_rules` claim **extends** the default subscribe rule by additionally allowing `alerts/.*`.
+- The `sub_rules` claim **replaces** the default subscribe rule; here it lists `sensors/.*` (the default) alongside `alerts/.*`, so the client can subscribe to both.
+
+A dynamic claim **replaces** the default patterns for its direction rather than merging with them, so the token must repeat any default pattern it needs to keep.
 
 This demonstrates how dynamic rules can be used to customize access per client while still providing reliable fallbacks when needed.
 

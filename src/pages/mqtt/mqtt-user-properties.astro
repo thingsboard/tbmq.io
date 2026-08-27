@@ -1,0 +1,96 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What are MQTT user properties?',
+		a: 'Arbitrary UTF-8 key–value pairs you can attach to MQTT 5.0 packets, most usefully to a PUBLISH. They work like custom HTTP headers: application metadata that travels with the message without being part of the topic or payload.',
+	},
+	{
+		q: 'Can I use the same key more than once?',
+		a: 'Yes. User properties are an ordered list of name–value pairs, and the same name may appear multiple times. Order is preserved, so a receiver sees them exactly as the sender set them.',
+	},
+	{
+		q: 'What should I use user properties for?',
+		a: 'Metadata that helps route or interpret a message: a message type or schema version, a tenant or device ID, a content type, or a tracing/correlation token. Keeping it in properties avoids overloading the topic string or parsing it out of the payload.',
+	},
+	{
+		q: 'Do user properties work in MQTT 3.1.1?',
+		a: 'No. User properties are an MQTT 5.0 feature. In 3.1.1 you have to encode metadata into the topic or the payload yourself.',
+	},
+	{
+		q: 'Does the broker read or change user properties?',
+		a: 'It shouldn’t. The broker forwards them with the message. A compliant broker delivers the same user properties the publisher set (some brokers may add their own, but they don’t alter yours).',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-user-properties" faq={faq}>
+	<p>
+		Sometimes a message needs to carry a little metadata — what kind of message it is, which tenant it belongs to, a
+		trace ID for debugging. Before <a href="/mqtt/mqtt-5/">MQTT 5.0</a> you had to smuggle that into the
+		<a href="/mqtt/topics/">topic</a> or the payload. <strong>User Properties</strong> give you a proper place to put it.
+	</p>
+
+	<h2>Custom headers for MQTT</h2>
+	<p>
+		User Properties are arbitrary UTF-8 key–value pairs attached to a packet — the MQTT equivalent of custom HTTP
+		headers. They ride alongside the message from publisher to subscriber, so a consumer can branch on them without the
+		publisher having to bake the information into the topic name or the message body.
+	</p>
+
+	<MqttDiagram caption="User Properties are custom key–value metadata carried alongside the message">
+		<svg
+			viewBox="0 0 680 246"
+			role="img"
+			aria-label="MQTT user properties: a publisher attaches key-value properties to a PUBLISH; the broker carries them through to the subscriber untouched"
+		>
+			<rect x="196" y="22" width="288" height="98" rx="8" style="fill:#f7f9fc;stroke:#dfe3ea"></rect>
+			<text class="d-panelttl d-mid" x="340" y="43">User Properties (key → value)</text>
+			<text class="d-ctext d-mid" x="340" y="66" style="font-size:11px">content-type → application/json</text>
+			<text class="d-ctext d-mid" x="340" y="84" style="font-size:11px">tenant → acme</text>
+			<text class="d-ctext d-mid" x="340" y="102" style="font-size:11px">trace-id → 9f2c</text>
+			<line class="d-brk" x1="340" y1="120" x2="340" y2="150"></line>
+			<rect class="d-actor" x="24" y="156" width="130" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="89" y="183">Publisher</text>
+			<rect class="d-actor d-actor--hero" x="275" y="156" width="130" height="44" rx="10"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="340" y="183">Broker</text>
+			<rect class="d-actor" x="526" y="156" width="130" height="44" rx="10"></rect>
+			<text class="d-alabel d-mid" x="591" y="183">Subscriber</text>
+			<line class="d-line" x1="154" y1="178" x2="272" y2="178" marker-end="url(#arGray)"></line>
+			<line class="d-line d-line--green" x1="405" y1="178" x2="523" y2="178" marker-end="url(#arGreen)"></line>
+			<text class="d-tiny d-mid" x="213" y="170">PUBLISH</text>
+			<text class="d-tiny d-mid" x="464" y="170">PUBLISH</text>
+			<text class="d-note d-mid" x="340" y="230"
+				>User Properties travel with the message, from publisher to every subscriber — untouched</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Good uses for user properties</h2>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:category" title="Message type / schema version">
+			let consumers dispatch without sniffing the payload.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:id" title="Tenant or device identity">
+			tag multi-tenant traffic for filtering downstream.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:file-code" title="Content type"> declare how the payload is encoded. </LearnIconRow>
+		<LearnIconRow icon="tabler:route" title="Tracing">
+			carry a correlation or trace ID across services for debugging.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<h2>User properties in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> passes User Properties through end to end, from the publishing client to every subscriber, untouched
+		— so you can rely on them for routing hints and metadata. It's the same pass-through the broker gives the other MQTT 5.0
+		message metadata: the <a href="/mqtt/mqtt-request-response/">request-response</a> properties and the
+		<a href="/mqtt/mqtt-payload-format/">payload format and content type</a>. See the
+		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> for supported 5.0 features.
+	</p>
+</MqttTopicLayout>

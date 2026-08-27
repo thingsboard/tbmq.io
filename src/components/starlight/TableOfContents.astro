@@ -1,22 +1,15 @@
 ---
 import TableOfContentsList from '../../../node_modules/@astrojs/starlight/components-internals/TableOfContents/TableOfContentsList.astro';
-import TutorialNav from '../tutorial/TutorialNav.astro';
 
-const { entry, toc } = Astro.locals.starlightRoute;
-
-const isTutorial = entry.data.type === 'tutorial';
+const { toc } = Astro.locals.starlightRoute;
 ---
 
 {
 	toc && (
 		<starlight-toc data-min-h={toc.minHeadingLevel} data-max-h={toc.maxHeadingLevel}>
 			<nav aria-labelledby="starlight__on-this-page">
-				<h2 id="starlight__on-this-page">
-					{isTutorial
-						? Astro.locals.t('tutorial.trackerLabel')
-						: Astro.locals.t('tableOfContents.onThisPage')}
-				</h2>
-				{isTutorial ? <TutorialNav /> : <TableOfContentsList toc={toc.items} />}
+				<h2 id="starlight__on-this-page">{Astro.locals.t('tableOfContents.onThisPage')}</h2>
+				<TableOfContentsList toc={toc.items} />
 			</nav>
 		</starlight-toc>
 	)

@@ -1,0 +1,147 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+const foundations = [
+	{
+		name: 'Apache Kafka',
+		text: 'Durable message storage and distribution across the cluster.',
+		icon: 'tabler:database',
+		color: 'blue',
+	},
+	{
+		name: 'Netty',
+		text: 'Non-blocking, event-driven network transport for millions of connections per node.',
+		icon: 'tabler:activity',
+		color: 'green',
+	},
+	{
+		name: 'Actor system',
+		text: 'Isolated per-client concurrency, so one slow client never blocks another.',
+		icon: 'tabler:box-multiple',
+		color: 'purple',
+	},
+	{
+		name: 'In-memory trie',
+		text: 'Subscription matching in time proportional to topic length, not subscriber count.',
+		icon: 'tabler:binary-tree',
+		color: 'teal',
+	},
+];
+---
+
+<section id="built-on">
+	<div class="inner">
+		<SectionHeader
+			class="reveal"
+			title="Built on proven foundations"
+			subtitle="Each technology choice directly determines how the broker behaves under load, during failures, and as the cluster grows."
+		/>
+		<div class="grid">
+			{
+				foundations.map((f, i) => (
+					<div class={`item item--${f.color} reveal`} style={`--reveal-delay: ${i * 90}ms`}>
+						<span class="item-icon">
+							<Icon name={f.icon} />
+						</span>
+						<h3 class="item-name">{f.name}</h3>
+						<p class="item-text">{f.text}</p>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#built-on {
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 24px;
+		width: 100%;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		@include media-up(lg) {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	.item {
+		display: flex;
+		flex-direction: column;
+		border-radius: 16px;
+		padding: 26px 24px 24px;
+		background: var(--tint);
+		border: 1px solid rgba(0, 0, 0, 0.06);
+
+		&--blue {
+			--tint: #eaf1fb;
+			--accent: #2f74d0;
+			--ink: #12447c;
+		}
+		&--green {
+			--tint: #eef7f0;
+			--accent: #{$color-pe-dark};
+			--ink: #{$color-pe-link};
+		}
+		&--purple {
+			--tint: #f0edfd;
+			--accent: #7a5af0;
+			--ink: #3f2e8a;
+		}
+		&--teal {
+			--tint: #e3f5f1;
+			--accent: #159e8a;
+			--ink: #0b5c50;
+		}
+	}
+
+	.item-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 11px;
+		background: $color-white;
+		color: var(--accent);
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		margin-bottom: 16px;
+
+		:global(svg) {
+			width: 24px;
+			height: 24px;
+		}
+	}
+
+	.item-name {
+		font-size: 19px;
+		font-weight: $font-weight-semibold;
+		color: var(--ink);
+		margin: 0 0 10px;
+	}
+
+	.item-text {
+		font-size: 15px;
+		line-height: 1.6;
+		color: $color-text-primary;
+		margin: 0;
+	}
+</style>

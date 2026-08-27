@@ -1,0 +1,65 @@
+import { Aside } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+
+Every MQTT connection carries a **client identifier** (client ID) — the string a client puts in its `CONNECT` packet
+to tell the broker who it is. For a conceptual introduction — what a client ID is and how a take-over looks on the wire —
+see the [MQTT Client ID](/mqtt/mqtt-client-id/) guide. This page covers how **TBMQ** handles client IDs: uniqueness,
+client take-over, broker-assigned IDs, and length limits.
+
+## One live connection per client ID
+
+TBMQ allows only one active connection per client ID, and it enforces this **across the whole cluster** — not merely per
+node. When a second `CONNECT` arrives with a client ID that already has a live session, TBMQ performs a **client take-over**:
+it keeps the new connection and disconnects the previous one, even when the two clients are connected to different broker
+nodes.
+
+An MQTT 5.0 client that is displaced receives a `DISCONNECT` with reason code **`SESSION_TAKEN_OVER` (0x8E)**, so it can
+tell a take-over apart from other drops. This is a normal part of session management — a device that reboots and reconnects
+transparently resumes its session — but a steady stream of take-overs on one ID almost always means two clients were
+accidentally given the same identifier.
+
+Whether a take-over fires the displaced client's Last Will depends on its will delay; see
+<DocLink product={props.product} path="user-guide/last-will">Last Will</DocLink> and
+<DocLink product={props.product} path="user-guide/keep-alive">Keep alive</DocLink> for that interaction.
+
+## Client ID as the session key
+
+TBMQ uses the client ID as the key for a client's persistent-session state — its subscriptions and any queued messages. A
+client that wants to resume its session after reconnecting must present the **same** client ID it used before; that is what
+lets TBMQ locate the stored state and restore it. A persistent session therefore requires a stable client ID — see
+<DocLink product={props.product} path="user-guide/clean-persistent-sessions">Non-persistent and persistent sessions</DocLink>.
+
+<Aside type="note">
+  The client ID is distinct from a client's <DocLink product={props.product} path="user-guide/mqtt-client-type">type</DocLink>
+  (DEVICE or APPLICATION), which controls *how* the session is persisted. One identifies the connection; the other selects
+  the storage strategy.
+</Aside>
+
+## Connecting without a client ID
+
+A client may send an empty client ID and let the broker assign one. TBMQ generates a unique identifier for such a
+connection and, for MQTT 5.0 clients, returns it in the `CONNACK` as the **Assigned Client Identifier** property, so the
+client learns the ID it was given.
+
+A generated ID only makes sense for a clean (non-persistent) session — there is no stable key to map stored state back to on
+the next connect. TBMQ therefore **refuses** a `CONNECT` that sends no client ID while asking to resume a session
+(MQTT 3.1.1 `Clean Session = 0`, or MQTT 5.0 `Clean Start = 0`). The connection is rejected with **Client identifier not
+valid (0x85)** for MQTT 5.0 clients, or **Identifier rejected (0x02)** for MQTT 3.x clients.
+
+## Client ID length and character set
+
+| MQTT version | Client ID rules in TBMQ |
+|---|---|
+| MQTT 3.1 | Length is capped at **1024** characters, set by the `MQTT_3_1_MAX_CLIENT_ID_LENGTH` environment variable. |
+| MQTT 3.1.1 / 5.0 | Follows the MQTT specification — a server must accept 1–23 UTF-8 characters from `0-9`, `a-z`, `A-Z`; longer IDs and a wider character set are permitted, and TBMQ accepts them without an additional length cap. |
+
+<Aside type="tip">
+  Keep client IDs reasonably short even where longer ones are accepted: the ID is sent on every reconnect and, for
+  persistent sessions, stored per client.
+</Aside>
+
+## Best practices
+
+- **Use a stable, unique ID** per device or application instance whenever you rely on persistent sessions — that stability is what lets a client resume its state across reconnects.
+- **Derive the ID from something inherently unique**, such as a serial number or MAC address, so two units can never collide.
+- **Never share one ID across devices.** Because TBMQ keeps only the newest connection per ID, duplicated IDs make clients repeatedly take each other over in a reconnect loop.

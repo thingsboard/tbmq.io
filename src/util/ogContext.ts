@@ -1,15 +1,40 @@
-import { getProductTitleName, getVersionFromSlug } from '@util/path-utils';
+/** Slug words whose display form is not a plainly capitalized word (acronyms, brand casing). */
+const ACRONYMS = new Map([
+	['mqtt', 'MQTT'],
+	['tbmq', 'TBMQ'],
+	['api', 'API'],
+	['ui', 'UI'],
+	['tls', 'TLS'],
+	['qos', 'QoS'],
+	['http', 'HTTP'],
+	['amqp', 'AMQP'],
+	['coap', 'CoAP'],
+	['rest', 'REST'],
+	['websocket', 'WebSocket'],
+	['id', 'ID'],
+]);
+
+/** Service words kept lowercase in every position but the first: 'what-is-mqtt' → 'What is MQTT'. */
+const LOWERCASE_PARTICLES = new Set(['a', 'an', 'and', 'for', 'is', 'of', 'the', 'to', 'vs']);
 
 /**
- * SEO product label used in the eyebrow line.
- * Examples: 'ThingsBoard', 'ThingsBoard PE', 'ThingsBoard Edge PE'.
+ * Prettify a URL segment for display: 'mqtt-5' → 'MQTT 5',
+ * 'getting-started' → 'Getting Started', 'mqtt-vs-amqp' → 'MQTT vs AMQP'.
  */
-export function getProductLabel(slug: string): string {
-	return getProductTitleName(getVersionFromSlug(slug));
+export function prettifySegment(seg: string): string {
+	return seg
+		.split('-')
+		.map((w, i) => {
+			const acronym = ACRONYMS.get(w);
+			if (acronym) return acronym;
+			if (i > 0 && LOWERCASE_PARTICLES.has(w)) return w;
+			return w ? w[0]!.toUpperCase() + w.slice(1) : w;
+		})
+		.join(' ');
 }
 
 /**
- * First path segment after the docs/version prefix, prettified.
+ * First path segment after the docs/edition prefix, prettified.
  * 'docs/pe/getting-started/quickstart' → 'Getting Started'
  * 'docs/getting-started'               → 'Getting Started'
  * Returns empty string for product-root pages.
@@ -18,32 +43,10 @@ export function getSectionLabel(slug: string): string {
 	let path = slug;
 	if (path.startsWith('uk/')) path = path.slice(3);
 	if (path.startsWith('docs/')) path = path.slice(5);
-	const versionPrefixes = [
-		'pe/', 'paas/eu/', 'paas/', 'edge/pe/', 'edge/',
-		'trendz/', 'iot-gateway/', 'mqtt-broker/pe/', 'mqtt-broker/',
-		'mobile/pe/', 'mobile/', 'license-server/', 'iot-hub/',
-	];
-	for (const prefix of versionPrefixes) {
-		if (path.startsWith(prefix)) {
-			path = path.slice(prefix.length);
-			break;
-		}
-	}
+	if (path.startsWith('pe/')) path = path.slice(3);
 	const firstSegment = path.split('/')[0] ?? '';
 	if (!firstSegment) return '';
-	return firstSegment
-		.split('-')
-		.map((word) => (word ? word[0]!.toUpperCase() + word.slice(1) : word))
-		.join(' ');
-}
-
-/** Format a Date as 'Mon DD, YYYY' (e.g. 'Apr 28, 2026'). */
-export function formatBlogDate(date: Date): string {
-	return date.toLocaleDateString('en-US', {
-		year: 'numeric',
-		month: 'short',
-		day: '2-digit',
-	});
+	return prettifySegment(firstSegment);
 }
 
 /**
@@ -63,30 +66,19 @@ export function truncate(text: string, max: number): string {
  * Anything outside this list falls through to the global fallback PNG.
  * Curated from the spec's "Risks and open questions" section.
  *
- * Wildcard suffix `/*` means "this page and any direct children".
+ * Wildcard suffix `/*` means "this page and all of its descendants".
  */
 export const MARKETING_ALLOWLIST: ReadonlyArray<string> = [
 	'/',
 	'/pricing/',
-	'/products/*',
-	'/industries/*',
-	'/partners/*',
-	'/services/*',
-	'/careers/*',
-	'/clients-feedback/',
-	'/mediakit/',
+	'/community/*',
 	'/contact-us/',
-	'/asset-management/',
-	'/device-management/',
 	'/installations/*',
-	'/iot-data-visualization/',
-	'/monitoring-dashboard/',
-	'/smart-farming-demo/',
-	'/google-iot-core-alternative/',
-	'/ce-vs-pe-diff/',
+	'/performance/',
+	'/product/*',
+	'/live-demo/',
 	'/cookie-policy/',
-	'/energy-management/',
-	'/company/*',
+	'/mqtt/*',
 ];
 
 /** Test whether a marketing pathname is in the allowlist. */

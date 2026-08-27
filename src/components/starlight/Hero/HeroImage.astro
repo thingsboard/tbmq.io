@@ -1,7 +1,7 @@
 ---
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { docsLink, Products } from '~/models/site.models';
+import { docsLink, type Products } from '~/models/site.models';
 
 export interface Props {
 	product: Products;
@@ -9,23 +9,20 @@ export interface Props {
 
 const { product } = Astro.props;
 
-const productColor: Partial<Record<Products, string>> = {
-	[Products.PE]: '#00695C',
-	[Products.PAAS]: '#00695C',
-	[Products.PAAS_EU]: '#00695C',
-	[Products.GW]: '#6D28D9',
-};
-const color = productColor[product] ?? '#305680';
+// TBMQ brand green, consumed as `currentColor` by the SVG. Baked in at build
+// time, so keep in sync with $color-brand in src/styles/_variables.scss.
+const color = '#1a7f46';
 
-const svgPath = join(process.cwd(), 'public', 'hero', 'hero.svg');
+const svgPath = join(process.cwd(), 'public', 'hero', 'tbmq-hero.svg');
 let svg = fs.readFileSync(svgPath, 'utf-8');
 
+// `product` selects the CE or PE docs prefix.
 const links = {
-	dashboards: docsLink(product, 'user-guide/dashboards/'),
-	users: docsLink(product, 'user-guide/users/'),
-	alarms: docsLink(product, 'user-guide/alarms/'),
-	devices: docsLink(product, 'user-guide/devices/'),
-	widgets: docsLink(product, 'user-guide/widgets/'),
+	sessions: docsLink(product, 'user-guide/ui/sessions/'),
+	credentials: docsLink(product, 'user-guide/ui/mqtt-client-credentials/'),
+	monitoring: docsLink(product, 'user-guide/ui/monitoring/'),
+	subscriptions: docsLink(product, 'user-guide/ui/subscriptions/'),
+	websocket: docsLink(product, 'user-guide/ui/websocket-client/'),
 };
 
 // Substitute link placeholders defined in the SVG

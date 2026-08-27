@@ -52,31 +52,6 @@ export function getSitemapSourceRegistry(): Map<string, SitemapSources> {
 	return globalMap<string, SitemapSources>(REGISTRY_KEY);
 }
 
-/**
- * Companion registry of EXPLICIT `<lastmod>` ISO strings, for pages whose
- * freshness comes from build-time data rather than git (IoT Hub listings'
- * `updatedTime`). Written by `src/util/sitemap-lastmod.ts`; the integration
- * prefers it over any git-derived date.
- */
-const LASTMOD_REGISTRY_KEY = Symbol.for('thingsboard.sitemap.lastmod-registry');
-
-export function getSitemapLastmodRegistry(): Map<string, string> {
-	return globalMap<string, string>(LASTMOD_REGISTRY_KEY);
-}
-
-/**
- * Largest finite, positive epoch (ms) among the inputs, as an ISO string — or
- * `null` if none qualify. Shared by both `<lastmod>` paths (git commit dates and
- * explicit API timestamps) so the formatting stays identical.
- */
-export function maxEpochToIso(epochsMs: Iterable<number | null | undefined>): string | null {
-	let latest = 0;
-	for (const ms of epochsMs) {
-		if (typeof ms === 'number' && Number.isFinite(ms) && ms > latest) latest = ms;
-	}
-	return latest > 0 ? new Date(latest).toISOString() : null;
-}
-
 /** Canonical key shape: always a single leading and trailing slash. */
 export function normalizeSitemapPath(pathname: string): string {
 	let p = pathname;

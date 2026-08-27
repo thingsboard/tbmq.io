@@ -2,10 +2,11 @@ import { Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 
-The Image Gallery is a centralized repository for managing images in TBMQ.
-It provides the source for logo and favicon images used in the White Labeling feature on the
+The Image gallery is a centralized repository for managing images in TBMQ, found on the **Image gallery** tab of the **White labeling** page.
+It provides the source for the logo and website icon used by white labeling on the
 <DocLink product={props.product} path="white-labeling/#customize-tbmq-web-interface">application</DocLink> and
 <DocLink product={props.product} path="white-labeling/#customize-the-login-page">login</DocLink> pages.
+Any image format is accepted, up to 10 MB per file.
 
 <ImageGallery product={props.product} images={[
   {
@@ -13,6 +14,9 @@ It provides the source for logo and favicon images used in the White Labeling fe
     alt: 'Image Gallery overview page', caption: 'Image Gallery overview page',
   },
 ]} />
+
+Use **Search image** to filter the gallery by name, and **Include system images** to also list the images shipped with TBMQ.
+System images are read-only: their edit action opens **Image details** instead of **Edit image**.
 
 ## Add image
 
@@ -29,7 +33,7 @@ To upload an image in image file format:
      { src: '/src/assets/images/docs/mqtt-broker/white-labeling/upload-image-1.png', alt: 'Open White labeling Image gallery tab and click Upload image', caption: 'Open White labeling Image gallery tab and click Upload image' },
    ]} />
 
-2. Select an image or drag it into the **Upload image** window, then click **Upload**.
+2. Select an image or drag it into the **Upload image** window. The **Name** field is prefilled from the file name — adjust it if needed, then click **Upload**.
 
    <ImageGallery product={props.product} images={[
      { src: '/src/assets/images/docs/mqtt-broker/white-labeling/upload-image-2.png', alt: 'Select or drag an image file and click Upload', caption: 'Select or drag an image file and click Upload' },
@@ -181,3 +185,7 @@ To delete multiple images at once (list view only):
      { src: '/src/assets/images/docs/mqtt-broker/white-labeling/delete-image-6.png', alt: 'Confirm bulk image deletion dialog', caption: 'Confirm bulk image deletion dialog' },
    ]} />
 </Steps>
+
+An image that is still referenced by another entity — for example a logo assigned in white labeling — is not removed.
+Instead, TBMQ opens a dialog listing the images that were kept; review what uses them with the **References** button,
+then click **Delete anyway** (or select them and click **Delete selected**) to delete them regardless.

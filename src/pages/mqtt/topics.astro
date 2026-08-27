@@ -1,0 +1,126 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is an MQTT topic?',
+		a: 'A topic is a <strong>UTF-8 string that names the subject of a message</strong>, split into levels by forward slashes — for example <code>sensors/floor1/temp</code>. Publishers send to a full topic and subscribers register interest in topics, and the broker routes each message to the matching subscribers.',
+	},
+	{
+		q: 'What is the difference between + and # wildcards?',
+		a: 'The <code>+</code> wildcard matches <strong>exactly one topic level</strong>, so <code>sensors/+/temp</code> matches <code>sensors/floor1/temp</code> and <code>sensors/floor2/temp</code>. The <code>#</code> wildcard matches <strong>the current level and everything beneath it</strong>, so <code>sensors/#</code> matches all topics under <code>sensors</code>. <code>#</code> must be the last character of the filter; <code>+</code> can appear at any level.',
+	},
+	{
+		q: 'Can you publish to a wildcard topic?',
+		a: 'No. Wildcards are <strong>only valid in subscriptions</strong>. A published message must go to a specific, fully qualified topic — the broker needs one concrete destination to route from.',
+	},
+	{
+		q: 'Are MQTT topics case-sensitive?',
+		a: 'Yes. <code>sensors/Temp</code> and <code>sensors/temp</code> are <strong>different topics</strong>. Topics are also created on the fly — there is no need to register or pre-declare a topic before publishing to it.',
+	},
+	{
+		q: 'What makes a good MQTT topic structure?',
+		a: 'Use a consistent, hierarchical scheme that goes from <strong>general to specific</strong>, such as <code>site/area/device/metric</code>. Avoid leading slashes and spaces, keep names predictable, and design the hierarchy so common subscriptions map cleanly to a single-level (<code>+</code>) or multi-level (<code>#</code>) wildcard.',
+	},
+];
+---
+
+<MqttTopicLayout slug="topics" faq={faq}>
+	<p>
+		MQTT has no addresses or routing tables — messages are addressed by <strong>topic</strong>. A publisher tags each
+		message with a topic string, and the broker delivers it to whoever subscribed to a matching topic. Getting your
+		topic structure right is most of the work of designing an MQTT system.
+	</p>
+
+	<h2>Topic hierarchy</h2>
+	<p>
+		A topic is a UTF-8 string divided into levels by a forward slash, such as
+		<code>sensors/floor1/temp</code>. The hierarchy is yours to design; the broker treats each level as opaque text.
+		Topics are case-sensitive, may be up to 65,535 bytes long, and are created implicitly — you never pre-register a
+		topic, you just publish to it.
+	</p>
+
+	<h2>Wildcards</h2>
+	<p>
+		Publishers always use a full, specific topic. <strong>Subscribers</strong> can widen their interest with two wildcards:
+	</p>
+	<ul>
+		<li>
+			<code>+</code> — <strong>single-level</strong> wildcard. It matches exactly one level, so
+			<code>sensors/+/temp</code> matches every floor's temperature.
+		</li>
+		<li>
+			<code>#</code> — <strong>multi-level</strong> wildcard. It matches the current level and everything below it, so
+			<code>sensors/#</code> matches all topics under <code>sensors</code>. It must be the last character of the filter.
+		</li>
+	</ul>
+
+	<MqttDiagram caption="Publishers use a full topic; subscribers can widen with + and # wildcards">
+		<svg viewBox="0 0 680 268" role="img" aria-label="Which subscription filters match a published topic">
+			<text class="d-tiny" x="40" y="30">PUBLISHED TOPIC</text>
+			<rect class="d-chip d-chip--green" x="40" y="40" width="250" height="30" rx="8"></rect><text
+				class="d-ctext d-ctext--green"
+				x="58"
+				y="60"
+				style="font-size:13px">sensors/floor1/temp</text
+			>
+			<text class="d-tiny" x="40" y="98">SUBSCRIPTION FILTERS</text>
+			<!-- rows -->
+			<rect class="d-chip" x="40" y="108" width="220" height="26" rx="8"></rect><text class="d-ctext" x="56" y="125"
+				>sensors/floor1/temp</text
+			><text class="d-yes" x="280" y="126">✓</text><text class="d-note" x="304" y="126">exact match</text>
+			<rect class="d-chip" x="40" y="140" width="220" height="26" rx="8"></rect><text class="d-ctext" x="56" y="157"
+				>sensors/+/temp</text
+			><text class="d-yes" x="280" y="158">✓</text><text class="d-note" x="304" y="158">+ matches any single level</text
+			>
+			<rect class="d-chip" x="40" y="172" width="220" height="26" rx="8"></rect><text class="d-ctext" x="56" y="189"
+				>sensors/#</text
+			><text class="d-yes" x="280" y="190">✓</text><text class="d-note" x="304" y="190"
+				># matches this level and everything below</text
+			>
+			<rect class="d-chip" x="40" y="204" width="220" height="26" rx="8"></rect><text class="d-ctext" x="56" y="221"
+				>sensors/floor1/+</text
+			><text class="d-yes" x="280" y="222">✓</text><text class="d-note" x="304" y="222">+ matches the "temp" level</text
+			>
+			<rect class="d-chip" x="40" y="236" width="220" height="26" rx="8"></rect><text class="d-ctext" x="56" y="253"
+				>sensors/floor2/temp</text
+			><text class="d-no" x="280" y="254">✗</text><text class="d-note" x="304" y="254">wrong floor — no match</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Naming best practices</h2>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:hierarchy-2" title="General to specific">
+			structure topics from broad to narrow, like <code>site/area/device/metric</code>.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:slash" title="No leading slashes or spaces">
+			both create confusing empty or padded levels.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:asterisk" title="Never publish to a wildcard">
+			wildcards are for subscriptions only — don't put a <code>+</code> or <code>#</code> in a topic you publish to.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:target" title="Design around your subscriptions">
+			shape the hierarchy so the subscriptions you'll actually need map to one clean wildcard.
+		</LearnIconRow>
+	</LearnIconRows>
+	<p>
+		If two of a client's subscriptions both match a message (say <code>sensors/#</code> and <code>sensors/+/temp</code
+		>), the broker usually delivers a single copy at the highest matching QoS rather than one per subscription — as TBMQ
+		does, though the MQTT spec technically permits either.
+	</p>
+
+	<h2>Topics in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> matches subscriptions with an in-memory <strong>topic trie</strong>, so a published message is
+		routed by walking its topic levels and match cost scales with a topic's depth rather than its total subscription
+		count. You can cap how deep topics may go with <code>MQTT_TOPIC_MAX_SEGMENTS_COUNT</code> to keep matching predictable,
+		and the
+		<code>$share/</code> prefix turns a normal subscription into a load-balanced
+		<a href="/mqtt/shared-subscriptions/">shared subscription</a>. See the
+		<a href="/docs/user-guide/topics/">topics reference</a> for the full matching rules.
+	</p>
+</MqttTopicLayout>

@@ -1,0 +1,649 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+	/**
+	 * Compact (default) shows only the flow skeleton: node headers, the numbered
+	 * steps, and the Redis / Kafka-topic sub-blocks. Pass `compact={false}` for the
+	 * fully-annotated variant with per-node chips and description sentences.
+	 */
+	compact?: boolean;
+}
+const { compact = true } = Astro.props;
+
+// Data-plane lifecycle of one PUBLISH, rendered as a single top-to-bottom flow.
+// Ported from the approved diagram design onto the site's design tokens so it
+// stays crisp, selectable, searchable and responsive (vs. a flattened image).
+type Block =
+	| {
+			kind: 'endpoint';
+			icon: string;
+			title: string;
+			sub: string;
+			role: string;
+	  }
+	| {
+			kind: 'conn';
+			num: number;
+			label: string;
+	  }
+	| {
+			kind: 'node';
+			icon: string;
+			title: string;
+			meta?: string;
+			chips?: string[];
+			desc?: string;
+	  }
+	| { kind: 'gate' }
+	| { kind: 'fan' };
+
+const blocks: Block[] = [
+	{
+		kind: 'endpoint',
+		icon: 'tabler:access-point',
+		title: 'Devices',
+		sub: 'millions of MQTT clients',
+		role: 'publishers',
+	},
+	{ kind: 'conn', num: 1, label: 'PUBLISH · QoS 0/1/2' },
+	{
+		kind: 'node',
+		icon: 'tabler:network',
+		title: 'Netty transport',
+		meta: 'ingest',
+		chips: ['tcp · ssl · ws · wss', 'MqttDecoder', 'MqttSessionHandler'],
+		desc: 'One channel + <code>ClientSessionCtx</code> per socket.',
+	},
+	{ kind: 'conn', num: 2, label: 'decode · route to per-client actor' },
+	{
+		kind: 'node',
+		icon: 'tabler:hierarchy-2',
+		title: 'Actor system',
+		meta: 'ClientActor · one per client',
+		desc: 'Single-thread mailbox per client ⇒ per-client isolation, FIFO ordering, lock-free.',
+	},
+	{ kind: 'conn', num: 3, label: 'persist before ack' },
+	{ kind: 'gate' },
+	{ kind: 'conn', num: 5, label: 'consume' },
+	{
+		kind: 'node',
+		icon: 'tabler:sitemap',
+		title: 'Message dispatcher + subscription trie',
+		desc: 'Match topic → subscribers · <code>$share/…</code> → round-robin.',
+	},
+	{ kind: 'conn', num: 6, label: 'split subscribers by session type' },
+	{ kind: 'fan' },
+	{ kind: 'conn', num: 7, label: "write PUBLISH down each subscriber's channel" },
+	{
+		kind: 'node',
+		icon: 'tabler:network',
+		title: 'Netty transport',
+		meta: 'delivery',
+		chips: ['DefaultMqttMsgDeliveryService → ctx.getChannel().writeAndFlush'],
+		desc: 'Same channels / event loops as ingest (outbound writes).',
+	},
+	{ kind: 'conn', num: 8, label: 'PUBLISH down-link' },
+	{
+		kind: 'endpoint',
+		icon: 'tabler:server-2',
+		title: 'Applications',
+		sub: 'backend consumers receive messages',
+		role: 'subscribers',
+	},
+];
+---
+
+<div
+	class="flow"
+	role="img"
+	aria-label="TBMQ message flow: a device PUBLISH enters through Netty transport, is routed to a per-client actor, persisted to Kafka before the publisher is acknowledged, matched against the in-memory subscription trie, then split by session type — non-persistent in memory, persistent device clients via a Redis queue, persistent application clients via a dedicated Kafka topic — before Netty writes it down to subscribing applications."
+>
+	{
+		blocks.map((b) => {
+			if (b.kind === 'conn') {
+				return (
+					<div class="conn">
+						<span class="conn__line" aria-hidden="true" />
+						<span class="conn__step">
+							<span class="conn__num">{b.num}</span>
+							<span class="conn__label">{b.label}</span>
+						</span>
+						<span class="conn__line" aria-hidden="true" />
+						<span class="conn__arrow" aria-hidden="true" />
+					</div>
+				);
+			}
+
+			if (b.kind === 'endpoint') {
+				return (
+					<div class="node node--endpoint">
+						<Icon name={b.icon} class="node__icon node__icon--lg" />
+						<div class="node__endpoint-body">
+							<span class="node__title node__title--endpoint">{b.title}</span>
+							<span class="node__sub">{b.sub}</span>
+						</div>
+						<span class="node__role">{b.role}</span>
+					</div>
+				);
+			}
+
+			if (b.kind === 'gate') {
+				return (
+					<div class="gate">
+						<div class="node gate__card">
+							<div class="node__head">
+								<Icon name="tabler:shield-check" class="node__icon" />
+								<span class="node__title">Durability gate</span>
+							</div>
+							<p class="node__desc">
+								<code>PUBACK</code> / <code>PUBREC</code> sent only after Kafka persists ⇒{' '}
+								<b>zero message loss</b>.
+							</p>
+						</div>
+						<div
+							class="gate__exchange"
+							role="img"
+							aria-label="Kafka persists the message (step 3), then acknowledges it back (step 4)"
+						>
+							<span class="gate__x-row" aria-hidden="true">
+								<span class="gate__num">3</span>
+								<Icon name="tabler:arrow-right" class="gate__arr gate__arr--send" />
+							</span>
+							<span class="gate__x-row" aria-hidden="true">
+								<Icon name="tabler:arrow-left" class="gate__arr gate__arr--recv" />
+								<span class="gate__num">4</span>
+							</span>
+						</div>
+						<div class="node node--accent gate__kafka">
+							<div class="node__head">
+								<Icon name="tabler:database" class="node__icon" />
+								<span class="node__title node__title--accent">Apache Kafka</span>
+							</div>
+							<code class="topic">tbmq.msg.all</code>
+							<p class="node__desc node__desc--tight">Every PUBLISH lands here.</p>
+						</div>
+					</div>
+				);
+			}
+
+			if (b.kind === 'fan') {
+				return (
+					<div class="fan">
+						<div class="node node--card">
+							<div class="node__head">
+								<Icon name="tabler:bolt" class="node__icon node__icon--sm" />
+								<span class="node__title node__title--card">Non-persistent</span>
+							</div>
+							<div class="node__line">QoS 0 · clean session</div>
+							{!compact && (
+								<p class="node__desc node__desc--muted">Delivered in-memory — nothing stored.</p>
+							)}
+						</div>
+						<div class="node node--card">
+							<div class="node__head">
+								<Icon name="tabler:devices" class="node__icon node__icon--sm" />
+								<span class="node__title node__title--card">Persistent · device</span>
+							</div>
+							<div class="node__line">durable per-client queue</div>
+							<div class="subbox">
+								<div class="subbox__label">Redis</div>
+								<code>ZSET · {'{clientId}'} queue</code>
+							</div>
+							{!compact && (
+								<p class="node__desc node__desc--muted">
+									PersistedDeviceActor drains the queue → hands to Netty.
+								</p>
+							)}
+						</div>
+						<div class="node node--card">
+							<div class="node__head">
+								<Icon name="tabler:apps" class="node__icon node__icon--sm" />
+								<span class="node__title node__title--card">Persistent · application</span>
+							</div>
+							<div class="node__line">dedicated Kafka topic per app</div>
+							<div class="subbox subbox--list">
+								<code>tbmq.msg.app.&lt;clientId-1&gt;</code>
+								<code>tbmq.msg.app.&lt;clientId-2&gt;</code>
+								<code class="is-faded">tbmq.msg.app.&lt;clientId-N&gt;</code>
+							</div>
+							{!compact && (
+								<p class="node__desc node__desc--muted">
+									1 consumer per app · offset commit = MQTT ack.
+								</p>
+							)}
+						</div>
+					</div>
+				);
+			}
+
+			// kind === 'node'
+			return (
+				<div class="node">
+					<div class="node__head">
+						<Icon name={b.icon} class="node__icon" />
+						<span class="node__title">{b.title}</span>
+						{b.meta && <span class="node__meta">{b.meta}</span>}
+					</div>
+					{!compact && b.chips && (
+						<div class="node__chips">
+							{b.chips.map((c, i) => (
+								<Fragment>
+									{i > 0 && (
+										<span class="node__sep" aria-hidden="true">
+											→
+										</span>
+									)}
+									<code>{c}</code>
+								</Fragment>
+							))}
+						</div>
+					)}
+					{!compact && b.desc && <p class="node__desc" set:html={b.desc} />}
+				</div>
+			);
+		})
+	}
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.flow {
+		// Local palette derived from the site's PE-green brand tokens.
+		--acc: #{$color-pe-dark}; // lines · arrows · step badges · icons
+		--acc-strong: #{$color-pe-link}; // endpoint / accent titles
+		--tint: #eaf7ef; // accent (green) box fill
+		--tint-border: rgba(31, 139, 77, 0.28);
+		--card-bg: #{$color-bg-white};
+		--card-border: #{$color-border};
+		--card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+		--code-bg: #{$color-bg-light};
+		--text: #{$color-text-primary};
+		--text-2: #{$color-text-secondary};
+		--text-3: #{$color-text-muted};
+
+		width: 100%;
+		max-width: 780px;
+		margin: 0 auto 56px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		font-family: $font-family-base;
+	}
+
+	/* ---- connector between nodes ---- */
+	.conn {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 6px 0;
+	}
+
+	.conn__line {
+		width: 2px;
+		height: 12px;
+		background: var(--acc);
+	}
+
+	.conn__step {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 2px 0;
+	}
+
+	.conn__num {
+		flex: none;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		background: var(--acc);
+		color: #fff;
+		font-size: 11px;
+		font-weight: $font-weight-semibold;
+		line-height: 20px;
+		text-align: center;
+	}
+
+	.conn__label {
+		font-size: 12px;
+		font-weight: $font-weight-medium;
+		line-height: 1.35;
+		letter-spacing: 0.02em;
+		color: var(--text-2);
+	}
+
+	.conn__arrow {
+		width: 0;
+		height: 0;
+		border-left: 5px solid transparent;
+		border-right: 5px solid transparent;
+		border-top: 7px solid var(--acc);
+	}
+
+	/* ---- generic node card ---- */
+	.node {
+		width: 100%;
+		max-width: 620px;
+		box-sizing: border-box;
+		background: var(--card-bg);
+		border: 1px solid var(--card-border);
+		border-radius: 4px;
+		box-shadow: var(--card-shadow);
+		padding: 16px 18px;
+	}
+
+	.node__head {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 8px;
+
+		// header-only cards (compact nodes) shouldn't keep the trailing gap
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	:global(.flow .node__icon) {
+		flex: none;
+		width: 22px;
+		height: 22px;
+		color: var(--acc);
+	}
+
+	:global(.flow .node__icon--lg) {
+		width: 26px;
+		height: 26px;
+	}
+
+	:global(.flow .node__icon--sm) {
+		width: 20px;
+		height: 20px;
+	}
+
+	.node__title {
+		font-size: 13px;
+		font-weight: $font-weight-medium;
+		line-height: 1.2;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+		color: var(--text);
+	}
+
+	.node__title--accent {
+		color: var(--acc-strong);
+	}
+
+	.node__title--card {
+		font-size: 11.5px;
+		letter-spacing: 0.05em;
+	}
+
+	.node__meta {
+		margin-left: auto;
+		font-size: 12px;
+		font-weight: $font-weight-normal;
+		line-height: 1.2;
+		letter-spacing: 0.02em;
+		color: var(--text-3);
+	}
+
+	.node__line {
+		font-size: 12.5px;
+		line-height: 1.5;
+		color: var(--text-2);
+		margin-top: 8px;
+	}
+
+	.node__desc {
+		font-size: 13px;
+		line-height: 1.55;
+		color: var(--text-2);
+		margin: 0;
+
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 12px;
+			color: inherit;
+		}
+
+		:global(b) {
+			color: var(--acc-strong);
+			font-weight: $font-weight-medium;
+		}
+	}
+
+	.node__desc--tight {
+		font-size: 12.5px;
+		margin-top: 8px;
+	}
+
+	.node__desc--muted {
+		font-size: 12.5px;
+		color: var(--text-3);
+		margin-top: 8px;
+	}
+
+	.node__chips {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 8px;
+
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 12px;
+			line-height: 1.5;
+			background: var(--code-bg);
+			padding: 2px 7px;
+			border-radius: 2px;
+			color: var(--text-2);
+		}
+	}
+
+	.node__sep {
+		color: var(--text-3);
+	}
+
+	/* ---- endpoint (devices / applications) ---- */
+	.node--endpoint {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		background: var(--tint);
+		border-color: var(--tint-border);
+		box-shadow: none;
+		padding: 14px 18px;
+	}
+
+	.node__endpoint-body {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.node__title--endpoint {
+		font-size: 14px;
+		letter-spacing: 0.05em;
+		color: var(--acc-strong);
+	}
+
+	.node__sub {
+		font-size: 12.5px;
+		line-height: 1.4;
+		color: var(--text-2);
+	}
+
+	.node__role {
+		margin-left: auto;
+		align-self: center;
+		font-size: 11px;
+		font-weight: $font-weight-medium;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--acc);
+	}
+
+	/* ---- accent (green tinted) node ---- */
+	.node--accent {
+		background: var(--tint);
+		border-color: var(--tint-border);
+		box-shadow: none;
+	}
+
+	.topic {
+		display: inline-block;
+		font-family: $font-family-mono;
+		font-size: 12.5px;
+		line-height: 1.5;
+		background: #fff;
+		border: 1px solid var(--tint-border);
+		padding: 2px 7px;
+		border-radius: 2px;
+		color: var(--text);
+	}
+
+	/* ---- durability gate + kafka pair ---- */
+	.gate {
+		width: 100%;
+		max-width: 760px;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
+	}
+
+	.gate__card,
+	.gate__kafka {
+		max-width: none;
+	}
+
+	.gate__exchange {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 20px;
+		padding: 8px 0;
+	}
+
+	.gate__x-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.gate__num {
+		flex: none;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: var(--acc);
+		color: #fff;
+		font-size: 10px;
+		font-weight: $font-weight-semibold;
+		line-height: 18px;
+		text-align: center;
+	}
+
+	:global(.flow .gate__arr) {
+		width: 16px;
+		height: 16px;
+		color: var(--acc);
+		transform: rotate(90deg); // mobile: point vertically between stacked cards
+	}
+
+	@include media-up(md) {
+		.gate {
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+			gap: 0;
+		}
+
+		.gate__card {
+			flex: 1 1 340px;
+		}
+
+		.gate__kafka {
+			flex: 1 1 300px;
+		}
+
+		.gate__exchange {
+			flex: none;
+			width: 70px;
+			flex-direction: column;
+			gap: 14px;
+			padding: 0 4px;
+		}
+
+		:global(.flow .gate__arr) {
+			transform: none;
+		}
+	}
+
+	/* ---- fan-out: three delivery lanes ---- */
+	.fan {
+		width: 100%;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 14px;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.node--card {
+		max-width: none;
+		display: flex;
+		flex-direction: column;
+		padding: 14px 16px;
+	}
+
+	.node--card .node__head {
+		gap: 8px;
+	}
+
+	.subbox {
+		margin-top: 8px;
+		background: var(--tint);
+		border: 1px solid var(--tint-border);
+		border-radius: 3px;
+		padding: 8px 10px;
+
+		:global(code) {
+			font-family: $font-family-mono;
+			font-size: 12px;
+			line-height: 1.4;
+			color: var(--text);
+		}
+	}
+
+	.subbox--list {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+
+		:global(code) {
+			font-size: 11.5px;
+		}
+
+		:global(code.is-faded) {
+			color: var(--text-3);
+		}
+	}
+
+	.subbox__label {
+		font-size: 10px;
+		font-weight: $font-weight-semibold;
+		line-height: 1;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--acc-strong);
+		margin-bottom: 4px;
+	}
+</style>

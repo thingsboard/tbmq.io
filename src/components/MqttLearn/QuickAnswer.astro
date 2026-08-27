@@ -1,0 +1,38 @@
+---
+interface Props {
+	text: string;
+}
+const { text } = Astro.props;
+---
+
+<div class="quick-answer">
+	<span class="quick-answer__label">Quick answer</span>
+	<p class="quick-answer__text">{text}</p>
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.quick-answer {
+		border-left: 4px solid $color-pe-dark;
+		background: #eaf7ef;
+		border-radius: 0 6px 6px 0;
+		padding: 20px 24px;
+		margin: 0 0 $spacing-8;
+	}
+	.quick-answer__label {
+		display: block;
+		font-size: 12px;
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $color-pe-link;
+		margin-bottom: 8px;
+	}
+	.quick-answer__text {
+		font-size: 18px;
+		line-height: 1.6;
+		color: $color-text-primary;
+		margin: 0;
+	}
+</style>

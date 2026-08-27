@@ -1,6 +1,6 @@
-# Contributing to ThingsBoard Docs
+# Contributing to TBMQ Docs
 
-Thanks for helping improve the ThingsBoard documentation. This repo holds the source for [thingsboard.io/docs](https://thingsboard.io/docs/) — documentation content, the site code that renders it, redirects, and translations. Bugs and features in the ThingsBoard platform itself live in the [`thingsboard/thingsboard`](https://github.com/thingsboard/thingsboard) repo.
+Thanks for helping improve the TBMQ documentation. This repo holds the source for [tbmq.io](https://tbmq.io/) — documentation content, the marketing pages, the site code that renders them, and redirects. Bugs and features in the TBMQ broker itself live in the [`thingsboard/tbmq`](https://github.com/thingsboard/tbmq) repo.
 
 ## Prerequisites
 
@@ -13,8 +13,8 @@ Thanks for helping improve the ThingsBoard documentation. This repo holds the so
 1. Fork this repo on GitHub.
 2. Clone your fork:
    ```bash
-   git clone git@github.com:<your-username>/thingsboard.io.git
-   cd thingsboard.io
+   git clone git@github.com:<your-username>/tbmq.io.git
+   cd tbmq.io
    ```
 3. Install dependencies and start the dev server:
    ```bash
@@ -23,45 +23,49 @@ Thanks for helping improve the ThingsBoard documentation. This repo holds the so
    ```
 4. Open <http://localhost:4321/docs/> in your browser.
 
-`pnpm dev` rebuilds incrementally and is the normal authoring loop. Before opening a PR, run `pnpm build:fast` for a full production build. It skips OG image generation for speed; CI runs the full `pnpm build`.
+`pnpm dev` rebuilds incrementally and is the normal authoring loop. Before opening a PR, run `pnpm build:fast` for a full production build. It skips OG image generation for speed; run the full `pnpm build` when you need to check the generated OG cards.
 
 ## Before you open a PR
 
-CI runs four checks. All must pass for the PR to be merged. Run them locally first:
+GitHub Actions runs three checks. All must pass for the PR to be merged. Run them locally first:
 
 - `pnpm check` — TypeScript and Astro type checking.
 - `pnpm lint:eslint` — ESLint.
-- `pnpm lint:slugcheck` — verifies slugs match across languages.
-- `pnpm build:fast` — production build (catches broken imports, missing assets, schema errors).
+- `pnpm lint:slugcheck` — verifies slugs match across locales.
+
+Link validation runs in a separate pipeline (it needs a full build) and must also pass before merge. Run it locally when you add, rename, or remove pages, change redirects, or edit internal links:
+
+- `pnpm lint:linkcheck` — full link validation (slow; runs a build first).
+- `pnpm lint:linkcheck:nobuild` — same check against a build you already produced.
 
 Other commands worth knowing:
 
-- `pnpm lint:linkcheck` — full link validation (slow; runs a full build first).
+- `pnpm build:fast` — production build (catches broken imports, missing assets, schema errors).
 - `pnpm format` — Prettier formatting.
 
 ## Content authoring basics
 
 A 30-second orientation. For the full architecture (product system, schemas, redirects, OG cards), see [`CLAUDE.md`](./CLAUDE.md).
 
-**Where pages live.** Documentation pages are MDX files under `src/content/docs/{lang}/docs/...`. English (`en`) is canonical; other languages mirror the English structure and fall back to English automatically when untranslated.
+**Where pages live.** Documentation pages are MDX files under `src/content/docs/docs/mqtt-broker/`. The site is English-only, so there are no per-language content directories. Marketing and landing pages live under `src/pages/`.
 
-**The CE / PE three-tier pattern.** Pages that exist for both Community Edition (CE) and Professional Edition (PE) do not duplicate content. The actual content lives in a shared MDX file under `src/content/_includes/docs/{path}/{page}.mdx`. Two thin stub pages import it. The CE stub at `src/content/docs/docs/{path}/{page}.mdx` passes `Products.CE`; the PE stub at `src/content/docs/docs/pe/{path}/{page}.mdx` passes `Products.PE`:
+**The CE / PE three-tier pattern.** Pages that exist for both Community Edition (CE) and Professional Edition (PE) do not duplicate content. The actual content lives in a shared MDX file under `src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx`. Two thin stub pages import it. The CE stub at `src/content/docs/docs/mqtt-broker/{path}/{page}.mdx` passes `Products.TBMQ`; the PE stub at `src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx` passes `Products.TBMQ_PE`:
 
 ```mdx
 ---
 title: My Page
 ---
-import Content from '~/content/_includes/docs/path/page.mdx';
+import PageContent from '@includes/docs/mqtt-broker/path/page.mdx';
 import { Products } from '~/models/site.models';
 
-<Content {...{ product: Products.CE }} />
+<PageContent product={Products.TBMQ} />
 ```
 
-**Internal links.** Use the `<DocLink>` component, never bare Markdown links to other doc pages. Bare links break when language fallback kicks in or when product prefixes change.
+**Internal links.** Use the `<DocLink>` component, never bare Markdown links to other doc pages. Bare links break when product prefixes change.
 
-**Version strings.** Never hardcode ThingsBoard version numbers in Docker image tags, download URLs, or code samples. Import constants from `~/data/versions` (`CE_FULL_VER`, `PE_FULL_VER`, `TBMQ_VER`, etc.).
+**Version strings.** Never hardcode TBMQ version numbers in Docker image tags, download URLs, or code samples. Import constants from `~/data/versions` (`TBMQ_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`).
 
-**Sidebar.** When you add a new page, register it in `astro.sidebar.ts`. The shared helpers `guideItems(prefix)` and `installationItems(prefix)` cover both CE and PE — add the entry once and both products pick it up.
+**Sidebar.** When you add a new page, register it in `astro.sidebar.ts`. The shared helpers `tbmqGuideItems(prefix)`, `tbmqInstallItems(prefix)`, and `tbmqReferenceItems(prefix)` cover both editions — add the entry once and both CE and PE pick it up.
 
 ## Common tasks
 
@@ -73,11 +77,11 @@ import { Products } from '~/models/site.models';
 
 ### Add a new documentation page
 
-1. Create the shared include at `src/content/_includes/docs/{path}/{page}.mdx`.
-2. Create the CE stub at `src/content/docs/docs/{path}/{page}.mdx` that imports the include with `Products.CE`.
-3. Create the PE stub at `src/content/docs/docs/pe/{path}/{page}.mdx` that imports the include with `Products.PE`.
-4. Register the page's slug in `astro.sidebar.ts` (typically inside the matching `guideItems` or `installationItems` helper).
-5. Run `pnpm dev` and verify the page renders for both products.
+1. Create the shared include at `src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx`.
+2. Create the CE stub at `src/content/docs/docs/mqtt-broker/{path}/{page}.mdx` that imports the include with `Products.TBMQ`.
+3. Create the PE stub at `src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx` that imports the include with `Products.TBMQ_PE`.
+4. Register the page's slug in `astro.sidebar.ts` (typically inside the matching `tbmqGuideItems`, `tbmqInstallItems`, or `tbmqReferenceItems` helper).
+5. Run `pnpm dev` and verify the page renders for both editions.
 
 ### Add a redirect
 
@@ -93,39 +97,30 @@ Do not hand-edit `public/_redirects` or `public/redirects.json` directly — the
 
 ### Regenerate configuration reference pages
 
-When ThingsBoard's upstream `*.yml` config files change, regenerate the configuration reference MDX pages with `scripts/generate_config_pages.py`. The script fetches the upstream config files directly from GitHub via the [`gh` CLI](https://cli.github.com/) — no local checkout needed. Run `gh auth login` once (required for the private PE / Edge-PE / TBMQ-PE repos), then from this repo's root:
+When TBMQ's `*.yml` config files change, regenerate the configuration reference MDX pages with `scripts/generate_config_pages.py`. The script fetches the config files directly from GitHub via the [`gh` CLI](https://cli.github.com/) — no local checkout needed. Run `gh auth login` once (required for the private `tbmq-pe` repo), then from this repo's root:
 
 ```bash
 python3 scripts/generate_config_pages.py <repo_type> <branch>
 ```
 
-`<repo_type>` is one of: `ce`, `pe`, `tbmq`, `tbmq-pe`, `edge`, `edge-pe`. `<branch>` is the upstream branch to read the config files from. For example, to regenerate CE pages from the `master` branch:
+`<repo_type>` is `tbmq` (reads [`thingsboard/tbmq`](https://github.com/thingsboard/tbmq)) or `tbmq-pe` (reads `thingsboard/tbmq-pe`). `<branch>` is the branch to read the config files from. For example, to regenerate the CE pages from `main`:
 
 ```bash
-python3 scripts/generate_config_pages.py ce master
+python3 scripts/generate_config_pages.py tbmq main
 ```
 
-Each `<repo_type>` maps to a fixed upstream repo (`ce` → `thingsboard/thingsboard`, `pe` → `thingsboard/thingsboard-pe`, `tbmq` → `thingsboard/tbmq`, `tbmq-pe` → `thingsboard/tbmq-pe`, `edge` → `thingsboard/thingsboard-edge`, `edge-pe` → `thingsboard/thingsboard-edge-pe`).
-
-Commit the regenerated files (under `src/content/docs/docs/.../reference/configuration/` for CE / PE, or the equivalent path for TBMQ / Edge).
-
-### Translate a page
-
-1. Find the English source under `src/content/docs/en/docs/...`.
-2. Create the file at the same path under `src/content/docs/{lang}/docs/...`.
-3. Copy and translate the body; keep the frontmatter structure. Set `i18nReady: true` once the translation is ready to publish.
-4. Untranslated pages fall back to English automatically — do not stub-translate or leave English placeholders.
+Commit the regenerated files — `src/content/docs/docs/mqtt-broker/installation/config.mdx` and `ie-config.mdx` for CE, the same paths under `mqtt-broker/pe/` for PE.
 
 ## Opening the PR
 
-- Branch naming is loose; descriptive is enough (`fix/mqtt-quickstart-typo`, `add/edge-installation-page`).
+- Branch naming is loose; descriptive is enough (`fix/mqtt-quickstart-typo`, `add/kubernetes-installation-page`).
 - Use imperative-mood commit messages. Keep the subject brief; add a body if the motivation isn't obvious from the diff.
 - The PR title should describe the change. The body should mention the affected pages and include screenshots if there's a visual change.
-- Every PR gets a preview deployment link in the PR conversation — use it to verify your change in a rendered context.
-- The four CI checks must pass before merge.
+- Verify your change in a rendered context before requesting review — `pnpm dev` while authoring, or `pnpm build:fast && pnpm preview` for the production output.
+- The CI checks must pass before merge.
 
 ## Getting help
 
-- Found a documentation bug, broken link, or unclear page? [Open an issue](https://github.com/thingsboard/thingsboard.io/issues).
-- Read the live docs at [thingsboard.io/docs](https://thingsboard.io/docs/) to see what's already published.
-- PRs are reviewed by the ThingsBoard docs team on a best-effort basis.
+- Found a documentation bug, broken link, or unclear page? [Open an issue](https://github.com/thingsboard/tbmq/issues) in the TBMQ repo.
+- Read the live docs at [tbmq.io/docs/](https://tbmq.io/docs/) to see what's already published.
+- PRs are reviewed by the TBMQ team on a best-effort basis.

@@ -1,25 +1,52 @@
 import { Aside, Code } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { Products } from '~/models/site.models';
 
 export const rateLimitsCe = `rate-limits:
   total:
-    # Enable/disable total incoming and outgoing message rate limits for the broker (per whole cluster)
+    # Enables or disables the cluster-wide total throughput quota.
     enabled: "\${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
-    # Total message rate across the cluster (e.g., 1000 messages per second, 50000 per minute)
-    config: "\${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
+    # Quota bucket definition. Comma-separated list of capacity:seconds bandwidths.
+    # The default sustains ~833 messages per second and allows a 50000-packet burst.
+    config: "\${MQTT_TOTAL_RATE_LIMITS_CONFIG:50000:60}"
+    # Tokens a node draws from Redis per round trip. 0 derives max(1, sustainedRate / 10).
+    block-size: "\${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
+    # Period of the tick returning a node's unused drawn tokens to the shared bucket (in ms).
+    lease-return-ms: "\${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
+    # How long the quota keeps granting after it loses the shared Redis bucket (in ms).
+    degraded-grace-ms: "\${MQTT_TOTAL_RATE_LIMITS_DEGRADED_GRACE_MS:30000}"
   incoming-publish:
-    # Enable/disable per-client publish rate limits
+    # Enables or disables publish rate limits per client for incoming messages to the broker.
     enabled: "\${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
-    # Per-client publish rate (e.g., 10 messages per second, 300 per minute)
+    # Limits the count of publish messages per publisher per time interval (in s).
     client-config: "\${MQTT_INCOMING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"`;
 
 export const rateLimitsPe = `rate-limits:
+  total:
+    # Tokens a node draws from Redis per round trip. 0 derives max(1, sustainedRate / 10).
+    block-size: "\${MQTT_TOTAL_RATE_LIMITS_BLOCK_SIZE:0}"
+    # Period of the tick returning a node's unused drawn tokens to the shared bucket (in ms).
+    lease-return-ms: "\${MQTT_TOTAL_RATE_LIMITS_LEASE_RETURN_MS:1000}"
   incoming-publish:
-    # Enable/disable per-client publish rate limits
+    # Enables or disables publish rate limits per client for incoming messages to the broker.
     enabled: "\${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
-    # Per-client publish rate (e.g., 10 messages per second, 300 per minute)
+    # Limits the count of publish messages per publisher per time interval (in s).
     client-config: "\${MQTT_INCOMING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"`;
+
+export const rateLimitsOutgoing = `rate-limits:
+  outgoing-publish:
+    # Enables or disables publish rate limits per client for outgoing messages to subscribers.
+    # Applies only to non-persistent subscribers with QoS = 0 ("AT_MOST_ONCE").
+    enabled: "\${MQTT_OUTGOING_RATE_LIMITS_ENABLED:false}"
+    # Limits the count of publish messages per subscriber per time interval (in s).
+    client-config: "\${MQTT_OUTGOING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+  device-persisted-messages:
+    # Enables or disables Device clients persisted messages rate limits for the broker (per whole cluster).
+    enabled: "\${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
+    # Limits the count of Device clients persisted messages per time interval (in s).
+    config: "\${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_CONFIG:100:1,1000:60}"`;
 
 In high-throughput systems like TBMQ, backpressure handling is essential for preventing out-of-memory errors and maintaining stability under load. Backpressure must be managed in two directions: **inbound** (publishers to the broker) and **outbound** (broker to subscribers).
 
@@ -32,11 +59,14 @@ TBMQ handles virtually unlimited publisher load by immediately persisting incomi
 TBMQ uses Netty for network I/O, and the socket receive buffer size can be tuned via the following configuration:
 
 ```yaml
-# Socket receive buffer size for Netty in KB.
-# If the buffer limit is reached, TCP will trigger backpressure and notify the sender to slow down.
-# If set to 0 (default), the system's default buffer size will be used.
-so_receive_buffer: "${NETTY_SO_RECEIVE_BUFFER:0}"
+listener:
+  # Netty socket receive buffer size (in KB). When the buffer limit is reached, TCP triggers backpressure
+  # and notifies the sender to slow down.
+  # Defaults to 0, which uses the system's default buffer size.
+  so_receive_buffer: "${NETTY_SO_RECEIVE_BUFFER:0}"
 ```
+
+The value is expressed in **kilobytes** and applies globally to all MQTT listeners.
 
 When the receive buffer fills up, TCP signals the sender to slow down, preventing the broker from being overwhelmed at the network layer.
 
@@ -48,19 +78,124 @@ When the receive buffer fills up, TCP signals the sender to slow down, preventin
 
 Unlike TCP-level backpressure, which is reactive, rate limiting is a proactive control layer. It enforces traffic constraints before the system becomes overloaded, preventing individual publishers from overwhelming the broker and maintaining fairness across clients.
 
-{props.product !== Products.TBMQ_PE && (
-  <>
-    <p>TBMQ supports both cluster-wide rate limits and per-client publish rate limits:</p>
-    <Code code={rateLimitsCe} lang="yaml" />
-  </>
-)}
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+TBMQ supports both a cluster-wide throughput quota and per-client publish rate limits:
 
-{props.product === Products.TBMQ_PE && (
-  <>
-    <p>Cluster-wide throughput is enforced by the TBMQ subscription plan — the <strong>Throughput (msg/sec)</strong> tier you purchase caps the total incoming message rate across the cluster, so no separate configuration is needed. Per-client publish rate limits remain configurable:</p>
-    <Code code={rateLimitsPe} lang="yaml" />
-  </>
-)}
+<Code code={rateLimitsCe} lang="yaml" />
+
+The `total` quota is cluster-wide: the token bucket lives in Redis, so all broker nodes draw from the same budget. It is
+described in detail below.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The cluster-wide quota is sized by your TBMQ subscription plan — the **Throughput (msg/sec)** tier you purchase *is* the
+budget. It is always enforced and cannot be enabled, disabled, or enlarged from the configuration; the `total` section
+only tunes how each node draws from that shared budget. Per-client publish rate limits are configured separately:
+
+<Code code={rateLimitsPe} lang="yaml" />
+
+When the quota refuses a message, TBMQ also raises a **licensed throughput reached** indicator in the license usage
+notification, so an operator can tell a licensing ceiling apart from an ordinary rate limit. It clears when
+acknowledged, and otherwise expires five minutes after it was first raised.
+</ShowFor>
+
+Per-client limits are configured as a comma-separated list of `limit:seconds` pairs, and **all** pairs must be satisfied.
+The default `10:1,300:60` means at most 10 messages in any second **and** at most 300 in any minute — so a client cannot
+burst at 10 msg/sec for a whole minute.
+
+Per-client rate limits are disabled by default. When an incoming limit is hit, the PUBLISH is dropped, the
+`droppedMsgs` counter is incremented, and the broker's response to the publisher depends on the protocol version:
+
+| MQTT version | Broker response |
+|---|---|
+| 5.0 | The message is acknowledged with reason code `0x97` Quota exceeded — in PUBACK for QoS 1, in PUBREC for QoS 2. QoS 0 publishes are dropped silently. The session stays open. |
+| 3.1.1 / 3.1 | The client is **disconnected**, since MQTT 3.x has no way to signal a rejected publish. |
+
+#### Cluster-wide throughput quota
+
+The cluster-wide quota counts MQTT PUBLISH packets — incoming and outgoing combined — against a single budget shared by
+every node in the cluster. Packets are charged at **admission**: when the publish is processed, before it is stored. A
+publish costs
+
+- **1 packet** for the incoming message itself, plus
+- **1 packet** for every persistent subscriber, shared subscription group, and integration it is routed to.
+
+The bill is therefore `1 + fanout`, computed at publish time and independent of whether those subscribers happen to be
+online. Once a message has been charged and stored, delivering it costs nothing more: a persistent session that
+reconnects after being offline receives its whole backlog however large, and QoS 1/2 retransmissions are free.
+
+Two kinds of packet fall outside that one charge. Delivery to a **non-persistent** subscriber is charged as it is sent,
+because nothing was stored — for those clients, delivery *is* admission. A **retained** message sent to a client that
+subscribes later is charged on SUBSCRIBE, since it is a new outgoing packet that nothing has paid for yet.
+
+When the budget runs out, the outcome depends on which packet is being charged:
+
+| Packet | Result |
+|---|---|
+| Incoming PUBLISH | Refused — MQTT 5.0 gets a PUBACK (QoS 1) or PUBREC (QoS 2) carrying reason code `0x97` Quota exceeded, MQTT 3.x is disconnected. Counted in `droppedMsgs`. |
+| Copy for a persistent subscriber, shared subscription group, or integration | Never stored. The subscription list is truncated and the copies past the cut are counted in `droppedMsgs`. |
+| Delivery to a non-persistent subscriber | Dropped and counted in `droppedMsgs`. |
+| Retained message on SUBSCRIBE | Truncated, but **not** counted in `droppedMsgs` — the retained store is left intact, so the next matching subscription still receives the full set. |
+
+Because refusals happen at admission, the quota only ever sheds work the broker has not yet acknowledged; a message that
+is already durable is never discarded to save budget.
+
+<Aside type="note">
+  A Redis blip must not stop message flow, so when the shared bucket cannot be reached the quota keeps granting rather
+  than refuse traffic it has no way to price. That opening is **bounded by a grace period**, measured from the first
+  failed draw of an outage: later failures do not extend it, and any successful draw resets it, so an intermittent
+  Redis never accumulates toward the deadline. Past the grace the node lends nothing — it spends only the tokens it
+  actually drew and then refuses, exactly as it does on a spent budget: counted in `droppedMsgs`, with MQTT 5.0
+  publishers getting `0x97` Quota exceeded and MQTT 3.x publishers disconnected. Refusing never stops the node
+  probing Redis, once a second, so enforcement resumes on its own as soon as a draw succeeds. Each failed draw
+  increments `throughputQuotaDegraded_total`, described in
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>.
+</Aside>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+The grace is `degraded-grace-ms`, `30000` by default — long enough to ride out a Redis Cluster or Sentinel failover, so
+a node passes the switch without refusing anything. Raising it trades enforcement for availability; `0` refuses the
+moment a single draw fails.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The grace is fixed — long enough to ride out a Redis Cluster or Sentinel failover, and deliberately not configurable:
+the quota is what enforces your licensed throughput, so a setting able to lengthen the grace could suspend that limit
+for as long as one chose, simply by taking Redis away.
+
+Refusals past the grace do **not** raise the **licensed throughput reached** indicator: the budget is unknown rather
+than spent. During a Redis outage the only signals are `droppedMsgs` and `throughputQuotaDegraded_total`.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={5} id="sizing-the-bucket" showFor="mqtt-broker">Sizing the bucket</ConditionalHeading>
+
+`config` is a comma-separated list of `capacity:seconds` bandwidths. Each refills continuously over its period, so the
+sustained rate is `capacity / seconds` while the capacity is how much unused budget accumulates for a burst. The default
+`50000:60` sustains roughly 833 messages per second, and after a full idle minute admits 50000 packets at once.
+
+**The capacity is also the largest amount a single publish can charge**, because a publish pays for its entire fan-out in
+one charge — so keep it above your widest fan-out.
+
+Configuring more than one bandwidth lowers that ceiling to the smallest capacity among them, since a single charge has to
+fit within every configured bandwidth. `1000:1,50000:60` sustains the same ~833 msg/sec but truncates any fan-out wider
+than 1000 subscribers, even on a completely idle cluster. To allow a smaller burst without capping the fan-out, keep one
+bandwidth and shorten the period at the same ratio instead of adding a second one: `5000:6` is the same ~833 msg/sec with
+a tenth of the burst.
+</ShowFor>
+
+##### How nodes share the bucket
+
+Two parameters govern how each node draws from the shared budget, and rarely need changing:
+
+- **`block-size`** — how many tokens a node draws from Redis per round trip. Defaults to `0`, which derives
+  `max(1, sustainedRate / 10)` from the sustained rate. Larger blocks mean fewer Redis calls but let an idle node hold
+  more of the cluster budget between lease returns. A publish whose fan-out exceeds the node's drawn tokens draws the
+  shortfall on demand, so this value never caps a single publish.
+- **`lease-return-ms`** — how often a node returns unused drawn tokens to the shared bucket, in milliseconds. Defaults to
+  `1000`. Setting it to `0` disables the tick, and a node that draws a block and then goes quiet holds those tokens
+  indefinitely — the cluster's effective budget shrinks by the sum of every idle node's lease. Leave the tick on unless
+  traffic is even across all nodes.
 
 ## Outbound backpressure
 
@@ -73,59 +208,171 @@ TBMQ monitors channel writability via the `channelWritabilityChanged` event. Wri
 - **High Watermark**: When the write buffer exceeds this threshold, the channel is marked non-writable and message delivery is paused.
 - **Low Watermark**: When the write buffer drops below this threshold, the channel is marked writable again and delivery resumes.
 
-The watermarks are configured via environment variables:
+```yaml
+listener:
+  # Threshold (in KB) at which Netty considers the channel non-writable.
+  write_buffer_high_water_mark: "${NETTY_WRITE_BUFFER_HIGH_WATER_MARK:1280}"
+  # Threshold (in KB) at which Netty considers the channel writable again.
+  write_buffer_low_water_mark: "${NETTY_WRITE_BUFFER_LOW_WATER_MARK:640}"
+```
 
-- `NETTY_WRITE_BUFFER_LOW_WATER_MARK` — default: 640 KB (655,360 bytes)
-- `NETTY_WRITE_BUFFER_HIGH_WATER_MARK` — default: 1280 KB (1,310,720 bytes)
+Both values are in **kilobytes** and apply globally to all MQTT listeners. They bound bytes queued in the outbound
+channel, not a message count — with the default 1280 KB high watermark, a subscriber receiving 1 KB payloads goes
+non-writable after roughly 1,280 unsent messages have accumulated, while one receiving 100 KB payloads goes
+non-writable after about 13. Size the watermarks against your payload size and how much memory per slow subscriber you
+are willing to spend.
 
 ### Handling non-persistent and persistent clients
 
 #### Non-persistent clients
 
-When a non-persistent client's channel is non-writable, the broker **skips delivery** of that message. Dropped messages are not retained or retried. TBMQ maintains a global dropped message counter to track how many messages were skipped due to backpressure — this metric provides visibility into system behavior under load and helps identify bottlenecks. This approach avoids memory buildup for short-lived or unreliable clients that are not expected to maintain state.
+When a non-persistent client's channel is non-writable, the broker **skips delivery** of that message. Dropped messages
+are not retained or retried; the `droppedMsgs` counter records them so you can see backpressure losses under load.
+Dropped **retained** messages are deliberately not counted, since a client can still recover them from the
+retained-message store. This approach avoids memory buildup for short-lived or unreliable clients that are not expected
+to maintain state.
+
+Non-persistent sessions are skipped per message rather than paused: they never transition into the internal
+`CHANNEL_NON_WRITABLE` session state, because there is nothing to resume from. They do, however, still count toward the
+`nonWritableClients` gauge while their channel is over the high watermark.
 
 #### Persistent clients
 
-Persistent clients are guaranteed delivery even under backpressure.
+For persistent clients, a non-writable channel **pauses** delivery instead of discarding messages. The pause itself
+never loses anything: the message is already in durable storage before the broker attempts to write it to the socket, so
+"skip the delivery" means "leave it where it is" rather than "drop it". Messages are only lost if storage limits are
+exceeded while the client stays behind — the bounds described below.
 
-**Device clients** use Redis as a buffer:
+This protection covers only what TBMQ stores, which means QoS 1 and 2 publishes delivered to a subscription of QoS 1 or 2.
+A message **published at QoS 0** is never stored, even for a persistent session, so it takes the non-persistent path above
+and is skipped and counted while the channel is congested. The same applies to a persistent client that subscribed at QoS 0.
 
-- Each client has a per-client message queue with a configurable limit (e.g., 10,000 messages), controlled by `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT`. If this limit is exceeded before the client becomes writable, older messages may be dropped.
-- Messages in the queue have a configurable TTL controlled by `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL`.
-- For MQTT 5.0 clients, the broker respects the client-defined message expiry interval.
+**Device clients** use Redis as the buffer.
 
-**Application clients** use Kafka consumer pause:
+The order of operations is what makes the pause safe. A Kafka consumer reads the `tbmq.msg.persisted` topic and
+**writes the batch into Redis first**, then hands the messages to the client's device actor for delivery. Redis is
+therefore the authoritative copy at all times, not a fallback that gets populated once trouble starts.
 
-- When the channel becomes non-writable, the broker pauses the Kafka consumer for that client.
-- When the channel becomes writable again, the broker resumes the consumer.
-- Kafka retains messages during the pause according to the topic retention policy, configured via `TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES`.
-- Default retention: `retention.ms=604800000` — seven days, `retention.bytes=1048576000` — 1 GB.
+What happens across a backpressure episode:
+
+1. **Channel goes non-writable.** The client's device actor records that its channel is congested and stops passing
+   messages to it. Messages that keep arriving for this client are still persisted to Redis as usual; they are simply
+   not written to the socket, so the outbound buffer is given a chance to drain.
+2. **Channel becomes writable again.** The broker does not immediately resume at full rate. The actor first checks how
+   many messages it has sent but not yet had acknowledged. While that count is above zero it reschedules itself using an
+   exponential backoff — roughly 1, 2, 3, 5, 9 and 10 seconds, each with up to a second of jitter, so about half a minute
+   of grace in total — giving the client time to work through its PUBACK/PUBREC backlog instead of being flooded the
+   instant its buffer clears.
+3. **Delivery resumes from Redis.** Once the in-flight count reaches zero, or the retry budget is exhausted, the actor
+   **re-reads the client's queue from Redis** and continues from there. Recovery is driven by durable state, so it is
+   unaffected by whatever was in memory when congestion began — and it works the same way whether the client was merely
+   slow or fully disconnected.
+4. **Expired messages are discarded on the way out.** A message whose expiry has passed while it waited is skipped at
+   delivery time rather than sent late.
+
+The two bounds on how long a client can stay behind:
+
+- Each client has a per-client message queue bounded by `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT`
+  (default: 10,000). When the queue exceeds the limit, TBMQ trims the **oldest** messages first — so a client that stays
+  congested past the limit keeps the newest messages and silently loses the earliest ones. The limit cannot exceed
+  65535 — the broker fails to start with a larger value.
+- Messages in the queue have a configurable TTL controlled by `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL`
+  (default: 604800 s — seven days), applied per message.
+- For MQTT 5.0 publishers, the message's **Message Expiry Interval** property overrides that default TTL.
+
+<Aside type="caution">
+  These two bounds are where a persistent DEVICE client's delivery guarantee actually ends. Multiply your peak per-client
+  message rate by how long a subscriber might realistically stay congested or offline: if that product exceeds
+  `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT`, raise the limit (up to 65535) or fix the slow subscriber —
+  trimming is silent from the client's point of view.
+</Aside>
+
+**Application clients** use Kafka consumer pause.
+
+Here the mechanism is simpler, because each persistent APPLICATION client already has its own Kafka topic and its own
+consumer. Instead of buffering anywhere, the broker just **stops reading**:
+
+- When the channel becomes non-writable, the broker pauses that client's Kafka consumer. Messages continue to be produced
+  into the client's topic; they simply accumulate there, unread. Nothing is buffered in broker memory, so a slow
+  APPLICATION client costs disk on the Kafka side rather than heap on the broker.
+- When the channel becomes writable again, the broker resumes the consumer, which picks up from its committed offset —
+  so delivery continues exactly where it left off, with no gap and no re-reading of already-acknowledged messages.
+- The bound here is Kafka retention rather than a message count, configured via
+  `TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES`. Defaults: `retention.ms=604800000` — seven days,
+  `retention.bytes=1048576000` — 1 GB. A client that stays paused longer than retention allows loses the oldest
+  unread messages, the same failure mode as the DEVICE queue trim.
+
+This is why APPLICATION clients absorb backpressure far better than DEVICE clients: the backlog lives in Kafka, sized in
+gigabytes, instead of a per-client Redis queue capped at 65535 messages.
 
 ### Shared subscriptions and backpressure handling
 
 See <DocLink product={props.product} path="user-guide/shared-subscriptions">shared subscriptions</DocLink> for a full overview of shared subscriptions in TBMQ.
 
+For non-persistent and persistent DEVICE groups, TBMQ picks the target in two steps, and only the first one considers
+writability: it checks whether the group has any usable member — a connected subscriber that is either on another cluster
+node or, if local, has a writable channel — and then round-robin picks the next **connected** member. Because that second
+step ignores writability, a congested member can still be picked.
+
 #### Non-persistent shared subscription group
 
-When a subscriber in the group is non-writable, the broker skips that subscriber and attempts delivery to another member of the group. If **all** subscribers are non-writable, the message is dropped.
+If no usable member exists — every subscriber disconnected, or every local one non-writable — the message is dropped. If
+round-robin lands on a congested member, that copy is dropped and counted in `droppedMsgs` too, even when another member
+of the group was writable.
 
 #### Persistent DEVICE shared subscription group
 
-The broker skips non-writable subscribers and routes the message to a writable one. If **all** subscribers are non-writable, the message is saved to a per-group Redis queue. Once any subscriber becomes writable again, delivery resumes from the stored messages. The same configuration parameters apply as for individual persistent DEVICE clients (`MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT` and `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL`).
+Landing on a congested member costs nothing here: the message goes to that subscriber's device actor, which keeps it in
+Redis and delivers it once the channel recovers. If no usable member exists at all, the message is saved to a per-group
+Redis queue and delivered to whichever member becomes available first. The same configuration parameters apply as for individual persistent DEVICE clients (`MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT` and `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL`).
 
 #### Persistent APPLICATION shared subscription group
 
-TBMQ removes the non-writable subscriber from the Kafka consumer group. Other writable subscribers continue polling messages from Kafka as usual. If **all** subscribers are non-writable, the consumer group becomes empty and Kafka polling stops. Kafka retains messages until subscribers reconnect. Retention for shared APPLICATION topics is configured via `TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES`.
+Here selection is Kafka's, not TBMQ's: the group is a real Kafka consumer group on the shared topic. When a member's
+channel becomes non-writable, TBMQ **pauses that member's consumer**. It stays in the group and keeps its partition
+assignment, so its share of the messages waits in the topic rather than being handed to the other members. Retention for
+shared APPLICATION topics is configured via `TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES`.
+
+How much of the group a congested member holds up therefore depends on the **Partitions** count you set on the
+<DocLink product={props.product} path="user-guide/shared-subscriptions">Application shared subscription</DocLink> when
+you create it: Kafka gives each member a subset of the partitions, and only that member's own subset waits while it is
+paused. The count cannot be changed afterwards.
+
+### Outbound rate limiting
+
+Writability monitoring reacts to a channel that is already congested. Two proactive limits cap outbound and persistence
+load before that happens:
+
+<Code code={rateLimitsOutgoing} lang="yaml" />
+
+**`outgoing-publish`** is a per-subscriber limit that applies **only to messages published at QoS 0**, the ones TBMQ never
+stores. Messages over the limit are dropped and counted in `droppedMsgs`. QoS 1 and 2 publishes are unaffected, since
+dropping them would violate the delivery guarantee — but a *persistent* subscriber is not exempt: its QoS 0 traffic goes
+through the same non-persistent path and is subject to this limit.
+
+**`device-persisted-messages`** is a cluster-wide limit on how many messages TBMQ writes into persistent DEVICE storage
+per interval, sharing one Redis-backed bucket across all nodes. When a publish matches more persistent DEVICE
+subscribers than the bucket has tokens left, the surplus is dropped and counted. Use it to protect Redis when a burst
+fans out to many persistent DEVICE subscribers.
+
+Both are disabled by default.
 
 ## Recommendations
 
-- Monitor the `nonWritableClients` counter via logs and Prometheus to detect backpressure conditions early.
-- Default watermark thresholds support approximately 10,000 messages per second per subscriber under typical conditions; adjust only after load testing.
-- Ensure sufficient Redis capacity for persistent DEVICE client queues.
-- Ensure sufficient Kafka capacity and appropriate retention settings for APPLICATION client topics.
+- Monitor the `nonWritableClients` gauge on `/actuator/prometheus` to detect backpressure conditions early, and watch
+  `droppedMsgs` to quantify what backpressure and rate limits are actually costing you.
+- Size the watermarks against your payload size (see above) rather than a target message rate, and change them only
+  after load testing — raising them trades broker memory for tolerance of slow subscribers.
+- Ensure sufficient Redis capacity for persistent DEVICE client queues: worst case is
+  `number of persistent DEVICE clients × MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT × average message size`.
+- Ensure sufficient Kafka capacity and appropriate retention settings for APPLICATION client topics — retention, not the
+  session, is what bounds how long a disconnected APPLICATION client can fall behind before losing messages.
+- Enable the rate limits that match your risk: `incoming-publish` against a misbehaving publisher,
+  `device-persisted-messages` against Redis saturation.
 - Use horizontal scaling to distribute load across multiple TBMQ nodes.
 - Test your deployment under realistic peak load before going to production.
 
-## Conclusion
-
-TBMQ's layered backpressure architecture — combining TCP flow control, rate limiting, Netty writability monitoring, and type-specific persistence strategies — ensures the broker remains stable and resilient under high-throughput conditions. By buffering inbound messages in Kafka and handling outbound pressure through Redis and Kafka consumer pausing, TBMQ can sustain reliable message delivery for both DEVICE and APPLICATION clients even when subscribers temporarily fall behind.
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+When a drop counter does move, the <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink>
+page breaks the total down by reason, client, and topic, so you can tell which limit fired and for which client.
+</ShowFor>

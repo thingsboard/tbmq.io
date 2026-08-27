@@ -1,0 +1,126 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is the MQTT keep-alive interval?',
+		a: 'A value in seconds (0 to 65,535) that the client sets in the CONNECT packet. It is the maximum time the client may stay silent; if it has no data to send, it must send a PINGREQ within that window.',
+	},
+	{
+		q: 'What is the 1.5x rule in MQTT keep-alive?',
+		a: 'If the broker receives no packet from a client within 1.5 times the keep-alive interval, it considers the client disconnected and closes the connection. For a 60-second keep-alive, that window is 90 seconds.',
+	},
+	{
+		q: 'What are PINGREQ and PINGRESP?',
+		a: 'They are the MQTT heartbeat packets. When a client has no application message to send, it sends a PINGREQ and the broker replies with PINGRESP to confirm the connection is still alive.',
+	},
+	{
+		q: 'What happens when keep-alive times out?',
+		a: 'The broker closes the connection and publishes the client’s Last Will message if one was configured, so the rest of the system learns the client dropped off. In TBMQ the connection closes with reason KEEP_ALIVE_TIMEOUT.',
+	},
+	{
+		q: 'Can I disable MQTT keep-alive?',
+		a: 'Yes — set keep-alive to 0. The client then sends no periodic pings and the broker does not monitor the connection for inactivity. This is generally discouraged because unexpected disconnects go undetected until the next send.',
+	},
+	{
+		q: 'Can the broker override the keep-alive value?',
+		a: 'In MQTT 5.0, yes. The broker can return a <strong>Server Keep Alive</strong> value in CONNACK, and the client must then use that interval instead of the one it requested. TBMQ caps MQTT 5.0 clients at <code>600</code> seconds (10 minutes) by default. MQTT 3.1.1 has no such mechanism, so the client’s requested value always stands.',
+	},
+];
+---
+
+<MqttTopicLayout slug="keep-alive" faq={faq}>
+	<p>
+		TCP can lie. A connection can look open to one side while the other has silently vanished — a crashed device, a
+		dropped Wi-Fi link, a firewall that quietly killed an idle session. MQTT keep-alive is the mechanism that lets the
+		broker tell a live client from a dead one.
+	</p>
+
+	<h2>How keep-alive works</h2>
+	<p>
+		The client declares a <strong>keep-alive interval</strong> (0–65,535 seconds) in its
+		<code>CONNECT</code> packet. It then promises to send <em>some</em> packet — a publish, a subscribe, or, if it has nothing
+		else to say, a <code>PINGREQ</code> — within every interval. The broker answers each <code>PINGREQ</code> with a <code
+			>PINGRESP</code
+		>. Any packet resets the timer.
+	</p>
+	<p>
+		If the broker hears nothing for <strong>1.5×</strong> the interval, it assumes the client is gone and closes the connection.
+		With a 60-second keep-alive, the client must be heard from at least every 90 seconds.
+	</p>
+
+	<MqttDiagram caption="Keep-alive heartbeat and dead-client detection">
+		<svg viewBox="0 0 680 348" role="img" aria-label="Keep-alive ping sequence and timeout">
+			<text class="d-head" x="40" y="22"
+				>Keep-alive <tspan class="d-em">60s</tspan> → the client must send a packet at least every <tspan class="d-em"
+					>90s</tspan
+				> (60 × 1.5)</text
+			>
+			<rect class="d-actor" x="92" y="40" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-mid" x="150" y="62">Client</text>
+			<rect class="d-actor d-actor--hero" x="472" y="40" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="530" y="62">Broker</text>
+			<line class="d-life" x1="150" y1="76" x2="150" y2="324"></line>
+			<line class="d-life" x1="530" y1="76" x2="530" y2="324"></line>
+			<line class="d-line" x1="150" y1="106" x2="527" y2="106" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="222" y="95" width="236" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="110">PUBLISH / SUBSCRIBE / any packet</text>
+			<text class="d-note" x="540" y="110">timer resets</text>
+			<text class="d-note d-mid" x="340" y="146">quiet period — nothing else to send</text>
+			<line class="d-line d-line--green" x1="150" y1="182" x2="527" y2="182" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="301" y="171" width="78" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="186">PINGREQ</text>
+			<text class="d-note" x="540" y="186">heartbeat</text>
+			<line class="d-line d-line--green" x1="530" y1="216" x2="153" y2="216" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="299" y="205" width="82" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="220">PINGRESP</text>
+			<text class="d-note" x="540" y="220">still alive</text>
+			<line class="d-brk" x1="60" y1="252" x2="620" y2="252"></line>
+			<rect x="252" y="242" width="176" height="20" rx="10" fill="#f0f1f4"></rect>
+			<text class="d-brklabel d-mid" x="340" y="255">silence for more than 90s</text>
+			<text class="d-danger d-mid" x="340" y="298">✗ Broker closes the connection (KEEP_ALIVE_TIMEOUT)</text>
+			<text class="d-mid" x="340" y="316" style="font: 500 12px system-ui; fill: #8a8d94"
+				>and publishes the client&apos;s Last Will, if one was set</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Server keep-alive (MQTT 5.0)</h2>
+	<p>
+		MQTT 5.0 lets the broker push back on the interval a client asks for. If the requested keep-alive is longer than the
+		broker is willing to allow, it returns its own <strong>Server Keep Alive</strong> value in the <code>CONNACK</code>,
+		and the client must adopt <em>that</em> interval instead. This caps how long a connection can sit idle before the broker
+		is prepared to reclaim it, no matter what the client proposed. MQTT 3.1.1 has no such property, so there the client’s
+		value always stands.
+	</p>
+
+	<h2>Why it matters: half-open connections</h2>
+	<p>
+		Without keep-alive, a broker can accumulate <strong>half-open connections</strong> — sessions it believes are active but
+		whose clients are long gone. These waste resources and leave stale
+		<a href="/mqtt/persistent-session/">sessions</a> around. Keep-alive forces clients to prove they're alive, so the broker
+		can reclaim dead connections promptly.
+	</p>
+
+	<h2>Choosing a keep-alive value</h2>
+	<p>
+		Shorter intervals detect failures faster but add ping traffic and wake battery-powered devices more often; longer
+		intervals are lighter but slower to notice a dropped client. Match the interval to how quickly you need to detect a
+		disconnect. Devices that already send data at a steady rate may not need a short keep-alive at all, since their
+		normal traffic keeps the connection active.
+	</p>
+
+	<h2>Keep-alive in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> monitors keep-alive per connection (checking on an interval set by
+		<code>MQTT_KEEP_ALIVE_MONITORING_DELAY_MS</code>, every second by default). On timeout it closes the connection with
+		reason <code>KEEP_ALIVE_TIMEOUT</code> and publishes the client's
+		<a href="/mqtt/last-will/">Last Will</a> if one was set. For MQTT 5.0 clients it also enforces a
+		<strong>Server Keep Alive</strong>: a requested interval above <code>600</code> seconds (10 minutes) is capped to that
+		maximum and returned in the CONNACK. See the
+		<a href="/docs/user-guide/keep-alive/">keep-alive docs</a> for the full behavior, including client take-over when the
+		same client ID reconnects.
+	</p>
+</MqttTopicLayout>

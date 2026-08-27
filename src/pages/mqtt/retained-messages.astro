@@ -1,0 +1,106 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What is a retained message in MQTT?',
+		a: 'A message published with the <code>retain</code> flag set, which the broker stores as the <strong>last known value</strong> for that topic. Any client that subscribes later receives it immediately, instead of having to wait for the next publish.',
+	},
+	{
+		q: 'How do you clear a retained message?',
+		a: 'Publish a message to the same topic with the <code>retain</code> flag set and an <strong>empty (zero-byte) payload</strong>. The broker removes the stored value, so future subscribers get nothing until a new retained message is published.',
+	},
+	{
+		q: 'How many retained messages can a topic hold?',
+		a: '<strong>One.</strong> Retained storage is last-value-wins per topic — each new retained publish replaces the previous one. Retained messages are <strong>not a history or replay log</strong>; for that you need a persistent session or a streaming platform.',
+	},
+	{
+		q: 'What is the difference between retained messages and persistent sessions?',
+		a: 'A retained message is the <strong>current value of a topic</strong>, kept for any future subscriber. A persistent session is a <strong>per-client queue</strong> of messages missed while that specific client was offline. Retained messages serve everyone; persistent sessions serve one client’s catch-up.',
+	},
+	{
+		q: 'Are retained messages a good fit for device status?',
+		a: 'Yes — it is the <strong>classic use case</strong>. Publishing a device’s online/offline status or latest configuration as a retained message means any dashboard or service that connects later immediately knows the current state without waiting.',
+	},
+];
+---
+
+<MqttTopicLayout slug="retained-messages" faq={faq}>
+	<p>
+		Normally a subscriber only sees messages published <em>after</em> it subscribes — connect a second too late and you learn
+		nothing until the next publish. Retained messages fix that: they let the broker hand every new subscriber the current
+		value of a topic straight away.
+	</p>
+
+	<h2>How the retain flag works</h2>
+	<p>
+		When a message is published with the <strong>retain flag</strong> set, the broker stores it as the last known value for
+		that topic — replacing any previous retained value. From then on, any client that subscribes to a matching topic immediately
+		receives that stored message, flagged as retained, before any live traffic. Publishing an empty payload with the retain
+		flag <strong>clears</strong> the stored value.
+	</p>
+
+	<MqttDiagram caption="Stored once, delivered to every future subscriber the moment they subscribe">
+		<svg viewBox="0 0 680 300" role="img" aria-label="A retained message is stored and delivered to a later subscriber">
+			<text class="d-tiny" x="40" y="34">t0</text>
+			<rect class="d-actor" x="92" y="14" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-mid" x="150" y="36">Publisher</text>
+			<rect class="d-actor d-actor--hero" x="472" y="14" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="530" y="36">Broker</text>
+			<line class="d-life" x1="530" y1="50" x2="530" y2="282"></line>
+			<line class="d-life" x1="150" y1="50" x2="150" y2="124"></line>
+			<line class="d-line" x1="150" y1="84" x2="527" y2="84" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="224" y="73" width="232" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="88">PUBLISH home/door (retain)</text>
+			<text class="d-note" x="540" y="88">stored</text>
+			<rect class="d-chip d-chip--green" x="452" y="107" width="152" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="528" y="122" style="font-size: 11px">home/door = closed</text>
+			<text class="d-note d-mid" x="528" y="140" style="font-size: 10.5px">retained value held</text>
+			<line class="d-brk" x1="60" y1="160" x2="620" y2="160"></line>
+			<rect x="238" y="150" width="204" height="20" rx="10" fill="#f0f1f4"></rect>
+			<text class="d-brklabel d-mid" x="340" y="163">time passes — no new publish</text>
+			<text class="d-tiny" x="40" y="186">t2</text>
+			<rect class="d-actor" x="92" y="168" width="116" height="34" rx="8"></rect>
+			<text class="d-alabel d-mid" x="150" y="190" style="font-size: 12px">New subscriber</text>
+			<line class="d-life" x1="150" y1="204" x2="150" y2="282"></line>
+			<line class="d-line" x1="150" y1="234" x2="527" y2="234" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="246" y="223" width="188" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="238">SUBSCRIBE home/door</text>
+			<line class="d-line d-line--green" x1="530" y1="266" x2="153" y2="266" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="260" y="255" width="160" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="270">"closed" (retained)</text>
+			<text class="d-note" x="540" y="270">immediately</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>What retained messages are good for</h2>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:broadcast" title="Device presence">
+			an <code>online</code>/<code>offline</code> status a new dashboard reads instantly.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:settings" title="Current configuration">
+			the latest settings a device should apply when it connects.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:gauge" title="Latest reading">
+			the most recent value of a slow-changing sensor, so subscribers don't start blind.
+		</LearnIconRow>
+	</LearnIconRows>
+	<p>
+		It's worth being clear about the boundary: a retained message is the <em>current value</em> of a topic, kept for everyone.
+		It is not a replay log — there is only one retained message per topic. To catch up on messages a specific client missed
+		while offline, that's a <a href="/mqtt/persistent-session/">persistent session</a>, not retention.
+	</p>
+
+	<h2>Retained messages in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> keeps retained messages in an in-memory trie for fast lookup, backed by a compacted Kafka topic so
+		they survive broker restarts. Clearing a retained message removes it from the trie, and a scheduled cleanup job prunes
+		the empty nodes it leaves behind. See the
+		<a href="/docs/user-guide/retained-messages/">retained messages guide</a> for configuration and the UI view of stored
+		retained messages.
+	</p>
+</MqttTopicLayout>

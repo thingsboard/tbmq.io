@@ -1,14 +1,89 @@
 ---
-import DocFooter from '~/components/starlight/DocFooter.astro';
-import LandingFooter from '~/components/Landing/Footer.astro';
+import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
+import SocialNetworks from '~/components/Landing/SocialNetworks.astro';
 
-// Proxy in front of the actual Starlight footer chrome. Pages
-// rendered through `BaseLayout` set `Astro.locals.bsl = true`
-// to opt into the marketing footer (`Landing/Footer`); everything else
-// gets the docs footer (`DocFooter`). Each branch is a separate
-// component so only the styles of the chosen variant land in the
-// route's CSS bundle — there's no per-page cost for the unused one.
-const isBaseStarlight = (Astro.locals as unknown as Record<string, unknown>).bsl === true;
+const currentYear = new Date().getFullYear();
 ---
 
-{isBaseStarlight ? <LandingFooter /> : <DocFooter />}
+<DefaultFooter />
+
+<div class="doc-footer sl-markdown-content">
+	<nav>
+		<a href="/docs/pe/getting-started/">Get Started</a>
+		<a href="/docs/pe/">Documentation</a>
+		<a href="https://thingsboard.io/blog/" target="_blank" rel="noopener noreferrer">Blog</a>
+		<a href="/contact-us/">Contact us</a>
+	</nav>
+	<div class="deepmost">
+		<div class="copyright">&copy; {currentYear} The ThingsBoard Authors</div>
+		<SocialNetworks />
+	</div>
+</div>
+
+<style>
+	@media (min-width: 72rem) {
+		:global([data-has-toc]) .hide-when-toc-is-visible {
+			display: none;
+		}
+	}
+
+	.doc-footer {
+		container-type: inline-size;
+		border-top: 1px solid var(--sl-color-hairline);
+		padding: var(--sl-content-pad-x) 0;
+	}
+
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	@container (max-width: 36rem) {
+		nav {
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+		}
+	}
+
+	nav a {
+		font-size: 1rem;
+		color: var(--sl-color-text);
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	nav a:hover {
+		color: var(--sl-color-white);
+		text-decoration: underline;
+	}
+
+	.deepmost {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		--sn-color: var(--sl-color-gray-3);
+	}
+
+	.deepmost :global(.social) {
+		margin-top: 0;
+	}
+
+	@container (max-width: 36rem) {
+		.deepmost {
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			gap: 1.5rem;
+		}
+	}
+
+	.copyright {
+		font-size: 0.875rem;
+		color: var(--sl-color-gray-3);
+	}
+</style>

@@ -30,9 +30,6 @@ sandbox.config.json
 # Add local workspace settings
 !.vscode/settings.json
 
-# Claude Code local settings
-.claude/settings.local.json
-
 # macOS-specific files
 .DS_Store
 
@@ -49,3 +46,12 @@ reports/
 
 # Claude Code runtime lock (not source)
 .claude/*.lock
+
+# Claude Code local (personal) settings
+.claude/settings.local.json
+
+# Superpowers brainstorm visual-companion artifacts
+.superpowers/
+
+# Superpowers working docs (plans, specs, reports) — root folder only, not src/content/docs
+/docs/

@@ -1,9 +1,10 @@
 ---
 // Proxy for Starlight's ThemeProvider — renders only the inline theme script
 // in <head>, never a <template>. The `#theme-icons` template lives in <body>
-// (see starlight/SkipLink.astro) because a warmed `astro dev` traps the page's
-// hoisted <style> blocks inside any <head> <template>, leaving the page
-// unstyled (https://github.com/withastro/astro/issues/16994).
+// (see starlight/SkipLink.astro for docs pages and layouts/BaseLayout.astro for
+// marketing pages) because a warmed `astro dev` traps the page's hoisted
+// <style> blocks inside any <head> <template>, leaving the page unstyled
+// (https://github.com/withastro/astro/issues/16994).
 //
 // forceLightTheme locks light before paint and skips the switcher; every other
 // route gets Starlight's stock theme script (verbatim).

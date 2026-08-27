@@ -16,12 +16,7 @@ import {
  * equivalent exists. Both versions continue serving their own distinct content.
  */
 const canonicalConsolidationMap: Partial<Record<Products, Products>> = {
-	[Products.CE]: Products.PE,
-	[Products.PAAS]: Products.PE,
-	[Products.PAAS_EU]: Products.PE,
-	[Products.EDGE]: Products.EDGE_PE,
 	[Products.TBMQ]: Products.TBMQ_PE,
-	[Products.MOBILE]: Products.MOBILE_PE,
 };
 
 /** Page-slug segments that opt out of canonical consolidation (edition-specific content). */

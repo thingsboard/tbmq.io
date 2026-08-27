@@ -1,0 +1,141 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Is MQTT secure by default?',
+		a: 'The MQTT protocol itself carries no encryption or access control — plain MQTT on port 1883 is unencrypted. Security is added around it: TLS for transport encryption, an authentication method to verify each client, and topic authorization to limit what each client can do.',
+	},
+	{
+		q: 'What port does secure MQTT use?',
+		a: 'MQTT over TLS (MQTTS) uses port 8883 by default, versus 1883 for plaintext MQTT. Over WebSocket, TBMQ uses 8084 for WS and 8085 for secure WSS.',
+	},
+	{
+		q: 'How do you authenticate MQTT clients?',
+		a: 'Common methods are username/password, X.509 client certificates (mutual TLS), and signed tokens such as JWT. The broker validates the chosen credential on CONNECT and rejects the connection if it fails.',
+	},
+	{
+		q: 'What is the difference between authentication and authorization in MQTT?',
+		a: 'Authentication proves who a client is when it connects. Authorization decides what an authenticated client may do — specifically which topics it can publish to or subscribe from. A client can be authenticated yet still denied a topic.',
+	},
+	{
+		q: 'Does TLS slow down MQTT?',
+		a: 'TLS adds a one-time handshake cost when the connection opens, but MQTT reuses one long-lived connection, so that cost is amortized across every message that follows. The per-message overhead of encryption is small.',
+	},
+];
+---
+
+<MqttTopicLayout slug="security" faq={faq}>
+	<p>
+		An MQTT broker usually sits right at the boundary between the public internet and a fleet of devices, which makes it
+		a high-value target. Securing it is not one setting but three layers working together: encrypt the connection,
+		verify who is connecting, and control what they are allowed to do.
+	</p>
+
+	<h2>The three layers of MQTT security</h2>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:lock" title="Transport (TLS)">
+			encrypt the connection so credentials and payloads are never sent in the clear. Secure MQTT (<a
+				href="/mqtt/mqtt-tls/">MQTTS</a
+			>) runs on port <code>8883</code>; plaintext MQTT on <code>1883</code> should not face the internet.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:user-check" title="Authentication">
+			<a href="/mqtt/mqtt-authentication/">verify a client's identity</a> on connect using a username/password, an
+			<a href="/mqtt/mqtt-client-certificates/">X.509 client certificate</a>, or a signed token, and reject anything
+			that fails.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:shield-check" title="Authorization">
+			once authenticated, <a href="/mqtt/mqtt-authorization/">restrict which topics</a> each client may publish to or subscribe
+			from, so a compromised device can't read or write topics it has no business touching.
+		</LearnIconRow>
+	</LearnIconRows>
+	<p>
+		Those three cover most deployments. For especially sensitive data you can add a fourth, independent layer —
+		<a href="/mqtt/mqtt-payload-encryption/">payload encryption</a> — encrypting the message body in your clients so it stays
+		private even from the broker.
+	</p>
+
+	<MqttDiagram caption="Every connection passes through encryption, authentication, then authorization">
+		<svg viewBox="0 0 680 268" role="img" aria-label="Three layers of MQTT security">
+			<circle cx="60" cy="42" r="15" fill="#e6f7ed" stroke="#17bb52" stroke-width="1.5"></circle><text
+				class="d-ctext--green d-mid"
+				x="60"
+				y="47"
+				style="font:700 14px system-ui">1</text
+			>
+			<rect class="d-actor" x="92" y="20" width="560" height="44" rx="10"></rect><text class="d-alabel" x="112" y="39"
+				>TLS handshake</text
+			><text class="d-note" x="112" y="55">encrypt the channel — MQTTS 8883 / WSS 8085</text>
+			<line class="d-line d-line--green" x1="60" y1="57" x2="60" y2="83" marker-end="url(#arGreen)"></line>
+			<circle cx="60" cy="112" r="15" fill="#e6f7ed" stroke="#17bb52" stroke-width="1.5"></circle><text
+				class="d-ctext--green d-mid"
+				x="60"
+				y="117"
+				style="font:700 14px system-ui">2</text
+			>
+			<rect class="d-actor" x="92" y="90" width="560" height="44" rx="10"></rect><text class="d-alabel" x="112" y="109"
+				>Authentication</text
+			><text class="d-note" x="112" y="125">who are you? — basic · X.509 · JWT · SCRAM · HTTP</text>
+			<line class="d-line d-line--green" x1="60" y1="127" x2="60" y2="153" marker-end="url(#arGreen)"></line>
+			<circle cx="60" cy="182" r="15" fill="#e6f7ed" stroke="#17bb52" stroke-width="1.5"></circle><text
+				class="d-ctext--green d-mid"
+				x="60"
+				y="187"
+				style="font:700 14px system-ui">3</text
+			>
+			<rect class="d-actor" x="92" y="160" width="560" height="44" rx="10"></rect><text class="d-alabel" x="112" y="179"
+				>Authorization</text
+			><text class="d-note" x="112" y="195">which topics? — per-topic publish / subscribe rules</text>
+			<rect x="92" y="224" width="560" height="30" rx="15" fill="#e6f7ed"></rect><text
+				class="d-ctext--green d-mid"
+				x="372"
+				y="243"
+				style="font-family:system-ui;font-weight:600">✓ connected — allowed only on permitted topics</text
+			>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Authentication methods at a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>Method</th><th>How it identifies a client</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Basic</td><td>Client ID, username and password in the <code>CONNECT</code> packet</td></tr>
+				<tr
+					><td>X.509 certificate chain</td><td
+						>The client's certificate presented during the TLS handshake (mutual TLS)</td
+					></tr
+				>
+				<tr><td>JWT</td><td>A signed JSON Web Token carried in the password field</td></tr>
+				<tr><td>SCRAM</td><td>A salted challenge-response — the password never crosses the wire (MQTT 5.0)</td></tr>
+				<tr><td>HTTP</td><td>Credentials validated by an external HTTP service you control</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>Security in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> implements all three layers. Its listeners support TCP, TLS, and WebSocket (including secure WSS),
+		and it ships five pluggable authentication providers —
+		<a href="/docs/security/authentication/basic/">Basic</a>,
+		<a href="/docs/security/authentication/x509/">X.509</a>,
+		<a href="/docs/security/authentication/jwt/">JWT</a>,
+		<a href="/docs/security/authentication/scram/">SCRAM</a>, and
+		<a href="/docs/security/authentication/http/">HTTP</a> — that you can enable, disable, and order from the UI without restarting
+		the broker. SCRAM is the exception — the broker handles it automatically per the MQTT 5.0 spec, so it isn’t part of that
+		configurable order.
+	</p>
+	<p>
+		For authorization, TBMQ applies regular-expression topic patterns per client credentials, so you scope each client
+		to exactly the topics it needs. Start with the
+		<a href="/docs/concepts/security/">security concepts guide</a> — the same three-layer model, mapped to TBMQ — then the
+		<a href="/docs/security/overview/">security overview</a> and the
+		<a href="/docs/security/mqtts/">MQTTS setup guide</a> for configuration details.
+	</p>
+</MqttTopicLayout>

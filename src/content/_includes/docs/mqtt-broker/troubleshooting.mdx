@@ -1,0 +1,478 @@
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import Help from '@includes/docs/mqtt-broker/help.mdx';
+import { Products } from '~/models/site.models';
+
+This guide walks through diagnosing a misbehaving TBMQ deployment: a playbook for each symptom you are likely to hit, followed by the reference those playbooks draw on — where the logs are, how to turn on a component logger, and what the Kafka lag line tells you.
+
+Every metric named here is documented in full on the <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink> page, and [Reading logs](#reading-logs) below covers where the log files live and how to tail them on Docker Compose and Kubernetes.
+
+## Start here
+
+| Symptom | First thing to check | Playbook |
+|---|---|---|
+| Clients cannot establish a connection | `connectionRefused_total`, `connectionError_total` | [Clients cannot connect](#clients-cannot-connect) |
+| Clients connect, then drop | `clientDisconnects_total`, disconnect logs | [Unexpected disconnects](#unexpected-disconnects) |
+| Publishers succeed but messages vanish | `droppedMsgs_total` | [Messages are dropped](#messages-are-dropped) |
+| A subscriber receives nothing | Subscription lookup and SUBACK codes | [Subscriber receives nothing](#subscriber-receives-nothing) |
+| Everything works but slowly | Kafka consumer lag | [Latency and backlog](#latency-and-backlog) |
+| One subscriber falls behind | `nonWritableClients` | [Slow subscribers](#slow-subscribers) |
+| Node is saturated or restarting | `process_cpu_usage`, `jvm_memory_used_bytes` | [Resource exhaustion](#resource-exhaustion) |
+| Broker is up but degraded | `sqlQueue_queueSize`, `kafkaProducer_send_seconds` | [Dependency failures](#dependency-failures) |
+
+## Clients cannot connect
+
+A client's CONNECT either comes back with a failure CONNACK, or the connection ends before a CONNACK is ever sent.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `connectionRefused_total` | CONNECT attempts that got a non-success CONNACK back — bad credentials, an invalid client identifier, or a broker-side quota (a session-count limit or an APPLICATION-client limit). |
+| `connectionError_total` | Failures below the MQTT layer, before any CONNACK — a TLS handshake problem, or non-MQTT traffic arriving on the port. It is counted only while the connecting client's id is still unknown to TBMQ. |
+| `connectionAccepted_total` | The success baseline. Read the other two counters' rate against this one rather than in isolation. |
+| `MqttSessionHandler` logs | Carry the session id and, once known, the client id and remote address. A connection-reset (`IOException`) line also tags `closed-by=TBMQ` or `closed-by=peer-or-network`, telling you which side ended the connection. |
+| <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized clients</DocLink> page | Every CONNECT rejected on authentication or authorization, with the client id and reason. |
+
+**Interpret**
+
+`connectionRefused_total` rising while `connectionAccepted_total` stays flat means the CONNECT is reaching TBMQ and getting a CONNACK back — just not a successful one. Bad credentials and failed authorization both send this CONNACK. So does a handful of validation failures that TBMQ only runs *after* authentication has already succeeded — an empty client identifier on a non-clean-start session, an invalid last-will topic, an MQTT 5 receive-maximum of `0`. Seeing one of these specifically is a useful signal in its own right: it confirms the client's credentials were accepted, and the connection failed on a protocol/session detail instead. It's also how a broker-side quota shows up — TBMQ enforces a configurable limit on total sessions and on APPLICATION clients, and refuses new connections with a `QUOTA_EXCEEDED` reason once either is hit.
+
+`connectionError_total` rising instead means the failure sits below the MQTT layer, before a CONNACK is even possible. It counts pre-CONNECT failures — a TLS handshake problem, non-MQTT traffic arriving on the port, or a protocol violation caught before a session exists — and it is deliberately narrow: it only fires while the connection has no client id yet, so an error on an already-established session is counted as a disconnect instead, not a connection error (see [Unexpected disconnects](#unexpected-disconnects)).
+
+**Act**
+
+- Check the credentials and authorization rules against what the client is actually presenting.
+- Verify the listener and TLS configuration — the right port, a valid certificate chain, a TLS-capable client talking to a TLS listener.
+- Review the <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized clients</DocLink> page for the specific client id and rejection reason.
+- See <DocLink product={props.product} path="security/overview">Security</DocLink> for how authentication and authorization are configured end to end.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+PE keeps an audit log of connection and authentication activity as a queryable record the counters above can't give you — see <DocLink product={props.product} path="security/audit-log">Audit logs</DocLink>.
+</ShowFor>
+
+## Unexpected disconnects
+
+A client connects successfully and then drops — either on its own or because TBMQ closed the session.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `clientDisconnects_total` | Every established-session disconnect, all reasons together — it carries no reason label, so a rate spike tells you *that* clients are dropping, not *why*. |
+| `DisconnectServiceImpl` logs (`DEBUG`) | "Init client disconnection. Reason - …" — the client id, session id, and `DisconnectReasonType` for a specific drop. Enable the logger (see [Enabling component logs](#enabling-component-logs) below) — it doesn't show at the default root level. |
+| `connectedSessions` | Per-node live channel count. Falling in step with the disconnect rate means sessions are genuinely going away; staying flat while disconnects churn is the takeover signature below. |
+| Keep-alive configuration | Whether the client's keep-alive interval is realistic for its network — see <DocLink product={props.product} path="user-guide/keep-alive">Keep alive</DocLink>. |
+
+**Interpret**
+
+The counter alone can't tell reasons apart, so the logged `DisconnectReasonType` is what you read for the breakdown. The ones that show up most often in practice:
+
+- **`ON_KEEP_ALIVE`** — the client stopped sending anything within its keep-alive window.
+- **`ON_CONFLICTING_SESSIONS`** / **`ON_CLUSTER_CONFLICTING_SESSIONS`** — another connection using the same client id took over the session, on this node or elsewhere in the cluster.
+- **`ON_RATE_LIMITS`** — an MQTT 3.x client exceeded a configured incoming-message rate limit. An MQTT 5 client hitting the same limit stays connected instead: a QoS 1 or QoS 2 publish gets a PUBACK/PUBREC reporting "Quota exceeded"; a QoS 0 publish is silently dropped with no ack at all.
+- **`ON_QUOTA_EXCEEDED`** — an internal limit was exceeded, for example too many messages queued while a CONNECT was still being processed.
+- **`ON_CHANNEL_CLOSED`** — the client's TCP connection went away.
+- **`ON_ADMINISTRATIVE_ACTION`** — an operator or API call disconnected the client.
+- **`ON_SERVER_SHUTTING_DOWN`** — the node is shutting down and is closing every session on it.
+
+The takeover case is worth calling out on its own: two clients sharing one client id will keep disconnecting each other, as long as both reconnect automatically, as each new CONNECT kicks off the previous session and each kicked-off client's own reconnect logic kicks the other one straight back off. The signature is a `clientDisconnects_total` rate that stays high while `connectedSessions` barely moves — sessions are churning, not draining. That reading holds cleanly for a same-node takeover (`ON_CONFLICTING_SESSIONS`), where the old and new session are on the same node. For the cross-node case (`ON_CLUSTER_CONFLICTING_SESSIONS`), each node's own `connectedSessions` does move — one node loses the old session while another gains the new one — so look at whether the cluster-wide sum stays flat rather than at any single node's gauge.
+
+**Act**
+
+- Give every client a unique client identifier — this is the fix for the takeover case above. See <DocLink product={props.product} path="user-guide/mqtt-client-id">Client ID</DocLink>.
+- Review the keep-alive interval against the client's actual network conditions — see <DocLink product={props.product} path="user-guide/keep-alive">Keep alive</DocLink>.
+- Check whether a configured rate limit is tighter than the client's real traffic.
+
+## Messages are dropped
+
+A publisher gets its PUBLISH acknowledged (or sends QoS 0 without expecting one), but the message never reaches a subscriber.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `droppedMsgs_total` | PUBLISH messages permanently lost, per node. Untagged — it tells you a rate, not a client, topic, or cause. |
+| `flowControl_total{statsName="dropsOverflow"}` | Drops from a subscriber's send buffer overflowing — see **Interpret** below. |
+| `flowControl_total{statsName="dropsTtl"}` | Drops from a delayed message aging out before it could be sent — see **Interpret** below. |
+| `incomingPublishMsg_consumed_total{statsName="failedMsgs"}` | A message was discarded on the main ingest pipeline after processing gave up on it — not merely retried. |
+| `deviceProcessor_total{statsName="failedMsgs"}` | Drops from a failed write to the persistent DEVICE message store — persistence failing, not delivery. |
+| <DocLink product={props.product} path="user-guide/ui/monitoring">Monitoring</DocLink> page's message drop chart | A per-interval delta of the same drop events, reset to zero after each report — compare it against `rate(droppedMsgs_total[5m])`, not the raw counter. |
+
+**Interpret**
+
+Several different things collapse into "a drop," and telling them apart matters:
+
+- **No matching subscription** — nobody is subscribed to a topic a client just published to. This still counts toward `droppedMsgs_total`, but it's a normal, often expected outcome rather than a problem to chase.
+- **`dropsOverflow`** — a subscriber's in-flight window **and** its delay queue behind it are both full, almost always because that subscriber has fallen behind the publisher for a while, not just momentarily. See the [Slow subscribers](#slow-subscribers) playbook. This only adds to `droppedMsgs_total` for a non-persistent, non-retained message — a persistent subscriber's copy stays recoverable from Kafka or Redis, so it isn't counted as lost.
+- **`dropsTtl`** — the message aged out of the delay queue before TBMQ could send it. This isn't an independent cause: a message only lands in the delay queue in the first place because the in-flight window was already full, so `dropsTtl` is usually the same slow-subscriber situation as `dropsOverflow`, just showing up on a longer delay — see [Slow subscribers](#slow-subscribers) here too.
+- **`failedMsgs` on the device processor** — persistence failed, not delivery. That points at Redis (the persistent DEVICE message store), not at the messaging path — see the [Dependency failures](#dependency-failures) playbook.
+- **Rate limiting** — a client's incoming messages, or the broker's total-message budget, hit a configured limit and the PUBLISH is dropped at ingest before it is ever dispatched to a subscriber.
+
+**Act**
+
+- Confirm a subscription actually exists on the topic and that its filter matches what was published — see <DocLink product={props.product} path="user-guide/topics">Topics and wildcards</DocLink>.
+- Check the configured rate limits against the client's or the broker's real traffic.
+- For a slow subscriber or a failing dependency, follow through to the corresponding playbook below rather than treating the drop counter itself as the fix.
+- See <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> for how TBMQ handles a subscriber that can't keep up.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+None of the counters above name a client or a topic. For the client, topic, and reason behind each drop, see <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink>.
+</ShowFor>
+
+## Subscriber receives nothing
+
+A client subscribes successfully but a publish that should reach it never arrives.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| SUBACK reason code | A subscribe is granted or refused **per topic filter** — an invalid filter, a failed authorization check, or (for a persistent APPLICATION client) a shared-subscription topic filter that doesn't exist yet all produce a failure code instead of a granted QoS. |
+| `subscriptions` gauge | Cluster-wide subscription count — confirms the subscription registered somewhere in the cluster at all. |
+| `subscriptionLookup_seconds`, `clientSessionsLookup_seconds` | Lookup latency on the publish path — a sudden rise here points at a bottleneck in matching publishes to subscribers, not at the subscription itself being missing. |
+| `ClientSubscriptionConsumerImpl` logs | Whether a subscription made on one node has propagated to the rest of the cluster. |
+| `retainedMsgLookup_seconds` | Relevant specifically when the expectation is a retained message on subscribe. |
+
+**Interpret**
+
+Ordinary causes, roughly in order of how often they turn out to be it:
+
+- **The topic filter doesn't match the publish topic** — wildcards and exact segments have to line up; test the filter directly rather than assuming.
+- **A QoS 0 message published to an offline persistent session** — QoS 0 is never stored for later delivery, regardless of whether the subscribing session itself is persistent. A persistent client that was offline when a QoS 0 publish went out will never see that message, even after it reconnects.
+- **Shared-subscription semantics** — only one member of a shared-subscription group receives any given message. If you're testing with more than one group member, look at all of them before concluding nothing was delivered — see <DocLink product={props.product} path="user-guide/shared-subscriptions">Shared subscriptions</DocLink>.
+- **The subscription hasn't propagated across the cluster yet** — subscription state replicates between nodes over Kafka; a publish arriving on another node right after the SUBSCRIBE can briefly miss it.
+
+**Act**
+
+- Verify the topic filter by subscribing with the <DocLink product={props.product} path="user-guide/ui/websocket-client">WebSocket client</DocLink> and publishing a test message to the exact topic.
+- Confirm the session type and clean-start behavior match what you expect — see <DocLink product={props.product} path="user-guide/clean-persistent-sessions">Non-persistent and persistent sessions</DocLink>.
+- Review shared-subscription group membership if other members are receiving messages the one you're testing isn't — see <DocLink product={props.product} path="user-guide/shared-subscriptions">Shared subscriptions</DocLink>.
+- See <DocLink product={props.product} path="user-guide/topics">Topics and wildcards</DocLink> for filter syntax.
+
+## Latency and backlog
+
+Publishes succeed and subscribers eventually get them, but end-to-end latency is high or climbing — the broker is falling behind rather than failing outright.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| Kafka consumer lag on `msg-all-consumer-group` (see [Kafka consumer group lag](#kafka-consumer-group-lag)) | Whether the main ingest pipeline is falling behind — often the first symptom to show up, ahead of anything that implies loss. |
+| `incomingPublishMsg_consumed_pack_processing_time_seconds` | Per-poll-batch latency on the main ingest consumers. |
+| `incomingPublishMsg_consumed_total{statsName="tmpFailed"}` | Messages retried on the main ingest pipeline — not lost yet. Only moves under `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so this stays at zero regardless of load. |
+| `incomingPublishMsg_consumed_total{statsName="timeoutMsgs"}` | Messages the main ingest pipeline gave up on and discarded. |
+| `deviceProcessor_pack_processing_time_seconds` | Whole-poll-batch latency for persisting persistent DEVICE client messages. |
+| `appProcessor_total{statsName="tmpTimeoutPublish"}` | PUBLISH messages a persistent APPLICATION client has not yet acknowledged within a processing pass. |
+| `kafkaProducer_send_seconds` | Kafka `send()` latency, per `producerId`. |
+| `delivery_seconds` | Time to hand a PUBLISH to the network layer — the last leg of the delivery path. |
+| `clientActor_msgInQueueTime_seconds`, `deviceActor_msgInQueueTime_seconds` | How long a message waited in an actor's mailbox before being picked up. |
+
+**Interpret**
+
+Growing lag on `msg-all-consumer-group` means the broker is ingesting PUBLISH messages faster than the consumer pool behind it can process them — usually the first sign of trouble, ahead of anything that implies loss. Rising `msgInQueueTime` on either actor family means the actor thread pool doing that work is behind, not just the Kafka consumers feeding it. Rising `kafkaProducer_send_seconds` points at Kafka itself — broker load, network, or replication — rather than at TBMQ's own processing. Timeouts on the app processor (`tmpTimeoutPublish` climbing) mean persistent APPLICATION clients are not acknowledging fast enough to keep the pipeline draining.
+
+**Act**
+
+- Scale broker nodes horizontally, or increase the consumer count for the pipeline that's behind (`queue.msg-all.consumers-count`, `queue.device-persisted-msg.consumers-count`) — each is capped by its topic's partition count, so raising it past that point is a silent no-op. Persistent APPLICATION clients have no equivalent setting to raise; each gets its own per-client consumer instead — see [Kafka consumer group lag](#kafka-consumer-group-lag).
+- If the slowdown traces to one specific downstream — a subscriber, Kafka, or the database — follow through to that playbook instead of tuning consumer counts here.
+- See <DocLink product={props.product} path="architecture">Architecture</DocLink> for how the consumer pools relate to broker nodes, and <DocLink product={props.product} path="installation/config">MQTT broker configuration</DocLink> for the consumer-count parameters.
+
+## Slow subscribers
+
+A publish reaches the broker fine and most subscribers get it promptly, but one subscriber consistently lags — or starts losing messages under load.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `nonWritableClients` | Clients whose channel has crossed the outbound high watermark, right now — a per-node gauge; sum across nodes for a cluster-wide count. |
+| `flowControl_delayedQueueSize` | Messages queued behind a full QoS 1/2 in-flight window — the early warning, before anything is lost. |
+| `flowControl_inflightCount` | Messages currently in that in-flight window, on this node. |
+| `flowControl_total{statsName="dropsOverflow"}` | Drops once both of the above are exhausted — where lag has become loss. |
+| `flowControl_total{statsName="dropsTtl"}` | Drops from a delayed message aging out first — the same condition on a longer delay. |
+
+**Interpret**
+
+`nonWritableClients` above zero for a sustained period means at least one subscriber's channel cannot drain as fast as the broker is writing to it. `delayedQueueSize` climbing is the early warning; `dropsOverflow` climbing means the buffer already overflowed and messages were lost — see [Messages are dropped](#messages-are-dropped) above for what counts as lost and what doesn't. A brief spike during a reconnect burst is ordinary; a level that stays elevated is not.
+
+**Act**
+
+- Fix the slow consumer, or reduce its subscription fan-out.
+- Reconsider the client's type: persistent APPLICATION clients absorb backpressure in Kafka, sized in days/GB of retention, while persistent DEVICE clients are bounded by a much smaller per-client Redis-backed queue. See <DocLink product={props.product} path="user-guide/mqtt-client-type">TBMQ client type</DocLink>.
+- See <DocLink product={props.product} path="user-guide/backpressure">Backpressure</DocLink> for the full mechanism — how TBMQ buffers, pauses, and eventually drops for a subscriber that can't keep up. This playbook only points at the symptoms; that page is the full treatment.
+
+## Resource exhaustion
+
+A node is pegged on CPU or memory, threads pile up, or the process restarts under load — the broker is resource-bound rather than waiting on a downstream dependency.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `process_cpu_usage` | Process CPU utilization, `0`–`1`, on this node. |
+| `system_load_average_1m` | Host load average — catches load from other processes sharing the same host, not just TBMQ. |
+| `jvm_memory_used_bytes{area="heap"}` vs. `jvm_memory_max_bytes{area="heap"}` | Heap usage against the heap ceiling. |
+| `jvm_gc_overhead` | Approximate share of CPU time spent collecting garbage. |
+| `jvm_threads_live_threads` | Live JVM thread count. |
+| `process_files_open_files` vs. `process_files_max_files` | Open file descriptors against the process limit. |
+| `runningActors`, `subscriptionTrieNodes`, `retainMsgTrieNodes`, `retainedMessages` | TBMQ-side growth drivers — whether pressure tracks connection/actor count or accumulated subscription and retained-message state. |
+
+**Interpret**
+
+`jvm_gc_overhead` approaching `1` means the JVM is spending nearly all its CPU time collecting rather than doing broker work — the node is effectively down even though the process is still running. Open file descriptors approaching `process_files_max_files` cap how many more connections the node can accept, since every MQTT connection holds a socket descriptor open. Growing `subscriptionTrieNodes` or `retainMsgTrieNodes` while message traffic stays flat points at subscription or retained-message accumulation, not at load. `retainedMessages` and those two trie gauges are cluster-wide replicated, while `runningActors` is per node — read them accordingly rather than summing what's already cluster-wide; see <DocLink product={props.product} path="prometheus-metrics#aggregating-across-a-cluster">Aggregating across a cluster</DocLink> on the metrics page for the full breakdown.
+
+**Act**
+
+- When Prometheus isn't reachable, `top` gives a fast read on whether a node is CPU- or memory-bound — a stand-in for a quick check, not a replacement for watching these series over time.
+- Sustained high CPU across every node calls for horizontal scaling — add broker nodes. Memory pressure on a single node with a modest connection count usually calls for vertical scaling — raise the heap — instead.
+- Raise the file descriptor limit before raising the connection target per node.
+- See <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink> and <DocLink product={props.product} path="reference/1m-throughput-p2p-performance-test">Scaling P2P messaging to 1M msg/sec</DocLink> for sizing guidance.
+
+## Dependency failures
+
+The broker itself is up and accepting connections, but something behind it — Kafka, PostgreSQL, or the Redis-backed store — is slow or unreachable, and TBMQ is stalling on it.
+
+**Check**
+
+| Signal | What it tells you |
+|---|---|
+| `kafkaProducer_send_seconds`, `kafkaConsumer_commit_seconds` | Kafka `send()` / `commitSync()` latency, per `producerId` / `consumerId` — a rise here points at Kafka itself. |
+| `sqlQueue_queueSize` | Current depth of a database write queue, by `queueName`/`queueIndex` — the backpressure signal for PostgreSQL writes. |
+| `sqlQueue_total{statsName="failedMsgs"}` | Messages that failed to write to the database — the counter adds the whole failed batch's size, not one per batch. |
+| `hikaricp_connections_pending` | Threads currently waiting for a database connection from the pool. |
+| `hikaricp_connections_timeout_total` | Connection acquisitions that gave up waiting. |
+| `deviceProcessor_total{statsName="failedMsgs"}` | Failed writes to the persistent DEVICE message store — Redis- (or Valkey-) backed, distinct from the SQL queues above. |
+| Health API (`/actuator/health`) | Whether `db`, `kafka`, and `redis` are each reachable from this node, right now — only visible once `HEALTH_SHOW_DETAILS=always` is set; the default `never` returns just the aggregate status with no per-component breakdown. See <DocLink product={props.product} path="other/health#configuration">Health API configuration</DocLink>. |
+
+**Interpret**
+
+`sqlQueue_queueSize` climbing while `sqlQueue_total{statsName="successfulMsgs"}` stays flat means TBMQ is producing SQL writes faster than PostgreSQL is draining them. `hikaricp_connections_pending` above zero means threads are waiting for a connection — the pool is undersized for the load, or queries themselves are slow. Rising `kafkaProducer_send_seconds` or `kafkaConsumer_commit_seconds` with no matching rise in TBMQ's own CPU usage points outside the broker, at Kafka. `deviceProcessor_total{statsName="failedMsgs"}` climbing on its own, with the SQL queues above flat, narrows the problem to the Redis (or Valkey) side specifically.
+
+**Act**
+
+- Check the dependency's own health first — <DocLink product={props.product} path="other/health">Health API</DocLink> reports `db`, `kafka`, and `redis` as separate components once `HEALTH_SHOW_DETAILS=always` is set, so a `DOWN` there tells you which one to chase before looking anywhere else.
+- Review connection-pool sizing against real concurrency — the HikariCP pool, and the Kafka producer/consumer counts.
+- Verify TLS and credentials for Redis or Valkey specifically when the persistent DEVICE path is the one failing.
+- See <DocLink product={props.product} path="installation/config">MQTT broker configuration</DocLink> for the pool-size and connection parameters.
+
+## Reading logs
+
+TBMQ writes to `thingsboard-mqtt-broker.log` in `/var/log/thingsboard-mqtt-broker`, plus stdout — both by default. On Kubernetes, each pod logs into its own subdirectory under that path instead, named after the pod (`TB_SERVICE_ID` is set to the pod's own name) — see the Kubernetes tab below.
+
+<Tabs>
+<TabItem label="Docker Compose">
+
+```bash
+docker compose logs -f tbmq1 tbmq2
+docker compose logs tbmq1 tbmq2 | grep ERROR
+docker compose logs -f tbmq1 tbmq2 > tbmq.log
+docker ps
+```
+
+`tbmq1`/`tbmq2` are the two node service names from the <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink>; a single-node <DocLink product={props.product} path="installation/docker">Docker install</DocLink> uses just `tbmq`.
+
+</TabItem>
+<TabItem label="Kubernetes">
+
+```bash
+kubectl get pods
+kubectl logs -f tbmq-0
+kubectl logs -f tbmq-0 | grep ERROR
+kubectl logs -f tbmq-0 > tbmq-0.log
+```
+
+`tbmq-0` is the first pod of the `tbmq` StatefulSet — `kubectl get pods` lists the actual pod names in your cluster. Kubernetes sets each pod's `TB_SERVICE_ID` to that same pod name (via a `fieldRef` on `metadata.name`), which is why the log file sits in a subdirectory named after the pod instead of directly in `/var/log/thingsboard-mqtt-broker`.
+
+</TabItem>
+</Tabs>
+
+## Enabling component logs
+
+TBMQ looks for `logback.xml` at `/config/logback.xml` first, falling back to the packaged copy at `/usr/share/thingsboard-mqtt-broker/conf/logback.xml` only if nothing is mounted at `/config`. The cluster Docker Compose setup and every Kubernetes manifest both mount something at `/config`, so `/config/logback.xml` is the file actually in effect there — the packaged path only matters for a single-node Docker install, which doesn't mount `/config` by default. Either way, `scan="true"` and `scanPeriod="10 seconds"` mean an edit takes effect within ten seconds once it's in the right place — no restart required. This is different from the environment-variable parameters covered in <DocLink product={props.product} path="installation/how-to-change-config">how to change configuration</DocLink>: `logback.xml` is its own file, and Docker and Kubernetes each ship their own copy of it.
+
+The shipped configuration:
+
+```xml
+<configuration scan="true" scanPeriod="10 seconds">
+
+    <appender name="fileLogAppender"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.log</file>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>/var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="fileLogAppender"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>
+```
+
+The `RollingFileAppender` caps each file at 100MB, keeps 30 days of history, and stops growing past a 3GB total cap. `STDOUT` mirrors the same pattern to the console, and `<root level="INFO">` sends everything to both.
+
+To turn on a specific component, add one or more `<logger>` elements between the appenders and `<root>`. For example, to see every detail of the CONNECT/CONNACK path while silencing actor lifecycle noise:
+
+```xml
+<logger name="org.thingsboard.mqtt.broker.actors.client.service.connect" level="TRACE"/>
+<logger name="org.thingsboard.mqtt.broker.actors.DefaultTbActorSystem" level="OFF"/>
+```
+
+**Loggers worth enabling.** Every name below is relative to `org.thingsboard.mqtt.broker.` — prepend that prefix when you write the `<logger name="…">` entry. Rows marked *(package)* cover every class beneath them.
+
+| Area | Logger, and what it covers |
+|---|---|
+| Connect / CONNACK | `actors.client.service.connect` *(package)*<br/>CONNACK send and connection-validation failures, topic-alias and keep-alive adjustments. Does **not** cover auth failures or malformed packets — see the next two rows. |
+| Authentication | `service.auth` *(package)*<br/>Why CONNECTs are rejected: bad credentials, invalid JWT, untrusted certificate, failed HTTP auth. Covers every provider, and is the key logger for [Clients cannot connect](#clients-cannot-connect). |
+| Channel / TLS errors | `server.MqttSessionHandler`<br/>TLS handshake failures, protocol violations, malformed packets, connections dropped mid-handshake. |
+| Disconnect | `actors.client.service.disconnect.DisconnectServiceImpl`<br/>The reason behind a specific client's disconnect. |
+| Subscriptions | `service.subscription.ClientSubscriptionConsumerImpl`<br/>The consumer that replicates subscription state across the cluster — enable it when a subscription made on one node isn't reaching another. |
+| Retained messages | `service.mqtt.retain.RetainedMsgConsumerImpl`<br/>Retained messages not propagating to, or clearing from, other nodes. |
+| Kafka consumer lag | `queue.kafka.stats.TbKafkaConsumerStatsService`<br/>Keeps the [lag line](#kafka-consumer-group-lag) visible after you raise the root level to cut noise; this logger's level controls it independently of root. |
+| Actor system | `actors.DefaultTbActorSystem`<br/>Client actor and session lifecycle — actors created and stopped, not message content. |
+| Stats printing | `service.stats` *(package)*<br/>Keeps the periodic stats dump visible if you turn the root level below INFO. |
+
+<Tabs>
+<TabItem label="Docker Compose">
+
+On the <DocLink product={props.product} path="installation/cluster/docker-compose-setup">cluster setup</DocLink>, `logback.xml` lives on the host at `tbmq/conf/logback.xml`, relative to wherever you cloned the cluster scripts into (`docker/` for TBMQ, `cluster/` for TBMQ PE) — and is copied into the running configuration volume by:
+
+```bash
+./scripts/docker-refresh-config.sh
+```
+
+Both nodes pick up the change automatically within the ten-second scan period — no restart.
+
+The single-node <DocLink product={props.product} path="installation/docker">Docker install</DocLink> doesn't mount `/config` by default, and the running container ships no text editor and isn't writable by its own user — there's no way to edit the packaged file in place. Mount your own file at `/config/logback.xml` instead, which `start-tbmq.sh` prefers over the packaged copy:
+
+<Steps>
+
+1. **Save the configuration** (with your `<logger>` additions) to a file on the host, e.g. `./logback.xml`.
+
+2. **Add a bind mount** to the `tbmq` service in `docker-compose.yml`:
+
+   ```yaml
+   volumes:
+     - ./logback.xml:/config/logback.xml
+     - tbmq-logs:/var/log/thingsboard-mqtt-broker
+     - tbmq-data:/data
+   ```
+
+3. **Recreate the container:**
+
+   ```bash
+   docker compose up -d tbmq
+   ```
+
+</Steps>
+
+From then on the mount is live — further edits to `./logback.xml` on the host reach the container directly, and the ten-second scan still applies. Only the first bind-mount change needs step 3.
+
+</TabItem>
+<TabItem label="Kubernetes">
+
+Edit the `logback` key inside `tbmq-configmap.yml` (in the cloned `k8s/<provider>` directory), then apply it:
+
+```bash
+kubectl apply -f tbmq-configmap.yml
+```
+
+Kubernetes propagates the updated ConfigMap to the mounted volume on its own schedule, and `scanPeriod` picks it up from there — still no pod restart, just a longer wait than the Docker Compose path.
+
+</TabItem>
+</Tabs>
+
+<Aside type="caution">
+  `TRACE` on a busy broker produces a very large volume of output. Scope it to a single package or class, and turn it back off once you have what you need.
+</Aside>
+
+## Kafka consumer group lag
+
+Consumer-group lag reporting is enabled by default (`TB_KAFKA_CONSUMER_STATS_ENABLED`, default `true`), printed every `TB_KAFKA_CONSUMER_STATS_PRINT_INTERVAL_MS` (default `60000` ms). There is nothing to turn on.
+
+```text
+2022-11-27 02:33:23,625 [kafka-consumer-stats-1-thread-1] INFO  o.t.m.b.q.k.s.TbKafkaConsumerStatsService - [msg-all-consumer-group] Topic partitions with lag: [[topic=[tbmq.msg.all], partition=[2], lag=[5]]].
+```
+
+Generic form:
+
+```text
+[<consumer group>] Topic partitions with lag: [[topic=[<topic>], partition=[<partition>], lag=[<count>]], ...].
+```
+
+| Field | Meaning |
+|---|---|
+| `[msg-all-consumer-group]` | Kafka consumer group name |
+| `topic=[tbmq.msg.all]` | Kafka topic |
+| `partition=[2]` | Partition number |
+| `lag=[5]` | Messages the group has not yet consumed on that partition |
+
+<Aside type="note">
+  A line is printed only when at least one partition has non-zero lag. Silence means no backlog — it does not mean the check is disabled.
+</Aside>
+
+Each consumer group belongs to one subsystem, so a lag line points you straight at what's falling behind:
+
+| Group | Subsystem |
+|---|---|
+| `msg-all-consumer-group` | Main incoming PUBLISH pipeline |
+| `device-persisted-msg-consumer-group` | Persistent DEVICE client message persistence |
+| `application-persisted-msg-consumer-group-<clientId>` | Persistent APPLICATION client message delivery |
+| `application-shared-msg-consumer-group-<shareName>-<sharedTopic>` | Shared-subscription APPLICATION client message delivery |
+| `client-session-event-consumer-group` | Session connect/disconnect events |
+| `client-session-event-response-consumer-group-<serviceId>` | Session event responses |
+| `client-session-consumer-group-<id>` | Client session cache replication |
+| `client-subscriptions-consumer-group-<id>` | Subscription cache replication |
+| `retained-msg-consumer-group-<id>` | Retained message cache replication |
+| `blocked-client-consumer-group-<id>` | Blocked clients cache replication |
+| `basic-downlink-msg-consumer-group-<id>` | Non-persistent downlink delivery |
+| `persisted-downlink-msg-consumer-group-<id>` | Persistent downlink delivery |
+| `disconnect-client-command-consumer-group-<serviceId>` | Cross-node disconnect commands |
+| `application-removed-event-consumer-group` | APPLICATION client removal cleanup |
+| `historical-data-consumer-group` | UI monitoring chart aggregation |
+| `internode-notifications-consumer-group-<serviceId>` | Internode notifications |
+| `ie-uplink-consumer-group`, `ie-uplink-notifications-consumer-group-<serviceId>` | Integration uplink |
+| `http-ie-downlink-consumer-group`, `mqtt-ie-downlink-consumer-group`, `kafka-ie-downlink-consumer-group` | Integration downlink per type |
+| `ie-msg-consumer-group-<integrationId>` | Message delivery to one specific integration |
+| `ie-event-consumer-group-<integrationId>` | Client lifecycle event delivery to one specific integration — present only when that integration is subscribed to lifecycle events |
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+PE adds one more monitored group:
+
+| Group | Subsystem |
+|---|---|
+| `dropped-msg-consumer-group-drain` | Dropped-message record delivery — see <DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> |
+</ShowFor>
+
+Every group name is prefixed with the Kafka prefix from configuration (`TB_KAFKA_PREFIX`, empty by default — see <DocLink product={props.product} path="installation/config#kafka-parameters">Kafka parameters</DocLink>), so on a broker with a prefix configured, look for `<prefix>msg-all-consumer-group` rather than the bare name above.
+
+Most groups also carry a trailing id, and the placeholders above mean different things depending on the group:
+
+- **`<serviceId>`** — just that node's `TB_SERVICE_ID`, stable across restarts.
+- **`<id>`** — that node's `TB_SERVICE_ID` plus a suffix generated fresh each time the node starts. The exact group name for these six changes on every restart, so don't expect to find the same name in an old log after a node has restarted — search for the group's name **prefix** instead.
+- **`<clientId>` / `<shareName>-<sharedTopic>`** — the two APPLICATION-client rows aren't per-node at all: each persistent APPLICATION client, and each shared-subscription group, gets its own dedicated consumer group identified by its own client ID or share name and topic.
+- **`<integrationId>`** — the two `ie-…-consumer-group-…` rows are per integration rather than per node: each integration gets its own pair of groups, identified by that integration's ID written as a 32-character UUID with the hyphens stripped (for example, integration `1d2f5d40-1111-2222-3333-444455556666` lags as `ie-msg-consumer-group-1d2f5d40111122223333444455556666`). Lag on one of these points at a single integration falling behind, not at the integration subsystem as a whole.
+
+## Getting help
+
+If none of the playbooks above resolve the issue, have the logs and the relevant metric series ready before reaching out.
+
+<Help />

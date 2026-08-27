@@ -1,28 +1,30 @@
 ---
 title: Introduction
-description: ThingsBoard Community Edition documentation — guides, tutorials, and API references for building open-source IoT solutions.
-selfCanonical: true
+description: TBMQ documentation — scalable, fault-tolerant MQTT broker for IoT deployments.
 tableOfContents: false
 editUrl: false
 next: false
 hero:
-  title: ThingsBoard Docs
-  tagline: Guides, recipes, and API references to build IoT solutions with ThingsBoard Community Edition.
+  title: TBMQ Docs
+  tagline: Scalable, fault-tolerant, and durable messaging for millions of MQTT clients.
   actions:
-    - text: Getting Started
+    - text: Getting started
       icon: rocket
       link: /docs/getting-started/
-    - text: Why ThingsBoard?
+    - text: Why TBMQ?
       icon: right-arrow
       variant: minimal
-      link: /docs/why-thingsboard/
+      link: /docs/why-tbmq/
   gridVariant: lines
   activity:
     type: dashboard
-    product: CE
+    product: TBMQ
 ---
 
-import Introduction from '@includes/docs/introduction.mdx'
+import Introduction from '@includes/docs/mqtt-broker/index.mdx'
+import TbmqIntegrations from '~/components/TbmqIntegrations.astro'
 import { Products } from '~/models/site.models'
 
-<Introduction product={Products.CE}/>
+<Introduction product={Products.TBMQ}/>
+
+<TbmqIntegrations product={Products.TBMQ} />

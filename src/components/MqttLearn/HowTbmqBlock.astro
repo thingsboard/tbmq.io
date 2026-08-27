@@ -1,0 +1,100 @@
+---
+import { Icon } from 'astro-icon/components';
+interface Props {
+	/** One-line tie-in (usually topic.tbmqTieIn). */
+	text: string;
+	/** Optional extra sentence of context. */
+	detail?: string;
+}
+const { text, detail } = Astro.props;
+---
+
+<aside class="how-tbmq">
+	<div class="how-tbmq__head">
+		<Icon name="tabler:bolt" class="how-tbmq__icon" />
+		<h2 class="how-tbmq__title">How TBMQ handles this</h2>
+	</div>
+	<p class="how-tbmq__text">{text}</p>
+	{detail && <p class="how-tbmq__text">{detail}</p>}
+	<div class="how-tbmq__actions">
+		<a class="how-tbmq__btn how-tbmq__btn--primary" href="/product/">Explore the architecture</a>
+		<a class="how-tbmq__btn" href="/docs/">Read the docs</a>
+	</div>
+	<p class="how-tbmq__meta">Free · Apache-2.0 · self-hosted or cloud</p>
+</aside>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.how-tbmq {
+		background: #eaf7ef;
+		border: 1px solid rgba($color-pe-dark, 0.28);
+		border-radius: $radius-xl;
+		padding: $spacing-6;
+	}
+	.how-tbmq__head {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 10px;
+	}
+	.how-tbmq__title {
+		font-size: 15px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-link;
+		margin: 0;
+	}
+	.how-tbmq__text {
+		font-size: 14px;
+		line-height: 1.6;
+		color: $color-text-secondary;
+		margin: 0 0 $spacing-4;
+	}
+	.how-tbmq__actions {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.how-tbmq__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 10px 16px;
+		border-radius: $radius-lg;
+		font-size: 14px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		border: 1px solid $color-border;
+		background: $color-bg-white;
+		color: $color-text-primary;
+		&:hover {
+			border-color: $color-text-muted;
+			text-decoration: none;
+		}
+		&:focus-visible {
+			outline: 2px solid $color-pe;
+			outline-offset: 2px;
+		}
+	}
+	.how-tbmq__btn--primary {
+		background: $color-pe;
+		border-color: $color-pe;
+		color: $color-bg-white;
+		&:hover {
+			background: $color-pe-hover;
+			border-color: $color-pe-hover;
+		}
+	}
+	.how-tbmq__meta {
+		font-size: 12px;
+		color: $color-text-muted;
+		text-align: center;
+		margin: 12px 0 0;
+	}
+	:global(.how-tbmq__icon) {
+		width: 18px;
+		height: 18px;
+		color: $color-pe-dark;
+		flex-shrink: 0;
+	}
+</style>

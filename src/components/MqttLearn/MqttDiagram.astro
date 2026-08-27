@@ -1,0 +1,421 @@
+---
+// Polished HTML/SVG diagram for /mqtt learn guides — the upgrade of AsciiDiagram.
+// Pass the diagram as an inline <svg> in the default slot; it uses the shared `.d-*`
+// vocabulary defined below and the arrow markers (arGray / arGreen / arRed) rendered here.
+//
+// The /mqtt learn pages are forceLightTheme, so colours are intentionally light-locked.
+// AsciiDiagram.astro is kept as a lightweight fallback / quick-scaffold seam.
+interface Props {
+	/** Caption shown under the diagram. */
+	caption?: string;
+	/** Accessible label for the figure (defaults to the caption). */
+	label?: string;
+}
+const { caption, label } = Astro.props;
+---
+
+<figure class="mqtt-diagram" aria-label={label ?? caption}>
+	<svg width="0" height="0" class="mqtt-diagram__defs" aria-hidden="true">
+		<defs>
+			<marker
+				id="arGray"
+				viewBox="0 0 10 10"
+				refX="8.5"
+				refY="5"
+				markerWidth="7"
+				markerHeight="7"
+				orient="auto-start-reverse"
+			>
+				<path d="M0 0 L10 5 L0 10 z" fill="#9aa0a9"></path>
+			</marker>
+			<marker
+				id="arGreen"
+				viewBox="0 0 10 10"
+				refX="8.5"
+				refY="5"
+				markerWidth="7"
+				markerHeight="7"
+				orient="auto-start-reverse"
+			>
+				<path d="M0 0 L10 5 L0 10 z" fill="#17bb52"></path>
+			</marker>
+			<marker
+				id="arRed"
+				viewBox="0 0 10 10"
+				refX="8.5"
+				refY="5"
+				markerWidth="7"
+				markerHeight="7"
+				orient="auto-start-reverse"
+			>
+				<path d="M0 0 L10 5 L0 10 z" fill="#d64545"></path>
+			</marker>
+		</defs>
+	</svg>
+	<div class="mqtt-diagram__canvas">
+		<button class="mqtt-diagram__expand" type="button" aria-label="Enlarge diagram">
+			<svg
+				viewBox="0 0 24 24"
+				width="18"
+				height="18"
+				aria-hidden="true"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"></path>
+			</svg>
+		</button>
+		<slot />
+	</div>
+	{caption && <figcaption class="mqtt-diagram__caption">{caption}</figcaption>}
+</figure>
+
+<script>
+	// Click-to-enlarge for /mqtt diagrams. Runs once per page; binds every diagram
+	// canvas to a single shared <dialog> that shows an enlarged clone of its SVG.
+	function setupMqttDiagramZoom() {
+		const figures = document.querySelectorAll('figure.mqtt-diagram');
+		if (!figures.length) return;
+
+		let modal = document.querySelector('dialog.mqtt-diagram-modal') as HTMLDialogElement | null;
+		if (!modal) {
+			const dialog = document.createElement('dialog');
+			dialog.className = 'mqtt-diagram-modal';
+			dialog.innerHTML =
+				'<div class="mqtt-diagram-modal__inner">' +
+				'<button class="mqtt-diagram-modal__close" type="button" aria-label="Close">' +
+				'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>' +
+				'</button>' +
+				'<div class="mqtt-diagram mqtt-diagram-modal__body"></div>' +
+				'</div>';
+			document.body.appendChild(dialog);
+			dialog.querySelector('.mqtt-diagram-modal__close')?.addEventListener('click', () => dialog.close());
+			dialog.addEventListener('click', (e) => {
+				if (e.target === dialog) dialog.close();
+			});
+			dialog.addEventListener('close', () => {
+				const b = dialog.querySelector('.mqtt-diagram-modal__body');
+				if (b) b.innerHTML = '';
+			});
+			modal = dialog;
+		}
+		const dialogEl = modal;
+		const body = dialogEl.querySelector('.mqtt-diagram-modal__body') as HTMLElement | null;
+		if (!body) return;
+
+		figures.forEach((fig) => {
+			const canvas = fig.querySelector('.mqtt-diagram__canvas') as HTMLElement | null;
+			// The diagram SVG is the direct child of the canvas — NOT the defs svg
+			// (child of the figure) and NOT the expand-button icon (a descendant).
+			const svg = fig.querySelector('.mqtt-diagram__canvas > svg');
+			if (!canvas || !svg || canvas.dataset.zoomReady) return;
+			canvas.dataset.zoomReady = 'true';
+			const open = () => {
+				body.innerHTML = '';
+				body.appendChild(svg.cloneNode(true));
+				dialogEl.showModal();
+			};
+			canvas.addEventListener('click', open);
+			canvas.querySelector('.mqtt-diagram__expand')?.addEventListener('click', (e) => {
+				e.stopPropagation();
+				open();
+			});
+		});
+	}
+
+	setupMqttDiagramZoom();
+</script>
+
+<style lang="scss" is:global>
+	@use '../../styles/variables' as *;
+
+	.mqtt-diagram {
+		margin: $spacing-6 0;
+	}
+	.mqtt-diagram__defs {
+		position: absolute;
+		width: 0;
+		height: 0;
+	}
+	.mqtt-diagram__canvas {
+		position: relative;
+		background: rgba($color-pe, 0.05);
+		border: 1px solid $color-border;
+		border-radius: 12px;
+		padding: 22px 20px;
+		overflow-x: auto;
+		cursor: zoom-in;
+	}
+	// Only the diagram SVG itself (the slotted direct child of the canvas) is sized —
+	// NOT the expand-button icon (a descendant) or the defs svg (a child of the figure).
+	.mqtt-diagram__canvas > svg {
+		display: block;
+		margin: 0 auto;
+		width: 100%;
+		max-width: 680px;
+		min-width: 520px;
+		height: auto;
+	}
+	.mqtt-diagram__caption {
+		margin-top: 10px;
+		font-size: 14px;
+		color: $color-text-muted;
+		text-align: center;
+	}
+
+	// Click-to-enlarge affordance + modal.
+	.mqtt-diagram__expand {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		z-index: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 30px;
+		height: 30px;
+		padding: 0;
+		border: 1px solid $color-border;
+		border-radius: 8px;
+		background: rgba(255, 255, 255, 0.92);
+		color: $color-text-secondary;
+		cursor: zoom-in;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+	}
+	.mqtt-diagram__canvas:hover .mqtt-diagram__expand,
+	.mqtt-diagram__expand:focus-visible {
+		opacity: 1;
+	}
+	.mqtt-diagram__expand:hover {
+		color: $color-pe-link;
+		border-color: $color-pe;
+	}
+	.mqtt-diagram__expand:focus-visible {
+		outline: 2px solid $color-pe;
+		outline-offset: 2px;
+	}
+	@media (hover: none) {
+		.mqtt-diagram__expand {
+			opacity: 1;
+		}
+	}
+
+	.mqtt-diagram-modal {
+		border: none;
+		// The `* { margin: 0 }` reset in _base.scss outranks the UA's
+		// `dialog { margin: auto }` — the rule that actually centres a modal dialog
+		// inside its `inset: 0` box. Without this the modal pins to the top-left.
+		margin: auto;
+		padding: 0;
+		max-width: 96vw;
+		max-height: 94vh;
+		background: transparent;
+		overflow: visible;
+	}
+	.mqtt-diagram-modal::backdrop {
+		background: rgba(20, 22, 28, 0.55);
+	}
+	.mqtt-diagram-modal__inner {
+		position: relative;
+		background: $color-bg-white;
+		border: 1px solid $color-border;
+		border-radius: 14px;
+		padding: 30px 28px;
+		box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.4);
+	}
+	.mqtt-diagram-modal__body {
+		overflow: auto;
+	}
+	dialog.mqtt-diagram-modal .mqtt-diagram-modal__body > svg {
+		// Track the width the modal actually offers — its own 96vw cap less the
+		// inner's 28px side padding — not a raw vw fraction. Any figure looser than
+		// that spills horizontally on viewports under ~1400px and trips the
+		// `overflow: auto` scrollbar on __body.
+		width: min(1400px, calc(96vw - 60px));
+		max-width: none;
+		min-width: 0;
+		height: auto;
+		// Diagram viewBoxes are 680 wide and up to 348 tall, so the tallest one at
+		// 1400px would run past a short viewport. Cap the height and let the viewBox
+		// ratio pull the width back down instead of handing the reader a scrollbar.
+		max-height: calc(94vh - 108px);
+	}
+	.mqtt-diagram-modal__close {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 34px;
+		height: 34px;
+		padding: 0;
+		border: 1px solid $color-border;
+		border-radius: 8px;
+		background: $color-bg-white;
+		color: $color-text-secondary;
+		cursor: pointer;
+	}
+	.mqtt-diagram-modal__close:hover {
+		color: $color-text-primary;
+		border-color: $color-text-muted;
+	}
+	.mqtt-diagram-modal__close:focus-visible {
+		outline: 2px solid $color-pe;
+		outline-offset: 2px;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.mqtt-diagram-modal[open] .mqtt-diagram-modal__inner {
+			animation: mqttDiagramZoomIn 0.18s ease-out;
+		}
+		@keyframes mqttDiagramZoomIn {
+			from {
+				opacity: 0;
+				transform: scale(0.97);
+			}
+			to {
+				opacity: 1;
+				transform: none;
+			}
+		}
+	}
+
+	// Shared SVG vocabulary (light-locked). Scoped under .mqtt-diagram so the
+	// short `.d-*` class names can't leak into the rest of the site.
+	.mqtt-diagram {
+		.d-actor {
+			fill: #fff;
+			stroke: #dfe3ea;
+			stroke-width: 1.5;
+		}
+		.d-actor--hero {
+			fill: #e6f7ed;
+			stroke: #17bb52;
+		}
+		.d-alabel {
+			font:
+				600 13px system-ui,
+				sans-serif;
+			fill: #17181c;
+		}
+		.d-alabel--hero {
+			fill: #166c37;
+		}
+		.d-life {
+			stroke: #d7dbe2;
+			stroke-width: 1.5;
+			stroke-dasharray: 2 5;
+		}
+		.d-line {
+			stroke: #9aa0a9;
+			stroke-width: 2;
+			fill: none;
+		}
+		.d-line--green {
+			stroke: #17bb52;
+		}
+		.d-line--red {
+			stroke: #d64545;
+		}
+		.d-chip {
+			fill: #fff;
+			stroke: #dfe3ea;
+			stroke-width: 1.5;
+		}
+		.d-chip--green {
+			fill: #e6f7ed;
+			stroke: #17bb52;
+		}
+		.d-ctext {
+			font:
+				600 12px ui-monospace,
+				'SF Mono',
+				Menlo,
+				monospace;
+			fill: #17181c;
+		}
+		.d-ctext--green {
+			fill: #166c37;
+		}
+		.d-note {
+			font:
+				500 12px system-ui,
+				sans-serif;
+			fill: #707275;
+		}
+		.d-mid {
+			text-anchor: middle;
+		}
+		.d-end {
+			text-anchor: end;
+		}
+		.d-brk {
+			stroke: #cfd4dc;
+			stroke-width: 1.5;
+			stroke-dasharray: 5 4;
+		}
+		.d-brklabel {
+			font:
+				500 11.5px system-ui,
+				sans-serif;
+			fill: #8a8d94;
+		}
+		.d-danger {
+			font:
+				600 12px system-ui,
+				sans-serif;
+			fill: #c23b3b;
+		}
+		.d-head {
+			font:
+				500 13px system-ui,
+				sans-serif;
+			fill: #63656c;
+		}
+		.d-em {
+			fill: #166c37;
+			font-weight: 700;
+		}
+		.d-feat {
+			font:
+				500 11.5px system-ui,
+				sans-serif;
+			fill: #4f7d63;
+		}
+		.d-tiny {
+			font:
+				500 10.5px system-ui,
+				sans-serif;
+			fill: #9aa0a9;
+			letter-spacing: 0.04em;
+		}
+		.d-glabel {
+			font:
+				700 12px system-ui,
+				sans-serif;
+			fill: #17181c;
+		}
+		.d-yes {
+			font:
+				700 13px system-ui,
+				sans-serif;
+			fill: #166c37;
+		}
+		.d-no {
+			font:
+				700 13px system-ui,
+				sans-serif;
+			fill: #c23b3b;
+		}
+		.d-panelttl {
+			font:
+				600 12.5px system-ui,
+				sans-serif;
+			fill: #17181c;
+		}
+	}
+</style>

@@ -145,6 +145,14 @@ const processedItems = items.map((item) => {
 		z-index: 1;
 	}
 
+	/* Repaint Starlight's variant colours (tip = purple) as a brand-green pill,
+	   whatever variant the card data passes. */
+	.ic-card__badge :global(.sl-badge) {
+		border-color: var(--color-brand);
+		background: var(--color-bg-brand-tint);
+		color: var(--color-brand);
+	}
+
 	/* Card */
 	.ic-card {
 		position: relative;
@@ -169,7 +177,7 @@ const processedItems = items.map((item) => {
 	}
 
 	.ic-card:not(.ic-card--soon):hover {
-		border-color: var(--sl-color-text-accent);
+		border-color: var(--color-brand);
 	}
 
 	.ic-card--soon {
@@ -189,8 +197,10 @@ const processedItems = items.map((item) => {
 		color: inherit;
 	}
 
-	/* Icon area */
+	/* Icon area. Icons drawn with `fill="currentColor"` (the TBMQ mark) pick up the
+	   brand green; third-party logos carry their own fills and ignore this. */
 	.ic-card__icon {
+		color: var(--color-brand);
 		width: auto;
 		height: 2.25rem;
 		display: flex;

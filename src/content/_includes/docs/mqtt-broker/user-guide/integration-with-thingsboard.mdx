@@ -4,30 +4,60 @@ import TabItem from '@components/TabItem.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 
-This guide shows how to integrate TBMQ with <a href="/" target="_blank" rel="noopener noreferrer">ThingsBoard</a> using the ThingsBoard MQTT Integration.
-This guide uses TBMQ client credentials with type **APPLICATION** so that ThingsBoard connects as an APPLICATION client, enabling persistent subscriptions with offline message delivery.
-Read more about client types in the <DocLink product={props.product} path="user-guide/mqtt-client-type">Client types</DocLink> guide.
+This guide shows how to connect <a href="https://thingsboard.io/" target="_blank" rel="noopener noreferrer">ThingsBoard</a> to TBMQ using the
+ThingsBoard MQTT Integration, so that data published by MQTT clients to TBMQ becomes device telemetry in ThingsBoard.
 
-ThingsBoard MQTT Integration acts as an MQTT client: it subscribes to topics, converts the received data into telemetry and attribute updates, and converts downlink messages to a device-suitable format before pushing them back to TBMQ.
+The ThingsBoard MQTT Integration acts as an ordinary MQTT client: it connects to TBMQ, subscribes to a topic filter,
+and converts each received message into telemetry and attribute updates using an uplink data converter.
+This guide configures it as an <DocLink product={props.product} path="user-guide/mqtt-client-type">APPLICATION</DocLink> client
+with a persistent session, so messages published while ThingsBoard is offline are queued by TBMQ and delivered on reconnect.
 
 <Aside>
-  TBMQ must be accessible from the ThingsBoard instance — either co-located, deployed in the cloud with a public IP or DNS name, or reachable via VPN.
-  A ThingsBoard instance running in the cloud cannot connect to a TBMQ deployed in a local network without internet access.
+  TBMQ must be reachable from the ThingsBoard instance — either co-located, deployed in the cloud with a public IP or DNS
+  name, or reachable over a VPN. A ThingsBoard instance running in the cloud cannot connect to a TBMQ deployed in a local
+  network without inbound access.
 </Aside>
 
 <Aside type="caution">
-  ThingsBoard MQTT Integration is a **ThingsBoard PE / Cloud** feature. Ensure your ThingsBoard instance supports Platform Integrations before proceeding.
+  Platform integrations are a **ThingsBoard PE / Cloud** feature. On ThingsBoard CE the Integrations center is not
+  available, so this guide does not apply. See the
+  <a href="https://thingsboard.io/docs/pe/user-guide/integrations/mqtt/" target="_blank" rel="noopener noreferrer">ThingsBoard MQTT Integration</a>
+  documentation for the full reference on the ThingsBoard side.
 </Aside>
 
 ## Prerequisites
 
-- A running <a href="/docs/pe/installation/" target="_blank" rel="noopener noreferrer">ThingsBoard PE</a> instance
-- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance accessible by the ThingsBoard PE instance
-- `mosquitto_pub` MQTT client to send test messages.
+- A running <a href="https://thingsboard.io/docs/pe/installation/" target="_blank" rel="noopener noreferrer">ThingsBoard PE</a>
+  instance, or a <a href="https://thingsboard.io/installations/?product=thingsboard-cloud" target="_blank" rel="noopener noreferrer">ThingsBoard Cloud</a>
+  tenant with integrations enabled
+- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance reachable from ThingsBoard
+- The `mosquitto_pub` MQTT client, to publish a test message
+
+## How the connection works
+
+Four settings decide whether ThingsBoard receives every message or only the ones published while it happens to be
+connected. Three of them live on the ThingsBoard side, one on the TBMQ side:
+
+| Setting | Configured in | Value used here | Why it matters |
+|---|---|---|---|
+| **Client type** | TBMQ client credentials | `Application` | TBMQ creates a dedicated Kafka topic, `tbmq.msg.app.$CLIENT_ID`, for each persistent APPLICATION client and delivers from it with a per-client consumer. This is the high-throughput path intended for a backend consumer such as ThingsBoard. |
+| **Clean session** | ThingsBoard integration → Advanced settings | off | Makes the MQTT session persistent, so TBMQ retains the subscription and queues matching messages while ThingsBoard is disconnected. Left on (the ThingsBoard default), nothing is queued and offline messages are lost. |
+| **Client ID** | ThingsBoard integration → Advanced settings | fixed, e.g. `tbpeintegration` | The per-client Kafka topic is derived from the client ID. With the ThingsBoard default of an auto-generated ID, every reconnect produces a different ID, so the integration resumes a brand-new empty session instead of the one holding its queued messages. |
+| **QoS** | ThingsBoard integration → topic filter | `1` or `2` | Persistence applies only at QoS 1 and above. If either the subscriber or the publisher uses QoS 0, the message takes the non-persistent path and is dropped when the subscriber is offline. |
+
+<Aside type="caution">
+  An APPLICATION client that connects with a non-persistent session gets no persistence at all — messages are delivered
+  only while it is connected. TBMQ flags this on the session details page. See
+  <DocLink product={props.product} path="user-guide/mqtt-client-type">TBMQ client type</DocLink> for the full comparison.
+</Aside>
 
 ## TBMQ setup
 
-Create TBMQ client credentials to use for connecting the ThingsBoard MQTT Integration to TBMQ.
+Create the client credentials that ThingsBoard will use to connect.
+
+These credentials use <DocLink product={props.product} path="security/authentication/basic">Basic authentication</DocLink>,
+which is the one authentication provider TBMQ enables out of the box. If it was turned off on your instance, re-enable it
+on the **Authentication → Providers** page before continuing.
 
 <Steps>
 1. In the TBMQ UI, go to **Authentication → Credentials** and click **Add** (+).
@@ -38,26 +68,27 @@ Create TBMQ client credentials to use for connecting the ThingsBoard MQTT Integr
 </Steps>
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-1.png', alt: 'Navigate to Credentials and click the plus icon', caption: 'Navigate to "Credentials" tab, click on the "plus" icon in the top right corner of the table.' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-2.png', alt: 'Enter credential name, select Application client type and Basic authentication', caption: 'Input client credentials name, select client type. Enable "Basic" authentication type.' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-3.png', alt: 'Enter Username and Password, then click Add', caption: 'Input "Username" and "Password" with chosen values. For example, use "tb-pe" value for Username and "secret" for Password fields. Click "Add" to save credentials.' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-4.png', alt: 'New APPLICATION client credentials created', caption: 'New client credential is created.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-1.png', alt: 'Navigate to Credentials and click the plus icon', caption: 'The Credentials table lists every client credential on the broker. Use the "plus" icon in the top right corner to add one.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-2.png', alt: 'Enter credential name, select Application client type and Basic authentication', caption: 'Client type "Application" is what routes this client to its own Kafka topic. Credentials type "Basic" enables username and password authentication.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-3.png', alt: 'Enter Username and Password, then click Add', caption: 'The Username and Password entered here are the ones ThingsBoard sends in its CONNECT packet. This guide uses "tb-pe" and "secret".' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-add-client-credentials-4.png', alt: 'New APPLICATION client credentials created', caption: 'The new credential appears in the table with client type APPLICATION.' },
 ]} />
-
-<Aside>
-  Basic authentication must be <DocLink product={props.product} path="security/authentication/basic">enabled</DocLink> in TBMQ for these credentials to work.
-</Aside>
 
 ## ThingsBoard setup
 
 ### Create an uplink converter
 
-The uplink converter parses incoming MQTT data and metadata into a format ThingsBoard can consume.
+The uplink converter parses each incoming MQTT message — payload plus metadata such as the topic it arrived on — into the
+device name, attributes, and telemetry that ThingsBoard stores.
 
-In ThingsBoard, go to **Integrations center → Data converters** and click **Add** (+). Name it `TBMQ Uplink Converter`, select type **Uplink**, and paste the decoder script below. Click **Add**.
+In ThingsBoard, go to **Integrations center → Data converters** and add a converter. Name it `TBMQ Uplink Converter`,
+select type **Uplink**, and paste the decoder script below.
+
+The script takes the device name from the fourth topic segment, so a message on
+`tb/mqtt-integration-tutorial/sensors/SN-001/temperature` is attributed to device `SN-001`.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-uplink-converter-tbel-1.png', alt: 'Create TBMQ Uplink Converter in ThingsBoard', caption: 'Create TBMQ Uplink Converter in ThingsBoard.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-uplink-converter-tbel-1.png', alt: 'Create TBMQ Uplink Converter in ThingsBoard', caption: 'The uplink converter with the decoder script. The Events tab on this page later shows each conversion, which is where you debug payload parsing.' },
 ]} />
 
 <Tabs>
@@ -129,50 +160,56 @@ In ThingsBoard, go to **Integrations center → Data converters** and click **Ad
   </TabItem>
 </Tabs>
 
-### Create an MQTT Integration
+### Create an MQTT integration
 
 <Steps>
-1. Go to **Integrations center → Integrations** and click **Add** (+). Name it `MQTT Integration` and select type **MQTT**.
-2. Select the uplink converter you just created.
-3. Leave the **Downlink data converter** field empty and click **Skip**.
-4. Specify the TBMQ **Host** and **Port**. Select **Basic** credentials and enter the TBMQ client credentials.
-   Add topic filter: `tb/mqtt-integration-tutorial/sensors/+/temperature` and select QoS level `1` or higher.
+1. Go to **Integrations center → Integrations** and click **+ Add integration**. Set **Integration type** to **MQTT**,
+   name it `MQTT Integration`, and continue to the next step.
+2. Select the `TBMQ Uplink Converter` you just created.
+3. Leave the **Downlink data converter** field empty and click **Skip** — a downlink converter is only needed to send
+   commands back to devices, which is covered in [Downlink and RPC](#downlink-and-rpc).
+4. Specify the TBMQ **Host** and **Port** (`1883` for the default TBMQ TCP listener). Select **Basic** credentials and
+   enter the username and password created above.
+   Add the topic filter `tb/mqtt-integration-tutorial/sensors/+/temperature` and set **QoS** to `1` or `2`.
 5. Open **Advanced settings**. Uncheck **Clean session** and set **Client ID** to `tbpeintegration`.
-6. (Optional) Click **Check connection** to verify connectivity. Click **Add** to create the integration.
+6. (Optional) Click **Check connection** to verify TBMQ is reachable. Click **Add** to create the integration.
 </Steps>
 
+<Aside>
+  The `+` in the topic filter is a single-level wildcard, so one subscription covers every sensor.
+  See <DocLink product={props.product} path="user-guide/topics">Topics and wildcards</DocLink>.
+</Aside>
+
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-1.png', alt: 'Create MQTT Integration in ThingsBoard — name and type', caption: 'Go to the "Integrations center" section -> "Integrations" page and click "plus" icon to add a new integration. Name it "MQTT Integration", select type "MQTT".' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-2.png', alt: 'Select the uplink converter', caption: 'Add the recently created uplink converter.' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-3.png', alt: 'Leave downlink converter empty and click Skip', caption: 'Leave the "Downlink data converter" field empty. Click "Skip".' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-4.png', alt: 'Specify TBMQ host, port, credentials and topic filter', caption: 'Specify host and port of TBMQ instance. Select "Basic" credentials type and specify TBMQ client credentials. Add a topic filter: "tb/mqtt-integration-tutorial/sensors/+/temperature" and select an MQTT QoS level higher than 0.' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-5.png', alt: 'Advanced settings — uncheck Clean session and set Client ID', caption: 'Now go to the advanced settings. Uncheck the "Clean session" parameter and specify client ID as "tbpeintegration".' },
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-6.png', alt: 'Check connection and click Add', caption: '[Optional] Click on Check connection button to check connection to TBMQ. Click Add button to create the integration.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-1.png', alt: 'Create MQTT Integration in ThingsBoard — name and type', caption: 'Adding a new integration of type MQTT in the Integrations center.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-2.png', alt: 'Select the uplink converter', caption: 'Selecting the uplink converter that will decode messages arriving from TBMQ.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-3.png', alt: 'Leave downlink converter empty and click Skip', caption: 'The downlink converter is optional and can be added later, so this step is skipped.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-4.png', alt: 'Specify TBMQ host, port, credentials and topic filter', caption: 'Connection settings: the TBMQ host and port, Basic credentials, and the topic filter with QoS 1. QoS 0 here would bypass persistence entirely.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-5.png', alt: 'Advanced settings — uncheck Clean session and set Client ID', caption: 'Advanced settings. Clean session unchecked plus a fixed client ID are what make the session persistent and reusable across reconnects.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-add-integration-6.png', alt: 'Check connection and click Add', caption: 'Check connection confirms TBMQ accepted the credentials before the integration is saved.' },
 ]} />
 
-Once the integration is created and the connection is established, go to the **Sessions** page in the TBMQ UI. You should see a new session with status `Connected`.
+## Verify the connection
+
+Once the integration is created, open the <DocLink product={props.product} path="user-guide/ui/sessions">Sessions</DocLink>
+page in the TBMQ UI. A session for client ID `tbpeintegration` should be listed with status `Connected`, client type
+`APPLICATION`, and marked as persistent.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-sessions-1.png', alt: 'TBMQ Sessions page showing ThingsBoard integration connected', caption: 'Go to the "Sessions" page in the TBMQ UI. Upon successful establishment of the connection ThingsBoard to TBMQ, we will see a new session and its status - "Connected".' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-sessions-1.png', alt: 'TBMQ Sessions page showing ThingsBoard integration connected', caption: 'The ThingsBoard integration session on the TBMQ Sessions page. Open the session to inspect its subscriptions and confirm it is persistent.' },
 ]} />
 
-On the **Topics** page (Kafka Management section), you will see the Kafka topic corresponding to the client ID (`tbpeintegration`), along with partition count, replication factor, and topic size.
+Because the client is a persistent APPLICATION client, TBMQ has also created its dedicated Kafka topic. Open
+**Kafka management → Topics** and look for `tbmq.msg.app.tbpeintegration`, listed with its partitions, replicas, and
+size.
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-home-page-1.png', alt: 'Kafka Topics page showing the tbpeintegration topic', caption: 'On the "Topics" page you will see a name of Kafka topic (which corresponds to the client ID specified in the MQTT integration), number of partitions, replication factor and size of the topic.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-home-page-1.png', alt: 'Kafka Topics page showing the tbpeintegration topic', caption: 'The per-client Kafka topic created for the integration. Its name is derived from the client ID, which is why a stable client ID matters.' },
 ]} />
 
 ## Send an uplink message
 
-Simulate a device sending a temperature reading to TBMQ. Run the following command, replacing `$THINGSBOARD_MQTT_BROKER_HOST_NAME`, `username`, and `password` with your broker address and credentials:
-
-```bash
-mosquitto_pub -h $THINGSBOARD_MQTT_BROKER_HOST_NAME -p 1883 -q 1 \
-  -t "tb/mqtt-integration-tutorial/sensors/SN-001/temperature" \
-  -m '{"value":25.1}' -u "username" -P "password"
-```
-
-For this tutorial example:
+Publish a temperature reading as a device would. Replace the host and credentials with your own if you changed them:
 
 ```bash
 mosquitto_pub -h localhost -p 1883 -q 1 \
@@ -180,18 +217,62 @@ mosquitto_pub -h localhost -p 1883 -q 1 \
   -m '{"value":25.1}' -u "tb-pe" -P "secret"
 ```
 
-<ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-uplink-message-1.png', alt: 'Publishing uplink message via mosquitto_pub', caption: 'Publishing uplink message via mosquitto_pub.' },
-]} />
+The `-q 1` is deliberate: at QoS 0 the message would skip the persistent path, so it would be lost rather than queued if
+ThingsBoard happened to be disconnected.
 
-After publishing, open the MQTT Integration in ThingsBoard UI and go to the **Events** tab. You should see the message consumed by the integration.
-
-<ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-events-1.png', alt: 'ThingsBoard integration Events tab showing the received message', caption: 'ThingsBoard integration Events tab showing the received message.' },
-]} />
-
-Go to **Entities → Devices**. You should find a `SN-001` device provisioned by the integration. Click the device and open the **Latest Telemetry** tab — you should see the `temperature` key with value `25.1`.
+<Aside>
+  Publishing with the same credentials as the integration is fine for this test. In production, give each device its own
+  credentials so you can authorize and revoke them independently.
+</Aside>
 
 <ImageGallery product={props.product} images={[
-  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-create-device-1.png', alt: 'SN-001 device created in ThingsBoard with temperature telemetry', caption: 'SN-001 device created in ThingsBoard with temperature telemetry.' },
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-uplink-message-1.png', alt: 'Publishing uplink message via mosquitto_pub', caption: 'Publishing the test message with mosquitto_pub.' },
 ]} />
+
+In ThingsBoard, open the MQTT integration and go to its **Events** tab. An uplink event should show the message as
+received and converted.
+
+<ImageGallery product={props.product} images={[
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-integration-events-1.png', alt: 'ThingsBoard integration Events tab showing the received message', caption: 'The integration Events tab, showing the uplink message and the converter output. This is the first place to look when telemetry does not appear.' },
+]} />
+
+Then go to **Entities → Devices**. The integration provisions a device named `SN-001` on first message. Open it and
+switch to the **Latest telemetry** tab — the `temperature` key should hold `25.1`.
+
+<ImageGallery product={props.product} images={[
+  { src: '/src/assets/images/docs/mqtt-broker/user-guide/integrations/how-to-connect-tbqm-to-thingsboard/tbmq-create-device-1.png', alt: 'SN-001 device created in ThingsBoard with temperature telemetry', caption: 'Device SN-001, provisioned automatically by the uplink converter, with its temperature telemetry.' },
+]} />
+
+To confirm the offline queueing actually works, disable the integration in ThingsBoard, publish a few more messages at
+QoS 1, then re-enable it. The messages queued in TBMQ are delivered as soon as the integration reconnects.
+
+## Downlink and RPC
+
+This guide covers uplink only. To send commands from ThingsBoard back to devices through TBMQ, add a downlink data
+converter to the integration: ThingsBoard encodes the Rule Engine message and publishes it to TBMQ, where the device is
+subscribed. The downlink topic comes from the integration's **Downlink topic pattern** setting, which resolves
+`metadata.topic` from the converter output.
+
+The encoder API and the RPC walkthroughs live in the ThingsBoard documentation:
+
+- <a href="https://thingsboard.io/docs/pe/user-guide/integrations/mqtt/" target="_blank" rel="noopener noreferrer">MQTT Integration</a> — downlink setup and troubleshooting
+- <a href="https://thingsboard.io/docs/pe/user-guide/integrations/downlink-data-converter/" target="_blank" rel="noopener noreferrer">Downlink data converter</a> — the full encoder function reference
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to check |
+|---|---|---|
+| Integration status is **Disconnected**, no session in TBMQ | TBMQ is not reachable, or the connection was refused | Confirm the host and port, and that a firewall or security group is not blocking `1883`. Use **Check connection** in the integration settings. |
+| Connection refused and the client appears under **Authentication → Unauthorized clients** in TBMQ | Wrong username or password, or Basic authentication is disabled | The <DocLink product={props.product} path="user-guide/ui/unauthorized-clients">Unauthorized clients</DocLink> table records the reason for each rejected CONNECT. Verify the credentials and that the Basic provider is enabled. |
+| Session connects but is not persistent, and TBMQ warns about it | **Clean session** is still enabled on the integration | Uncheck **Clean session** in the integration's Advanced settings. |
+| Live messages arrive, but nothing published while ThingsBoard was down | QoS 0 somewhere in the chain, or a non-persistent session | Both the publisher and the integration's topic filter must use QoS 1 or 2. See <DocLink product={props.product} path="user-guide/qos">Quality of service</DocLink>. |
+| A new Kafka topic appears after each reconnect, queued messages are never delivered | **Client ID** is left empty, so ThingsBoard generates a new one per connection | Set a fixed **Client ID** in Advanced settings. Messages queued under a previous ID stay in that session's topic until the session is cleared. |
+| Connection rejected even though credentials are correct | The broker's APPLICATION client limit is reached | `MQTT_APPLICATION_CLIENTS_LIMIT` caps the total number of persistent APPLICATION clients and external system integrations. It defaults to `0`, which disables the limit. |
+| Events appear in TBMQ but the converter produces no telemetry | The payload does not match the decoder script | Open the converter's **Events** tab in ThingsBoard to see the raw payload and the conversion output. The sample script expects JSON shaped like `{"value":25.1}` and a five-segment topic. |
+
+## Next steps
+
+- <DocLink product={props.product} path="user-guide/mqtt-client-type">TBMQ client type</DocLink> — how DEVICE and APPLICATION clients are persisted and delivered
+- <DocLink product={props.product} path="user-guide/clean-persistent-sessions">Non-persistent and persistent sessions</DocLink> — what a persistent session retains
+- <DocLink product={props.product} path="security/mqtts">MQTT over SSL</DocLink> — secure the connection between ThingsBoard and TBMQ
+- <DocLink product={props.product} path="integrations">TBMQ integrations</DocLink> — the reverse direction, where TBMQ itself pushes messages out to HTTP, Kafka, or another MQTT broker

@@ -48,6 +48,14 @@ As per the MQTT 5.0 specification, shared subscriptions do **not** guarantee mes
 While each individual client may receive messages in the order they are assigned, the overall order across the group is not maintained.
 If strict ordering is required, a single non-shared subscriber should be used instead.
 
+## Behavior and constraints
+
+TBMQ enforces the MQTT 5.0 shared-subscription rules:
+
+- **Retained messages are not delivered on subscribe.** Subscribing to `$share/{ShareName}/{TopicFilter}` never triggers retained-message delivery — TBMQ sends retained messages only to regular (non-shared) subscriptions. See <DocLink path="user-guide/retained-messages" product={props.product}>Retained messages</DocLink>.
+- **The `No Local` option is not allowed.** Setting `No Local` to `true` on a shared subscription is a protocol error; TBMQ closes the client's connection.
+- **`ShareName` must be valid.** It must be at least one character long and must not contain the `+` or `#` wildcards — otherwise TBMQ rejects the subscription with a `Topic Filter invalid` reason code. The `{TopicFilter}` itself may use wildcards as usual.
+
 ## Subscribing to shared subscriptions
 
 The following example demonstrates how two subscribers join the same shared subscription group and then receive distributed messages.
@@ -211,4 +219,6 @@ Key points:
 - Only one client in the group receives each matching message, regardless of QoS.
 - QoS does not affect load balancing behavior — it only defines delivery guarantees for each individual client.
 
-**Best practice:** use the same QoS level for all subscribers within a shared group. This consistency simplifies message flow, ensures predictable behavior, and makes it easier to debug and monitor message delivery across clients.
+<Aside type="tip">
+  As a best practice, use the same QoS level for all subscribers within a shared group. This consistency simplifies message flow, ensures predictable behavior, and makes it easier to debug and monitor message delivery across clients.
+</Aside>

@@ -1,0 +1,103 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnTypeCards from '@components/MqttLearn/LearnTypeCards.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What port does MQTT over TLS use?',
+		a: 'Port 8883 by default for MQTT over TLS (MQTTS), versus 1883 for plaintext MQTT. Over WebSocket, secure WSS commonly uses 8084 or 8085 depending on the broker — TBMQ uses 8085 for WSS and 8084 for plain WS.',
+	},
+	{
+		q: 'What is the difference between one-way and mutual TLS?',
+		a: 'In one-way TLS the broker presents a certificate so the client can verify it and encrypt the channel; the client still authenticates separately (e.g. with a password). In mutual TLS (mTLS) the client also presents a certificate, so the handshake authenticates both ends at once.',
+	},
+	{
+		q: 'Does TLS replace authentication?',
+		a: 'Only if you use mutual TLS with client certificates. Plain (one-way) TLS just encrypts the channel and proves the broker’s identity — you still need an authentication method such as username/password or a token to identify the client.',
+	},
+	{
+		q: 'Is MQTTS a different protocol?',
+		a: 'No. MQTTS is just MQTT running inside a TLS connection — the same MQTT packets, wrapped in an encrypted transport. The broker terminates TLS and then speaks ordinary MQTT underneath.',
+	},
+	{
+		q: 'Does TLS add much overhead to MQTT?',
+		a: 'Mostly a one-time cost at connection setup for the handshake. Because MQTT keeps one long-lived connection open, that cost is spread across every message that follows, and per-message encryption overhead is small.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mqtt-tls" faq={faq}>
+	<p>
+		Plain MQTT on port 1883 sends everything — including passwords — as clear text, which is unacceptable across an
+		untrusted network. <strong>MQTT over TLS</strong> (MQTTS) fixes that by running the same MQTT protocol inside an encrypted
+		TLS channel. It’s the first of the three layers of <a href="/mqtt/security/">MQTT security</a>.
+	</p>
+
+	<h2>How MQTT over TLS works</h2>
+	<p>
+		Before any MQTT packet is sent, the client and broker perform a TLS handshake: the broker presents its certificate,
+		the two negotiate keys, and an encrypted channel is established. The <a href="/mqtt/mqtt-connection/">CONNECT</a> and
+		every message after it then travel inside that channel, unreadable to anyone on the path. Secure MQTT listens on
+		<code>8883</code> by default.
+	</p>
+
+	<MqttDiagram caption="MQTT over TLS: a handshake sets up an encrypted channel, then MQTT flows inside it">
+		<svg
+			viewBox="0 0 680 268"
+			role="img"
+			aria-label="MQTT over TLS: the client and broker complete a TLS handshake, then exchange MQTT CONNECT and CONNACK inside the encrypted channel"
+		>
+			<rect class="d-actor" x="110" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="170" y="46">Client</text>
+			<rect class="d-actor d-actor--hero" x="450" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="510" y="46">Broker</text>
+			<rect x="120" y="138" width="440" height="104" rx="8" style="fill:#eaf7ef;stroke:#bfe3cd"></rect>
+			<text class="d-feat" x="132" y="156">TLS-encrypted channel · port 8883</text>
+			<line class="d-life" x1="170" y1="58" x2="170" y2="252"></line>
+			<line class="d-life" x1="510" y1="58" x2="510" y2="252"></line>
+			<line class="d-line" x1="170" y1="88" x2="507" y2="88" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="270" y="77" width="140" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="92">TLS ClientHello</text>
+			<line class="d-line" x1="510" y1="116" x2="173" y2="116" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="242" y="105" width="196" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="120" style="font-size:11px">ServerHello + certificate</text>
+			<line class="d-line d-line--green" x1="170" y1="186" x2="507" y2="186" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="282" y="175" width="116" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="190">MQTT CONNECT</text>
+			<line class="d-line d-line--green" x1="510" y1="216" x2="173" y2="216" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="298" y="205" width="84" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="220">CONNACK</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>One-way vs mutual TLS</h2>
+	<LearnTypeCards
+		cards={[
+			{
+				icon: 'tabler:shield-lock',
+				title: 'One-way TLS',
+				text: 'Only the broker presents a certificate. The channel is encrypted and the broker is verified, but the client still authenticates separately (password, token, etc.).',
+			},
+			{
+				icon: 'tabler:certificate',
+				title: 'Mutual TLS (mTLS)',
+				text: 'The client also presents a certificate, so the TLS handshake authenticates both ends of the connection.',
+			},
+		]}
+	/>
+	<p>
+		With mutual TLS, the client’s certificate is what identifies it to the broker — see
+		<a href="/mqtt/mqtt-client-certificates/">client certificate authentication</a>.
+	</p>
+
+	<h2>TLS in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> exposes TLS listeners for MQTT on port <code>8883</code> and for secure WebSocket (WSS) on <code
+			>8085</code
+		>. Both are provided but ship disabled until you configure a server certificate. See the
+		<a href="/docs/security/mqtts/">MQTTS setup guide</a> and
+		<a href="/docs/security/listeners/">listener configuration</a> for details.
+	</p>
+</MqttTopicLayout>

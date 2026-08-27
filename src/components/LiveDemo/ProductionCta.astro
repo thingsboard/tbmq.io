@@ -1,0 +1,158 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const cards = [
+	{
+		icon: 'tabler:server',
+		title: 'TBMQ Professional',
+		text: 'Deploy on your own infrastructure with full enterprise controls — RBAC, OAuth 2.0, White Labeling, and advanced security at any scale.',
+		cta: 'Start free trial',
+		href: '/docs/pe/installation/',
+	},
+	{
+		icon: 'tabler:cloud',
+		title: 'TBMQ Private Cloud',
+		text: 'Fully managed by the ThingsBoard team, from deployment to scaling. No infrastructure to run, no upgrades to plan — just connect.',
+		cta: 'Learn more',
+		href: '/pricing/?section=tbmq-options&product=tbmq-private-cloud',
+	},
+];
+---
+
+<section id="ld-production">
+	<div class="inner">
+		<h2 class="reveal">Ready for production?</h2>
+		<p class="lead reveal">When you've seen enough, take TBMQ to production your way.</p>
+		<div class="grid">
+			{
+				cards.map((c, i) => (
+					<div class="prod-card reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<span class="prod-icon-wrap">
+							<Icon name={c.icon} class="prod-icon" />
+						</span>
+						<h3>{c.title}</h3>
+						<p>{c.text}</p>
+						<a class="btn" href={c.href}>
+							{c.cta}
+							<Icon name="tabler:arrow-right" class="btn-icon" />
+						</a>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#ld-production {
+		background-color: $color-white;
+		padding: $spacing-20 $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	h2 {
+		@include section-title;
+		margin: 0 0 16px;
+	}
+
+	.lead {
+		@include text-m;
+		color: $color-text-secondary;
+		margin: 0 0 48px;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 24px;
+		width: 100%;
+		text-align: left;
+
+		@include media-up(md) {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.prod-card {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 32px;
+		border: 1px solid $color-border;
+		border-radius: 14px;
+		background: $color-white;
+		transition:
+			transform $transition-fast,
+			box-shadow $transition-fast,
+			border-color $transition-fast;
+
+		&:hover {
+			transform: translateY(-3px);
+			box-shadow: 0 7px 32px rgba(20, 26, 23, 0.08);
+			border-color: #cfe4d5;
+		}
+
+		h3 {
+			@include card-title;
+			margin: 16px 0 12px;
+		}
+
+		p {
+			@include text-s;
+			color: $color-text-secondary;
+			margin: 0 0 24px;
+			flex-grow: 1;
+		}
+	}
+
+	.prod-icon-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 12px;
+		background: rgba(23, 187, 82, 0.1);
+		color: $color-pe-dark;
+	}
+
+	:global(.prod-icon) {
+		width: 26px;
+		height: 26px;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 24px;
+		line-height: 42px;
+		border-radius: 8px;
+		font-size: 15px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		background-color: $color-pe-dark;
+		color: $color-white;
+		transition: 0.3s;
+
+		&:hover {
+			background-color: $color-pe-link;
+		}
+	}
+
+	:global(.btn-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+</style>

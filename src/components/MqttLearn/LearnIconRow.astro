@@ -1,0 +1,64 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+	/** astro-icon tabler name, e.g. 'tabler:plug-connected' */
+	icon: string;
+	/** bold lead-in label */
+	title: string;
+}
+const { icon, title } = Astro.props;
+---
+
+<div class="learn-icon-row">
+	<span class="learn-icon-row__ic">
+		<Icon name={icon} />
+	</span>
+	{/* A <div>, not <p>, so the layout's global prose <p> sizing doesn't reflow the compact row. */}
+	<div class="learn-icon-row__text">
+		<b class="learn-icon-row__title">{title}</b>
+		<span class="learn-icon-row__desc">— <slot /></span>
+	</div>
+</div>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	// Rows are separate component instances but share the scope id, so the
+	// adjacent-sibling separator resolves across them inside <LearnIconRows>.
+	.learn-icon-row {
+		display: flex;
+		gap: 16px;
+		align-items: flex-start;
+		padding: 16px 20px;
+	}
+	.learn-icon-row + .learn-icon-row {
+		border-top: 1px solid $color-border;
+	}
+	.learn-icon-row__ic {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 38px;
+		height: 38px;
+		border-radius: $radius-lg;
+		background: rgba($color-pe, 0.1);
+		color: $color-pe-link;
+	}
+	:global(.learn-icon-row__ic svg) {
+		width: 20px;
+		height: 20px;
+	}
+	.learn-icon-row__text {
+		font-size: 15px;
+		line-height: 1.55;
+	}
+	.learn-icon-row__title {
+		font-weight: $font-weight-semibold;
+		color: $color-text-primary;
+	}
+	.learn-icon-row__desc {
+		color: $color-text-secondary;
+	}
+</style>

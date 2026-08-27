@@ -9,8 +9,10 @@
  *    (`<ol>`) but found no child elements."
  * This error only surfaces during llms-full.txt generation, far from the source.
  *
- * Fix: replace the markdown list with explicit <ol>/<li> HTML.
- * See CLAUDE.md "Rules for _includes" for details.
+ * Preferred fix: replace the JSX conditional with <ShowFor product={props.product}
+ * show={[…]}>, which keeps Markdown parsing on so the numbered list still compiles.
+ * Where the JSX block has to stay, write the list as explicit <ol>/<li> HTML.
+ * See CLAUDE.md "Shared Content via _includes" for details.
  *
  * Usage:
  *   pnpm lint:steps
@@ -69,9 +71,7 @@ function braceDepthAt(content: string, index: number): number {
 // Replace MDX block comments (the `{/* … */}` form) with same-length
 // whitespace so brace depth counting and offset-based line numbers stay correct.
 function stripMdxComments(content: string): string {
-	return content.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, (m) =>
-		m.replace(/[^\n]/g, ' '),
-	);
+	return content.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, (m) => m.replace(/[^\n]/g, ' '));
 }
 
 function checkFile(filePath: string): Array<{ line: number }> {
@@ -112,7 +112,19 @@ JSX expression {…}. Inside {…} MDX does not process markdown, so the list
 is never compiled to <ol>. Starlight's <Steps> then throws at render time
 with a confusing "no child elements" error during llms-full.txt generation.
 
-Fix — replace the markdown list with explicit <ol>/<li> HTML:
+Preferred fix — swap the JSX conditional for <ShowFor>, which keeps Markdown
+parsing on so the numbered list still compiles to <ol>:
+
+  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+  <Steps>
+
+  1. First step.
+  2. Second step.
+
+  </Steps>
+  </ShowFor>
+
+Where the JSX block has to stay, write the list as explicit <ol>/<li> HTML:
 
   <Steps>
     <ol>
@@ -121,7 +133,7 @@ Fix — replace the markdown list with explicit <ol>/<li> HTML:
     </ol>
   </Steps>
 
-See CLAUDE.md "Rules for _includes" for details.`);
+See CLAUDE.md "Shared Content via _includes" for details.`);
 	process.exit(1);
 }
 

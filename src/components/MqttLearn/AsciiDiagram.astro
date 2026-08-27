@@ -1,0 +1,47 @@
+---
+// Monospaced ASCII diagram block for /mqtt learn guides.
+// SWAP SEAM: to upgrade a diagram, replace the <AsciiDiagram .../> usage on the page with a
+// Claude Design HTML diagram component — the surrounding page prose stays untouched.
+interface Props {
+	/** The ASCII art, passed as a template-literal string so JSX never parses < > | chars. */
+	content: string;
+	/** Optional caption shown under the diagram. */
+	caption?: string;
+	/** Optional accessible label for the figure (defaults to the caption). */
+	label?: string;
+}
+const { content, caption, label } = Astro.props;
+---
+
+<figure class="ascii-diagram" aria-label={label ?? caption}>
+	<pre class="ascii-diagram__pre">{content}</pre>
+	{caption && <figcaption class="ascii-diagram__caption">{caption}</figcaption>}
+</figure>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	.ascii-diagram {
+		margin: $spacing-6 0;
+	}
+	.ascii-diagram__pre {
+		font-family: $font-family-mono;
+		font-size: 13px;
+		line-height: 1.5;
+		color: $color-text-primary;
+		background: $color-bg-light;
+		border: 1px solid $color-border;
+		border-radius: 8px;
+		padding: 20px 24px;
+		margin: 0;
+		overflow-x: auto;
+		white-space: pre;
+		tab-size: 4;
+	}
+	.ascii-diagram__caption {
+		margin-top: 10px;
+		font-size: 14px;
+		color: $color-text-muted;
+		text-align: center;
+	}
+</style>

@@ -1,6 +1,7 @@
 ---
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import { claimFirstContentImage } from '@util/first-content-image';
 import { Products } from '~/models/site.models';
 import 'photoswipe/style.css';
 
@@ -24,29 +25,13 @@ interface Props {
 const { images, product, cardMode = false } = Astro.props;
 
 const productSuffix: Record<Products, string> = {
-	[Products.CE]: 'ce',
-	[Products.PE]: 'pe',
-	[Products.PAAS]: 'paas',
-	[Products.PAAS_EU]: 'paas-eu',
-	[Products.EDGE]: 'edge',
-	[Products.EDGE_PE]: 'edge-pe',
-	[Products.GW]: 'gw',
-	[Products.LICENSE]: 'license',
-	[Products.IOT_HUB]: 'iot-hub',
-	[Products.TRENDZ]: 'trendz',
-	[Products.MOBILE]: 'mobile',
-	[Products.MOBILE_PE]: 'mobile-pe',
 	[Products.TBMQ]: 'tbmq',
 	[Products.TBMQ_PE]: 'tbmq-pe',
 };
 
 // Fallback chain when a product-specific image is missing.
-// e.g. PAAS_EU → PAAS → PE → base.
+// e.g. TBMQ_PE → TBMQ → base.
 const productFallback: Partial<Record<Products, Products[]>> = {
-	[Products.PAAS]: [Products.PE],
-	[Products.PAAS_EU]: [Products.PAAS, Products.PE],
-	[Products.EDGE_PE]: [Products.EDGE],
-	[Products.MOBILE_PE]: [Products.MOBILE],
 	[Products.TBMQ_PE]: [Products.TBMQ],
 };
 
@@ -261,6 +246,13 @@ const processed = await Promise.all(
 );
 
 const isSingle = processed.length === 1;
+
+// This gallery's leading thumb is the page's likely LCP element when it is
+// the first content image on the page — load it eagerly (a `hasDark` pair
+// eager-loads both variants; a display:none <img> is still fetched when
+// eager). Deliberately no fetchpriority boost — see DocImage for why.
+const isFirstContentImage = processed.length > 0 && claimFirstContentImage(Astro.locals);
+const thumbLoading = (i: number) => (i === 0 && isFirstContentImage ? 'eager' : 'lazy');
 const useCardMode = cardMode && isSingle;
 ---
 
@@ -302,7 +294,7 @@ const useCardMode = cardMode && isSingle;
 							alt={processed[0].alt}
 							width={processed[0].fullWidth}
 							height={processed[0].fullHeight}
-							loading="lazy"
+							loading={thumbLoading(0)}
 							decoding="async"
 						/>
 						{processed[0].hasDark && (
@@ -312,7 +304,7 @@ const useCardMode = cardMode && isSingle;
 								alt={processed[0].alt}
 								width={processed[0].fullWidth}
 								height={processed[0].fullHeight}
-								loading="lazy"
+								loading={thumbLoading(0)}
 								decoding="async"
 							/>
 						)}
@@ -321,7 +313,7 @@ const useCardMode = cardMode && isSingle;
 			</figure>
 		) : (
 			<div class="gallery-grid">
-				{processed.map((img) => (
+				{processed.map((img, i) => (
 					<a
 						class="gallery-thumb"
 						href={img.fullSrc}
@@ -337,7 +329,7 @@ const useCardMode = cardMode && isSingle;
 								class:list={[{ 'light-only': img.hasDark }]}
 								src={img.thumbSrc}
 								alt={img.alt}
-								loading="lazy"
+								loading={thumbLoading(i)}
 								decoding="async"
 							/>
 							{img.hasDark && (
@@ -345,7 +337,7 @@ const useCardMode = cardMode && isSingle;
 									class="dark-only"
 									src={img.darkThumbSrc}
 									alt={img.alt}
-									loading="lazy"
+									loading={thumbLoading(i)}
 									decoding="async"
 								/>
 							)}
@@ -397,7 +389,7 @@ const useCardMode = cardMode && isSingle;
 
 	.gallery-thumb:hover,
 	.gallery-thumb:focus-visible {
-		border-color: var(--sl-color-accent);
+		border-color: var(--color-brand);
 		transform: translateY(-2px);
 		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 		outline: none;
@@ -440,7 +432,7 @@ const useCardMode = cardMode && isSingle;
 	}
 
 	.single-thumb:focus-visible {
-		outline: 2px solid var(--sl-color-accent);
+		outline: 2px solid var(--color-brand);
 		outline-offset: 2px;
 	}
 

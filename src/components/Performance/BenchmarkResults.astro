@@ -1,0 +1,650 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+type Metric = { label: string; value: string; hi?: boolean };
+type Benchmark = {
+	kicker: string;
+	title: string;
+	viz: 'fan-in' | 'fan-out' | 'p2p';
+	// Rendered via set:html — may carry inline markup (links). Local constants only.
+	scenarioHtml: string;
+	metrics: Metric[];
+	href: string;
+};
+
+const benchmarks: Benchmark[] = [
+	{
+		kicker: 'Fan-in · Scale',
+		title: '100 million connections',
+		viz: 'fan-in',
+		scenarioHtml:
+			'A 25-node cluster sustained 100M+ concurrent MQTT clients emulating smart trackers while processing 6M messages per second.',
+		metrics: [
+			{ label: 'Throughput', value: '6M msg/sec', hi: true },
+			{ label: 'Connections', value: '100,000,500', hi: true },
+			{ label: 'Avg latency', value: '195 ms' },
+			{ label: 'Delivery', value: '100%' },
+			{ label: 'QoS', value: '1 (at least once)' },
+			{ label: 'CPU', value: '45% utilization' },
+		],
+		href: '/docs/pe/reference/100m-connections-performance-test/',
+	},
+	{
+		kicker: 'Fan-out · Throughput',
+		title: '3M msg/sec, single node',
+		viz: 'fan-out',
+		scenarioHtml:
+			'One 32-vCPU <a href="/">TBMQ</a> node handled a 3M msg/sec fan-out — 100 publishers to 3,000 subscribers — with CPU headroom to spare.',
+		metrics: [
+			{ label: 'Throughput', value: '3M msg/sec', hi: true },
+			{ label: 'Avg latency', value: '7.4 ms', hi: true },
+			{ label: 'Nodes', value: '1 (32 vCPU)' },
+			{ label: 'CPU', value: '54% utilization' },
+			{ label: 'QoS', value: '0 (at most once)' },
+			{ label: 'Payload', value: '66 bytes' },
+		],
+		href: '/docs/pe/reference/3m-throughput-single-node-performance-test/',
+	},
+	{
+		kicker: 'Point-to-point · Delivery',
+		title: '1M msg/sec, guaranteed',
+		viz: 'p2p',
+		scenarioHtml:
+			'Persistent DEVICE clients scaled linearly from 200k to 1M msg/sec with QoS 1 guaranteed delivery, backed by Redis and Kafka.',
+		metrics: [
+			{ label: 'Throughput', value: '1M msg/sec', hi: true },
+			{ label: 'Efficiency', value: '~8,900 msg/sec/core', hi: true },
+			{ label: 'Avg latency', value: '75 ms' },
+			{ label: 'Publish ACK', value: '8 ms' },
+			{ label: 'QoS', value: '1 (at least once)' },
+			{ label: 'Scaling', value: 'Linear, phase by phase' },
+		],
+		href: '/docs/pe/reference/1m-throughput-p2p-performance-test/',
+	},
+];
+---
+
+<section id="benchmark-results">
+	<div class="inner">
+		<SectionHeader
+			class="reveal"
+			title="Benchmarked at every scale"
+			subtitle="TBMQ is proven across the three core MQTT messaging patterns — fan-in, fan-out, and point-to-point."
+		/>
+		<div class="cards">
+			{
+				benchmarks.map((b, i) => (
+					<article class="card reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<div class="card-viz">
+							{b.viz === 'fan-in' && (
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Fan-in: many publishers through the broker to one subscriber"
+								>
+									<defs>
+										<marker
+											id="bm-0"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-1"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-2"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-3"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-4"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M58 36 C 85 36 91 73 118 73"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-0)"
+									/>
+									<path
+										d="M58 72 C 85 72 91 86 118 86"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-1)"
+									/>
+									<path
+										d="M58 108 C 85 108 91 98 118 98"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-2)"
+									/>
+									<path
+										d="M58 144 C 85 144 91 111 118 111"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-3)"
+									/>
+									<path
+										d="M242 92 C 269 92 275 92 302 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-4)"
+									/>
+									<circle cx="44" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="36" r="8" fill="#17bb52" />
+									<circle cx="44" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="72" r="8" fill="#17bb52" />
+									<circle cx="44" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="108" r="8" fill="#17bb52" />
+									<circle cx="44" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="144" r="8" fill="#17bb52" />
+									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="180"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="316" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="92" r="8" fill="#17bb52" />
+									<text
+										x="52"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publishers
+									</text>
+									<text
+										x="316"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscriber
+									</text>
+								</svg>
+							)}
+							{b.viz === 'fan-out' && (
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Fan-out: one publisher through the broker to many subscribers"
+								>
+									<defs>
+										<marker
+											id="bm-5"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-6"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-7"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-8"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-9"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M58 92 C 85 92 91 92 118 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-5)"
+									/>
+									<path
+										d="M242 73 C 269 73 275 36 302 36"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-6)"
+									/>
+									<path
+										d="M242 86 C 269 86 275 72 302 72"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-7)"
+									/>
+									<path
+										d="M242 98 C 269 98 275 108 302 108"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-8)"
+									/>
+									<path
+										d="M242 111 C 269 111 275 144 302 144"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-9)"
+									/>
+									<circle cx="44" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="92" r="8" fill="#17bb52" />
+									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="180"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="316" cy="36" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="36" r="8" fill="#17bb52" />
+									<circle cx="316" cy="72" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="72" r="8" fill="#17bb52" />
+									<circle cx="316" cy="108" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="108" r="8" fill="#17bb52" />
+									<circle cx="316" cy="144" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="144" r="8" fill="#17bb52" />
+									<text
+										x="44"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publisher
+									</text>
+									<text
+										x="308"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscribers
+									</text>
+								</svg>
+							)}
+							{b.viz === 'p2p' && (
+								<svg
+									viewBox="0 0 360 196"
+									role="img"
+									aria-label="Point-to-point: one publisher through the broker to one subscriber"
+								>
+									<defs>
+										<marker
+											id="bm-10"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+										<marker
+											id="bm-11"
+											markerUnits="userSpaceOnUse"
+											markerWidth="10"
+											markerHeight="10"
+											refX="8"
+											refY="5"
+											orient="auto"
+										>
+											<path d="M0,0 L9,5 L0,10 Z" fill="#17bb52" />
+										</marker>
+									</defs>
+									<path
+										d="M58 92 C 85 92 91 92 118 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-10)"
+									/>
+									<path
+										d="M242 92 C 269 92 275 92 302 92"
+										fill="none"
+										stroke="#4fb97a"
+										stroke-width="2.25"
+										stroke-linecap="round"
+										marker-end="url(#bm-11)"
+									/>
+									<circle cx="44" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="44" cy="92" r="8" fill="#17bb52" />
+									<rect x="124" y="62" width="112" height="60" rx="12" fill="#155e2b" />
+									<text
+										x="180"
+										y="93"
+										text-anchor="middle"
+										dominant-baseline="middle"
+										font-size="15"
+										font-weight="700"
+										fill="#fff"
+										letter-spacing="0.6"
+									>
+										BROKER
+									</text>
+									<circle cx="316" cy="92" r="13" fill="none" stroke="#bfe6cd" stroke-width="2" />
+									<circle cx="316" cy="92" r="8" fill="#17bb52" />
+									<text
+										x="44"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Publisher
+									</text>
+									<text
+										x="316"
+										y="174"
+										text-anchor="middle"
+										font-size="15"
+										font-weight="600"
+										fill="#3f4a44"
+										letter-spacing="0.3"
+									>
+										Subscriber
+									</text>
+								</svg>
+							)}
+						</div>
+						<div class="card-body">
+							<p class="kicker">{b.kicker}</p>
+							<h3 class="title">{b.title}</h3>
+							<p class="scenario" set:html={b.scenarioHtml} />
+							<div class="metricgrid">
+								{b.metrics.map((m) => (
+									<div class:list={['mt', { hi: m.hi }]}>
+										<div class="mt-k">{m.label}</div>
+										<div class="mt-v">{m.value}</div>
+									</div>
+								))}
+							</div>
+							<a class="report-link" href={b.href}>
+								Read the full report
+								<Icon name="tabler:arrow-right" class="link-icon" />
+							</a>
+						</div>
+					</article>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#benchmark-results {
+		padding: $spacing-20 $spacing-6;
+		background-color: #f2f8f4;
+	}
+
+	.inner {
+		@include container;
+		max-width: 1400px;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 28px;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		@include media-up(xl) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.card {
+		display: flex;
+		flex-direction: column;
+		background: $color-white;
+		border-radius: 24px;
+		padding: 32px;
+		box-shadow: 0 7px 32px 0 rgba(0, 0, 0, 0.08);
+	}
+
+	// Mini topology diagram in its own rounded, bordered panel; card padding sets the outer spacing.
+	.card-viz {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 24px;
+		padding: 8px 12px;
+		background: linear-gradient(180deg, #f4faf6, #eef7f1);
+		border: 1px solid $color-border-light;
+		border-radius: 14px;
+
+		svg {
+			width: 100%;
+			height: auto;
+			max-height: 184px;
+		}
+	}
+
+	.card-body {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		padding: 0;
+	}
+
+	.kicker {
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		font-size: 13px;
+		font-weight: $font-weight-semibold;
+		color: $color-pe-link;
+		margin: 0 0 12px;
+	}
+
+	.title {
+		font-size: 24px;
+		font-weight: $font-weight-semibold;
+		line-height: 1.25;
+		color: $color-text-primary;
+		margin: 0 0 14px;
+	}
+
+	.scenario {
+		font-size: 16px;
+		line-height: 1.7;
+		color: $color-text-secondary;
+		margin: 0 0 24px;
+		// Reserve 3 lines so the metric tiles start at the same height across
+		// all three cards, keeping the columns aligned row-for-row.
+		min-height: 5.1em;
+
+		// Scenario text is injected via set:html, so links inside need :global.
+		:global(a) {
+			color: $color-pe-link;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+
+	// Metrics as compact tiles; the two headline numbers per card are accented.
+	.metricgrid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		margin: 0 0 28px;
+	}
+
+	.mt {
+		border: 1px solid $color-border;
+		border-radius: 9px;
+		padding: 9px 11px;
+		background: #f7faf8;
+
+		&.hi {
+			background: #eef7f0;
+			border-color: #cfe8d6;
+
+			.mt-v {
+				color: $color-pe-link;
+			}
+		}
+	}
+
+	.mt-k {
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: $color-text-muted;
+	}
+
+	.mt-v {
+		font-size: 15px;
+		font-weight: $font-weight-bold;
+		line-height: 1.3;
+		color: $color-text-primary;
+		font-variant-numeric: tabular-nums;
+		margin-top: 2px;
+	}
+
+	.report-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: auto;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		color: $color-pe-link;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.link-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>

@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BenchmarkHero from '@components/Performance/BenchmarkHero.astro';
+import BenchmarkResults from '@components/Performance/BenchmarkResults.astro';
+import WhyScales from '@components/Performance/WhyScales.astro';
+import BenchmarkTrust from '@components/Performance/BenchmarkTrust.astro';
+import BenchmarkCta from '@components/Performance/BenchmarkCta.astro';
+import ScrollReveal from '@components/ScrollReveal.astro';
+import { Products } from '@models/site.models';
+import { marketingJsonLd } from '~/util/structuredData';
+
+const title = 'MQTT Broker Benchmark – 100M Connections, 3M+ msg/sec';
+const description =
+	'TBMQ MQTT broker benchmarks: 100M concurrent connections at 6M msg/sec, 3M+ messages/sec on a single node, and 1M msg/sec point-to-point — fully reproducible.';
+const jsonLd = marketingJsonLd({
+	path: '/performance/',
+	name: title,
+	description,
+	breadcrumb: 'Performance',
+});
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="performance"
+	gitHubPlatform={Products.TBMQ}
+	jsonLd={jsonLd}
+	ogImageAlt="TBMQ MQTT broker performance benchmarks at 100M connections and 3M+ msg/sec"
+	openContentLinksInNewTab
+>
+	<main>
+		<BenchmarkHero />
+		<BenchmarkResults />
+		<WhyScales />
+		<BenchmarkTrust />
+		<BenchmarkCta />
+	</main>
+	<ScrollReveal />
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	:global(#performance) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+	}
+</style>

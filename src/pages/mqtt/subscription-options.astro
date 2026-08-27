@@ -1,0 +1,110 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'What are MQTT subscription options?',
+		a: 'Per-subscription settings a client sends inside the <code>SUBSCRIBE</code> packet, one set per topic filter. They are the requested maximum QoS and — new in MQTT 5.0 — the <strong>No Local</strong>, <strong>Retain As Published</strong>, and <strong>Retain Handling</strong> flags. They change how the broker delivers messages that match that subscription.',
+	},
+	{
+		q: 'What is a subscription identifier in MQTT 5.0?',
+		a: 'A number a client attaches to a subscription. The broker stores it and stamps it onto every <code>PUBLISH</code> it delivers for that subscription, so a client holding several overlapping subscriptions can tell which one a message matched — without re-matching the topic itself.',
+	},
+	{
+		q: 'What does the Retain Handling option do?',
+		a: 'It controls whether the broker sends retained messages at subscribe time: <code>0</code> always sends them, <code>1</code> sends them only if the subscription did not already exist, and <code>2</code> never sends them. It stops a client re-receiving retained state on every reconnect.',
+	},
+	{
+		q: 'What is the No Local option for?',
+		a: 'With <strong>No Local</strong> set, the broker will not send a message back to the same connection that published it. It prevents feedback loops when a client both publishes to and subscribes to the same topic — common in bridge and mesh setups.',
+	},
+	{
+		q: 'Are subscription options and identifiers available in MQTT 3.1.1?',
+		a: 'Only partly. MQTT 3.1.1 carries a requested maximum QoS per subscription, but <strong>No Local</strong>, <strong>Retain As Published</strong>, <strong>Retain Handling</strong>, and the <strong>subscription identifier</strong> are all MQTT 5.0 additions.',
+	},
+];
+---
+
+<MqttTopicLayout slug="subscription-options" faq={faq}>
+	<p>
+		A subscription is more than a topic filter. When a client sends a <a href="/mqtt/publish-subscribe/">SUBSCRIBE</a>,
+		it can attach a set of options to each filter that tune how the broker delivers matching messages — and
+		<a href="/mqtt/mqtt-5/">MQTT 5.0</a> adds an identifier the broker echoes back on every delivery.
+	</p>
+
+	<h2>How subscription options work</h2>
+	<p>
+		Every entry in a <code>SUBSCRIBE</code> packet pairs a <a href="/mqtt/topics/">topic filter</a> with an options byte.
+		The requested maximum QoS has been there since MQTT 3.1.1; MQTT 5.0 adds three more flags. Together they let the subscriber
+		shape delivery per subscription, not just per connection:
+	</p>
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:arrow-down-bar" title="Maximum QoS">
+			caps the <a href="/mqtt/qos/">QoS</a> this subscription will accept; the broker downgrades any higher-QoS publish to
+			this level.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:repeat-off" title="No Local">
+			the broker won't send a message back to the connection that published it — prevents feedback loops in bridge and
+			mesh setups.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:flag" title="Retain As Published">
+			keep the publisher's RETAIN flag intact when forwarding, instead of clearing it — matters when bridging so
+			downstream retention is preserved.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:download" title="Retain Handling">
+			controls whether <a href="/mqtt/retained-messages/">retained messages</a> are sent at subscribe time: 0 = always, 1
+			= only if the subscription is new, 2 = never.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<h2>The subscription identifier</h2>
+	<p>
+		MQTT 5.0 also lets a client put a numeric <strong>Subscription Identifier</strong> on a subscription. The broker remembers
+		it and stamps it onto every <code>PUBLISH</code> it delivers for that subscription. When a client holds several overlapping
+		<a href="/mqtt/topics/">wildcard</a> subscriptions, it can dispatch each incoming message to the right handler by identifier
+		— instead of re-matching the topic string itself.
+	</p>
+
+	<MqttDiagram caption="A subscription identifier set on SUBSCRIBE is echoed back on every matching PUBLISH">
+		<svg
+			viewBox="0 0 680 244"
+			role="img"
+			aria-label="MQTT subscription identifier: the client subscribes with identifier 7, and the broker stamps subscription identifier 7 onto every matching PUBLISH it delivers, so the client can route by id without re-matching the topic"
+		>
+			<rect class="d-actor" x="90" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-mid" x="150" y="46">Client</text>
+			<rect class="d-actor d-actor--hero" x="450" y="24" width="120" height="34" rx="9"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="510" y="46">Broker</text>
+			<line class="d-life" x1="150" y1="58" x2="150" y2="232"></line>
+			<line class="d-life" x1="510" y1="58" x2="510" y2="232"></line>
+			<line class="d-line" x1="150" y1="96" x2="507" y2="96" marker-end="url(#arGray)"></line>
+			<rect class="d-chip" x="237" y="85" width="206" height="22" rx="11"></rect>
+			<text class="d-ctext d-mid" x="340" y="100" style="font-size:11px">SUBSCRIBE · sensors/# · id 7</text>
+			<line class="d-line d-line--green" x1="510" y1="132" x2="153" y2="132" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="296" y="121" width="88" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="136">SUBACK</text>
+			<line class="d-brk" x1="70" y1="160" x2="590" y2="160"></line>
+			<text class="d-brklabel d-mid" x="330" y="155">later — a message matches the subscription</text>
+			<line class="d-line d-line--green" x1="510" y1="196" x2="153" y2="196" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="241" y="185" width="198" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="340" y="200" style="font-size:11px"
+				>PUBLISH + Subscription Id 7</text
+			>
+			<text class="d-note d-mid" x="330" y="228">Client routes by id 7 — no topic re-match needed</text>
+		</svg>
+	</MqttDiagram>
+
+	<h2>Subscription options and identifiers in TBMQ</h2>
+	<p>
+		<a href="/">TBMQ</a> honors all four subscription options for MQTT 5.0 clients — capping delivered QoS, suppressing local
+		echo, preserving the RETAIN flag, and applying the retain-handling policy — and it supports subscription identifiers,
+		advertising them as available at connect and echoing the identifier on every matching message. You can inspect and edit
+		these per subscription from the
+		<a href="/docs/user-guide/ui/subscriptions/">Subscriptions page</a> in the UI, and the
+		<a href="/docs/user-guide/mqtt-protocol/">MQTT protocol guide</a> lists them among the supported 5.0 features.
+	</p>
+</MqttTopicLayout>

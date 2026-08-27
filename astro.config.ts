@@ -1,14 +1,12 @@
+import { satteri } from '@astrojs/markdown-satteri';
 import starlight from '@astrojs/starlight';
 import { defineConfig, passthroughImageService, sharpImageService } from 'astro/config';
-import rehypeSlug from 'rehype-slug';
-import remarkSmartypants from 'remark-smartypants';
 import { redirects } from './astro.redirects';
 import { sidebar } from './astro.sidebar';
 import { devServerFileWatcher } from './config/integrations/dev-server-file-watcher';
 import { sitemap } from './config/integrations/sitemap';
-import { rehypeMdxIncludeHeadings } from './config/plugins/rehype-mdx-include-headings';
-import { rehypeTasklistEnhancer } from './config/plugins/rehype-tasklist-enhancer';
-import { PROD_ORIGIN } from './src/consts';
+import { satteriMdxIncludeHeadings } from './config/plugins/satteri-mdx-include-headings';
+import { EDIT_BASE_URL, PROD_ORIGIN } from './src/consts';
 
 import icon from 'astro-icon';
 import svgo from 'vite-plugin-svgo';
@@ -110,7 +108,7 @@ export default defineConfig({
         },
         routeMiddleware: './src/routeData.ts',
         editLink: {
-            baseUrl: 'https://github.com/thingsboard/thingsboard.io/edit/main',
+            baseUrl: EDIT_BASE_URL,
         },
         defaultLocale: 'root',
         locales: {
@@ -132,7 +130,7 @@ export default defineConfig({
             // Override Starlight defaults: site_name uses Starlight `title:` ("Docs") and og:type
             // is hard-coded to "article" — neither is correct for our docs. Starlight's mergeHead
             // replaces same-property defaults with these.
-            { tag: 'meta', attrs: { property: 'og:site_name', content: 'ThingsBoard' } },
+            { tag: 'meta', attrs: { property: 'og:site_name', content: 'TBMQ' } },
             { tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
             // Starlight only emits twitter:site if a twitter/x.com entry is set in `social:`.
             // We can't use `social:` here without also rendering a duplicate icon in the header
@@ -145,12 +143,13 @@ export default defineConfig({
     scopedStyleStrategy: 'where',
     compressHTML: false,
     markdown: {
-        smartypants: false,
-        remarkPlugins: [
-            // @ts-expect-error — `remark-smartypants` type is not matching Astro's for some reason even though they both use unified's `Plugin` type
-            [remarkSmartypants, { dashes: false }],
-        ],
-        rehypePlugins: [rehypeSlug, rehypeTasklistEnhancer(), rehypeMdxIncludeHeadings()],
+        // Astro 7's Rust Markdown pipeline. Heading ids (formerly `rehype-slug`) are
+        // built in, and `smartPunctuation` replaces `remark-smartypants` — keep `dashes`
+        // off so "--" stays literal in CLI snippets, as it always has.
+        processor: satteri({
+            hastPlugins: satteriMdxIncludeHeadings(),
+            features: { smartPunctuation: { dashes: false } },
+        }),
     },
     image: {
         domains: ['avatars.githubusercontent.com'],

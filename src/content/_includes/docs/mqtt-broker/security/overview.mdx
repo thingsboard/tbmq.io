@@ -89,8 +89,33 @@ If the flow reaches the end of the list without a `success` or `failure` result,
 
 ## Authorization
 
-Authorization involves granting or denying access to specific resources or actions based on the authenticated client's privileges.
-To achieve this, define topic-level access control by applying configurable rules that determine whether a client can publish to or subscribe from specific topics.
-TBMQ uses regular expression–based topic patterns to enforce these rules.
-Authorization settings are typically configured per <DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials">client credentials</DocLink>.
-Both HTTP and JWT authentication support provider-level authorization rules, enabling dynamic access control based on token claims or external responses.
+Authentication decides whether a client may connect. Authorization decides what it may do once it is connected: which topics it may publish to, and which topic filters it may subscribe to.
+TBMQ expresses this as two lists of regular expressions carried by the client — one for publishing, one for subscribing — so the two directions are controlled independently.
+A client can be allowed to publish to a topic it may not subscribe to, and the other way round.
+
+### How rules are evaluated
+
+- Every `PUBLISH` is checked against the publish patterns, and **each** topic filter in a `SUBSCRIBE` is checked against the subscribe patterns.
+- A pattern must match the **whole** topic, not a fragment of it. `city/.*` permits `city/berlin/temperature`, while the pattern `city` permits nothing except the literal topic `city`.
+- The topic is allowed if **any** pattern in that direction matches. Rules are additive — there are no deny patterns, so access is widened by adding a pattern, never narrowed.
+- An **empty** list denies every topic in that direction. This is how you revoke publishing while leaving subscriptions intact, and it is why an accidentally cleared field locks a client out rather than opening it up.
+- A client with **no rules at all** is unrestricted. That is the case when every authentication provider is disabled, and it is another reason not to run that way outside a lab.
+
+Rules are resolved once, when the client connects. Editing credentials or provider settings therefore takes effect on that client's **next** connection — force a reconnect if a change has to apply immediately.
+
+### Where rules come from
+
+| Source | How the rules are defined |
+|---|---|
+| <DocLink product={props.product} path="security/authentication/basic">Basic</DocLink> and <DocLink product={props.product} path="security/authentication/scram">SCRAM</DocLink> credentials | One publish list and one subscribe list per credentials record, edited in the <DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials">client credentials</DocLink> UI. Both default to `.*`. |
+| <DocLink product={props.product} path="security/authentication/x509">X.509</DocLink> credentials | Several rule sets per record, each keyed by a certificate Common Name matcher. Every set whose key matches the client's CN applies, and patterns may embed the `${cn}` placeholder for per-device scoping. A client whose CN matches no entry fails authentication. |
+| <DocLink product={props.product} path="security/authentication/jwt">JWT</DocLink> provider | Default patterns in the provider settings, optionally replaced per connection by patterns read from token claims. The fallback to the defaults is independent for publish and subscribe. |
+| <DocLink product={props.product} path="security/authentication/http">HTTP</DocLink> provider | Returned by the external service alongside the authentication result, falling back to the provider's configured defaults when absent or unparsable. |
+
+Rules can also be loaded in bulk — see <DocLink product={props.product} path="other/bulk-provisioning">bulk provisioning</DocLink>, which treats an unmapped column and an empty cell differently.
+
+### What a client sees when access is denied
+
+A denial is always reported back, but not the same way in both directions: a rejected publish is answered on the acknowledgement, while a rejected subscription is flagged per topic filter in the `SUBACK`.
+For the exact reason codes and the MQTT 3.x versus 5.0 difference, see <DocLink product={props.product} path="concepts/security/#layer-3-authorization">authorization</DocLink> in the security concepts.
+Every denial is also published as a `CLIENT_AUTHORIZATION_FAILED` <DocLink product={props.product} path="integrations/#client-lifecycle-events">lifecycle event</DocLink>, so integrations can alert on clients that are probing topics they have no rights to.

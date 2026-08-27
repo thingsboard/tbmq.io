@@ -1,0 +1,103 @@
+---
+import { Icon } from 'astro-icon/components';
+---
+
+<section id="benchmark-cta">
+	<div class="inner">
+		<h2 class="reveal">Put TBMQ to the test</h2>
+		<p class="reveal" style="--reveal-delay: 90ms">
+			Spin up TBMQ and benchmark it against your own workload. The same broker that handles
+			100 million connections runs on a single laptop for development.
+		</p>
+		<div class="buttons reveal" style="--reveal-delay: 180ms">
+			<a class="btn btn-white" href="/installations/">
+				Try it now
+				<Icon name="tabler:arrow-up-right" class="btn-icon" />
+			</a>
+			<a class="btn btn-outline" href="/docs/pe/getting-started/">Get started</a>
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#benchmark-cta {
+		background-color: #00240f;
+		padding: 120px $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 900px;
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+
+		h2 {
+			font-size: 42px;
+			font-weight: $font-weight-semibold;
+			color: $color-white;
+			line-height: 1.2;
+			margin: 0 0 24px;
+
+			@include media-down(md) {
+				font-size: 32px;
+			}
+		}
+
+		p {
+			font-size: 18px;
+			line-height: 1.7;
+			color: rgba(255, 255, 255, 0.8);
+			margin: 0 0 40px;
+			max-width: 640px;
+		}
+	}
+
+	.buttons {
+		display: flex;
+		gap: 20px;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 28px;
+		line-height: 44px;
+		border-radius: 8px;
+		font-size: 16px;
+		font-weight: $font-weight-medium;
+		text-decoration: none;
+		transition: 0.3s;
+
+		&.btn-white {
+			background-color: $color-white;
+			color: $color-pe-link;
+
+			&:hover {
+				background-color: #e8e8e8;
+			}
+		}
+
+		&.btn-outline {
+			border: 1px solid rgba(255, 255, 255, 0.6);
+			color: $color-white;
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+				border-color: $color-white;
+			}
+		}
+	}
+
+	:global(.btn-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+</style>
