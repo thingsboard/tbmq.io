@@ -4,6 +4,26 @@ import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="v240PE" showFor="mqtt-broker-pe">v2.4.0 (August 27, 2026)</ConditionalHeading>
+
+This release includes all features, improvements, and bug fixes from [TBMQ v2.4.0](#v240-august-27-2026), along with the following Professional Edition exclusive updates:
+
+**Main features**
+
+- **Dropped Message Analytics:** Dropped messages are now persisted together with the reason they were dropped and surfaced in the UI, so operators can see exactly why a message never reached its subscribers. Results can be rolled up by topic or by client, narrowed with exact-match modes, and filtered by client type, with each reason shown in operator-readable form.
+- **Accurate attribution for every drop:** A message published with an MQTT 5 topic alias is recorded against its real topic. A publish refused for a shared subscription is reported as a single event rather than once per subscriber, so one publish reads as one entry.
+
+**Improvements**
+
+- **White labeling upgrade prompt:** Attempting to configure white labeling on a subscription that does not include it now opens a clear upgrade dialog instead of failing silently, making the available options and the path to enabling them obvious.
+- **Licensed throughput visibility:** The "licensed throughput reached" indicator now tracks actual message refusals, so it stays consistent with the dropped-message metric.
+- **Resilient throughput accounting:** Throughput accounting now stays reliable across a brief cache outage, such as a Redis Cluster or Sentinel failover.
+- **Burst handling under load:** Short traffic bursts are now admitted whenever cluster budget is available.
+
+**Bug fixes**
+
+- **License capacity changes take effect immediately:** Rate limits now pick up the current capacity as soon as a license changes.
+
 <ConditionalHeading level={2} id="v230PE" showFor="mqtt-broker-pe">v2.3.0 (May 12, 2026)</ConditionalHeading>
 
 This release includes all features, improvements, and bug fixes from [TBMQ v2.3.0](#v230-may-12-2026), along with the following Professional Edition exclusive updates:
@@ -41,6 +61,80 @@ This release includes all features, improvements, and bug fixes from [TBMQ v2.2.
 
 The following release notes cover all Community Edition versions included in TBMQ.
 </ShowFor>
+
+## v2.4.0 (August 27, 2026)
+
+Minor release with the following features, infrastructure upgrades, improvements, and bug fixes.
+
+**Breaking changes:**
+
+Several Prometheus metrics and metric tags were renamed in [#342](https://github.com/thingsboard/tbmq/pull/342) and [#343](https://github.com/thingsboard/tbmq/pull/343). Update your queries, recording rules, alerts, and dashboards before upgrading:
+
+- `sqlQueue_<QueueName>_total{...}` becomes `sqlQueue_total{queueName="<QueueName>", ...}` — the queue name moved out of the metric name and into a bounded `queueName` tag, so queues can be selected and aggregated together. The queue depth gauge changes the same way, to `sqlQueue_queueSize{queueName="<QueueName>", ...}`.
+- `producer_seconds*{producerId}` becomes `kafkaProducer_send_seconds*{producerId}` — Kafka send latency.
+- `consumer_seconds*{consumerId, operation="syncCommit"}` becomes `kafkaConsumer_commit_seconds*{consumerId}` — Kafka commit latency. The `operation` tag was always `syncCommit` and has been dropped, so remove it from label matchers.
+- `clientSubscriptionsConsumer` keeps its name, but its `statsName` tag values change: `totalSubscriptions` becomes `totalRecords`, `acceptedSubscriptions` becomes `acceptedRecords`, and `ignoredSubscriptions` becomes `ignoredRecords`. These counters advance per Kafka record consumed from the client subscriptions topic, not per subscription.
+- The `clientSubscriptions` gauge becomes `subscriptions`, and its meaning changes with it: it now reports the total number of subscriptions across all clients, where it previously reported the number of clients holding at least one subscription. The new value is greater than or equal to the old one whenever a client holds more than one subscription, and it matches the `subscriptions` chart in the UI. The value is cluster-wide, so read it from a single node or use `max` rather than summing across nodes.
+
+The `msgDownlink` counter and the `processedBytes` historical key were also removed. Neither ever produced data, so neither needs a dashboard change.
+
+**Main features:**
+
+- [#316](https://github.com/thingsboard/tbmq/pull/316) **Core**: Sparkplug 3.0 compliant and aware MQTT server by @dmytro-landiak;
+- [#323](https://github.com/thingsboard/tbmq/pull/323) **Core & UI**: Deliver client lifecycle events to integrations by @deaflynx and @dmytro-landiak;
+- [#356](https://github.com/thingsboard/tbmq/pull/356) **Core**: Cluster-wide total throughput quota charged before persistence by @dmytro-landiak;
+- [#317](https://github.com/thingsboard/tbmq/pull/317) **Core**: Expose dropped messages count as the droppedMsgs Prometheus counter by @dmytro-landiak.
+
+**Infrastructure upgrades:**
+
+- [#315](https://github.com/thingsboard/tbmq/pull/315) Migration to Java 25 by @dmytro-landiak;
+- [#308](https://github.com/thingsboard/tbmq/pull/308) Upgrade Angular 19 to Angular 21 by @deaflynx.
+
+**Improvements:**
+
+- Core:
+  - [#312](https://github.com/thingsboard/tbmq/pull/312) Honor X-Forwarded-For and X-Real-IP on WS/WSS listeners by @dmytro-landiak;
+  - [#313](https://github.com/thingsboard/tbmq/pull/313) Flow control refactoring: map-based in-flight tracking, event-driven drain, and leak fix by @dmytro-landiak;
+  - [#333](https://github.com/thingsboard/tbmq/pull/333) Memoize Redis SSL material and extend TLS/username test coverage for all deployments by @dmytro-landiak;
+  - [#334](https://github.com/thingsboard/tbmq/pull/334) Remove obsolete JedisClusterTopologyRefresher by @dmytro-landiak;
+  - [#346](https://github.com/thingsboard/tbmq/pull/346) Complete droppedMsgs coverage across the PUBLISH pipeline by @dmytro-landiak;
+  - [#348](https://github.com/thingsboard/tbmq/pull/348) Connection outcome metrics: accepted, refused, and error by @dmytro-landiak;
+  - [#344](https://github.com/thingsboard/tbmq/pull/344) Add clientDisconnects Prometheus counter by @dmytro-landiak;
+  - [#345](https://github.com/thingsboard/tbmq/pull/345) Unify actor processing metrics for client and device actors by @dmytro-landiak;
+  - [#342](https://github.com/thingsboard/tbmq/pull/342) Remove dead msgDownlink counter and rename metrics for Prometheus by @dmytro-landiak;
+  - [#347](https://github.com/thingsboard/tbmq/pull/347) Enrich MqttSessionHandler exception logs with client id and close origin by @dmytro-landiak.
+- UI:
+  - [#310](https://github.com/thingsboard/tbmq/pull/310) Upgrade charts view and time window by @deaflynx;
+  - [#311](https://github.com/thingsboard/tbmq/pull/311) Validate email length and truncate unauthorized client fields to fit varchar(255) by @deaflynx.
+
+**Bug fixes:**
+
+- Core:
+  - [#314](https://github.com/thingsboard/tbmq/pull/314) Keep client-initiated DISCONNECT in FIFO order with pending PUBLISH by @dmytro-landiak;
+  - [#329](https://github.com/thingsboard/tbmq/pull/329) Fix device shared subscription delivery for cross-node subscribers by @dmytro-landiak;
+  - [#328](https://github.com/thingsboard/tbmq/pull/328) Enforce APPLICATION QoS 1 retry cap, set DUP on retransmit, reduce ack WARN noise, and add give-up observability by @dmytro-landiak;
+  - [#325](https://github.com/thingsboard/tbmq/pull/325) Decrement nonWritableClientsCount on session disconnect by @dmytro-landiak;
+  - [#326](https://github.com/thingsboard/tbmq/pull/326) Do not close PROXY protocol LOCAL connections used by health checks by @dmytro-landiak;
+  - [#327](https://github.com/thingsboard/tbmq/pull/327) Release HAProxyMessage in ProxyIpAddressHandler by @dmytro-landiak;
+  - [#332](https://github.com/thingsboard/tbmq/pull/332) Apply TLS and username to Redis/Valkey Sentinel client configuration by @dmytro-landiak;
+  - [#337](https://github.com/thingsboard/tbmq/pull/337) Return per-filter UNSUBACK reason codes by @dmytro-landiak;
+  - [#339](https://github.com/thingsboard/tbmq/pull/339) Correct SUBACK reason codes for persist failures and invalid topic filters by @dmytro-landiak;
+  - [#355](https://github.com/thingsboard/tbmq/pull/355) Apply a changed rate limit configuration to an existing bucket by @dmytro-landiak;
+  - [#353](https://github.com/thingsboard/tbmq/pull/353) Fix lifecycle events topic provisioning and cleanup, and uplink event ordering by @dmytro-landiak;
+  - [#335](https://github.com/thingsboard/tbmq/pull/335) Deregister application processor per-client meters on clear to stop a registry leak by @dmytro-landiak;
+  - [#336](https://github.com/thingsboard/tbmq/pull/336) Deregister integration processor meters on clear to stop a registry leak by @dmytro-landiak;
+  - [#338](https://github.com/thingsboard/tbmq/pull/338) Counter accuracy fixes for subscription, retained, and flow control metrics by @dmytro-landiak;
+  - [#340](https://github.com/thingsboard/tbmq/pull/340) NaN guards, SQL queue depth gauge, and removal of the dead queueSize log field by @dmytro-landiak;
+  - [#341](https://github.com/thingsboard/tbmq/pull/341) Measure delivery on write completion and actor processing in nanoseconds by @dmytro-landiak;
+  - [#343](https://github.com/thingsboard/tbmq/pull/343) Consistent subscriptions gauge, removal of the dead processedBytes key, and rolling upgrade guard by @dmytro-landiak.
+- UI:
+  - [#309](https://github.com/thingsboard/tbmq/pull/309) UI fixes for the release by @deaflynx.
+
+**Security:**
+
+- [#357](https://github.com/thingsboard/tbmq/pull/357) Remediate critical and high CVEs in the TBMQ images by @dmytro-landiak.
+
+**Full changelog**: [v2.3.0...v2.4.0](https://github.com/thingsboard/tbmq/compare/v2.3.0...v2.4.0)
 
 ## v2.3.0 (May 12, 2026)
 

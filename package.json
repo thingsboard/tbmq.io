@@ -26,6 +26,7 @@
     "generate:redirects": "node --experimental-transform-types ./scripts/generate-redirects.ts",
     "generate:nav-sprite": "node ./scripts/generate-nav-sprite.mjs",
     "generate:reading-time": "node ./scripts/mqtt-reading-time.mjs",
+    "generate:config": "python3 ./scripts/generate_config_pages.py",
     "diagrams:arch": "node ./scripts/diagrams/build.mjs"
   },
   "devDependencies": {

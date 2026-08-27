@@ -327,7 +327,10 @@ const titles = Array.isArray(title) ? title : [title];
 				&.white {
 					background-color: white;
 					border: 1px solid white;
-					color: var(--tb-main-color);
+					// Not --tb-main-color: the PE green (#17bb52) is only 2.54:1 on white
+					// and fails WCAG AA even at the 3:1 large-text bar. Same on-light green
+					// as the "Get started" CTA at the bottom of the page.
+					color: $color-pe-link;
 					text-shadow: none;
 
 					&:hover {
