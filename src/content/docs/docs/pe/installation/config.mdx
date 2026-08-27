@@ -31,7 +31,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">HTTP&#95;LOG&#95;CONTROLLER&#95;ERROR&#95;STACK&#95;TRACE</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Logs errors with stacktrace when REST API throws exception.</p>
+    <p class="config-def-desc">Enables or disables logging of errors with stacktrace when the REST API throws an exception.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">HTTP&#95;MAX&#95;PAYLOAD&#95;SIZE&#95;LIMIT&#95;CONFIGURATION</code> · <span class="config-def-label">Default</span> <code>/api/image&#42;/&#42;&#42;=52428800;/api/resource/&#42;&#42;=52428800;/api/&#42;&#42;=16777216</code></p>
@@ -84,7 +84,7 @@ sidebar:
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Enables proxy protocol support as a global setting for all listeners. If enabled, supports both v1 and v2.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+    <p class="config-def-desc">Enables or disables proxy protocol support as a global setting for all listeners. If enabled, supports both v1 and v2.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">NETTY&#95;LEAK&#95;DETECTOR&#95;LVL</code> · <span class="config-def-label">Default</span> <code>DISABLED</code></p>
@@ -116,7 +116,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;TCP&#95;PROXY&#95;PROTOCOL&#95;ENABLED</code></p>
-    <p class="config-def-desc">Enables proxy protocol support for the MQTT TCP listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+    <p class="config-def-desc">Enables or disables proxy protocol support for the MQTT TCP listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TCP&#95;NETTY&#95;BOSS&#95;GROUP&#95;THREADS</code> · <span class="config-def-label">Default</span> <code>1</code></p>
@@ -156,11 +156,11 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;SSL&#95;PROXY&#95;PROTOCOL&#95;ENABLED</code></p>
-    <p class="config-def-desc">Enables proxy protocol support for the MQTT TLS listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+    <p class="config-def-desc">Enables or disables proxy protocol support for the MQTT TLS listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">LISTENER&#95;SSL&#95;PROTOCOL</code> · <span class="config-def-label">Default</span> <code>TLSv1.2</code></p>
-    <p class="config-def-desc">SSL protocol. See &lt;a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms"&gt;this link&lt;/a&gt; for accepted values.</p>
+    <p class="config-def-desc">SSL protocol. See <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a> for accepted values.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">LISTENER&#95;SSL&#95;ENABLED&#95;CIPHER&#95;SUITES</code></p>
@@ -240,7 +240,11 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;WS&#95;PROXY&#95;PROTOCOL&#95;ENABLED</code></p>
-    <p class="config-def-desc">Enables proxy protocol support for the MQTT WS listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+    <p class="config-def-desc">Enables or disables proxy protocol support for the MQTT WS listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;WS&#95;FORWARD&#95;HEADERS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
+    <p class="config-def-desc">Enables or disables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.  Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.  When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.  Ignored when proxy protocol is enabled for this listener (per-listener or via the global listener.proxy&#95;enabled) — PROXY protocol takes precedence.  SECURITY: only enable this when TBMQ is behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their source IP.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">WS&#95;NETTY&#95;SUB&#95;PROTOCOLS</code> · <span class="config-def-label">Default</span> <code>mqttv3.1,mqtt</code></p>
@@ -284,11 +288,15 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;WSS&#95;PROXY&#95;PROTOCOL&#95;ENABLED</code></p>
-    <p class="config-def-desc">Enables proxy protocol support for the MQTT WSS listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+    <p class="config-def-desc">Enables or disables proxy protocol support for the MQTT WSS listener. Unset by default — inherits the global MQTT&#95;PROXY&#95;PROTOCOL&#95;ENABLED value.  If explicitly set, supports both v1 and v2 and takes precedence over the global setting.  Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;WSS&#95;FORWARD&#95;HEADERS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
+    <p class="config-def-desc">Enables or disables honoring HTTP forward headers (X-Forwarded-For, X-Real-IP) on the WebSocket upgrade request to derive the real client IP.  Useful when TBMQ sits behind an HTTP reverse proxy (e.g. NGINX) that cannot send the PROXY protocol on HTTP location blocks.  When enabled, X-Forwarded-For (leftmost IP) wins over X-Real-IP. Falls back to the raw socket address if no usable header is present.  Ignored when proxy protocol is enabled for this listener (per-listener or via the global listener.proxy&#95;enabled) — PROXY protocol takes precedence.  SECURITY: only enable this when TBMQ is behind a trusted reverse proxy that overwrites these headers; otherwise clients can spoof their source IP.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">LISTENER&#95;WSS&#95;PROTOCOL</code> · <span class="config-def-label">Default</span> <code>TLSv1.2</code></p>
-    <p class="config-def-desc">SSL protocol. See &lt;a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms"&gt;this link&lt;/a&gt; for accepted values.</p>
+    <p class="config-def-desc">SSL protocol. See <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a> for accepted values.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">LISTENER&#95;WSS&#95;ENABLED&#95;CIPHER&#95;SUITES</code></p>
@@ -452,6 +460,14 @@ sidebar:
     <p class="config-def-desc">Wait timeout for system messages to be delivered to 'tbmq.msg.retained' topic (in ms).</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;DROPPED&#95;MSG&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
+    <p class="config-def-desc">Poll interval for messages from 'tbmq.msg.dropped' topic (in ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;DROPPED&#95;MSG&#95;CONSUMERS&#95;COUNT</code> · <span class="config-def-label">Default</span> <code>2</code></p>
+    <p class="config-def-desc">Number of parallel consumers draining the 'tbmq.msg.dropped' topic into PostgreSQL on this node.  Each consumer polls, aggregates and upserts on its own thread, so raising this raises the drain rate when  a burst of drops has built up a backlog. Records are keyed by (clientId, reason, topic, direction), which is  exactly the dropped&#95;msg primary key, so all events for one row share a partition and consumers never contend  on the same row. Useful parallelism is capped by the topic partition count ACROSS the cluster: consumers  beyond that stay idle, so keep (nodes x consumers-count) &lt;= partitions.</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;CLIENT&#95;SESSION&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
     <p class="config-def-desc">Poll interval for messages from 'tbmq.client.session' topic (in ms).</p>
   </div>
@@ -546,6 +562,10 @@ sidebar:
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;UPLINK&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
     <p class="config-def-desc">Poll interval for messages from 'tbmq.ie.uplink' topic (in ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;UPLINK&#95;PACK&#95;PROCESSING&#95;TIMEOUT</code> · <span class="config-def-label">Default</span> <code>20000</code></p>
+    <p class="config-def-desc">Timeout for processing a pack of messages from 'tbmq.ie.uplink' topic (in ms).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;UPLINK&#95;NOTIFICATIONS&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
@@ -740,8 +760,24 @@ sidebar:
     <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.msg.retained` topic.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;RETAINED&#95;MSG&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>retries:3</code></p>
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;RETAINED&#95;MSG&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.msg.retained` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DROPPED&#95;MSG&#95;TOPIC</code> · <span class="config-def-label">Default</span> <code>tbmq.msg.dropped</code></p>
+    <p class="config-def-desc">Topic for dropped message events. Acts as a burst buffer in front of PostgreSQL, not as the store.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DROPPED&#95;MSG&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>cleanup.policy:delete;retention.ms:86400000;segment.bytes:26214400;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties. Plain delete retention (1 day) — events are drained into PostgreSQL.  The partition count is the budget for drain parallelism across the whole cluster: the drain consumers  share one group, so at most this many of them do work and any beyond it stay idle. Keep it &gt;= the total  (nodes x queue.dropped-msg.consumers-count) that should drain concurrently; a single partition is correct  but serialises the drain onto one consumer cluster-wide.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DROPPED&#95;MSG&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.msg.dropped` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DROPPED&#95;MSG&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.msg.dropped` topic.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;CLIENT&#95;SESSION&#95;TOPIC</code> · <span class="config-def-label">Default</span> <code>tbmq.client.session</code></p>
@@ -756,7 +792,7 @@ sidebar:
     <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.client.session` topic.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;CLIENT&#95;SESSION&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>retries:3</code></p>
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;CLIENT&#95;SESSION&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.client.session` topic.</p>
   </div>
   <div class="config-def-item">
@@ -772,7 +808,7 @@ sidebar:
     <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.client.subscriptions` topic.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;CLIENT&#95;SUBSCRIPTIONS&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>retries:3</code></p>
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;CLIENT&#95;SUBSCRIPTIONS&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.client.subscriptions` topic.</p>
   </div>
   <div class="config-def-item">
@@ -936,8 +972,8 @@ sidebar:
     <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.uplink` topic.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;UPLINK&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
-    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.uplink` topic.</p>
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;UPLINK&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>max.poll.records:50</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.uplink` topic.  A pack's events are processed one at a time per integration to keep their order, so max.poll.records bounds  how long a single integration's chain can get within one pack, and with it the pack processing time.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;UPLINK&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
@@ -970,6 +1006,18 @@ sidebar:
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;MSG&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.msg.ie` topics.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;EVENT&#95;MSG&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:86400000;segment.bytes:26214400;retention.bytes:104857600;partitions:1;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the dedicated `tbmq.ie.event` lifecycle-event topics.  Retention defaults shorter than the data topic since events are best-effort hints.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;EVENT&#95;MSG&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>max.poll.records:50</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.event` topics.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;EVENT&#95;MSG&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>max.block.ms:5000</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.event` topics.  Lifecycle events are produced synchronously on the MQTT processing thread. Before the first send to a given  integration's event topic, the producer provisions it through the admin client, which can block on  queue.kafka.admin.command-timeout (30 s default) twice - once to list existing topics, once to create the  missing one - a bound that dwarfs max.block.ms below it. A failed topic listing during a Kafka outage is  cached empty for queue.kafka.admin.topics-cache-ttl-ms (300 s default, floored at 60 s), so every event sent  in that window still pays a fresh topic-creation attempt. Lower max.block.ms to tighten the smaller,  producer-side bound at the cost of more dropped events under Kafka pressure.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;INTERNODE&#95;NOTIFICATIONS&#95;TOPIC&#95;PREFIX</code> · <span class="config-def-label">Default</span> <code>tbmq.sys.internode.notifications</code></p>
@@ -1038,10 +1086,6 @@ sidebar:
     <p class="config-def-desc">Maximum number of attempts to initialize the actor before disabling it.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">ACTORS&#95;SYSTEM&#95;PROCESSING&#95;METRICS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Enables or disables actor processing metrics.</p>
-  </div>
-  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">ACTORS&#95;SYSTEM&#95;DISCONNECT&#95;WAIT&#95;TIMEOUT&#95;MS</code> · <span class="config-def-label">Default</span> <code>15000</code></p>
     <p class="config-def-desc">Time the actor system waits during TBMQ node shutdown to process client disconnections (in ms).</p>
   </div>
@@ -1088,7 +1132,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS&#95;CLEANUP&#95;TTL&#95;SEC</code> · <span class="config-def-label">Default</span> <code>604800</code></p>
-    <p class="config-def-desc">Administration TTL for cleaning up disconnected integrations (in s). The cleanup removes topics that persist messages.  Defaults to one week. A value of 0 or negative disables this TTL.</p>
+    <p class="config-def-desc">Administration TTL for cleaning up disconnected integrations (in s). The cleanup deletes both of the  integration's topics, clears its subscriptions, and evicts its lifecycle event types cluster-wide - the  integration stops producing altogether, not just loses its topics. Defaults to one week. A value of 0 or  negative disables this TTL.</p>
   </div>
 </div>
 
@@ -1275,19 +1319,6 @@ sidebar:
   </div>
 </div>
 
-## Redis jedis configuration parameters
-
-<div class="config-def-list">
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">REDIS&#95;JEDIS&#95;CLUSTER&#95;TOPOLOGY&#95;REFRESH&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Enables or disables periodic cluster topology updates.  Useful for Redis cluster setup to handle topology changes,  such as node failover, restarts, or IP address changes.</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">REDIS&#95;JEDIS&#95;CLUSTER&#95;TOPOLOGY&#95;REFRESH&#95;PERIOD&#95;SEC</code> · <span class="config-def-label">Default</span> <code>60</code></p>
-    <p class="config-def-desc">Interval for periodic cluster topology updates (in s).</p>
-  </div>
-</div>
-
 ## SQL DAO configuration parameters
 
 <div class="config-def-list">
@@ -1438,7 +1469,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">AUDIT&#95;LOG&#95;SINK&#95;DATE&#95;FORMAT</code> · <span class="config-def-label">Default</span> <code>YYYY.MM.dd</code></p>
-    <p class="config-def-desc">Date format. Details of the pattern can be found here:  https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html</p>
+    <p class="config-def-desc">Date format. Details of the pattern can be found here:  {'https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html'}</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">AUDIT&#95;LOG&#95;SINK&#95;SCHEME&#95;NAME</code> · <span class="config-def-label">Default</span> <code>http</code></p>
@@ -1471,7 +1502,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SPRING&#95;JPA&#95;HIBERNATE&#95;JDBC&#95;LOB&#95;NON&#95;CONTEXTUAL&#95;CREATION</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Setting this property to true disables contextual LOB creation and forces Hibernate's own LOB implementation. Fixes Postgres JPA error.</p>
+    <p class="config-def-desc">Enables or disables Hibernate's own (non-contextual) LOB implementation. When enabled, replaces JDBC contextual LOB creation to fix a Postgres JPA error.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SPRING&#95;JPA&#95;HIBERNATE&#95;ORDER&#95;BY&#95;DEFAULT&#95;NULL&#95;ORDERING</code> · <span class="config-def-label">Default</span> <code>last</code></p>
@@ -1483,11 +1514,11 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SPRING&#95;DATA&#95;REDIS&#95;REPOSITORIES&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Disables Redis repositories scanning.</p>
+    <p class="config-def-desc">Enables or disables Spring Data Redis repositories scanning.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SPRING&#95;FREEMARKER&#95;CHECK&#95;TEMPLATE&#95;LOCATION</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Spring Freemarker configuration to check that the templates location exists.</p>
+    <p class="config-def-desc">Enables or disables the Spring Freemarker check that the template location exists.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SPRING&#95;MVC&#95;ASYNC&#95;REQUEST&#95;TIMEOUT</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
@@ -1543,7 +1574,7 @@ sidebar:
     <p class="config-def-desc">Redirect URL where the access code from an external user management system will be processed.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">SECURITY&#95;OAUTH2&#95;GITHUB&#95;MAPPER&#95;EMAIL&#95;URL&#95;KEY</code> · <span class="config-def-label">Default</span> <code>https://api.github.com/user/emails</code></p>
+    <p class="config-def-meta"><code class="config-def-env">SECURITY&#95;OAUTH2&#95;GITHUB&#95;MAPPER&#95;EMAIL&#95;URL&#95;KEY</code> · <span class="config-def-label">Default</span> <code>{'https://api.github.com/user/emails'}</code></p>
     <p class="config-def-desc">URL used to retrieve the email addresses mapped for the authenticated GitHub user.</p>
   </div>
 </div>
@@ -1572,8 +1603,8 @@ sidebar:
     <p class="config-def-desc">Enables or disables the MQTT 5 flow control feature for the server. If disabled, the server will not control the number of messages sent to subscribers via "Receive Maximum".  Also applies to MQTT 3.x clients when enabled. "Receive Maximum" for MQTT 3.x clients can be configured using MQTT&#95;FLOW&#95;CONTROL&#95;MQTT&#95;3X&#95;RECEIVE&#95;MAX.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;FLOW&#95;CONTROL&#95;TIMEOUT</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
-    <p class="config-def-desc">Timeout to wait when there is nothing to process for flow control. A separate thread handles sending delayed messages to subscribers (in ms).  If no clients are affected by flow control restrictions, there is no need to continuously try to find and send such messages.</p>
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;FLOW&#95;CONTROL&#95;TTL&#95;SWEEP&#95;INTERVAL&#95;MS</code> · <span class="config-def-label">Default</span> <code>$&#123;mqtt.flow-control.timeout:$&#123;MQTT&#95;FLOW&#95;CONTROL&#95;TIMEOUT:10000&#125;&#125;</code></p>
+    <p class="config-def-desc">Interval between sweeps of the per-client delayed-message buffer that drops messages whose age exceeds 'ttl' (in ms).  Drain on ACK/writability is event-driven, so this sweeper only handles TTL expiry. Defaults to 10 s.  The legacy YAML key 'mqtt.flow-control.timeout' and env var MQTT&#95;FLOW&#95;CONTROL&#95;TIMEOUT remain honoured as fallbacks  for upgrade compatibility.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;FLOW&#95;CONTROL&#95;TTL</code> · <span class="config-def-label">Default</span> <code>600</code></p>
@@ -1609,7 +1640,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;SUBSCRIPTION&#95;ROOT&#95;MULTI&#95;LVL&#95;WILDCARD</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Controls whether clients are permitted to subscribe to the root multi-level wildcard "#".  If set to 'true' (default):    Clients can subscribe to "#", receiving a copy of EVERY message published to the broker.    This is useful for debugging or firehose-style monitoring services.  If set to 'false':    Clients are explicitly denied permission to subscribe to the exact topic "#".    They can still subscribe to specific paths (e.g., "sensors/#") or individual topics.    Recommended for production to prevent accidental or malicious data leakage.</p>
+    <p class="config-def-desc">Enables or disables client subscriptions to the root multi-level wildcard "#".  When true (default), clients can subscribe to "#" and receive a copy of every message published to the broker.  Useful for debugging or firehose-style monitoring services.  When false, clients are denied subscription to the exact topic "#" but can still subscribe to specific paths  (e.g., "sensors/#") or individual topics. Recommended for production to prevent accidental or malicious data leakage.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;SHARED&#95;SUBSCRIPTIONS&#95;PROCESSING&#95;TYPE</code> · <span class="config-def-label">Default</span> <code>ROUND&#95;ROBIN</code></p>
@@ -1644,6 +1675,26 @@ sidebar:
     <p class="config-def-desc">Processing period for clearing retained messages by the MQTT expiry feature (in ms).</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;DROPPED&#95;MSG&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
+    <p class="config-def-desc">Enables tracking of dropped messages. Dropped messages are published to the 'tbmq.msg.dropped' Kafka topic,  persisted into PostgreSQL by a drain consumer and surfaced on the Dropped Messages page.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;DROPPED&#95;MSG&#95;RETENTION&#95;DAYS</code> · <span class="config-def-label">Default</span> <code>7</code></p>
+    <p class="config-def-desc">Number of days a dropped message entry is kept in the database since its last occurrence.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;DROPPED&#95;MSG&#95;MAX&#95;ROWS</code> · <span class="config-def-label">Default</span> <code>100000</code></p>
+    <p class="config-def-desc">Safety cap for the dropped&#95;msg table. The cleanup job removes the oldest entries beyond this limit.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;DROPPED&#95;MSG&#95;CLEANUP&#95;CRON</code> · <span class="config-def-label">Default</span> <code>0 0 &#42; ? &#42; &#42;</code></p>
+    <p class="config-def-desc">Cron job to schedule the cleanup (TTL + max-rows trim) of dropped message entries. Defaults to 'every hour'.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;DROPPED&#95;MSG&#95;CLEANUP&#95;ZONE</code> · <span class="config-def-label">Default</span> <code>UTC</code></p>
+    <p class="config-def-desc">Timezone for the cleanup cron above.</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;CLIENT&#95;SESSION&#95;EXPIRY&#95;CRON</code> · <span class="config-def-label">Default</span> <code>0 0 &#42; ? &#42; &#42;</code></p>
     <p class="config-def-desc">Cron job to schedule clearing of expired and inactive client sessions. Defaults to 'every hour', e.g. at 20:00:00 UTC.</p>
   </div>
@@ -1665,7 +1716,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;MSG&#95;WRITE&#95;AND&#95;FLUSH</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">If enabled, each message published to non-persistent subscribers is flushed immediately. If disabled, messages are buffered and flushed periodically.</p>
+    <p class="config-def-desc">Enables or disables immediate flush of each message published to non-persistent subscribers. When disabled, messages are buffered and flushed periodically.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;BUFFERED&#95;MSG&#95;COUNT</code> · <span class="config-def-label">Default</span> <code>5</code></p>
@@ -1697,7 +1748,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;PERSISTENT&#95;MSG&#95;WRITE&#95;AND&#95;FLUSH</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">If enabled, each message published to persistent DEVICE client subscribers is flushed immediately. If disabled, messages are buffered and flushed periodically.</p>
+    <p class="config-def-desc">Enables or disables immediate flush of each message published to persistent DEVICE client subscribers. When disabled, messages are buffered and flushed periodically.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;PERSISTENT&#95;BUFFERED&#95;MSG&#95;COUNT</code> · <span class="config-def-label">Default</span> <code>5</code></p>
@@ -1705,23 +1756,19 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;APP&#95;MSG&#95;WRITE&#95;AND&#95;FLUSH</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">If enabled, each message published to persistent APPLICATION client subscribers is flushed immediately. If disabled, messages are buffered and flushed periodically.</p>
+    <p class="config-def-desc">Enables or disables immediate flush of each message published to persistent APPLICATION client subscribers. When disabled, messages are buffered and flushed periodically.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;APP&#95;BUFFERED&#95;MSG&#95;COUNT</code> · <span class="config-def-label">Default</span> <code>10</code></p>
     <p class="config-def-desc">Number of messages buffered in the channel before the flush is made. Used when `MQTT&#95;APP&#95;MSG&#95;WRITE&#95;AND&#95;FLUSH` = false.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;RATE&#95;LIMITS&#95;THREADS&#95;COUNT</code> · <span class="config-def-label">Default</span> <code>1</code></p>
-    <p class="config-def-desc">Number of parallel threads dedicated to processing total rate limit checks for incoming messages.</p>
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;TOTAL&#95;RATE&#95;LIMITS&#95;BLOCK&#95;SIZE</code> · <span class="config-def-label">Default</span> <code>0</code></p>
+    <p class="config-def-desc">Number of quota tokens a broker node draws from Redis per replenishment round-trip. Defaults to 0, which  derives max(1, sustained rate / 10), the sustained rate being the licensed capacity over the period above. Larger blocks reduce Redis calls but let idle nodes hold  more of the cluster budget between lease-return ticks. A publish whose fan-out exceeds the node's drawn tokens  draws the shortfall on demand, so this value does not cap a single publish.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;RATE&#95;LIMITS&#95;BATCH&#95;SIZE</code> · <span class="config-def-label">Default</span> <code>50</code></p>
-    <p class="config-def-desc">Number of messages to process in each batch when checking total rate limits for incoming messages.</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;RATE&#95;LIMITS&#95;PERIOD&#95;MS</code> · <span class="config-def-label">Default</span> <code>50</code></p>
-    <p class="config-def-desc">Period to wait before processing a batch of messages for total rate limits (in ms).</p>
+    <p class="config-def-meta"><code class="config-def-env">MQTT&#95;TOTAL&#95;RATE&#95;LIMITS&#95;LEASE&#95;RETURN&#95;MS</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
+    <p class="config-def-desc">Period of the background tick that returns a node's unused drawn tokens to the shared Redis bucket (in ms).  Defaults to 1000. Set to 0 to disable the return tick. Note that a node that draws a block and then goes quiet  holds those tokens indefinitely, so the cluster's effective budget shrinks by the sum of every idle node's  lease. Leave the tick on unless traffic is even across all nodes.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;INCOMING&#95;RATE&#95;LIMITS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>false</code></p>
@@ -1745,7 +1792,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;DEVICE&#95;PERSISTED&#95;MSGS&#95;RATE&#95;LIMITS&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>100:1,1000:60</code></p>
-    <p class="config-def-desc">Limits the count of Device clients persisted messages per time interval (in s). Comma-separated list of limit:seconds pairs.  Example: 100 messages per second or 1000 messages per minute.</p>
+    <p class="config-def-desc">Limits the count of Device clients persisted messages per time interval (in s). Comma-separated list of limit:seconds pairs.  Example: 100 messages per second or 1000 messages per minute.  Applied on broker start. Changing this value resets the token counters across the cluster when more than one  limit:seconds pair is configured, granting one full interval of fresh budget.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;APPLICATION&#95;CLIENTS&#95;LIMIT</code> · <span class="config-def-label">Default</span> <code>0</code></p>
@@ -1860,7 +1907,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;USE&#95;DEFAULT&#95;CLIENT&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Enables the default Redis client configuration.</p>
+    <p class="config-def-desc">Enables or disables the default Redis client configuration.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;CLIENT&#95;NAME</code> · <span class="config-def-label">Default</span> <code>standalone</code></p>
@@ -1876,7 +1923,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;CLIENT&#95;USE&#95;POOL&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">Enables pool config. Applies only when not using the default ClientConfig.</p>
+    <p class="config-def-desc">Enables or disables pool config. Applies only when not using the default ClientConfig.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;NODES</code></p>
@@ -1888,7 +1935,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;CLUSTER&#95;USE&#95;DEFAULT&#95;POOL&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">If set to false, pool config is built from the pool config section values.</p>
+    <p class="config-def-desc">Enables or disables use of the default pool config. When false, the pool config is built from the 'pool&#95;config' section values.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;MASTER</code></p>
@@ -1899,12 +1946,16 @@ sidebar:
     <p class="config-def-desc">Comma-separated list of "host:port" pairs of sentinels.</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">REDIS&#95;SENTINEL&#95;USERNAME</code></p>
+    <p class="config-def-desc">Optional. Username to authenticate with the Sentinel (Sentinel ACL).</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;SENTINEL&#95;PASSWORD</code></p>
     <p class="config-def-desc">Password to authenticate with the Sentinel.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;SENTINEL&#95;USE&#95;DEFAULT&#95;POOL&#95;CONFIG</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">If set to false, pool config is built from the pool config section values.</p>
+    <p class="config-def-desc">Enables or disables use of the default pool config. When false, the pool config is built from the 'pool&#95;config' section values.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;DB</code> · <span class="config-def-label">Default</span> <code>0</code></p>
@@ -1912,7 +1963,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;USERNAME</code></p>
-    <p class="config-def-desc">Username for Redis ACL authentication (Redis 6+). Optional.</p>
+    <p class="config-def-desc">Optional. Username for Redis ACL authentication (Redis 6+).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;PASSWORD</code></p>
@@ -1928,11 +1979,11 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;SSL&#95;USER&#95;CERT&#95;FILE</code></p>
-    <p class="config-def-desc">Path to the client certificate PEM file. Required only for mutual TLS (mTLS). Optional.</p>
+    <p class="config-def-desc">Optional. Path to the client certificate PEM file. Required only for mutual TLS (mTLS).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;SSL&#95;USER&#95;KEY&#95;FILE</code></p>
-    <p class="config-def-desc">Path to the client private key PEM file. Required only for mutual TLS (mTLS). Optional.</p>
+    <p class="config-def-desc">Optional. Path to the client private key PEM file. Required only for mutual TLS (mTLS).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;POOL&#95;CONFIG&#95;MAX&#95;TOTAL</code> · <span class="config-def-label">Default</span> <code>128</code></p>
@@ -1976,7 +2027,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">REDIS&#95;POOL&#95;CONFIG&#95;BLOCK&#95;WHEN&#95;EXHAUSTED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Determines whether to block when a thread requests a connection from an exhausted pool.</p>
+    <p class="config-def-desc">Enables or disables blocking when a thread requests a connection from an exhausted pool.</p>
   </div>
 </div>
 
@@ -1985,7 +2036,7 @@ sidebar:
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">STATS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Enables or disables the broker's internal stats collection — not just the periodic log summary the name suggests. When disabled, no TBMQ counters, timers, or gauges are registered, and `/actuator/prometheus` exposes only generic framework metrics.</p>
+    <p class="config-def-desc">Enables or disables stats printing to the logs.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">STATS&#95;PRINT&#95;INTERVAL&#95;MS</code> · <span class="config-def-label">Default</span> <code>60000</code></p>
@@ -1997,7 +2048,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">APPLICATION&#95;PROCESSOR&#95;STATS&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Enables or disables specific Application clients stats.</p>
+    <p class="config-def-desc">Enables or disables per-Application-client processing stats. When enabled, each Application client gets its own set  of counters tagged with 'clientId' (deregistered when the client disconnects); the appProcessor.latency timers are  aggregated globally (keyed only by packetType, with no per-client tag). On a broker with very many Application  clients the per-client counter cardinality can be high, so enable only when per-client stats are needed.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">STATS&#95;SYSTEM&#95;INFO&#95;PERSIST&#95;FREQUENCY&#95;SEC</code> · <span class="config-def-label">Default</span> <code>60</code></p>
@@ -2035,7 +2086,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">HEALTH&#95;SHOW&#95;DETAILS</code> · <span class="config-def-label">Default</span> <code>never</code></p>
-    <p class="config-def-desc">Controls whether the health endpoint shows full component details (e.g., Redis, DB, TBMQ).  Accepted values:    never: always hide details (default if security is enabled).    when-authorized: show details only to authenticated users.    always: always include full health details in the response.</p>
+    <p class="config-def-desc">Visibility of full component details in the health endpoint response (e.g., Redis, DB, TBMQ). Accepted values:    never - always hide details (default if security is enabled).    when-authorized - show details only to authenticated users.    always - always include full health details in the response.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">METRICS&#95;ENDPOINTS&#95;EXPOSE</code> · <span class="config-def-label">Default</span> <code>health,info,prometheus</code></p>
@@ -2073,7 +2124,7 @@ sidebar:
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TBMQ&#95;LICENSE&#95;SECRET</code></p>
-    <p class="config-def-desc">License secret obtained from ThingsBoard License Portal (https://license.thingsboard.io).</p>
+    <p class="config-def-desc">License secret obtained from ThingsBoard License Portal ({'https://license.thingsboard.io'}).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TBMQ&#95;LICENSE&#95;INSTANCE&#95;DATA&#95;FILE</code> · <span class="config-def-label">Default</span> <code>tbmq-instance-license.data</code></p>
@@ -2086,7 +2137,7 @@ sidebar:
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SWAGGER&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">If false, Swagger API docs will be unavailable.</p>
+    <p class="config-def-desc">Enables or disables Swagger API docs.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">SWAGGER&#95;DEFAULT&#95;PRODUCES&#95;MEDIA&#95;TYPE</code> · <span class="config-def-label">Default</span> <code>application/json</code></p>
@@ -2122,7 +2173,7 @@ sidebar:
     <p class="config-def-desc">Contact name on the API doc UI page.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">SWAGGER&#95;CONTACT&#95;URL</code> · <span class="config-def-label">Default</span> <code>{'https://thingsboard.io/products/mqtt-broker/'}</code></p>
+    <p class="config-def-meta"><code class="config-def-env">SWAGGER&#95;CONTACT&#95;URL</code> · <span class="config-def-label">Default</span> <code>{'https://tbmq.io/'}</code></p>
     <p class="config-def-desc">Contact URL on the API doc UI page.</p>
   </div>
   <div class="config-def-item">
@@ -2134,7 +2185,7 @@ sidebar:
     <p class="config-def-desc">License title on the API doc UI page.</p>
   </div>
   <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">SWAGGER&#95;LICENSE&#95;URL</code> · <span class="config-def-label">Default</span> <code>https://github.com/thingsboard/tbmq/blob/main/LICENSE</code></p>
+    <p class="config-def-meta"><code class="config-def-env">SWAGGER&#95;LICENSE&#95;URL</code> · <span class="config-def-label">Default</span> <code>{'https://github.com/thingsboard/tbmq/blob/main/LICENSE'}</code></p>
     <p class="config-def-desc">Link to the license body on the API doc UI page.</p>
   </div>
   <div class="config-def-item">
@@ -2156,7 +2207,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">ANALYSIS&#95;LOG&#95;ALL&#95;CLIENTS</code> · <span class="config-def-label">Default</span> <code>false</code></p>
-    <p class="config-def-desc">If true, log events for ALL clients (ignores analyzed-client-ids).</p>
+    <p class="config-def-desc">Enables or disables logging events for all clients. When true, ignores the 'analyzed-client-ids' list.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">ANALYSIS&#95;LOG&#95;CLIENT&#95;IDS</code></p>
