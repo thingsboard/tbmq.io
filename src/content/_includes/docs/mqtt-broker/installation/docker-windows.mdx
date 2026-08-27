@@ -288,6 +288,17 @@ For guidance, follow the{' '}
   rel="noopener noreferrer">backup and restore instructions</a>.
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-0" exclude="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
+
+This is a standard upgrade from v2.3.0. No third-party component changes are required.
+
+The upgrade script requires a **`.tbmq-upgrade.env`** file.
+If it does not already exist from a previous upgrade, create an empty one:
+
+<Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
+
+Then proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 This release migrates all third-party components from Bitnami images to official open-source alternatives.
@@ -391,6 +402,18 @@ Afterward, proceed with the [upgrade](#run-upgrade).
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
+
+This is a standard upgrade from v2.3.0PE. No third-party component changes are required.
+The upgrade creates the `dropped_msg` table used by dropped message analytics; no existing data is changed.
+
+The upgrade script requires a **`.tbmq-upgrade.env`** file.
+If it does not already exist from a previous upgrade, create an empty one:
+
+<Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
+
+Then proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.

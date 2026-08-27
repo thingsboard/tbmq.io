@@ -49,19 +49,36 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 | Target version | Upgrade from    | Notes                                                                                                                                                    |
 | -------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.4.0PE**    | 2.3.0PE         | See [what the 2.4.0PE upgrade does](#upgrading-to-240-pe) below                                                                                          |
+| **2.4.0PE**    | TBMQ 2.4.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
 | **2.3.0PE**    | 2.2.0PE         |                                                                                                                                                          |
 | **2.3.0PE**    | TBMQ 2.3.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
 | **2.2.0PE**    | TBMQ 2.2.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) — [third-party changes apply](#third-party-component-updates-in-tbmq-pe-v220) |
 
+<ConditionalHeading level={2} id="upgrading-to-240-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.0PE</ConditionalHeading>
+
+The 2.4.0PE upgrade records the new schema version and creates the `dropped_msg` table and its index, used by dropped message analytics.
+Nothing else changes: no existing table is altered and no data is migrated, so the change is additive and safe to apply to an existing database.
+
+On Docker and Docker Compose deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
+The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Kubernetes deployments do not need this file.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
+The upgrade script stops the `tbmq` service while the upgrade runs and starts it again afterwards, so expect a brief interruption.
+
 <ConditionalHeading level={2} id="upgrade-from-tbmq-to-tbmq-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
 
 You can migrate from TBMQ to TBMQ PE of the **same version**.
-For example, TBMQ 2.3.0 can be upgraded to TBMQ PE 2.3.0.
-Cross-version migration (e.g. TBMQ 2.2.0 to TBMQ PE 2.3.0) is **not supported** — upgrade TBMQ to the target version first, then migrate to TBMQ PE.
+For example, TBMQ 2.4.0 can be upgraded to TBMQ PE 2.4.0.
+Cross-version migration (e.g. TBMQ 2.3.0 to TBMQ PE 2.4.0) is **not supported** — upgrade TBMQ to the target version first, then migrate to TBMQ PE.
 
 <Aside type="note">
-  To upgrade to TBMQ PE 2.3.0, you must be running TBMQ 2.3.0 first. If you are still on an earlier version,
-  <DocLink product={Products.TBMQ} path="installation/upgrade-instructions/">upgrade TBMQ</DocLink> to 2.3.0 before migrating to TBMQ PE.
+  To upgrade to TBMQ PE 2.4.0, you must be running TBMQ 2.4.0 first. If you are still on an earlier version,
+  <DocLink product={Products.TBMQ} path="installation/upgrade-instructions/">upgrade TBMQ</DocLink> to 2.4.0 before migrating to TBMQ PE.
 </Aside>
 
 <Aside type="tip">
@@ -116,6 +133,7 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 | Target version | Upgrade from   | Notes                                                                                       |
 | -------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| **2.4.0**      | 2.3.0          | See [what the 2.4.0 upgrade does](#upgrading-to-240) below                                   |
 | **2.3.0**      | 2.2.0          | See [third-party component updates](#third-party-component-updates-in-v230) below           |
 | **2.2.0**      | 2.1.0          | See [Bitnami images notice](#notice-about-bitnami-images) below                             |
 | **2.1.0**      | 2.0.0 or 2.0.1 | `fromVersion` is auto-detected — no longer required                                     |
@@ -126,6 +144,20 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 | **1.2.1**      | 1.2.0          | `fromVersion`: `1.2.0`                                                                      |
 | **1.2.0**      | 1.1.0          | `fromVersion`: `1.1.0`                                                                      |
 | **1.1.0**      | 1.0.0 or 1.0.1 | `fromVersion`: `1.0.0` or `1.0.1`                                                           |
+
+<ConditionalHeading level={2} id="upgrading-to-240" exclude="mqtt-broker-pe">Upgrading to 2.4.0</ConditionalHeading>
+
+The 2.4.0 upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
+
+On Docker and Docker Compose deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
+The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Kubernetes deployments do not need this file.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
+The upgrade script stops the `tbmq` service while the upgrade runs and starts it again afterwards, so expect a brief interruption.
 
 <ConditionalHeading level={2} id="third-party-component-updates-in-v230" exclude="mqtt-broker-pe">Third-party component updates in v2.3.0</ConditionalHeading>
 
