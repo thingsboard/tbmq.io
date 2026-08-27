@@ -10,11 +10,19 @@ This release includes all features, improvements, and bug fixes from [TBMQ v2.4.
 
 **Main features**
 
-- **Dropped Message Analytics:** Dropped messages are now persisted with a structured reason taxonomy and surfaced in the UI, so operators can see exactly why a message never reached its subscribers. Results can be rolled up by topic or by client, narrowed with exact-match modes, and filtered by client type. MQTT 5 topic aliases are resolved at drop time, so the recorded topic is always the real one.
+- **Dropped Message Analytics:** Dropped messages are now persisted together with the reason they were dropped and surfaced in the UI, so operators can see exactly why a message never reached its subscribers. Results can be rolled up by topic or by client, narrowed with exact-match modes, and filtered by client type, with each reason shown in operator-readable form.
+- **Accurate attribution for every drop:** A message published with an MQTT 5 topic alias is recorded against its real topic. A publish refused for a shared subscription is reported as a single event rather than once per subscriber, so one publish reads as one entry.
 
 **Improvements**
 
 - **White labeling upgrade prompt:** Attempting to configure white labeling on a subscription that does not include it now opens a clear upgrade dialog instead of failing silently, making the available options and the path to enabling them obvious.
+- **Licensed throughput visibility:** The "licensed throughput reached" indicator now tracks actual message refusals, so it stays consistent with the dropped-message metric.
+- **Resilient throughput accounting:** Throughput accounting now stays reliable across a brief cache outage, such as a Redis Cluster or Sentinel failover.
+- **Burst handling under load:** Short traffic bursts are now admitted whenever cluster budget is available.
+
+**Bug fixes**
+
+- **License capacity changes take effect immediately:** Rate limits now pick up the current capacity as soon as a license changes.
 
 <ConditionalHeading level={2} id="v230PE" showFor="mqtt-broker-pe">v2.3.0 (May 12, 2026)</ConditionalHeading>
 
