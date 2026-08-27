@@ -66,6 +66,18 @@ The following release notes cover all Community Edition versions included in TBM
 
 Minor release with the following features, infrastructure upgrades, improvements, and bug fixes.
 
+**Breaking changes:**
+
+Several Prometheus metrics and metric tags were renamed in [#342](https://github.com/thingsboard/tbmq/pull/342) and [#343](https://github.com/thingsboard/tbmq/pull/343). Update your queries, recording rules, alerts, and dashboards before upgrading:
+
+- `sqlQueue_<QueueName>_total{...}` becomes `sqlQueue_total{queueName="<QueueName>", ...}` — the queue name moved out of the metric name and into a bounded `queueName` tag, so queues can be selected and aggregated together. The queue depth gauge changes the same way, to `sqlQueue_queueSize{queueName="<QueueName>", ...}`.
+- `producer_seconds*{producerId}` becomes `kafkaProducer_send_seconds*{producerId}` — Kafka send latency.
+- `consumer_seconds*{consumerId, operation="syncCommit"}` becomes `kafkaConsumer_commit_seconds*{consumerId}` — Kafka commit latency. The `operation` tag was always `syncCommit` and has been dropped, so remove it from label matchers.
+- `clientSubscriptionsConsumer` keeps its name, but its `statsName` tag values change: `totalSubscriptions` becomes `totalRecords`, `acceptedSubscriptions` becomes `acceptedRecords`, and `ignoredSubscriptions` becomes `ignoredRecords`. These counters advance per Kafka record consumed from the client subscriptions topic, not per subscription.
+- The `clientSubscriptions` gauge becomes `subscriptions`, and its meaning changes with it: it now reports the total number of subscriptions across all clients, where it previously reported the number of clients holding at least one subscription. The new value is greater than or equal to the old one whenever a client holds more than one subscription, and it matches the `subscriptions` chart in the UI. The value is cluster-wide, so read it from a single node or use `max` rather than summing across nodes.
+
+The `msgDownlink` counter and the `processedBytes` historical key were also removed. Neither ever produced data, so neither needs a dashboard change.
+
 **Main features:**
 
 - [#316](https://github.com/thingsboard/tbmq/pull/316) **Core**: Sparkplug 3.0 compliant and aware MQTT server by @dmytro-landiak;
