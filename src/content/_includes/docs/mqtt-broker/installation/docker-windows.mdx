@@ -295,7 +295,7 @@ This is a standard upgrade from v2.3.0. No third-party component changes are req
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
 
-<Code code="touch .tbmq-upgrade.env" lang="bash" />
+<Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
 
 Then proceed with the [upgrade](#run-upgrade).
 
@@ -410,7 +410,7 @@ The upgrade creates the `dropped_msg` table used by dropped message analytics; n
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
 
-<Code code="touch .tbmq-upgrade.env" lang="bash" />
+<Code code={'New-Item -Path .tbmq-upgrade.env -ItemType File -Force'} lang="powershell" />
 
 Then proceed with the [upgrade](#run-upgrade).
 
