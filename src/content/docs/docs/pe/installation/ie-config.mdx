@@ -24,11 +24,11 @@ sidebar:
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;DOWNLINK&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
-    <p class="config-def-desc">Poll interval for messages from 'tbmq.ie.downlink' topics (in ms).</p>
+    <p class="config-def-desc">Poll interval for messages from `tbmq.ie.downlink` topics (in ms).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;MSG&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
-    <p class="config-def-desc">Poll interval for messages from 'tbmq.msg.ie' topics (in ms).</p>
+    <p class="config-def-desc">Poll interval for messages from `tbmq.msg.ie` topics (in ms).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;MSG&#95;PACK&#95;PROCESSING&#95;TIMEOUT</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
@@ -36,7 +36,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;MSG&#95;ACK&#95;STRATEGY&#95;TYPE</code> · <span class="config-def-label">Default</span> <code>SKIP&#95;ALL</code></p>
-    <p class="config-def-desc">Processing strategy for 'tbmq.msg.ie' topics. Accepted values: SKIP&#95;ALL, RETRY&#95;ALL.</p>
+    <p class="config-def-desc">Processing strategy for `tbmq.msg.ie` topics. Accepted values: SKIP&#95;ALL, RETRY&#95;ALL.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;MSG&#95;ACK&#95;STRATEGY&#95;RETRIES</code> · <span class="config-def-label">Default</span> <code>5</code></p>
@@ -48,7 +48,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;EVENT&#95;MSG&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
-    <p class="config-def-desc">Poll interval for the dedicated 'tbmq.ie.event' lifecycle-event topics (in ms).</p>
+    <p class="config-def-desc">Poll interval for the dedicated `tbmq.ie.event` lifecycle-event topics (in ms).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;EVENT&#95;MSG&#95;PACK&#95;PROCESSING&#95;TIMEOUT</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
@@ -56,7 +56,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;EVENT&#95;MSG&#95;ACK&#95;STRATEGY&#95;TYPE</code> · <span class="config-def-label">Default</span> <code>SKIP&#95;ALL</code></p>
-    <p class="config-def-desc">Processing strategy for 'tbmq.ie.event' topics. Accepted values: SKIP&#95;ALL, RETRY&#95;ALL.  Defaults to SKIP&#95;ALL because lifecycle events are best-effort hints - retrying would redeliver  stale events out of order; kept independent of the data stream, so it is not coupled to RETRY&#95;ALL.</p>
+    <p class="config-def-desc">Processing strategy for `tbmq.ie.event` topics. Accepted values: SKIP&#95;ALL, RETRY&#95;ALL.  Defaults to SKIP&#95;ALL because lifecycle events are best-effort hints - retrying would redeliver  stale events out of order; kept independent of the data stream, so it is not coupled to RETRY&#95;ALL.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;EVENT&#95;MSG&#95;ACK&#95;STRATEGY&#95;RETRIES</code> · <span class="config-def-label">Default</span> <code>5</code></p>
@@ -76,11 +76,11 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;CONSUMER&#95;CONFIG</code></p>
-    <p class="config-def-desc">Base Kafka properties applied to admins, all producers and consumers, making it the ideal place for shared  connection and security settings. Format is key:value;key:value. If a property value contains a semicolon  (common in sasl.jaas.config), escape it with a backslash (e.g., ...username="user"\;password="pass"\;).</p>
+    <p class="config-def-desc">Base Kafka properties applied to admins, all producers and consumers, making it the ideal place for shared  connection and security settings. Format is key:value;key:value. If a property value contains a semicolon  (common in sasl.jaas.config), escape it with a backslash (e.g., `...username="user"\;password="pass"\;`).</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DEFAULT&#95;CONSUMER&#95;CONFIG</code></p>
-    <p class="config-def-desc">Additional Kafka properties specific only to consumers, merged with the global defaults —  TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;CONSUMER&#95;CONFIG (overriding them if keys conflict).  Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as \;.</p>
+    <p class="config-def-desc">Additional Kafka properties specific only to consumers, merged with the global defaults —  TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;CONSUMER&#95;CONFIG (overriding them if keys conflict).  Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as &#92;;.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DEFAULT&#95;CONSUMER&#95;PARTITION&#95;ASSIGNMENT&#95;STRATEGY</code> · <span class="config-def-label">Default</span> <code>org.apache.kafka.clients.consumer.StickyAssignor</code></p>
@@ -112,7 +112,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;CONFIG</code></p>
-    <p class="config-def-desc">Additional Kafka properties specific only to producers, merged with the global defaults —  TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;CONSUMER&#95;CONFIG (overriding them if keys conflict).  Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as \;.</p>
+    <p class="config-def-desc">Additional Kafka properties specific only to producers, merged with the global defaults —  TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;CONSUMER&#95;CONFIG (overriding them if keys conflict).  Follows the standard key:value;key:value format. Ensure any internal semicolons in values are escaped as &#92;;.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;DEFAULT&#95;PRODUCER&#95;ACKS</code> · <span class="config-def-label">Default</span> <code>1</code></p>
@@ -310,7 +310,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS&#95;REINIT&#95;ENABLED</code> · <span class="config-def-label">Default</span> <code>true</code></p>
-    <p class="config-def-desc">Enables or disables hot reinitialization of integrations in 'FAILED' state.</p>
+    <p class="config-def-desc">Enables or disables hot reinitialization of integrations in `FAILED` state.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS&#95;REINIT&#95;FREQUENCY&#95;MS</code> · <span class="config-def-label">Default</span> <code>300000</code></p>
@@ -367,7 +367,7 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">METRICS&#95;ENDPOINTS&#95;EXPOSE</code> · <span class="config-def-label">Default</span> <code>health,info,prometheus</code></p>
-    <p class="config-def-desc">Actuator endpoints exposed via HTTP. Use 'health,info' to expose only basic health and information endpoints.  To expose Prometheus metrics, include 'prometheus' in the list (e.g., 'health,info,prometheus').</p>
+    <p class="config-def-desc">Actuator endpoints exposed via HTTP. Use `health,info` to expose only basic health and information endpoints.  To expose Prometheus metrics, include `prometheus` in the list (e.g., `health,info,prometheus`).</p>
   </div>
 </div>
 
