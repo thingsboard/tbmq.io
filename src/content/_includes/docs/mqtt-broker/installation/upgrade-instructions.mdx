@@ -60,8 +60,8 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 The 2.4.0PE upgrade records the new schema version and creates the `dropped_msg` table and its index, used by dropped message analytics.
 Nothing else changes: no existing table is altered and no data is migrated, so the change is additive and safe to apply to an existing database.
 
-On Docker and Docker Compose deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
-The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Kubernetes deployments do not need this file.
+On standalone Docker deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
+The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Cluster deployments — Docker Compose, Kubernetes and Helm — do not need this file.
 
 <Aside type="note">
   If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
@@ -149,8 +149,8 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 The 2.4.0 upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
 
-On Docker and Docker Compose deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
-The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Kubernetes deployments do not need this file.
+On standalone Docker deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
+The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Cluster deployments — Docker Compose, Kubernetes and Helm — do not need this file.
 
 <Aside type="note">
   If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
