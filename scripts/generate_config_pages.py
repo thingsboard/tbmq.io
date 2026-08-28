@@ -171,8 +171,17 @@ _HTML_TAG_RE = re.compile(
 
 _URL_RE = re.compile(r'https?://[^\s<>"\'()\[\]]+')
 
+# Inline code spans are literal in both markdown and MDX, so nothing inside one
+# needs escaping — and an entity written there renders as its own source text
+# (`&#95;` instead of `_`). Split them out and pass them through verbatim.
+_CODE_SPAN_RE = re.compile(r'(`+[^`]*`+)')
+
 
 def _escape_mdx(text):
+    # Backslash last: it emits an entity, and the '&' pass has already run.
+    # A literal backslash matters here — YAML comments use it to escape
+    # semicolons in key:value;key:value settings (sasl.jaas.config) — and MDX
+    # would otherwise read '\\;' as a markdown escape and drop the backslash.
     return (
         text.replace('&', '&amp;')
         .replace('<', '&lt;')
@@ -181,6 +190,7 @@ def _escape_mdx(text):
         .replace('}', '&#125;')
         .replace('_', '&#95;')
         .replace('*', '&#42;')
+        .replace('\\', '&#92;')
     )
 
 
@@ -216,8 +226,10 @@ def escape_cell(text):
     for i, part in enumerate(parts):
         if i % 2 == 1:  # captured HTML tag — preserve as-is
             result.append(part)
-        else:            # plain text — escape MDX-special characters + neutralize URLs
-            result.append(_escape_plain_text(part))
+        else:            # plain text — escape MDX-special characters + neutralize URLs,
+                         # but pass inline code spans through untouched
+            for j, seg in enumerate(_CODE_SPAN_RE.split(part)):
+                result.append(seg if j % 2 else _escape_plain_text(seg))
     return ''.join(result)
 
 
