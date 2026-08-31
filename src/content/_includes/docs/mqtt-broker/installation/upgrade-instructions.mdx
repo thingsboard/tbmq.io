@@ -58,17 +58,12 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 <ConditionalHeading level={2} id="upgrading-to-240-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.0PE</ConditionalHeading>
 
 The 2.4.0PE upgrade records the new schema version and creates the `dropped_msg` table and its index, used by dropped message analytics.
-Nothing else changes: no existing table is altered and no data is migrated, so the change is additive and safe to apply to an existing database.
-
-On standalone Docker deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
-The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Cluster deployments — Docker Compose, Kubernetes and Helm — do not need this file.
+Nothing else changes: no existing table is altered and no data is migrated.
 
 <Aside type="note">
   If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
   Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
 </Aside>
-
-The upgrade script stops the `tbmq` service while the upgrade runs and starts it again afterwards, so expect a brief interruption.
 
 <ConditionalHeading level={2} id="upgrade-from-tbmq-to-tbmq-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
 
@@ -149,15 +144,10 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 The 2.4.0 upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
 
-On standalone Docker deployments the upgrade script still requires a `.tbmq-upgrade.env` file in the same directory as `docker-compose.yml`, as it has since v2.3.0.
-The script exits without it, so create an empty one if you do not already have it from a previous upgrade. Cluster deployments — Docker Compose, Kubernetes and Helm — do not need this file.
-
 <Aside type="note">
   If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
   Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
 </Aside>
-
-The upgrade script stops the `tbmq` service while the upgrade runs and starts it again afterwards, so expect a brief interruption.
 
 <ConditionalHeading level={2} id="third-party-component-updates-in-v230" exclude="mqtt-broker-pe">Third-party component updates in v2.3.0</ConditionalHeading>
 
@@ -210,3 +200,51 @@ For details, see the <DocLink product={props.product} path="architecture">archit
   Back up your PostgreSQL database before upgrading to 2.0.0.
 </Aside>
 </ShowFor>
+
+## Troubleshooting
+
+The upgrade validates the database before it changes anything, and stops with one of the messages below.
+
+**`Upgrade failed: database already upgraded to current version.`**
+
+The schema version recorded in the database already matches the version you are upgrading to — either the upgrade
+already completed, or an earlier run failed after the version had been recorded. See
+[forcing a re-upgrade](#forcing-a-re-upgrade) below.
+
+**`Upgrade failed: database version 'X' is not supported for upgrade. Supported versions are: [...]`**
+
+An upgrade accepts only the versions listed in the message, normally just the one immediately before the target. Upgrade
+one version at a time along the paths in the version history above.
+
+**`Upgrade failed: can't upgrade TBMQ <A> database using TBMQ <B>.`**
+
+The edition you are upgrading with does not match the edition recorded in the database. Use TBMQ to upgrade a TBMQ
+database and TBMQ PE to upgrade a TBMQ PE database.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+To migrate a TBMQ database to TBMQ PE, run the CE-to-PE upgrade described in
+[Upgrade from TBMQ to TBMQ PE](#upgrade-from-tbmq-to-tbmq-pe) — it takes the source edition as an argument, which a
+plain upgrade does not.
+
+**`Upgrade failed: transitioning from CE to PE requires the database to first be upgraded to version 'X' using TBMQ CE.`**
+
+A CE-to-PE migration is only supported at the same version. Upgrade TBMQ to the version reported in the message first,
+then migrate to TBMQ PE.
+</ShowFor>
+
+**`Upgrade failed: the database schema version is missing.`**
+
+The `tb_schema_settings` table holds no version. Either the upgrade is pointed at the wrong database, or that database
+was never initialized by a TBMQ installation.
+
+### Forcing a re-upgrade
+
+Setting the `SKIP_SCHEMA_VERSION_CHECK` environment variable to `true` on the upgrade makes it skip **all** of the
+validation above and run regardless. Where that variable goes depends on the deployment — see the guide for your
+deployment type.
+
+<Aside type="caution">
+  This disables every safety check, not only the version comparison, so it will also let an upgrade run against an
+  unsupported version or the wrong edition. Use it only when you know a previous run did not finish, and back up your
+  database first.
+</Aside>

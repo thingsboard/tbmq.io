@@ -281,6 +281,11 @@ For further guidance, follow the{' '}
 
 This is a standard upgrade from v2.3.0. No third-party component changes are required.
 
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
 
@@ -290,7 +295,9 @@ Then proceed with the [upgrade](#run-upgrade).
 
 <ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
-This release migrates all third-party components from Bitnami images to official open-source alternatives.
+<details>
+<summary>This release migrates all third-party components from Bitnami images to official open-source alternatives.</summary>
+
 Review the <DocLink product={props.product} path="installation/upgrade-instructions/#third-party-component-updates-in-v230">third-party component updates</DocLink> for full details.
 
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
@@ -299,6 +306,7 @@ If it does not already exist from a previous upgrade, create an empty one:
 <Code code="touch .tbmq-upgrade.env" lang="bash" />
 
 Then proceed with the [upgrade](#run-upgrade).
+</details>
 
 <ConditionalHeading level={3} id="upgrade-to-2-2-0" exclude="mqtt-broker-pe">Upgrade to 2.2.0</ConditionalHeading>
 
@@ -396,6 +404,11 @@ Afterward, proceed with the [upgrade](#run-upgrade).
 This is a standard upgrade from v2.3.0PE. No third-party component changes are required.
 The upgrade creates the `dropped_msg` table used by dropped message analytics; no existing data is changed.
 
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
 
@@ -405,7 +418,10 @@ Then proceed with the [upgrade](#run-upgrade).
 
 <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
-This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.
+<details>
+<summary>This is a standard upgrade from v2.2.0.</summary>
+
+No third-party component changes are required — the official images are already in use since v2.2.0.
 
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
@@ -413,6 +429,7 @@ If it does not already exist from a previous upgrade, create an empty one:
 <Code code="touch .tbmq-upgrade.env" lang="bash" />
 
 Then proceed with the [upgrade](#run-upgrade).
+</details>
 
 <ConditionalHeading level={3} id="upgrade-from-ce-to-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
 
@@ -444,6 +461,8 @@ To update to the latest version, run the following commands:
 
 {props.product !== Products.TBMQ_PE && <Code code={upgradeCmdCe} lang="bash" />}
 {props.product === Products.TBMQ_PE && <Code code={upgradeCmdPe} lang="bash" />}
+
+The upgrade script stops the `tbmq` service while the upgrade runs and starts it again afterwards, so expect a brief interruption.
 
 <Aside type="caution">
   Replace `valkey_url`, `db_url`, `db_username`, and `db_password` variables in the script with the corresponding values used during DB initialization.

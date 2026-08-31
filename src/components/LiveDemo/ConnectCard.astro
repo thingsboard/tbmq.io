@@ -91,7 +91,7 @@ const tabs = [
 								<span class="conn-label">{p.label}</span>
 								<button
 									type="button"
-									class="conn-value port"
+									class="conn-value port copy"
 									data-copy={p.value}
 									title={`Copy ${p.value}`}
 									aria-label={`Copy ${p.label} port ${p.value}`}
@@ -493,7 +493,14 @@ const tabs = [
 		font-size: 14px;
 		color: $color-text-primary;
 
+		// Shares the .copy button behaviour: the label swaps to "Copied ✓" on click.
+		// The chip is right-aligned in the row, so it widens leftwards for that
+		// label and the row label never moves.
 		&.port {
+			white-space: nowrap;
+			// .copy (later in this sheet, same specificity as .conn-value) would
+			// otherwise pull the chip down to its own 12px
+			font-size: 14px;
 			color: $color-pe-link;
 			background: rgba(23, 187, 82, 0.1);
 			border: 1px solid rgba(23, 187, 82, 0.3);
@@ -503,6 +510,9 @@ const tabs = [
 			transition: $transition-fast;
 
 			&:hover {
+				// re-stated: .copy:hover would otherwise lighten the number to the
+				// brand green, which is too low-contrast on the chip's tint
+				color: $color-pe-link;
 				background: rgba(23, 187, 82, 0.18);
 				border-color: rgba(23, 187, 82, 0.5);
 			}
@@ -511,10 +521,6 @@ const tabs = [
 				color: $color-white;
 				background: $color-pe-dark;
 				border-color: $color-pe-dark;
-
-				&::after {
-					content: ' ✓';
-				}
 			}
 		}
 
@@ -692,21 +698,6 @@ const tabs = [
 						btn.textContent = original;
 						btn.classList.remove('copied');
 					}, 1500);
-				})
-				.catch(() => {});
-		});
-	});
-
-	// Port chips — copy the value on click and flash a "copied" state
-	// (keeps the number visible instead of swapping the label like .copy does)
-	document.querySelectorAll<HTMLButtonElement>('.conn-value.port').forEach((btn) => {
-		btn.addEventListener('click', () => {
-			if (btn.classList.contains('copied')) return;
-			navigator.clipboard
-				.writeText(btn.dataset.copy ?? '')
-				.then(() => {
-					btn.classList.add('copied');
-					setTimeout(() => btn.classList.remove('copied'), 1200);
 				})
 				.catch(() => {});
 		});

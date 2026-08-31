@@ -1,42 +1,10 @@
 ---
 import SocialNetworks from '@components/Landing/SocialNetworks.astro';
-import NButton from '@components/Landing/NButton.astro';
-import SmartImage from '@components/SmartImage.astro';
 const currentYear = new Date().getFullYear();
 ---
 
 <footer>
 	<div class="light-text main-div">
-		<div class="footer-top">
-			<NButton id="Footer_ContactUs" href="/contact-us/" class="gtm_button"> Contact us </NButton>
-			<div class="footer-top-img-section">
-				<SmartImage
-					src="/src/assets/images/landings/footer/crozdesk-quality-choice-badge.png"
-					alt="ThingsBoard achievement - Crozdesk Quality Choice"
-					height="80"
-					width="80"
-				/>
-				<SmartImage
-					src="/src/assets/images/landings/footer/crozdesk-trusted-vendor-badge.png"
-					alt="ThingsBoard achievement - Crozdesk Trusted Vendor"
-					height="80"
-					width="80"
-				/>
-				<SmartImage
-					src="/src/assets/images/landings/footer/crozdesk-happiest-users-badge.png"
-					alt="ThingsBoard achievement - Crozdesk Happiest Users"
-					height="80"
-					width="80"
-				/>
-				<SmartImage
-					src="/src/assets/images/landings/footer/supplier-retail.webp"
-					alt="ThingsBoard achievement - Top Supplier in Retail 2024"
-					height="80"
-					width="55"
-				/>
-			</div>
-		</div>
-
 		<hr />
 
 		<div class="deeper">
@@ -45,9 +13,7 @@ const currentYear = new Date().getFullYear();
 				<a href="/docs/pe/getting-started/">Get Started</a>
 				<a href="/docs/pe/">Documentation</a>
 				<a href="https://thingsboard.io/blog/" target="_blank" rel="noopener noreferrer">Blog</a>
-				<a href="/contact-us/?subject=TBMQ&tbmqorder&message=I%20am%20interested%20in%20TBMQ&customTitle=GetTBMQ"
-					>Contact us</a
-				>
+				<a href="/contact-us/">Contact us</a>
 			</nav>
 		</div>
 
@@ -156,37 +122,6 @@ const currentYear = new Date().getFullYear();
 							margin-left: 0;
 						}
 					}
-				}
-			}
-		}
-
-		.footer-top {
-			min-height: 6.625rem;
-			width: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 1.875rem;
-
-			@media screen and (max-width: 900px) {
-				flex-wrap: wrap;
-				justify-content: center;
-			}
-
-			@media screen and (max-width: 768px) {
-				flex-direction: column;
-				align-items: center;
-			}
-
-			.footer-top-img-section {
-				display: flex;
-				gap: 2.5rem;
-				flex-shrink: 0;
-
-				@media screen and (max-width: 900px) {
-					flex-wrap: wrap;
-					justify-content: center;
-					gap: 1.5rem 2rem;
 				}
 			}
 		}

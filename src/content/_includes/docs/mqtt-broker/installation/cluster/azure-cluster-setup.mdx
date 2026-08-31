@@ -22,6 +22,9 @@ export const kafkaPeOperatorReadmeUrl = `https://github.com/thingsboard/tbmq-pe-
 
 export const gitPullCmd = `git pull origin ${TBMQ_BRANCH}`;
 
+export const upgradeCmds = `./k8s-upgrade-tbmq.sh
+./k8s-deploy-tbmq.sh`;
+
 This guide covers setting up TBMQ in cluster mode on Azure AKS.
 
 ## Prerequisites
@@ -516,6 +519,19 @@ Backing up your PostgreSQL database before upgrading is highly recommended but o
 For guidance, follow the <a href="https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-backup-restore" target="_blank" rel="noopener noreferrer">Azure PostgreSQL backup and restore instructions</a>.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
+
+This is a standard upgrade from v2.3.0. No third-party component changes are required.
+The upgrade creates the `dropped_msg` table used by dropped message analytics; no existing table is altered and no data
+is migrated.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
+Proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.
@@ -544,6 +560,18 @@ Run the following commands to stop TBMQ, migrate the database, and redeploy:
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-0" exclude="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
+
+This is a standard upgrade from v2.3.0. No third-party component changes are required, and the upgrade only records the
+new schema version — no table is created or altered and no data is migrated.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
+Then proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 This release migrates all third-party components from Bitnami images to official open-source alternatives.
@@ -600,20 +628,21 @@ Merge strategy options:
 - `-X theirs` — auto-resolve conflicts by favoring the remote version
 </Aside>
 
-After pulling, run the upgrade script:
+After pulling, run the database upgrade and then apply the updated manifests to roll out the new version:
 
-```bash
-./k8s-upgrade-tbmq.sh
-```
+<Code code={upgradeCmds} lang="bash" />
+
+<Aside type="caution">
+  Both commands are required. `k8s-upgrade-tbmq.sh` upgrades the database but does not touch the TBMQ pods — they keep
+  running the previous image until `k8s-deploy-tbmq.sh` applies the updated manifests.
+</Aside>
 
 <Aside>
 You may optionally stop TBMQ pods before running the database upgrade to ensure a consistent DB state:
 
 <Code code="./k8s-delete-tbmq.sh" lang="bash" />
 
-This causes downtime, but most upgrades do not require stopping TBMQ. Once the upgrade completes, redeploy to roll out the new version:
-
-<Code code="./k8s-deploy-tbmq.sh" lang="bash" />
+This causes downtime, but most upgrades do not require stopping TBMQ.
 </Aside>
 
 ## Cluster deletion
