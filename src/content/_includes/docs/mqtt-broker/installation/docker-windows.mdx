@@ -292,6 +292,11 @@ For guidance, follow the{' '}
 
 This is a standard upgrade from v2.3.0. No third-party component changes are required.
 
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
 
@@ -409,6 +414,11 @@ Afterward, proceed with the [upgrade](#run-upgrade).
 
 This is a standard upgrade from v2.3.0PE. No third-party component changes are required.
 The upgrade creates the `dropped_msg` table used by dropped message analytics; no existing data is changed.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
 
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:

@@ -509,6 +509,19 @@ Backing up your PostgreSQL database before upgrading is highly recommended but o
 For guidance, follow the <a href="https://docs.cloud.google.com/sql/docs/postgres/backup-recovery/backing-up" target="_blank" rel="noopener noreferrer">Cloud SQL backup and recovery documentation</a>.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
+
+This is a standard upgrade from v2.3.0. No third-party component changes are required.
+The upgrade creates the `dropped_msg` table used by dropped message analytics; no existing table is altered and no data
+is migrated.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
+Proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.
@@ -537,6 +550,18 @@ Run the following commands to stop TBMQ, migrate the database, and redeploy:
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-0" exclude="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
+
+This is a standard upgrade from v2.3.0. No third-party component changes are required, and the upgrade only records the
+new schema version — no table is created or altered and no data is migrated.
+
+<Aside type="note">
+  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
+  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
+</Aside>
+
+Then proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 This release migrates all third-party components from Bitnami images to official open-source alternatives.
