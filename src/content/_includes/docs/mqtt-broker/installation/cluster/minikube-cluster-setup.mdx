@@ -17,6 +17,9 @@ kubectl create -n thingsboard-mqtt-broker secret generic tbmq-license --from-lit
 
 export const gitPullCmd = `git pull origin ${TBMQ_BRANCH}`;
 
+export const upgradeCmds = `./k8s-upgrade-tbmq.sh
+./k8s-deploy-tbmq.sh`;
+
 This guide covers setting up TBMQ in cluster mode using Minikube.
 
 ## Prerequisites
@@ -305,18 +308,19 @@ Merge strategy options:
 - `-X theirs` — auto-resolve conflicts by favoring the remote version
 </Aside>
 
-After pulling, run the upgrade script:
+After pulling, run the database upgrade and then apply the updated manifests to roll out the new version:
 
-```bash
-./k8s-upgrade-tbmq.sh
-```
+<Code code={upgradeCmds} lang="bash" />
+
+<Aside type="caution">
+  Both commands are required. `k8s-upgrade-tbmq.sh` upgrades the database but does not touch the TBMQ pods — they keep
+  running the previous image until `k8s-deploy-tbmq.sh` applies the updated manifests.
+</Aside>
 
 <Aside>
 You may optionally stop TBMQ pods before running the database upgrade to ensure a consistent DB state:
 
 <Code code="./k8s-delete-tbmq.sh" lang="bash" />
 
-This causes downtime, but most upgrades do not require stopping TBMQ. Once the upgrade completes, redeploy to roll out the new version:
-
-<Code code="./k8s-deploy-tbmq.sh" lang="bash" />
+This causes downtime, but most upgrades do not require stopping TBMQ.
 </Aside>
