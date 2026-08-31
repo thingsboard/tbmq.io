@@ -200,3 +200,51 @@ For details, see the <DocLink product={props.product} path="architecture">archit
   Back up your PostgreSQL database before upgrading to 2.0.0.
 </Aside>
 </ShowFor>
+
+## Troubleshooting
+
+The upgrade validates the database before it changes anything, and stops with one of the messages below.
+
+**`Upgrade failed: database already upgraded to current version.`**
+
+The schema version recorded in the database already matches the version you are upgrading to — either the upgrade
+already completed, or an earlier run failed after the version had been recorded. See
+[forcing a re-upgrade](#forcing-a-re-upgrade) below.
+
+**`Upgrade failed: database version 'X' is not supported for upgrade. Supported versions are: [...]`**
+
+An upgrade accepts only the versions listed in the message, normally just the one immediately before the target. Upgrade
+one version at a time along the paths in the version history above.
+
+**`Upgrade failed: can't upgrade TBMQ <A> database using TBMQ <B>.`**
+
+The edition you are upgrading with does not match the edition recorded in the database. Use TBMQ to upgrade a TBMQ
+database and TBMQ PE to upgrade a TBMQ PE database.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+To migrate a TBMQ database to TBMQ PE, run the CE-to-PE upgrade described in
+[Upgrade from TBMQ to TBMQ PE](#upgrade-from-tbmq-to-tbmq-pe) — it takes the source edition as an argument, which a
+plain upgrade does not.
+
+**`Upgrade failed: transitioning from CE to PE requires the database to first be upgraded to version 'X' using TBMQ CE.`**
+
+A CE-to-PE migration is only supported at the same version. Upgrade TBMQ to the version reported in the message first,
+then migrate to TBMQ PE.
+</ShowFor>
+
+**`Upgrade failed: the database schema version is missing.`**
+
+The `tb_schema_settings` table holds no version. Either the upgrade is pointed at the wrong database, or that database
+was never initialized by a TBMQ installation.
+
+### Forcing a re-upgrade
+
+Setting the `SKIP_SCHEMA_VERSION_CHECK` environment variable to `true` on the upgrade makes it skip **all** of the
+validation above and run regardless. Where that variable goes depends on the deployment — see the guide for your
+deployment type.
+
+<Aside type="caution">
+  This disables every safety check, not only the version comparison, so it will also let an upgrade run against an
+  unsupported version or the wrong edition. Use it only when you know a previous run did not finish, and back up your
+  database first.
+</Aside>
