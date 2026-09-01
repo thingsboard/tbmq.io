@@ -5,6 +5,20 @@ import type { AuditReport, Finding, Severity } from './types.ts';
 const MAX_EXAMPLES = 10;
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
 
+/**
+ * Resolves the `--dist=` CLI flag to a directory to audit.
+ * Absent or empty (`--dist=`) falls back to `./dist`. A bare `--dist` with no
+ * `=value` is a usage error, not a silent default, so it throws.
+ */
+export function resolveDistDir(args: string[]): string {
+	if (args.includes('--dist')) {
+		throw new Error('--dist requires a value, e.g. --dist=./dist');
+	}
+	const distArg = args.find((arg) => arg.startsWith('--dist='));
+	const value = distArg?.slice('--dist='.length) ?? '';
+	return value === '' ? './dist' : value;
+}
+
 export function buildReport(buildOutputDir: string): AuditReport {
 	const pages = collectPages(buildOutputDir);
 	const sectionCounts = pages.reduce<Record<string, number>>((counts, page) => {

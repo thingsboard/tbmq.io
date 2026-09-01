@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatText, toJson } from './report.ts';
+import { formatText, resolveDistDir, toJson } from './report.ts';
 import type { AuditReport, Finding } from './types.ts';
 
 function report(findings: Finding[]): AuditReport {
@@ -44,4 +44,21 @@ test('toJson is stable across calls and carries no timestamp', () => {
 	assert.equal(one, two);
 	assert.ok(!/\d{4}-\d{2}-\d{2}T/.test(one), 'an ISO timestamp would break week-over-week diffing');
 	assert.deepEqual(JSON.parse(one).findings, [low('/a/')]);
+});
+
+test('resolveDistDir defaults to ./dist when the flag is absent', () => {
+	assert.equal(resolveDistDir([]), './dist');
+	assert.equal(resolveDistDir(['--json']), './dist');
+});
+
+test('resolveDistDir uses the given value', () => {
+	assert.equal(resolveDistDir(['--dist=./other']), './other');
+});
+
+test('resolveDistDir treats an empty value as absent', () => {
+	assert.equal(resolveDistDir(['--dist=']), './dist');
+});
+
+test('resolveDistDir rejects a bare --dist with no value', () => {
+	assert.throws(() => resolveDistDir(['--dist']), /--dist requires a value/);
 });
