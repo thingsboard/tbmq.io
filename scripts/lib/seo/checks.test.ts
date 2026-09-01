@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkMetadata } from './checks.ts';
+import { checkLinkGraph, checkMetadata, runChecks } from './checks.ts';
 import type { PageFacts } from './types.ts';
 
 /** A page that trips no check, so each test can vary exactly one field. */
@@ -87,4 +87,78 @@ test('a unique title produces no duplicate finding', () => {
 		page({ pathname: '/b/', title: 'A Totally Different Title Here' }),
 	]);
 	assert.equal(findings.filter((f) => f.check === 'title-duplicate').length, 0);
+});
+
+test('a page with no inbound internal link is an orphan', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', outboundPathnames: [] }),
+		page({ pathname: '/b/', outboundPathnames: [] }),
+	]);
+	assert.deepEqual(
+		findings
+			.filter((f) => f.check === 'orphan-page')
+			.map((f) => f.pathname)
+			.sort(),
+		['/a/', '/b/']
+	);
+});
+
+test('a page with exactly one inbound link is a near-orphan, not an orphan', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', outboundPathnames: ['/b/'] }),
+		page({ pathname: '/b/', outboundPathnames: [] }),
+	]);
+	assert.equal(findings.filter((f) => f.check === 'orphan-page' && f.pathname === '/b/').length, 0);
+	assert.equal(findings.filter((f) => f.check === 'near-orphan-page' && f.pathname === '/b/').length, 1);
+});
+
+test('outbound links to pages outside the build do not create inbound counts', () => {
+	const findings = checkLinkGraph([page({ pathname: '/a/', outboundPathnames: ['/does-not-exist/'] })]);
+	assert.deepEqual(
+		findings.filter((f) => f.check === 'orphan-page').map((f) => f.pathname),
+		['/a/']
+	);
+});
+
+test('redirect stubs are excluded from the link graph', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', outboundPathnames: ['/b/'] }),
+		page({ pathname: '/b/', isRedirect: true, outboundPathnames: [] }),
+	]);
+	assert.equal(findings.filter((f) => f.pathname === '/b/').length, 0);
+});
+
+test('a learn-hub page that links to no docs page is flagged', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/mqtt/qos/', section: 'mqtt', outboundPathnames: ['/mqtt/topics/'] }),
+	]);
+	assert.equal(findings.filter((f) => f.check === 'no-crosslink-to-docs').length, 1);
+});
+
+test('a learn-hub page that links into docs is not flagged', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/mqtt/qos/', section: 'mqtt', outboundPathnames: ['/docs/getting-started/'] }),
+	]);
+	assert.equal(findings.filter((f) => f.check === 'no-crosslink-to-docs').length, 0);
+});
+
+test('a docs page that links to no learn-hub page is flagged at low severity', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/docs/getting-started/', section: 'docs', outboundPathnames: ['/docs/install/'] }),
+	]);
+	const crosslink = findings.filter((f) => f.check === 'no-crosslink-to-learn');
+	assert.equal(crosslink.length, 1);
+	assert.equal(crosslink[0].severity, 'low');
+});
+
+test('runChecks merges both check families and sorts deterministically', () => {
+	const pages = [
+		page({ pathname: '/b/', title: '', outboundPathnames: [] }),
+		page({ pathname: '/a/', outboundPathnames: ['/b/'] }),
+	];
+	const first = runChecks(pages);
+	const second = runChecks([...pages].reverse());
+	assert.deepEqual(first, second, 'findings must not depend on input order');
+	const keys = first.map((f) => `${f.check} ${f.pathname}`);
+	assert.deepEqual(keys, [...keys].sort(), 'findings must be sorted by (check, pathname)');
 });

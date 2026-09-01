@@ -73,7 +73,12 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 	for (const [title, paths] of groupBy(live, (page) => page.title)) {
 		if (paths.length > 1) {
 			findings.push(
-				finding('title-duplicate', 'medium', '', `${paths.length} pages share "${title}": ${paths.join(', ')}`)
+				finding(
+					'title-duplicate',
+					'medium',
+					'',
+					`${paths.length} pages share "${title}": ${[...paths].sort().join(', ')}`
+				)
 			);
 		}
 	}
@@ -84,11 +89,54 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 					'description-duplicate',
 					'medium',
 					'',
-					`${paths.length} pages share one description: ${paths.join(', ')}`
+					`${paths.length} pages share one description: ${[...paths].sort().join(', ')}`
 				)
 			);
 		}
 	}
 
 	return findings;
+}
+
+export function checkLinkGraph(pages: PageFacts[]): Finding[] {
+	const findings: Finding[] = [];
+	const live = pages.filter((page) => !page.isRedirect);
+	const known = new Set(live.map((page) => page.pathname));
+
+	const inbound = new Map<string, number>();
+	for (const page of live) inbound.set(page.pathname, 0);
+	for (const page of live) {
+		for (const target of page.outboundPathnames) {
+			if (known.has(target)) inbound.set(target, (inbound.get(target) ?? 0) + 1);
+		}
+	}
+
+	for (const [pathname, count] of inbound) {
+		if (count === 0) {
+			findings.push(finding('orphan-page', 'high', pathname, 'no inbound internal links'));
+		} else if (count === 1) {
+			findings.push(finding('near-orphan-page', 'low', pathname, 'only 1 inbound internal link'));
+		}
+	}
+
+	for (const page of live) {
+		if (page.section === 'mqtt' && !page.outboundPathnames.some((t) => t.startsWith('/docs/'))) {
+			findings.push(finding('no-crosslink-to-docs', 'medium', page.pathname, 'learn-hub page links to no /docs/ page'));
+		}
+		if (page.section === 'docs' && !page.outboundPathnames.some((t) => t.startsWith('/mqtt/'))) {
+			findings.push(finding('no-crosslink-to-learn', 'low', page.pathname, 'docs page links to no /mqtt/ page'));
+		}
+	}
+
+	return findings;
+}
+
+/**
+ * The audit's single entry point. Sorting here is what makes two runs over one
+ * `dist/` byte-identical, which is the property the weekly diff depends on.
+ */
+export function runChecks(pages: PageFacts[]): Finding[] {
+	return [...checkMetadata(pages), ...checkLinkGraph(pages)].sort(
+		(a, b) => a.check.localeCompare(b.check) || a.pathname.localeCompare(b.pathname) || a.detail.localeCompare(b.detail)
+	);
 }
