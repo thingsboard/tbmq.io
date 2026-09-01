@@ -120,10 +120,10 @@ const {
 		// style scope, so it reads these custom properties rather than a shared selector).
 		--carousel-slide-basis: 100%;
 		--carousel-slide-gutter: 0px;
-		// Brand accent: indigo in light theme, lavender in dark. --color-brand-indigo
-		// lands with the brand unification; --color-product-cloud is the identical pair.
-		--carousel-accent: var(--color-brand-indigo, var(--color-product-cloud));
-		--carousel-accent-contrast: var(--color-brand-indigo-contrast, var(--color-bg));
+		// Brand accent — TBMQ green (upstream uses its indigo pair here; this repo
+		// has no indigo tokens, so the shared brand pair is the accent).
+		--carousel-accent: var(--color-brand);
+		--carousel-accent-contrast: var(--color-brand-contrast);
 	}
 
 	// Multi-per-view (3/2/1 across breakpoints). Spacing moves from the container's
