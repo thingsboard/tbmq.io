@@ -43,7 +43,7 @@ export const mainNavItems: NavItem[] = [
 	{ label: 'Learn', href: '/mqtt/', id: 'learn-link', submenuId: 'nav-learn' },
 	// matchPrefixes: href '/docs/pe/' alone would miss the CE docs tree.
 	{ label: 'Docs', href: '/docs/pe/', matchPrefixes: ['/docs/'] },
-	{ label: 'Blog', href: 'https://thingsboard.io/blog/', id: 'blog-link', target: '_blank' },
+	{ label: 'Blog', href: '/blog/', id: 'blog-link' },
 ];
 
 // Company submenu

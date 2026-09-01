@@ -2,6 +2,7 @@ import { docsLoader, i18nLoader } from '@astrojs/starlight/loaders';
 import { docsSchema, i18nSchema } from '@astrojs/starlight/schema';
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
+import { glob } from 'astro/loaders';
 import { Products } from './models/site.models';
 
 export const baseSchema = z.object({
@@ -33,11 +34,31 @@ export const baseSchema = z.object({
 		.optional(),
 });
 
+export const blogSchema = z.object({
+	title: z.string(),
+	description: z.string(),
+	date: z.coerce.date(),
+	updatedDate: z.coerce.date().optional(),
+	author: z.string(),
+	categories: z
+		.array(z.string())
+		.or(z.string())
+		.transform((v) => (Array.isArray(v) ? v : [v])),
+	featuredImage: z.string(),
+	featuredImageAlt: z.string().default(''),
+	draft: z.boolean().default(false),
+	excludeFromCarousel: z.boolean().default(false),
+});
+
 export const docsCollectionSchema = baseSchema;
 
 export type DocsEntryData = z.infer<typeof docsCollectionSchema>;
 
 export const collections = {
+	blog: defineCollection({
+		loader: glob({ pattern: '**/*.mdx', base: './src/content/blog' }),
+		schema: blogSchema,
+	}),
 	docs: defineCollection({
 		// Default Astro slug derivation runs each path segment through `github-slugger`,
 		// which strips dots (only `[a-z0-9-]` survives). Override to preserve dotted

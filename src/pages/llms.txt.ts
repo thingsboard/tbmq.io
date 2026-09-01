@@ -149,6 +149,11 @@ const PRODUCT_PAGES: LinkEntry[] = [
 		description: 'Community Edition, self-managed Professional Edition, and managed private cloud plans.',
 	},
 	{
+		path: '/blog/',
+		title: 'Blog',
+		description: 'Release announcements, benchmarks, and MQTT engineering write-ups.',
+	},
+	{
 		path: '/contact-us/',
 		title: 'Contact us',
 		description: 'Reach the TBMQ team about licensing, support, or a proof of concept.',

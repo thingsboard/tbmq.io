@@ -1,12 +1,21 @@
 // src/pages/open-graph/_shared/page-data.ts
+import { getCollection } from 'astro:content';
 import fs from 'node:fs';
 import path from 'node:path';
 import { allPages } from '~/content';
-import { getSectionLabel, isAllowlistedMarketingPath, prettifySegment, truncate } from '~/util/ogContext';
+import {
+	formatBlogDate,
+	getSectionLabel,
+	isAllowlistedMarketingPath,
+	prettifySegment,
+	truncate,
+} from '~/util/ogContext';
 import { getLanguageFromSlug } from '~/util/path-utils';
 import type { CardProps } from './Card';
 import { getDocsProductMeta } from './product-meta';
 import { getMarketingOverride, getMarketingSection } from './marketing-meta';
+import { BLOG_AUTHORS } from '~/data/blog/authors';
+import { CATEGORY_LABELS } from '~/data/blog/categories';
 
 export interface CardInput {
 	/** URL-shaped slug used as the path parameter in the endpoint */
@@ -35,6 +44,70 @@ export async function getDocsCardInputs(): Promise<CardInput[]> {
 				},
 			};
 		});
+}
+
+function authorName(slug: string): string {
+	return BLOG_AUTHORS.find((a) => a.slug === slug)?.name ?? slug;
+}
+
+/** blog collection — posts + index + author landings + category landings. */
+export async function getBlogCardInputs(): Promise<CardInput[]> {
+	const posts = await getCollection('blog', ({ data }) => !data.draft);
+	const inputs: CardInput[] = [];
+
+	// /blog/{post-slug}/
+	for (const post of posts) {
+		const category = post.data.categories?.[0] ? prettifySegment(post.data.categories[0]!) : 'Article';
+		inputs.push({
+			slug: post.id,
+			props: {
+				variant: 'logo' as const,
+				sectionName: 'Blog',
+				eyebrow: `${category} · ${formatBlogDate(post.data.date)}`,
+				title: truncate(post.data.title, TITLE_MAX),
+				authorLine: `By ${authorName(post.data.author)}`,
+			},
+		});
+	}
+
+	// /blog/  (collection index)
+	inputs.push({
+		slug: 'index',
+		props: {
+			variant: 'logo' as const,
+			sectionName: 'Blog',
+			eyebrow: 'Latest articles',
+			title: 'TBMQ Blog',
+		},
+	});
+
+	// /blog/author/{author-slug}/
+	for (const author of BLOG_AUTHORS) {
+		inputs.push({
+			slug: `author/${author.slug}`,
+			props: {
+				variant: 'logo' as const,
+				sectionName: 'Blog',
+				eyebrow: 'Author',
+				title: author.name,
+			},
+		});
+	}
+
+	// /blog/category/{category-slug}/
+	for (const [slug, label] of Object.entries(CATEGORY_LABELS)) {
+		inputs.push({
+			slug: `category/${slug}`,
+			props: {
+				variant: 'logo' as const,
+				sectionName: 'Blog',
+				eyebrow: 'Category',
+				title: label,
+			},
+		});
+	}
+
+	return inputs;
 }
 
 /** Marketing landings — allowlist of /src/pages/*.astro routes. */
@@ -87,7 +160,7 @@ function stripDocsPrefix(slug: string): string {
 
 /** Walk src/pages/ for .astro files, skipping dynamic [...] routes and known non-content dirs. */
 function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pathname: string }>): void {
-	const SKIP_DIRS = new Set(['open-graph', 'docs']);
+	const SKIP_DIRS = new Set(['open-graph', 'docs', 'blog']);
 	const dir = path.join(root, rel);
 	let entries: fs.Dirent[];
 	try {

@@ -27,14 +27,20 @@ export const GOOGLE_CSE_CX = 'a0cca37fad72c4a8e';
 
 const SEP = ` ${TITLE_SEPARATOR} `;
 
-// The blog-era section machinery (SECTION_LABELS / getSectionFromPath /
-// formatSectionIndexTitle and the `section` title segment) was removed with the
-// local blog — re-add a section registry when the site actually has a second
-// marketing section again.
-export function formatMarketingTitle(title: string): string {
+export const SECTION_LABELS: Record<string, string> = {
+	'/blog/': 'Blog',
+};
+
+export function formatSectionIndexTitle(section: string): string {
+	return `${section}${SEP}${SITE_NAME}`;
+}
+
+export function formatMarketingTitle(title: string, section?: string): string {
 	// Strip any legacy " | ThingsBoard" baked into the title prop (some pages include it themselves)
 	const clean = title.replace(/\s*\|\s*ThingsBoard\s*$/i, '').trim();
-	return `${clean}${SEP}${SITE_NAME}`;
+	if (!section) return `${clean}${SEP}${SITE_NAME}`;
+	if (clean === section) return formatSectionIndexTitle(section);
+	return `${clean}${SEP}${section}${SEP}${SITE_NAME}`;
 }
 
 export function formatDocsTitle(pageTitle: string, productName: string, isIndex: boolean): string {

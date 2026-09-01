@@ -20,9 +20,11 @@ export interface LogoCardProps {
 	/** Optional uppercase line above the title. Omit for self-explanatory titles. */
 	eyebrow?: string;
 	title: string;
+	/** Optional bottom-left meta line (e.g. "By Author Name" on blog posts). */
+	authorLine?: string;
 }
 
-export function LogoCard({ sectionName, sectionTight, eyebrow, title }: LogoCardProps) {
+export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine }: LogoCardProps) {
 	const titleSize = pickTitleSize(title);
 	const sectionSize = sectionTight ? 22 : 26;
 	const sectionSpacing = sectionTight ? '0.14em' : '0.18em';
@@ -100,6 +102,22 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title }: LogoCard
 				</div>
 			</div>
 
+			{authorLine && (
+				<div
+					style={{
+						position: 'absolute',
+						bottom: 32,
+						left: '40%',
+						fontSize: 18,
+						fontWeight: 600,
+						letterSpacing: '0.04em',
+						color: URL_COLOR,
+						display: 'flex',
+					}}
+				>
+					{authorLine}
+				</div>
+			)}
 			<div
 				style={{
 					position: 'absolute',

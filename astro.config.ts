@@ -5,6 +5,7 @@ import { redirects } from './astro.redirects';
 import { sidebar } from './astro.sidebar';
 import { devServerFileWatcher } from './config/integrations/dev-server-file-watcher';
 import { sitemap } from './config/integrations/sitemap';
+import { satteriBlogImages } from './config/plugins/satteri-blog-images';
 import { satteriMdxIncludeHeadings } from './config/plugins/satteri-mdx-include-headings';
 import { EDIT_BASE_URL, PROD_ORIGIN } from './src/consts';
 
@@ -147,7 +148,7 @@ export default defineConfig({
         // built in, and `smartPunctuation` replaces `remark-smartypants` — keep `dashes`
         // off so "--" stays literal in CLI snippets, as it always has.
         processor: satteri({
-            hastPlugins: satteriMdxIncludeHeadings(),
+            hastPlugins: [...satteriMdxIncludeHeadings(), satteriBlogImages()],
             features: { smartPunctuation: { dashes: false } },
         }),
     },

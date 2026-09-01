@@ -1,0 +1,1292 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import Breadcrumbs from '@components/Breadcrumbs.astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { getSortedBlogPosts } from '@data/blog/posts';
+import { getAuthor } from '~/data/blog/authors';
+import { CATEGORY_LABELS, type BlogCategory } from '~/data/blog/categories';
+import { Icon } from 'astro-icon/components';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	return posts.map((post) => ({
+		params: { slug: post.id },
+		props: { post },
+	}));
+}
+
+const { post } = Astro.props as { post: CollectionEntry<'blog'> };
+const { Content, headings } = await render(post);
+const author = getAuthor(post.data.author);
+const siteOrigin = new URL(Astro.site!).origin;
+const homeUrl = new URL('/', Astro.site).href;
+const blogUrl = new URL('/blog/', Astro.site).href;
+const postUrl = new URL(`/blog/${post.id}/`, Astro.site).href;
+// Separate percent-encoded form for social share query params.
+const postUrlEncoded = encodeURIComponent(postUrl);
+const shareTitle = encodeURIComponent(post.data.title);
+const allPosts = await getSortedBlogPosts();
+const postCategories = new Set(post.data.categories);
+const relatedPosts = allPosts
+	.filter((p) => p.id !== post.id && p.data.categories.some((c) => postCategories.has(c)))
+	.slice(0, 3);
+
+// Filter headings for TOC — include h2, h3, h4
+const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+const tocMinDepth = tocHeadings.length > 0 ? Math.min(...tocHeadings.map((h) => h.depth)) : 2;
+
+// SEO: JSON-LD structured data
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'BlogPosting',
+			'@id': `${postUrl}#blogposting`,
+			headline: post.data.title,
+			description: post.data.description,
+			datePublished: post.data.date.toISOString(),
+			...(post.data.updatedDate && { dateModified: post.data.updatedDate.toISOString() }),
+			inLanguage: 'en-US',
+			mainEntityOfPage: { '@id': `${postUrl}#webpage` },
+			image: post.data.featuredImage
+				? {
+						'@type': 'ImageObject',
+						url: new URL(post.data.featuredImage, Astro.site).href,
+					}
+				: undefined,
+			author: author
+				? {
+						'@type': 'Person',
+						name: author.name,
+						url: new URL(`/blog/author/${author.slug}/`, Astro.site).href,
+						...(author.avatar && { image: { '@type': 'ImageObject', url: author.avatar } }),
+					}
+				: undefined,
+			publisher: {
+				'@type': 'Organization',
+				name: 'ThingsBoard',
+				url: siteOrigin,
+				logo: { '@type': 'ImageObject', url: new URL('/images/thingsboard_logo_blue.svg', Astro.site).href },
+			},
+		},
+		{
+			'@type': 'BreadcrumbList',
+			'@id': `${postUrl}#breadcrumblist`,
+			itemListElement: [
+				{ '@type': 'ListItem', position: 1, name: 'Home', item: homeUrl },
+				{ '@type': 'ListItem', position: 2, name: 'Blog', item: blogUrl },
+				{ '@type': 'ListItem', position: 3, name: post.data.title },
+			],
+		},
+		{
+			'@type': 'WebPage',
+			'@id': `${postUrl}#webpage`,
+			url: postUrl,
+			name: post.data.title,
+			description: post.data.description,
+			inLanguage: 'en-US',
+			isPartOf: { '@id': `${blogUrl}#website` },
+		},
+		{
+			'@type': 'WebSite',
+			'@id': `${blogUrl}#website`,
+			url: blogUrl,
+			name: 'ThingsBoard Blog',
+			inLanguage: 'en-US',
+			publisher: { '@id': `${homeUrl}#organization` },
+		},
+	],
+};
+---
+
+<BlogLayout
+	title={post.data.title}
+	description={post.data.description}
+	ogImage={post.data.featuredImage}
+	ogType="article"
+	publishedTime={post.data.date.toISOString()}
+	modifiedTime={post.data.updatedDate?.toISOString()}
+	authorName={author?.name}
+	jsonLd={jsonLd}
+>
+	<article class="blog-post">
+		<div class="post-layout">
+			<div class="post-main">
+				{/* Main bordered content */}
+				<div class="post-container" style="margin:0">
+					{/* Breadcrumbs */}
+					<Breadcrumbs items={[{ label: 'Blog', href: '/blog/' }, { label: post.data.title }]} />
+
+					{/* Date with accent bar */}
+					<time class="post-date" datetime={post.data.date.toISOString()}>
+						{post.data.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+					</time>
+
+					{/* Title */}
+					<h1>{post.data.title}</h1>
+
+					{/* Author card */}
+					{
+						author && (
+							<div class="post-author-card">
+								<a href={`/blog/author/${author.slug}/`} class="post-author-link">
+									<img src={author.avatar} alt={author.name} class="post-author-avatar" />
+									<div class="post-author-info">
+										<span class="post-author-name">{author.name}</span>
+										{author.role && <span class="post-author-role">{author.role}</span>}
+									</div>
+								</a>
+							</div>
+						)
+					}
+
+					{/* Mobile TOC — collapsible; shown below xl where the sticky sidebar is hidden */}
+					{
+						tocHeadings.length > 0 && (
+							<details class="toc-mobile">
+								<summary class="toc-mobile__summary">On this page</summary>
+								<nav aria-label="Table of contents">
+									<ul class="toc-list">
+										{tocHeadings.map((h) => (
+											<li style={h.depth > tocMinDepth ? `padding-left: ${(h.depth - tocMinDepth) * 12}px` : undefined}>
+												<a href={`#${h.slug}`} class="toc-link">
+													{h.text}
+												</a>
+											</li>
+										))}
+									</ul>
+								</nav>
+							</details>
+						)
+					}
+
+					{/* Content */}
+					<div class="blog-content">
+						<Content />
+					</div>
+
+					{/* Author bio */}
+					{
+						author && (
+							<div class="post-author-bio">
+								<a href={`/blog/author/${author.slug}/`} class="author-bio-card">
+									<img src={author.avatar} alt={author.name} class="author-bio-avatar" />
+									<div>
+										<strong>{author.name}</strong>
+										{author.bio && <p>{author.bio}</p>}
+									</div>
+								</a>
+							</div>
+						)
+					}
+
+					{/* Bottom breadcrumbs */}
+					<div class="blog-breadcrumb-bottom">
+						<Breadcrumbs items={[{ label: 'Blog', href: '/blog/' }, { label: post.data.title }]} />
+					</div>
+				</div>
+
+				{/* Share row */}
+				<div class="share-row">
+					<div class="share-inner">
+						<span class="share-label">Share:</span>
+						<div class="share-icons">
+							<a
+								href={`https://www.facebook.com/sharer/sharer.php?u=${postUrlEncoded}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="share-icon"
+								aria-label="Share on Facebook"
+							>
+								<Icon name="tabler:brand-facebook" size={20} />
+							</a>
+							<a
+								href={`https://t.me/share/url?url=${postUrlEncoded}&text=${shareTitle}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="share-icon"
+								aria-label="Share on Telegram"
+							>
+								<Icon name="tabler:brand-telegram" size={20} />
+							</a>
+							<a
+								href={`https://www.linkedin.com/sharing/share-offsite/?url=${postUrlEncoded}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="share-icon"
+								aria-label="Share on LinkedIn"
+							>
+								<Icon name="tabler:brand-linkedin" size={20} />
+							</a>
+							<a
+								href={`https://twitter.com/intent/tweet?url=${postUrlEncoded}&text=${shareTitle}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="share-icon"
+								aria-label="Share on X"
+							>
+								<Icon name="tabler:brand-x" size={20} />
+							</a>
+						</div>
+					</div>
+				</div>
+
+				{/* Newsletter section */}
+				<div class="newsletter-section">
+					<div class="newsletter-inner">
+						<h2 class="newsletter-heading">Join ThingsBoard community</h2>
+						<p class="newsletter-subtitle">Stay tuned and get first-hand updates and access to insights.</p>
+						{
+							/* Mailerlite wrapper structure — required for webforms.min.js to
+				    intercept the submit, AJAX-post, and toggle in the inline
+				    success state. Without it, target="_blank" lands on a blank
+				    Mailerlite response page (designed for their iframe). */
+						}
+						<div id="mlb2-z9h4b4-blog-post" class="ml-subscribe-form ml-subscribe-form-z9h4b4 newsletter-ml-wrap">
+							<div
+								class="subscribe-form ml-block-success"
+								style="display:none"
+								role="status"
+								aria-live="polite"
+								tabindex="-1"
+							>
+								<p class="newsletter-success">Thank you! You're subscribed.</p>
+							</div>
+							<form
+								class="newsletter-form ml-block-form"
+								action="https://static.mailerlite.com/webforms/submit/z9h4b4"
+								data-id="6028548"
+								data-code="z9h4b4"
+								method="post"
+							>
+								<input
+									type="email"
+									name="fields[email]"
+									placeholder="Your email address*"
+									required
+									class="newsletter-input"
+									aria-label="Email address"
+								/>
+								<input type="hidden" name="ml-submit" value="1" />
+								<button type="submit" class="newsletter-submit">
+									<span class="newsletter-submit-label">Subscribe</span>
+									<span class="newsletter-submit-spinner" aria-hidden="true"></span>
+								</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* TOC Sidebar — sticky right rail; shown at xl and up */}
+			{
+				tocHeadings.length > 0 && (
+					<aside class="toc-sidebar" id="toc-sidebar">
+						<nav class="toc-nav" aria-label="Table of contents">
+							<p class="toc-title">On this page</p>
+							<ul class="toc-list">
+								{tocHeadings.map((h) => (
+									<li style={h.depth > tocMinDepth ? `padding-left: ${(h.depth - tocMinDepth) * 12}px` : undefined}>
+										<a href={`#${h.slug}`} class="toc-link">
+											{h.text}
+										</a>
+									</li>
+								))}
+							</ul>
+						</nav>
+					</aside>
+				)
+			}
+		</div>
+
+		{/* Related Posts */}
+		{
+			relatedPosts.length > 0 && (
+				<section class="related-posts">
+					<div class="container-wide">
+						<h2>Related Posts</h2>
+						<div class="related-grid">
+							{relatedPosts.map((rp) => (
+								<a href={`/blog/${rp.id}/`} class="related-card">
+									<div class="related-card-image">
+										<img src={rp.data.featuredImage} alt={rp.data.featuredImageAlt} loading="lazy" />
+									</div>
+									<div class="related-card-body">
+										<span class="related-card-category">
+											{CATEGORY_LABELS[rp.data.categories[0] as BlogCategory] || rp.data.categories[0]}
+										</span>
+										<h3>{rp.data.title}</h3>
+										<time datetime={rp.data.date.toISOString()}>
+											{rp.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+										</time>
+									</div>
+								</a>
+							))}
+						</div>
+					</div>
+				</section>
+			)
+		}
+	</article>
+</BlogLayout>
+
+<script>
+	import { lockScroll, unlockScroll } from '@util/scroll-lock';
+
+	// TOC links live in both the sticky desktop sidebar and the mobile <details>,
+	// so the same slug can appear twice — setActive() toggles every matching link.
+	const tocLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.toc-link'));
+
+	if (tocLinks.length) {
+		// Unique heading elements in document order (dedupe the desktop/mobile pair).
+		const headings = [
+			...new Set(
+				tocLinks
+					.map((link) => {
+						const id = link.getAttribute('href')?.slice(1);
+						return id ? document.getElementById(id) : null;
+					})
+					.filter((el): el is HTMLElement => el !== null)
+			),
+		];
+
+		const setActive = (id: string | null) => {
+			for (const link of tocLinks) {
+				const isActive = id !== null && link.getAttribute('href') === `#${id}`;
+				link.classList.toggle('active', isActive);
+				if (isActive) link.setAttribute('aria-current', 'true');
+				else link.removeAttribute('aria-current');
+			}
+		};
+
+		// Live header + promo-banner height (the banner collapses on scroll).
+		const navOffset = () => {
+			const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sl-nav-height'));
+			if (!Number.isNaN(v) && v > 0) return v;
+			return document.querySelector('header')?.getBoundingClientRect().height ?? 80;
+		};
+
+		// IO won't fire once the page can't scroll further, so the last heading
+		// can never reach the trigger band on tall viewports — promote the lowest
+		// visible heading when pinned at the bottom.
+		const isAtBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+		const promoteIfAtBottom = () => {
+			if (!isAtBottom()) return;
+			const vh = window.innerHeight;
+			let last: HTMLElement | null = null;
+			for (const h of headings) {
+				if (h.getBoundingClientRect().top <= vh) last = h;
+			}
+			if (last) setActive(last.id);
+		};
+
+		// A thin trigger band just below the header tracks the heading currently
+		// entering the top of the viewport. Rebuilt on resize since both the band
+		// offset and the viewport height change.
+		let observer: IntersectionObserver | undefined;
+		const buildObserver = () => {
+			observer?.disconnect();
+			const top = navOffset() + 32;
+			const bottom = top + 53;
+			const rootMargin = `-${top}px 0px ${bottom - document.documentElement.clientHeight}px`;
+			observer = new IntersectionObserver(
+				(entries) => {
+					// A fast scroll can cross two headings in one batch; pick the topmost
+					// intersecting one so the upper section wins (batch order isn't reliable).
+					let topmost: IntersectionObserverEntry | null = null;
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue;
+						if (!topmost || entry.boundingClientRect.top < topmost.boundingClientRect.top) {
+							topmost = entry;
+						}
+					}
+					if (topmost) setActive((topmost.target as HTMLElement).id);
+					promoteIfAtBottom();
+				},
+				{ rootMargin }
+			);
+			for (const h of headings) observer.observe(h);
+		};
+
+		buildObserver();
+		promoteIfAtBottom();
+
+		let resizeTimer: ReturnType<typeof setTimeout>;
+		window.addEventListener(
+			'resize',
+			() => {
+				clearTimeout(resizeTimer);
+				resizeTimer = setTimeout(buildObserver, 200);
+			},
+			{ passive: true }
+		);
+
+		// Scroll listener only for the bottom-of-page case IO can't catch. rAF-coalesced.
+		let rafId = 0;
+		window.addEventListener(
+			'scroll',
+			() => {
+				if (rafId) return;
+				rafId = requestAnimationFrame(() => {
+					rafId = 0;
+					promoteIfAtBottom();
+				});
+			},
+			{ passive: true }
+		);
+
+		// Intercept TOC clicks so each click replaces the URL hash instead of pushing a history entry.
+		// Without this, the browser back button walks through every heading visited before leaving the post.
+		for (const link of tocLinks) {
+			link.addEventListener('click', (e) => {
+				const href = link.getAttribute('href');
+				if (!href?.startsWith('#')) return;
+				const target = document.getElementById(href.slice(1));
+				if (!target) return;
+				e.preventDefault();
+				// behavior: 'auto' defers to CSS scroll-behavior (which already respects prefers-reduced-motion).
+				target.scrollIntoView({ behavior: 'auto', block: 'start' });
+				history.replaceState(null, '', href);
+				// Collapse the mobile dropdown after picking a heading.
+				link.closest('details')?.removeAttribute('open');
+			});
+		}
+	}
+
+	// ── Blog Image Lightbox ──
+	const contentImages = document.querySelectorAll('.blog-content img') as NodeListOf<HTMLImageElement>;
+	if (contentImages.length) {
+		const overlay = document.createElement('div');
+		overlay.className = 'blog-lightbox';
+		overlay.innerHTML =
+			'<img alt="Enlarged image" /><button class="blog-lightbox__close" aria-label="Close">&times;</button>';
+		document.body.appendChild(overlay);
+
+		const lbImg = overlay.querySelector('img')!;
+		const closeBtn = overlay.querySelector('.blog-lightbox__close')!;
+
+		function openLightbox(src: string, alt: string) {
+			lbImg.src = src;
+			lbImg.alt = alt;
+			overlay.classList.add('active');
+			lockScroll();
+		}
+
+		function closeLightbox() {
+			overlay.classList.remove('active');
+			unlockScroll();
+		}
+
+		contentImages.forEach((img) => {
+			img.style.cursor = 'pointer';
+			img.addEventListener('click', () => openLightbox(img.src, img.alt));
+		});
+
+		overlay.addEventListener('click', (e) => {
+			if (e.target === overlay || e.target === closeBtn) closeLightbox();
+		});
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') closeLightbox();
+		});
+	}
+
+	// ── Newsletter (Mailerlite) — lazy-load webforms.min.js on first focus
+	// of the email input. Mirrors the pattern used on the blog index page.
+	// Submit directly via fetch — same pattern as /blog/ index. The lazy
+	// Mailerlite intercept script was race-prone and got blocked by some
+	// ad-blockers; the /webforms/submit/ endpoint accepts cross-origin
+	// fire-and-forget POSTs so the email still lands without the script.
+	(function initBlogPostNewsletter() {
+		const wrap = document.getElementById('mlb2-z9h4b4-blog-post');
+		if (!wrap) return;
+		const form = wrap.querySelector<HTMLFormElement>('form.ml-block-form');
+		const success = wrap.querySelector<HTMLElement>('.ml-block-success');
+		const emailInput = wrap.querySelector<HTMLInputElement>('input[type="email"]');
+		const submitBtn = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+		if (!form || !success || !emailInput || !submitBtn) return;
+
+		let submitted = false;
+		form.addEventListener('submit', (e) => {
+			e.preventDefault();
+			if (submitted) return;
+			if (!form.checkValidity()) return;
+			submitted = true;
+			submitBtn.disabled = true;
+			submitBtn.setAttribute('aria-busy', 'true');
+			submitBtn.classList.add('is-loading');
+
+			fetch(form.action, {
+				method: 'POST',
+				body: new FormData(form),
+				mode: 'no-cors',
+				credentials: 'omit',
+			}).catch(() => {
+				// Network failure — keep optimistic-success behavior.
+			});
+
+			emailInput.value = '';
+			form.style.setProperty('display', 'none', 'important');
+			success.style.setProperty('display', 'block', 'important');
+			// Move focus into the success region for SR + keyboard users.
+			success.focus();
+		});
+	})();
+</script>
+
+<style lang="scss" is:global>
+	@use '../../styles/_variables.scss' as *;
+
+	// ── Layout ──
+
+	// Smooth scroll for TOC anchor clicks on blog posts.
+	// Affects only same-document anchor nav + scrollIntoView — cross-document loads still land instantly.
+	html:has(.blog-post) {
+		scroll-behavior: smooth;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html:has(.blog-post) {
+			scroll-behavior: auto;
+		}
+	}
+
+	// Post body + sticky TOC layout, three modes:
+	//   • below xl: single column; the TOC becomes the in-flow mobile dropdown.
+	//   • xl–2xl (laptops): two-column grid with the article+rail group centred,
+	//     so the body shifts a touch left of dead-centre to make room for the rail
+	//     (the gutter is too narrow to hold the rail beside a centred article).
+	//   • 2xl and up: the gutter is wide enough on its own, so the article returns
+	//     to dead-centre in the viewport and the rail floats in the right gutter
+	//     (matches the pre-refactor centred article).
+	.post-layout {
+		@include container;
+		max-width: 860px; // single-column reading width below xl
+
+		@include media-up(xl) {
+			max-width: 1148px; // 860 article + 48 gap + 240 rail
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 240px;
+			column-gap: $spacing-12;
+			align-items: start;
+		}
+
+		@include media-up(2xl) {
+			// Span the viewport (drop the group cap) with equal side columns so the
+			// 860px article sits dead-centre; the rail rides in the right column.
+			max-width: none;
+			grid-template-columns: 1fr minmax(0, 860px) 1fr;
+		}
+	}
+
+	.post-main {
+		min-width: 0; // allow the article column to shrink within its grid track
+
+		@include media-up(2xl) {
+			grid-column: 2; // centre track of the three-column grid
+		}
+	}
+
+	.post-container {
+		border-left: 1px solid var(--color-border);
+		border-right: 1px solid var(--color-border);
+		padding: var(--spacing-6) var(--spacing-4) var(--spacing-10);
+
+		@include media-down(lg) {
+			border: none;
+			padding: var(--spacing-6) 0 0;
+		}
+	}
+
+	.container-wide {
+		@include container;
+		max-width: 860px;
+	}
+
+	// ── Breadcrumbs ──
+
+	.breadcrumbs {
+		margin-bottom: var(--spacing-6);
+	}
+
+	.blog-breadcrumb-bottom {
+		margin-top: var(--spacing-6);
+		padding-top: var(--spacing-6);
+		border-top: 1px solid var(--color-border);
+
+		.breadcrumbs {
+			margin-bottom: 0;
+		}
+	}
+
+	// ── Date ──
+
+	.post-date {
+		display: block;
+		@include text-s;
+		color: var(--color-primary);
+		font-weight: $font-weight-medium;
+		margin-bottom: var(--spacing-3);
+		margin-left: calc(-1 * var(--spacing-4) - 1px);
+		padding-left: calc(var(--spacing-4) - 2px);
+		border-left: 3px solid var(--color-primary);
+
+		@include media-down(lg) {
+			margin-left: 0;
+			padding-left: var(--spacing-4);
+		}
+	}
+
+	// ── Title ──
+
+	h1 {
+		font-size: 40px;
+		font-weight: $font-weight-semibold;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+		color: var(--color-text);
+		margin-bottom: var(--spacing-6);
+
+		@include media-down(md) {
+			font-size: 28px;
+			line-height: 1.25;
+		}
+	}
+
+	// ── Author Card ──
+
+	.post-author-card {
+		padding: var(--spacing-5) 0;
+		border-bottom: 1px solid var(--color-border);
+		margin-bottom: var(--spacing-8);
+	}
+
+	.post-author-link {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-4);
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.post-author-avatar {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.post-author-info {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.post-author-name {
+		font-size: $font-size-base;
+		font-weight: $font-weight-semibold;
+		color: var(--color-text);
+	}
+
+	.post-author-role {
+		@include text-s;
+		color: var(--color-text-muted);
+	}
+
+	// ── Blog Content ──
+
+	.blog-content {
+		margin-bottom: var(--spacing-10);
+
+		h2 {
+			font-size: $font-size-3xl;
+			font-weight: $font-weight-semibold;
+			color: var(--color-text);
+			margin: var(--spacing-10) 0 var(--spacing-4);
+			line-height: 1.3;
+			scroll-margin-top: calc(var(--sl-nav-height) + #{$spacing-6});
+		}
+
+		h3 {
+			font-size: $font-size-2xl;
+			font-weight: $font-weight-semibold;
+			color: var(--color-text);
+			margin: var(--spacing-8) 0 var(--spacing-3);
+			line-height: 1.3;
+			scroll-margin-top: calc(var(--sl-nav-height) + #{$spacing-6});
+		}
+
+		h4 {
+			font-size: $font-size-xl;
+			font-weight: $font-weight-semibold;
+			color: var(--color-text);
+			margin: var(--spacing-6) 0 var(--spacing-3);
+			scroll-margin-top: calc(var(--sl-nav-height) + #{$spacing-6});
+		}
+
+		h5 {
+			font-size: $font-size-lg;
+			font-weight: $font-weight-semibold;
+			color: var(--color-text);
+			margin: var(--spacing-4) 0 var(--spacing-2);
+		}
+
+		p {
+			@include text-m;
+			color: var(--color-text-secondary);
+			margin: 0 0 var(--spacing-6);
+			line-height: 1.8;
+		}
+
+		img {
+			max-width: 100%;
+			height: auto;
+			border-radius: var(--radius-md);
+			margin: var(--spacing-4) 0;
+			display: block;
+		}
+
+		// Caption pattern: a paragraph containing only an image, immediately followed by
+		// a paragraph whose only element child is an <em> — typical markdown caption shape
+		// `![](img)\n\n*caption*`. Scoped this way because a bare `p > em:only-child` selector
+		// also matches inline italics surrounded by text (CSS :only-child ignores text nodes).
+		p:has(> img:only-child) + p > em:only-child {
+			display: block;
+			@include text-s;
+			color: var(--color-text-muted);
+			text-align: center;
+			margin-top: calc(-1 * var(--spacing-2));
+			margin-bottom: var(--spacing-4);
+		}
+
+		figure {
+			margin: var(--spacing-6) 0;
+
+			figcaption {
+				@include text-s;
+				color: var(--color-text-muted);
+				text-align: center;
+				margin-top: var(--spacing-2);
+			}
+		}
+
+		blockquote {
+			border-left: 3px solid var(--color-primary);
+			padding: var(--spacing-3) var(--spacing-5);
+			margin: var(--spacing-6) 0;
+			background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+			border-radius: 0 var(--radius-md) var(--radius-md) 0;
+			color: var(--color-text-secondary);
+		}
+
+		a {
+			color: var(--color-primary);
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+
+		ul {
+			margin: 0 0 var(--spacing-4);
+			padding-left: var(--spacing-6);
+			list-style: disc !important;
+		}
+
+		ol {
+			margin: 0 0 var(--spacing-4);
+			padding-left: var(--spacing-6);
+			list-style: decimal !important;
+		}
+
+		li {
+			@include text-m;
+			color: var(--color-text-secondary);
+			margin-bottom: var(--spacing-2);
+			line-height: 1.75;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: var(--spacing-6) 0;
+
+			th,
+			td {
+				padding: var(--spacing-2) var(--spacing-3);
+				border: 1px solid var(--color-border);
+				@include text-s;
+			}
+
+			th {
+				background: var(--color-bg-surface);
+				font-weight: $font-weight-semibold;
+			}
+		}
+
+		hr {
+			border: none;
+			border-top: 1px solid var(--color-border);
+			margin: var(--spacing-8) 0;
+		}
+
+		pre {
+			margin: var(--spacing-6) 0;
+			border-radius: var(--radius-md);
+			overflow-x: auto;
+		}
+
+		code:not(pre code) {
+			background: var(--color-bg-light);
+			padding: 0.15rem 0.4rem;
+			border-radius: var(--radius-sm);
+			font-size: 0.9em;
+			color: var(--color-text);
+		}
+
+		iframe {
+			width: 100%;
+			border: none;
+			border-radius: var(--radius-md);
+			margin: var(--spacing-6) 0;
+		}
+
+		strong {
+			color: var(--color-text);
+			font-weight: $font-weight-semibold;
+		}
+	}
+
+	// ── Author Bio ──
+
+	.post-author-bio {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--spacing-8);
+		margin-bottom: var(--spacing-8);
+	}
+
+	.author-bio-card {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-4);
+		text-decoration: none;
+		color: inherit;
+
+		strong {
+			display: block;
+			@include text-m;
+			color: var(--color-text);
+			font-weight: $font-weight-semibold;
+		}
+
+		p {
+			@include text-s;
+			color: var(--color-text-secondary);
+			margin: var(--spacing-1) 0 0;
+		}
+	}
+
+	.author-bio-avatar {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	// ── TOC Sidebar ──
+
+	.toc-sidebar {
+		// Second column of .post-layout (xl and up). Sticks below the live
+		// header+banner offset (--sl-nav-height = header + promo band) so it
+		// lifts with the header as the banner collapses on scroll. align-self:
+		// start keeps it from stretching to the row height, which would break
+		// the sticky behaviour.
+		position: sticky;
+		align-self: start;
+		top: calc(var(--sl-nav-height) + #{$spacing-8});
+		max-height: calc(100vh - var(--sl-nav-height) - #{$spacing-10});
+		overflow-y: auto;
+		// Pin the width: at xl the grid track is already 240px, but at 2xl the rail
+		// sits in a wide 1fr gutter column and would otherwise stretch to fill it.
+		width: 240px;
+
+		@include media-down(xl) {
+			display: none;
+		}
+
+		@include media-up(2xl) {
+			grid-column: 3; // right gutter column; justify-self keeps it beside the article
+			justify-self: start;
+		}
+	}
+
+	.toc-title {
+		font-size: $font-size-sm;
+		font-weight: $font-weight-semibold;
+		color: var(--color-text);
+		margin-bottom: var(--spacing-3);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.toc-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+	}
+
+	.toc-link {
+		@include text-s;
+		color: var(--color-text-muted);
+		text-decoration: none;
+		transition: color $transition-fast;
+		display: block;
+		line-height: 1.4;
+		padding: 6px 0;
+
+		&:hover {
+			color: var(--color-text);
+		}
+
+		&.active {
+			color: var(--color-primary);
+			font-weight: $font-weight-medium;
+		}
+	}
+
+	// ── Mobile TOC (collapsible) ──
+	// Mirror image of .toc-sidebar: the dropdown only exists below xl, where the
+	// sticky rail is hidden, so readers on narrow viewports still get a TOC.
+
+	.toc-mobile {
+		margin-bottom: var(--spacing-6);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background: var(--color-bg-surface);
+
+		@include media-up(xl) {
+			display: none;
+		}
+
+		.toc-list {
+			padding: 0 var(--spacing-4) var(--spacing-3);
+		}
+	}
+
+	.toc-mobile__summary {
+		@include text-s;
+		font-weight: $font-weight-semibold;
+		color: var(--color-text);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: var(--spacing-3) var(--spacing-4);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		list-style: none; // hide the default disclosure marker (most browsers)
+
+		&::-webkit-details-marker {
+			display: none; // hide the default disclosure marker (Safari)
+		}
+
+		// Chevron that flips when the dropdown opens.
+		&::after {
+			content: '';
+			width: 8px;
+			height: 8px;
+			border-right: 2px solid currentColor;
+			border-bottom: 2px solid currentColor;
+			transform: rotate(45deg);
+			transition: transform $transition-fast;
+			opacity: 0.6;
+		}
+	}
+
+	.toc-mobile[open] .toc-mobile__summary::after {
+		transform: rotate(-135deg);
+	}
+
+	// ── Related Posts ──
+
+	.related-posts {
+		background: var(--color-bg-surface);
+		border-top: 1px solid var(--color-border);
+		padding: var(--spacing-10) 0;
+
+		h2 {
+			font-size: $font-size-2xl;
+			font-weight: $font-weight-semibold;
+			text-align: center;
+			margin-bottom: var(--spacing-6);
+		}
+	}
+
+	.related-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-5);
+
+		@include media-down(md) {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.related-card {
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		text-decoration: none;
+		color: inherit;
+		background: var(--color-bg-surface);
+		transition:
+			transform 0.2s,
+			box-shadow 0.2s;
+
+		&:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+	}
+
+	.related-card-image {
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	}
+
+	.related-card-body {
+		padding: var(--spacing-4);
+
+		h3 {
+			font-size: $font-size-base;
+			font-weight: $font-weight-semibold;
+			color: var(--color-text);
+			line-height: 1.4;
+			margin: var(--spacing-2) 0;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+		}
+
+		time {
+			@include text-s;
+			color: var(--color-text-muted);
+		}
+	}
+
+	.related-card-category {
+		@include text-s;
+		color: var(--color-primary);
+		font-weight: $font-weight-medium;
+	}
+
+	// ── Share Row ──
+
+	// Now an in-flow block inside .post-main (no longer self-centered), so it
+	// aligns with the article column above it instead of the viewport.
+	.share-row {
+		padding-top: var(--spacing-6);
+		padding-bottom: var(--spacing-6);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.share-inner {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--spacing-4);
+	}
+
+	.share-label {
+		@include text-m;
+		font-weight: $font-weight-semibold;
+		color: var(--color-text);
+	}
+
+	.share-icons {
+		display: flex;
+		gap: var(--spacing-3);
+	}
+
+	.share-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: 1px solid var(--color-border);
+		background: transparent;
+		color: var(--color-text);
+		text-decoration: none;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
+
+		&:hover {
+			border-color: var(--color-text);
+			color: var(--color-text);
+		}
+
+		svg {
+			width: 18px;
+			height: 18px;
+		}
+	}
+
+	// ── Newsletter Section ──
+
+	.newsletter-section {
+		background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-light));
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-10) var(--spacing-8);
+		text-align: center;
+		margin-top: var(--spacing-6);
+		margin-bottom: var(--spacing-6);
+	}
+
+	.newsletter-inner {
+		max-width: 500px;
+		margin: 0 auto;
+	}
+
+	.newsletter-heading {
+		font-size: $font-size-2xl;
+		font-weight: $font-weight-bold;
+		color: var(--color-text);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.newsletter-subtitle {
+		@include text-m;
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-6);
+	}
+
+	.newsletter-form {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--spacing-4);
+	}
+
+	.newsletter-input {
+		width: 100%;
+		padding: var(--spacing-3) var(--spacing-4);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		font-size: $font-size-base;
+		background: var(--color-bg);
+		color: var(--color-text);
+		outline: none;
+
+		&:focus {
+			border-color: var(--color-primary);
+		}
+
+		&::placeholder {
+			color: var(--color-text-muted);
+		}
+	}
+
+	.newsletter-submit {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: var(--spacing-3) var(--spacing-8);
+		background: var(--color-primary);
+		color: var(--sl-color-black);
+		border: none;
+		border-radius: var(--radius-md);
+		font-size: $font-size-base;
+		font-weight: $font-weight-semibold;
+		cursor: pointer;
+		transition: opacity 0.2s;
+
+		&:hover {
+			opacity: 0.85;
+		}
+
+		&:disabled {
+			cursor: default;
+			opacity: 0.7;
+		}
+	}
+
+	.newsletter-submit-spinner {
+		display: none;
+		width: 16px;
+		height: 16px;
+		border: 2px solid currentColor;
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: newsletter-submit-spin 0.7s linear infinite;
+	}
+
+	.newsletter-submit.is-loading .newsletter-submit-spinner {
+		display: inline-block;
+	}
+
+	@keyframes newsletter-submit-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	// ── Lightbox ──
+
+	.blog-lightbox {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		background: rgba(0, 0, 0, 0.85);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		visibility: hidden;
+		transition:
+			opacity 0.25s,
+			visibility 0.25s;
+		cursor: zoom-out;
+
+		&.active {
+			opacity: 1;
+			visibility: visible;
+		}
+
+		img {
+			max-width: 90vw;
+			max-height: 90vh;
+			object-fit: contain;
+			border-radius: 8px;
+			cursor: default;
+		}
+	}
+
+	.blog-lightbox__close {
+		position: absolute;
+		top: 20px;
+		right: 24px;
+		background: none;
+		border: none;
+		color: #fff;
+		font-size: 36px;
+		cursor: pointer;
+		line-height: 1;
+		opacity: 0.7;
+		transition: opacity 0.15s;
+
+		&:hover {
+			opacity: 1;
+		}
+	}
+</style>
