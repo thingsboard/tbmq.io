@@ -3,9 +3,14 @@ import assert from 'node:assert/strict';
 import { checkLinkGraph, checkMetadata, runChecks } from './checks.ts';
 import type { PageFacts } from './types.ts';
 
-/** A page that trips no check, so each test can vary exactly one field. */
+/**
+ * A page that trips no check, so each test can vary exactly one field.
+ * `mainOutboundPathnames` defaults to `outboundPathnames` unless overridden, so a
+ * test that sets only the full link set still gets a page whose main content is a
+ * subset of it — the invariant real pages have.
+ */
 function page(overrides: Partial<PageFacts> = {}): PageFacts {
-	return {
+	const facts: PageFacts = {
 		pathname: '/mqtt/qos/',
 		section: 'mqtt',
 		isRedirect: false,
@@ -17,8 +22,10 @@ function page(overrides: Partial<PageFacts> = {}): PageFacts {
 		hasJsonLd: true,
 		canonical: 'https://tbmq.io/mqtt/qos/',
 		outboundPathnames: ['/docs/getting-started/'],
+		mainOutboundPathnames: ['/docs/getting-started/'],
 		...overrides,
 	};
+	return overrides.mainOutboundPathnames ? facts : { ...facts, mainOutboundPathnames: facts.outboundPathnames };
 }
 
 const checkIds = (findings: { check: string }[]) => findings.map((f) => f.check).sort();
@@ -130,25 +137,63 @@ test('redirect stubs are excluded from the link graph', () => {
 
 test('a learn-hub page that links to no docs page is flagged', () => {
 	const findings = checkLinkGraph([
-		page({ pathname: '/mqtt/qos/', section: 'mqtt', outboundPathnames: ['/mqtt/topics/'] }),
+		page({ pathname: '/mqtt/qos/', section: 'mqtt', mainOutboundPathnames: ['/mqtt/topics/'] }),
 	]);
 	assert.equal(findings.filter((f) => f.check === 'no-crosslink-to-docs').length, 1);
 });
 
 test('a learn-hub page that links into docs is not flagged', () => {
 	const findings = checkLinkGraph([
-		page({ pathname: '/mqtt/qos/', section: 'mqtt', outboundPathnames: ['/docs/getting-started/'] }),
+		page({ pathname: '/mqtt/qos/', section: 'mqtt', mainOutboundPathnames: ['/docs/getting-started/'] }),
 	]);
 	assert.equal(findings.filter((f) => f.check === 'no-crosslink-to-docs').length, 0);
 });
 
 test('a docs page that links to no learn-hub page is flagged at low severity', () => {
 	const findings = checkLinkGraph([
-		page({ pathname: '/docs/getting-started/', section: 'docs', outboundPathnames: ['/docs/install/'] }),
+		page({ pathname: '/docs/getting-started/', section: 'docs', mainOutboundPathnames: ['/docs/install/'] }),
 	]);
 	const crosslink = findings.filter((f) => f.check === 'no-crosslink-to-learn');
 	assert.equal(crosslink.length, 1);
 	assert.equal(crosslink[0].severity, 'low');
+});
+
+// Regression guard for the defect these two checks shipped with: they read the
+// whole-document link set, which site chrome populates identically on every page,
+// so both were structurally incapable of firing. Measured against dist/ on
+// 2026-09-01, the minimum whole-document `/mqtt/` link count across all 183 docs
+// pages was 6 — the header/footer set — so `no-crosslink-to-learn` was a
+// permanent 0 that read as "every docs page cross-links".
+test('crosslink checks ignore chrome links and read main content only', () => {
+	const docsPage = page({
+		pathname: '/docs/getting-started/',
+		section: 'docs',
+		outboundPathnames: ['/docs/install/', '/mqtt/qos/'],
+		mainOutboundPathnames: ['/docs/install/'],
+	});
+	const learnPage = page({
+		pathname: '/mqtt/qos/',
+		section: 'mqtt',
+		outboundPathnames: ['/mqtt/topics/', '/docs/getting-started/'],
+		mainOutboundPathnames: ['/mqtt/topics/'],
+	});
+	const findings = checkLinkGraph([docsPage, learnPage]);
+	assert.equal(
+		findings.filter((f) => f.check === 'no-crosslink-to-learn' && f.pathname === '/docs/getting-started/').length,
+		1
+	);
+	assert.equal(findings.filter((f) => f.check === 'no-crosslink-to-docs' && f.pathname === '/mqtt/qos/').length, 1);
+});
+
+// The mirror of the guard above: inbound counting must keep using the full link
+// set, so a page reachable only from the footer is not reported as an orphan.
+test('inbound counting still uses chrome links', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', section: 'other', outboundPathnames: ['/b/'], mainOutboundPathnames: [] }),
+		page({ pathname: '/b/', section: 'other', outboundPathnames: [], mainOutboundPathnames: [] }),
+	]);
+	assert.equal(findings.filter((f) => f.check === 'orphan-page' && f.pathname === '/b/').length, 0);
+	assert.equal(findings.filter((f) => f.check === 'near-orphan-page' && f.pathname === '/b/').length, 1);
 });
 
 test('runChecks merges both check families and sorts deterministically', () => {

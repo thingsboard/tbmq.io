@@ -74,6 +74,34 @@ test('collectFacts collects unique outbound pages, excluding self and externals'
 	assert.deepEqual(facts.outboundPathnames.sort(), ['/docs/getting-started/', '/mqtt/topics/']);
 });
 
+const CHROME_PAGE = `<!doctype html><html><head><title>t</title></head><body>
+	<header><a href="/pricing/">pricing</a><a href="/docs/getting-started/">docs</a></header>
+	<nav class="sidebar"><a href="/mqtt/">learn</a></nav>
+	<main><h1>Title</h1><a href="/mqtt/topics/">topics in body copy</a></main>
+	<footer><a href="/company/">company</a></footer>
+</body></html>`;
+
+// Site chrome links to the same pages from every page, so the two crosslink checks
+// need a link set that excludes it; inbound counting needs one that includes it.
+test('collectFacts separates main-content links from chrome links', () => {
+	const facts = collectFacts(CHROME_PAGE, '/mqtt/qos/');
+	assert.deepEqual(facts.outboundPathnames.sort(), [
+		'/company/',
+		'/docs/getting-started/',
+		'/mqtt/',
+		'/mqtt/topics/',
+		'/pricing/',
+	]);
+	assert.deepEqual(facts.mainOutboundPathnames, ['/mqtt/topics/']);
+});
+
+// Seven built pages (all marketing) have no `<main>` at all, so the fallback is
+// what they are measured by — the same fallback `wordCount` already uses.
+test('collectFacts falls back to body when a page has no main element', () => {
+	const html = '<!doctype html><html><head><title>t</title></head><body><a href="/docs/x/">x</a></body></html>';
+	assert.deepEqual(collectFacts(html, '/no-main/').mainOutboundPathnames, ['/docs/x/']);
+});
+
 test('collectFacts reports absent metadata as empty rather than throwing', () => {
 	const facts = collectFacts('<!doctype html><html><head></head><body></body></html>', '/bare/');
 	assert.equal(facts.title, '');
@@ -83,6 +111,7 @@ test('collectFacts reports absent metadata as empty rather than throwing', () =>
 	assert.equal(facts.h1Count, 0);
 	assert.equal(facts.wordCount, 0);
 	assert.deepEqual(facts.outboundPathnames, []);
+	assert.deepEqual(facts.mainOutboundPathnames, []);
 });
 
 test('collectFacts detects meta-refresh redirect stubs', () => {

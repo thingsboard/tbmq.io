@@ -26,8 +26,19 @@ export interface PageFacts {
 	hasJsonLd: boolean;
 	/** Raw `<link rel="canonical">` href, or null when absent. */
 	canonical: string | null;
-	/** Unique, normalised, same-origin page pathnames linked from this page. */
+	/**
+	 * Unique, normalised, same-origin page pathnames linked from anywhere in the
+	 * document, site chrome included. This is the right set for inbound counting:
+	 * a page reachable only from the footer is still reachable.
+	 */
 	outboundPathnames: string[];
+	/**
+	 * The same, restricted to links inside `<main>` (falling back to `<body>`).
+	 * Header, sidebar and footer link to the same handful of pages from every page,
+	 * so a check asking "does *this page* point at X" must use this set — against
+	 * the full one it is answered by the chrome and can never fire.
+	 */
+	mainOutboundPathnames: string[];
 }
 
 export interface Finding {

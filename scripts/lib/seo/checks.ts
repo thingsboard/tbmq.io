@@ -119,12 +119,17 @@ export function checkLinkGraph(pages: PageFacts[]): Finding[] {
 		}
 	}
 
+	// Cross-linking is a property of the page's own body copy, so these two read
+	// `mainOutboundPathnames`, not `outboundPathnames`. The header, sidebar and
+	// footer already link into both trees from every page; measured against the
+	// full link set neither check can ever fire, and a permanent 0 reads as
+	// "cross-linking is healthy".
 	for (const page of live) {
-		if (page.section === 'mqtt' && !page.outboundPathnames.some((t) => t.startsWith('/docs/'))) {
-			findings.push(finding('no-crosslink-to-docs', 'medium', page.pathname, 'learn-hub page links to no /docs/ page'));
+		if (page.section === 'mqtt' && !page.mainOutboundPathnames.some((t) => t.startsWith('/docs/'))) {
+			findings.push(finding('no-crosslink-to-docs', 'medium', page.pathname, 'no /docs/ link in main content'));
 		}
-		if (page.section === 'docs' && !page.outboundPathnames.some((t) => t.startsWith('/mqtt/'))) {
-			findings.push(finding('no-crosslink-to-learn', 'low', page.pathname, 'docs page links to no /mqtt/ page'));
+		if (page.section === 'docs' && !page.mainOutboundPathnames.some((t) => t.startsWith('/mqtt/'))) {
+			findings.push(finding('no-crosslink-to-learn', 'low', page.pathname, 'no /mqtt/ link in main content'));
 		}
 	}
 

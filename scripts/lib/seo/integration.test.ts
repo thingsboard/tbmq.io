@@ -51,6 +51,21 @@ test('the orphan and near-orphan sets match the measured baseline', options, () 
 	assert.deepEqual(paths('near-orphan-page'), ['/docs/pe/search/', '/docs/search/', '/product/privacy-policy/']);
 });
 
+// Re-measured against dist/ on 2026-09-01 after the crosslink checks were moved
+// off the whole-document link set and onto the main-content one. Against the full
+// set both checks were structurally dead: every docs page carried 6–7 chrome links
+// into `/mqtt/`, so `no-crosslink-to-learn` reported a permanent 0. Main-content
+// only, 169 of the 183 docs pages genuinely never link into the learn hub, and the
+// one learn page with no `/docs/` link in its body is the `/mqtt/` hub index.
+test('the main-content crosslink checks match the measured baseline', options, () => {
+	const findings = buildReport(DIST).findings;
+	assert.deepEqual(
+		findings.filter((f) => f.check === 'no-crosslink-to-docs').map((f) => f.pathname),
+		['/mqtt/']
+	);
+	assert.equal(findings.filter((f) => f.check === 'no-crosslink-to-learn').length, 169);
+});
+
 test('the audit is deterministic across runs', options, () => {
 	assert.equal(toJson(buildReport(DIST)), toJson(buildReport(DIST)));
 });

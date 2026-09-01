@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DomUtils, parseDocument } from 'htmlparser2';
-import type { Element } from 'domhandler';
+import type { AnyNode, Element } from 'domhandler';
 import { getPagePathnamesFromBuildOutput } from '../linkcheck/steps/build-index.ts';
 import { PROD_ORIGIN } from '../../../src/consts.ts';
 import type { PageFacts, Section } from './types.ts';
@@ -36,16 +36,20 @@ export function normaliseHref(href: string | undefined, origin: string = PROD_OR
 
 export function collectFacts(html: string, pathname: string): PageFacts {
 	const dom = parseDocument(html);
-	const tags = (name: string) => DomUtils.getElementsByTagName(name, dom, true) as Element[];
+	const tags = (name: string, root: AnyNode = dom) => DomUtils.getElementsByTagName(name, root, true) as Element[];
 	const metas = tags('meta');
 	const titleEl = tags('title')[0];
 	const mainEl = tags('main')[0] ?? tags('body')[0];
 
-	const outbound = new Set<string>();
-	for (const anchor of tags('a')) {
-		const target = normaliseHref(anchor.attribs.href ?? anchor.attribs['xlink:href']);
-		if (target && target !== pathname) outbound.add(target);
-	}
+	/** Same-origin pages linked from within `root`, deduplicated and self-links dropped. */
+	const linkedPages = (root: AnyNode): string[] => {
+		const targets = new Set<string>();
+		for (const anchor of tags('a', root)) {
+			const target = normaliseHref(anchor.attribs.href ?? anchor.attribs['xlink:href']);
+			if (target && target !== pathname) targets.add(target);
+		}
+		return [...targets];
+	};
 
 	const text = mainEl ? DomUtils.innerText(mainEl).trim() : '';
 
@@ -62,7 +66,8 @@ export function collectFacts(html: string, pathname: string): PageFacts {
 			tags('link')
 				.find((l) => l.attribs.rel?.toLowerCase() === 'canonical')
 				?.attribs.href?.trim() ?? null,
-		outboundPathnames: [...outbound],
+		outboundPathnames: linkedPages(dom),
+		mainOutboundPathnames: mainEl ? linkedPages(mainEl) : [],
 	};
 }
 
