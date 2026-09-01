@@ -23,6 +23,8 @@
     "lint:eslint": "eslint .",
     "lint:steps": "node --experimental-transform-types ./scripts/lint-steps.ts",
     "lint:redirects": "node --experimental-transform-types ./scripts/check-redirect-chains.ts",
+    "seo:audit": "pnpm run build:linkcheck && node --experimental-transform-types ./scripts/seo-audit.ts",
+    "seo:audit:nobuild": "node --experimental-transform-types ./scripts/seo-audit.ts",
     "netlify:build": "pnpm ${NETLIFY_BUILD_SCRIPT:-build}",
     "generate:redirects": "node --experimental-transform-types ./scripts/generate-redirects.ts",
     "generate:nav-sprite": "node ./scripts/generate-nav-sprite.mjs",
