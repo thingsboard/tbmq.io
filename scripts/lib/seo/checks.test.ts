@@ -162,3 +162,9 @@ test('runChecks merges both check families and sorts deterministically', () => {
 	const keys = first.map((f) => `${f.check} ${f.pathname}`);
 	assert.deepEqual(keys, [...keys].sort(), 'findings must be sorted by (check, pathname)');
 });
+
+test('self-links do not count as inbound links', () => {
+	const findings = checkLinkGraph([page({ pathname: '/a/', outboundPathnames: ['/a/'] })]);
+	assert.equal(findings.filter((f) => f.check === 'orphan-page' && f.pathname === '/a/').length, 1);
+	assert.equal(findings.filter((f) => f.check === 'near-orphan-page' && f.pathname === '/a/').length, 0);
+});

@@ -107,7 +107,7 @@ export function checkLinkGraph(pages: PageFacts[]): Finding[] {
 	for (const page of live) inbound.set(page.pathname, 0);
 	for (const page of live) {
 		for (const target of page.outboundPathnames) {
-			if (known.has(target)) inbound.set(target, (inbound.get(target) ?? 0) + 1);
+			if (known.has(target) && target !== page.pathname) inbound.set(target, (inbound.get(target) ?? 0) + 1);
 		}
 	}
 
