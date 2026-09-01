@@ -11,6 +11,7 @@
     "build:linkcheck": "node ./scripts/generate-nav-sprite.mjs && SKIP_OG=true SKIP_LLMS=true SKIP_IMG=true NODE_OPTIONS=--max-old-space-size=8192 astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "test": "node --experimental-transform-types --test \"scripts/**/*.test.ts\"",
     "format": "pnpm run format:code",
     "format:ci": "pnpm run format:imports && pnpm run format:code",
     "format:code": "prettier -w . --cache --plugin-search-dir=.",
