@@ -58,19 +58,28 @@ export function collectFacts(html: string, pathname: string): PageFacts {
 		h1Count: tags('h1').length,
 		wordCount: text ? text.split(/\s+/).filter(Boolean).length : 0,
 		hasJsonLd: tags('script').some((s) => s.attribs.type === 'application/ld+json'),
-		canonical: tags('link').find((l) => l.attribs.rel?.toLowerCase() === 'canonical')?.attribs.href?.trim() ?? null,
+		canonical:
+			tags('link')
+				.find((l) => l.attribs.rel?.toLowerCase() === 'canonical')
+				?.attribs.href?.trim() ?? null,
 		outboundPathnames: [...outbound],
 	};
 }
 
 export function collectPages(buildOutputDir = './dist'): PageFacts[] {
+	if (!fs.existsSync(buildOutputDir)) {
+		throw new Error(`no build output at "${buildOutputDir}" — run pnpm build:linkcheck first`);
+	}
 	const pathnames = getPagePathnamesFromBuildOutput({
 		baseUrl: PROD_ORIGIN,
 		buildOutputDir,
 		pageSourceDir: './src/content/docs',
 		checks: [],
 	});
+	if (pathnames.length === 0) {
+		throw new Error(`"${buildOutputDir}" exists but contains no pages — run pnpm build:linkcheck first`);
+	}
 	return pathnames.map((pathname) =>
-		collectFacts(fs.readFileSync(path.join(buildOutputDir, pathname, 'index.html'), 'utf8'), pathname),
+		collectFacts(fs.readFileSync(path.join(buildOutputDir, pathname, 'index.html'), 'utf8'), pathname)
 	);
 }

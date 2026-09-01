@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectFacts, normaliseHref, sectionOf } from './collect.ts';
+import { collectFacts, collectPages, normaliseHref, sectionOf } from './collect.ts';
 
 test('sectionOf classifies by path prefix', () => {
 	assert.equal(sectionOf('/docs/getting-started/'), 'docs');
@@ -89,4 +89,26 @@ test('collectFacts detects meta-refresh redirect stubs', () => {
 	const html =
 		'<!doctype html><html><head><meta http-equiv="refresh" content="0;url=/new/"></head><body></body></html>';
 	assert.equal(collectFacts(html, '/old/').isRedirect, true);
+});
+
+// A missing build output must be a loud error, not a silent "0 pages, no
+// issues found" — that reads as good news to an unattended weekly diff.
+test('collectPages throws when the build output directory does not exist', () => {
+	const dir = './scripts/lib/seo/does-not-exist';
+	assert.throws(
+		() => collectPages(dir),
+		(error: unknown) =>
+			error instanceof Error && /no build output at/.test(error.message) && error.message.includes(dir)
+	);
+});
+
+// A directory that exists but enumerates zero pages (an emptied dist/, or a
+// typo that still resolves to a real path) is a different mistake and gets
+// a distinct message naming the directory.
+test('collectPages throws when the build output directory has no pages', () => {
+	const dir = './scripts/lib/seo';
+	assert.throws(
+		() => collectPages(dir),
+		(error: unknown) => error instanceof Error && /contains no pages/.test(error.message) && error.message.includes(dir)
+	);
 });
