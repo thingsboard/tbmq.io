@@ -14,7 +14,8 @@ import { getLanguageFromSlug } from '~/util/path-utils';
 import type { CardProps } from './Card';
 import { getDocsProductMeta } from './product-meta';
 import { getMarketingOverride, getMarketingSection } from './marketing-meta';
-import { BLOG_AUTHORS } from '~/data/blog/authors';
+import { BLOG_AUTHORS, getAuthor } from '~/data/blog/authors';
+import { BLOG_NAME } from '~/consts';
 
 export interface CardInput {
 	/** URL-shaped slug used as the path parameter in the endpoint */
@@ -45,10 +46,6 @@ export async function getDocsCardInputs(): Promise<CardInput[]> {
 		});
 }
 
-function authorName(slug: string): string {
-	return BLOG_AUTHORS.find((a) => a.slug === slug)?.name ?? slug;
-}
-
 /** blog collection — posts + index + author landings. */
 export async function getBlogCardInputs(): Promise<CardInput[]> {
 	const posts = await getCollection('blog', ({ data }) => !data.draft);
@@ -64,7 +61,7 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 				sectionName: 'Blog',
 				eyebrow: `${category} · ${formatBlogDate(post.data.date)}`,
 				title: truncate(post.data.title, TITLE_MAX),
-				authorLine: `By ${authorName(post.data.author)}`,
+				authorLine: `By ${getAuthor(post.data.author)?.name ?? post.data.author}`,
 			},
 		});
 	}
@@ -76,7 +73,7 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 			variant: 'logo' as const,
 			sectionName: 'Blog',
 			eyebrow: 'Latest articles',
-			title: 'TBMQ Blog',
+			title: BLOG_NAME,
 		},
 	});
 

@@ -1,6 +1,11 @@
 ---
 import { Icon } from 'astro-icon/components';
 
+// Kept identical to the upstream thingsboard.io component so cherry-picks stay
+// clean. The blog index only uses the single-slide overlay layout; the `multi`
+// layout, `header` arrow placement and `carousel:select` event are unused here
+// on purpose.
+
 interface Props {
 	/** Accessible name for the carousel region. */
 	ariaLabel: string;

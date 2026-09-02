@@ -10,6 +10,8 @@ import { pickTitleSize } from '@root/pages/open-graph/_shared/text-block';
 
 const TEXT_COLOR = '#ffffff';
 const URL_COLOR = 'rgba(255,255,255,0.62)';
+/** Left edge of the text column (title block and author line share it). */
+const TEXT_COLUMN_LEFT = '40%';
 
 export interface LogoCardProps {
 	variant: 'logo';
@@ -68,7 +70,7 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine
 				style={{
 					position: 'absolute',
 					top: '25%',
-					left: '40%',
+					left: TEXT_COLUMN_LEFT,
 					right: 80,
 					display: 'flex',
 					flexDirection: 'column',
@@ -107,7 +109,7 @@ export function LogoCard({ sectionName, sectionTight, eyebrow, title, authorLine
 					style={{
 						position: 'absolute',
 						bottom: 32,
-						left: '40%',
+						left: TEXT_COLUMN_LEFT,
 						fontSize: 18,
 						fontWeight: 600,
 						letterSpacing: '0.04em',

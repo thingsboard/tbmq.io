@@ -15,7 +15,7 @@ const { author } = Astro.props as { author: BlogAuthor };
 const posts = await getSortedBlogPosts((p) => p.data.author === author.slug);
 ---
 
-<BlogLayout title={`${author.name} — Blog`} description={`Blog posts by ${author.name}.`} noIndex={true}>
+<BlogLayout title={author.name} description={`Blog posts by ${author.name}.`} noIndex={true}>
 	<section class="author-page">
 		<div class="author-container">
 			<Breadcrumbs items={[{ label: 'Blog', href: '/blog/' }, { label: author.name }]} />
@@ -43,7 +43,7 @@ const posts = await getSortedBlogPosts((p) => p.data.author === author.slug);
 </BlogLayout>
 
 <style lang="scss" is:global>
-	@use '../../../styles/_variables.scss' as *;
+	@use '../../../styles/variables' as *;
 
 	.author-page .author-container { @include container; max-width: 1200px; }
 	// Top offset includes the fixed header — BaseLayout doesn't pad below it.

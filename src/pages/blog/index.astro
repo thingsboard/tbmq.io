@@ -2,49 +2,35 @@
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import Carousel from '@components/Carousel/Carousel.astro';
 import CarouselSlide from '@components/Carousel/CarouselSlide.astro';
-import { getCollection } from 'astro:content';
+import { getSortedBlogPosts } from '@data/blog/posts';
 import { getAuthor } from '~/data/blog/authors';
 import { Icon } from 'astro-icon/components';
-import {
-	BLOG_CATEGORIES,
-	CATEGORY_LABELS,
-	type BlogCategory,
-} from '~/data/blog/categories';
-import type { z } from 'astro/zod';
-import type { blogSchema } from '~/content.config';
+import { BLOG_CATEGORIES, CATEGORY_LABELS } from '~/data/blog/categories';
+import { BLOG_DESCRIPTION, BLOG_NAME, organizationJsonLd } from '~/consts';
 
-type BlogData = z.infer<typeof blogSchema>;
-type BlogPost = { id: string; data: BlogData; collection: 'blog' };
-
-const allPosts = (await getCollection('blog', ({ data }) => !(data as BlogData).draft)) as unknown as BlogPost[];
-const posts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const posts = await getSortedBlogPosts((p) => !p.data.draft);
 const featuredPosts = posts.filter((p) => !p.data.excludeFromCarousel).slice(0, 5);
 
 // Only categories at least one post uses become filter chips (in
 // BLOG_CATEGORIES order) — an empty category would filter to "no posts".
-const usedCategories = new Set(posts.flatMap((p) => p.data.categories ?? []));
+const usedCategories = new Set(posts.flatMap((p) => p.data.categories));
 const chipCategories = BLOG_CATEGORIES.filter((cat) => usedCategories.has(cat));
 
-const siteOrigin = new URL(Astro.site!).origin;
+const publisher = organizationJsonLd(Astro.site!);
 const blogUrl = new URL('/blog/', Astro.site).href;
 ---
 
 <BlogLayout
 	title="Blog"
-	description="ThingsBoard blog — product updates, technical guides, and IoT solutions."
+	description={BLOG_DESCRIPTION}
 	jsonLd={{
 		'@context': 'https://schema.org',
 		'@type': 'Blog',
 		'@id': `${blogUrl}#blog`,
-		name: 'ThingsBoard Blog',
-		description: 'ThingsBoard blog — product updates, technical guides, and IoT solutions.',
+		name: BLOG_NAME,
+		description: BLOG_DESCRIPTION,
 		url: blogUrl,
-		publisher: {
-			'@type': 'Organization',
-			name: 'ThingsBoard',
-			url: siteOrigin,
-			logo: { '@type': 'ImageObject', url: new URL('/images/thingsboard_logo_blue.svg', Astro.site).href },
-		},
+		publisher,
 	}}
 >
 	<main class="blog-page">
@@ -85,7 +71,7 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 					>
 						{featuredPosts.map((post, i) => {
 							const author = getAuthor(post.data.author);
-							const cat = post.data.categories[0] as BlogCategory;
+							const cat = post.data.categories[0];
 							return (
 								<CarouselSlide index={i} total={featuredPosts.length}>
 									<div class="carousel__card">
@@ -148,17 +134,14 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 						<a
 							href={`/blog/${post.id}/`}
 							class={`post-card${i >= 6 ? ' post-card--hidden' : ''}`}
-							data-title={post.data.title.toLowerCase()}
-							data-description={post.data.description.toLowerCase()}
-							data-categories={post.data.categories.join(' ').toLowerCase()}
-							data-date={`${post.data.date.getFullYear()}-${String(post.data.date.getMonth() + 1).padStart(2, '0')}`}
+							data-categories={post.data.categories.join(' ')}
 						>
 							<div class="post-card__image">
 								<img src={post.data.featuredImage} alt={post.data.featuredImageAlt} loading="lazy" />
 								<div class="post-card__badges">
 									{post.data.categories.slice(0, 2).map((cat) => (
 											<span class="post-card__badge" data-cat={cat}>
-												{CATEGORY_LABELS[cat as BlogCategory] || cat}
+												{CATEGORY_LABELS[cat]}
 											</span>
 									))}
 								</div>
@@ -196,30 +179,25 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	const allItems = Array.from(gridTop.querySelectorAll('.post-card')) as HTMLElement[];
 
 	let currentCategory = '';
-	let currentDate = '';
 	let currentPage = 1;
 
 	function readUrlParams() {
 		const params = new URLSearchParams(window.location.search);
 		currentCategory = params.get('category') || '';
-		currentDate = params.get('date') || '';
-		currentPage = parseInt(params.get('page') || '1', 10);
+		currentPage = Math.max(1, parseInt(params.get('page') || '1', 10) || 1);
 	}
 
 	function updateUrl() {
 		const params = new URLSearchParams();
 		if (currentCategory) params.set('category', currentCategory);
-		if (currentDate) params.set('date', currentDate);
 		if (currentPage > 1) params.set('page', String(currentPage));
 		const qs = params.toString();
 		history.replaceState(null, '', '/blog/' + (qs ? '?' + qs : ''));
 	}
 
 	function getFilteredItems(): HTMLElement[] {
-		return allItems.filter((el) =>
-			(!currentCategory || (el.dataset.categories || '').includes(currentCategory)) &&
-			(!currentDate || el.dataset.date === currentDate)
-		);
+		if (!currentCategory) return allItems;
+		return allItems.filter((el) => (el.dataset.categories || '').split(' ').includes(currentCategory));
 	}
 
 	function renderPagination(totalItems: number) {
@@ -282,7 +260,6 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		chip.addEventListener('click', (e) => {
 			e.preventDefault();
 			currentCategory = chip.dataset.category || '';
-			currentDate = '';
 			currentPage = 1;
 			render();
 		});
@@ -291,7 +268,6 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	clearAll.addEventListener('click', (e) => {
 		e.preventDefault();
 		currentCategory = '';
-		currentDate = '';
 		currentPage = 1;
 		render();
 	});

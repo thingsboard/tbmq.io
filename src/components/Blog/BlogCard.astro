@@ -10,7 +10,7 @@ interface Props {
 			description: string;
 			date: Date;
 			author: string;
-			categories: string[];
+			categories: BlogCategory[];
 			featuredImage: string;
 			featuredImageAlt: string;
 		};
@@ -29,7 +29,7 @@ const author = getAuthor(post.data.author);
 	<div class="blog-card__body">
 		<div class="blog-card__meta">
 			{post.data.categories.slice(0, 2).map((cat) => (
-				<span class="blog-card__category">{CATEGORY_LABELS[cat as BlogCategory] || cat}</span>
+				<span class="blog-card__category">{CATEGORY_LABELS[cat]}</span>
 			))}
 			<time datetime={post.data.date.toISOString()}>
 				{post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -47,7 +47,7 @@ const author = getAuthor(post.data.author);
 </a>
 
 <style lang="scss" is:global>
-	@use '../../styles/_variables.scss' as *;
+	@use '../../styles/variables' as *;
 
 	.blog-card {
 		display: flex;

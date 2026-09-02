@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { PROD_ORIGIN } from '~/consts';
+import { BLOG_DESCRIPTION, PROD_ORIGIN } from '~/consts';
 import { learnNavTopics, mqttTopics, topicHref } from '~/data/mqttLearn';
 import { TBMQ_PE_VER, TBMQ_VER } from '~/data/versions';
 
@@ -151,7 +151,7 @@ const PRODUCT_PAGES: LinkEntry[] = [
 	{
 		path: '/blog/',
 		title: 'Blog',
-		description: 'Release announcements, benchmarks, and MQTT engineering write-ups.',
+		description: BLOG_DESCRIPTION,
 	},
 	{
 		path: '/contact-us/',

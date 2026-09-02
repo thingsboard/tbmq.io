@@ -16,6 +16,23 @@ export const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 /** Global OG-card fallback for pages without a generated per-page card. */
 export const OG_FALLBACK = '/tbmq-og.png';
 
+/** Stable public URL of the TBMQ logo, referenced from JSON-LD `publisher.logo`. */
+export const SITE_LOGO = '/tbmq-logo.svg';
+
+export const BLOG_NAME = `${SITE_NAME} Blog`;
+export const BLOG_DESCRIPTION = 'Release announcements, benchmarks, and MQTT engineering write-ups.';
+
+/** schema.org Organization node shared by the blog's JSON-LD graphs as `publisher`. */
+export function organizationJsonLd(site: URL) {
+	return {
+		'@type': 'Organization',
+		'@id': new URL('/#organization', site).href,
+		name: SITE_NAME,
+		url: site.origin,
+		logo: { '@type': 'ImageObject', url: new URL(SITE_LOGO, site).href },
+	};
+}
+
 /**
  * Google Programmable Search Engine id (`cx`) behind the header search modal
  * and the /docs/search/ + /docs/pe/search/ pages. The domain the results come

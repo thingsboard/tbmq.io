@@ -1,15 +1,14 @@
-// noinspection JSUnusedGlobalSymbols — `GET` is consumed by Astro's route convention, not called from our code.
-
 import rss from '@astrojs/rss';
 import { getSortedBlogPosts } from '@data/blog/posts';
 import { getAuthor } from '~/data/blog/authors';
 import type { APIContext } from 'astro';
+import { BLOG_DESCRIPTION, BLOG_NAME } from '~/consts';
 export async function GET(context: APIContext) {
 	const sorted = await getSortedBlogPosts();
 
 	return rss({
-		title: 'ThingsBoard Blog',
-		description: 'Product updates, technical guides, and IoT solutions from ThingsBoard.',
+		title: BLOG_NAME,
+		description: BLOG_DESCRIPTION,
 		site: context.site!,
 		items: sorted.map((post) => {
 			const author = getAuthor(post.data.author);

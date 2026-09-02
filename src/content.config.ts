@@ -4,6 +4,8 @@ import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 import { Products } from './models/site.models';
+import { BLOG_AUTHOR_SLUGS } from './data/blog/authors';
+import { BLOG_CATEGORIES } from './data/blog/categories';
 
 export const baseSchema = z.object({
 	type: z.literal('base').optional().default('base'),
@@ -39,11 +41,8 @@ export const blogSchema = z.object({
 	description: z.string(),
 	date: z.coerce.date(),
 	updatedDate: z.coerce.date().optional(),
-	author: z.string(),
-	categories: z
-		.array(z.string())
-		.or(z.string())
-		.transform((v) => (Array.isArray(v) ? v : [v])),
+	author: z.enum(BLOG_AUTHOR_SLUGS),
+	categories: z.array(z.enum(BLOG_CATEGORIES)).nonempty(),
 	featuredImage: z.string(),
 	featuredImageAlt: z.string().default(''),
 	draft: z.boolean().default(false),

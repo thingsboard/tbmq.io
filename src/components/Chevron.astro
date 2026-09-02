@@ -1,8 +1,13 @@
 ---
-import { CHEVRON_PATHS, type ChevronDirection } from '@components/chevron-paths';
+// 24px viewBox, 2px round stroke.
+const CHEVRON_PATHS = {
+	left: 'm15 6-6 6 6 6',
+	right: 'm9 6 6 6-6 6',
+	down: 'm6 9 6 6 6-6',
+} as const;
 
 interface Props {
-	direction: ChevronDirection;
+	direction: keyof typeof CHEVRON_PATHS;
 	size?: number;
 	class?: string;
 }

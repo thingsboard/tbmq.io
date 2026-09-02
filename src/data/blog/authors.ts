@@ -19,6 +19,8 @@ export const BLOG_AUTHORS: BlogAuthor[] = [
 	},
 ];
 
+export const BLOG_AUTHOR_SLUGS = BLOG_AUTHORS.map((a) => a.slug) as [string, ...string[]];
+
 export function getAuthor(slug: string): BlogAuthor | undefined {
 	return BLOG_AUTHORS.find((a) => a.slug === slug);
 }

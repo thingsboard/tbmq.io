@@ -153,6 +153,7 @@ Two invariants matter, and neither is obvious from a plugin's signature:
 Plugin and visitor types come from the `satteri` package (an explicit devDependency for exactly this reason) — don't re-declare them structurally, or a shape change upstream turns into a silently empty TOC instead of a type error.
 
 - `config/plugins/satteri-mdx-include-headings.ts` — extracts headings from `_includes` MDX files and injects them into the page TOC; supports `<ConditionalHeading>` for product-conditional headings
+- `config/plugins/satteri-blog-images.ts` — for `src/content/blog/` only: injects intrinsic `width`/`height` on body `<img>` tags (read via `sharp` from `public/`) and lazy-loads every image after the first
 - `config/plugins/expressive-code-max-lines.mjs` — powers the `maxLines`/`collapsible` code-block meta options
 
 Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-slug` and `remark-smartypants`); `smartPunctuation.dashes` stays off so `--` is left alone in CLI snippets.
