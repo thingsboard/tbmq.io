@@ -479,15 +479,17 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 0;
-		background: linear-gradient(180deg, var(--color-bg-surface) 65%, #e4ecfb 100%);
+		// Fade into a brand-green wash (upstream fades into its link blue); the
+		// tokens flip for dark theme, so no separate dark override is needed.
+		background: linear-gradient(
+			180deg,
+			var(--color-bg-surface) 65%,
+			color-mix(in srgb, var(--color-brand) 9%, var(--color-bg-surface)) 100%
+		);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
 		min-height: 420px;
-
-		[data-theme='dark'] & {
-			background: linear-gradient(180deg, var(--color-bg-surface) 65%, #1a2030 100%);
-		}
 
 		@include media-down(md) {
 			grid-template-columns: 1fr;
@@ -516,15 +518,9 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		font-size: $font-size-xs;
 		font-weight: $font-weight-semibold;
 		letter-spacing: 0.02em;
-		border: 1.5px solid #0F1C8A;
-		background: #EBEDFF;
-		color: #0F1C8A;
-
-		[data-theme='dark'] & {
-			background: #1e2240;
-			color: #8b9af0;
-			border-color: #3a4280;
-		}
+		border: 1.5px solid var(--color-brand);
+		background: var(--color-bg-brand-tint);
+		color: var(--color-brand);
 	}
 
 	.carousel__title {
@@ -580,8 +576,8 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		gap: var(--spacing-2);
 		width: fit-content;
 		padding: 10px 24px;
-		background: var(--color-primary);
-		color: var(--sl-color-black);
+		background: var(--color-brand);
+		color: var(--color-brand-contrast);
 		font-weight: $font-weight-semibold;
 		font-size: $font-size-sm;
 		border-radius: $radius-md;
@@ -651,21 +647,21 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		background: transparent;
 
 		&:hover {
-			border-color: var(--color-primary);
-			color: var(--color-primary);
+			border-color: var(--color-brand);
+			color: var(--color-brand);
 		}
 
 		&.active {
-			border-color: var(--color-primary);
-			background: var(--color-primary);
-			color: var(--sl-color-black);
+			border-color: var(--color-brand);
+			background: var(--color-brand);
+			color: var(--color-brand-contrast);
 			font-weight: $font-weight-medium;
 		}
 	}
 
 	.clear-all {
 		@include text-s;
-		color: var(--color-primary);
+		color: var(--color-brand);
 		text-decoration: none;
 		font-weight: $font-weight-medium;
 		margin-left: var(--spacing-2);
@@ -704,7 +700,7 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 			transform: translateY(-4px);
 
 			.post-card__image img { transform: scale(1.04); }
-			.post-card__title { color: var(--color-primary); }
+			.post-card__title { color: var(--color-brand); }
 		}
 	}
 
@@ -739,15 +735,9 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		border-radius: 4px;
 		font-size: $font-size-xs;
 		font-weight: $font-weight-semibold;
-		border: 1.5px solid #0F1C8A;
-		background: #EBEDFF;
-		color: #0F1C8A;
-
-		[data-theme='dark'] & {
-			background: #1e2240;
-			color: #8b9af0;
-			border-color: #3a4280;
-		}
+		border: 1.5px solid var(--color-brand);
+		background: var(--color-bg-brand-tint);
+		color: var(--color-brand);
 	}
 
 	.post-card__body {
@@ -828,12 +818,12 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		transition: all 0.15s;
 		appearance: none;
 		font-family: inherit;
-		&:hover { background: color-mix(in srgb, var(--color-primary) 6%, transparent); color: var(--color-primary); }
+		&:hover { background: color-mix(in srgb, var(--color-brand) 6%, transparent); color: var(--color-brand); }
 	}
 
 	.pagination__page--active {
-		background: var(--color-primary) !important;
-		color: var(--sl-color-black) !important;
+		background: var(--color-brand) !important;
+		color: var(--color-brand-contrast) !important;
 		font-weight: $font-weight-medium;
 		cursor: default;
 	}
