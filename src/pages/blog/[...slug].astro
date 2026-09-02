@@ -231,51 +231,6 @@ const jsonLd = {
 					</div>
 				</div>
 
-				{/* Newsletter section */}
-				<div class="newsletter-section">
-					<div class="newsletter-inner">
-						<h2 class="newsletter-heading">Join ThingsBoard community</h2>
-						<p class="newsletter-subtitle">Stay tuned and get first-hand updates and access to insights.</p>
-						{
-							/* Mailerlite wrapper structure — required for webforms.min.js to
-				    intercept the submit, AJAX-post, and toggle in the inline
-				    success state. Without it, target="_blank" lands on a blank
-				    Mailerlite response page (designed for their iframe). */
-						}
-						<div id="mlb2-z9h4b4-blog-post" class="ml-subscribe-form ml-subscribe-form-z9h4b4 newsletter-ml-wrap">
-							<div
-								class="subscribe-form ml-block-success"
-								style="display:none"
-								role="status"
-								aria-live="polite"
-								tabindex="-1"
-							>
-								<p class="newsletter-success">Thank you! You're subscribed.</p>
-							</div>
-							<form
-								class="newsletter-form ml-block-form"
-								action="https://static.mailerlite.com/webforms/submit/z9h4b4"
-								data-id="6028548"
-								data-code="z9h4b4"
-								method="post"
-							>
-								<input
-									type="email"
-									name="fields[email]"
-									placeholder="Your email address*"
-									required
-									class="newsletter-input"
-									aria-label="Email address"
-								/>
-								<input type="hidden" name="ml-submit" value="1" />
-								<button type="submit" class="newsletter-submit">
-									<span class="newsletter-submit-label">Subscribe</span>
-									<span class="newsletter-submit-spinner" aria-hidden="true"></span>
-								</button>
-							</form>
-						</div>
-					</div>
-				</div>
 			</div>
 
 			{/* TOC Sidebar — sticky right rail; shown at xl and up */}
@@ -490,47 +445,6 @@ const jsonLd = {
 		});
 	}
 
-	// ── Newsletter (Mailerlite) — lazy-load webforms.min.js on first focus
-	// of the email input. Mirrors the pattern used on the blog index page.
-	// Submit directly via fetch — same pattern as /blog/ index. The lazy
-	// Mailerlite intercept script was race-prone and got blocked by some
-	// ad-blockers; the /webforms/submit/ endpoint accepts cross-origin
-	// fire-and-forget POSTs so the email still lands without the script.
-	(function initBlogPostNewsletter() {
-		const wrap = document.getElementById('mlb2-z9h4b4-blog-post');
-		if (!wrap) return;
-		const form = wrap.querySelector<HTMLFormElement>('form.ml-block-form');
-		const success = wrap.querySelector<HTMLElement>('.ml-block-success');
-		const emailInput = wrap.querySelector<HTMLInputElement>('input[type="email"]');
-		const submitBtn = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
-		if (!form || !success || !emailInput || !submitBtn) return;
-
-		let submitted = false;
-		form.addEventListener('submit', (e) => {
-			e.preventDefault();
-			if (submitted) return;
-			if (!form.checkValidity()) return;
-			submitted = true;
-			submitBtn.disabled = true;
-			submitBtn.setAttribute('aria-busy', 'true');
-			submitBtn.classList.add('is-loading');
-
-			fetch(form.action, {
-				method: 'POST',
-				body: new FormData(form),
-				mode: 'no-cors',
-				credentials: 'omit',
-			}).catch(() => {
-				// Network failure — keep optimistic-success behavior.
-			});
-
-			emailInput.value = '';
-			form.style.setProperty('display', 'none', 'important');
-			success.style.setProperty('display', 'block', 'important');
-			// Move focus into the success region for SR + keyboard users.
-			success.focus();
-		});
-	})();
 </script>
 
 <style lang="scss" is:global>
@@ -1144,106 +1058,6 @@ const jsonLd = {
 		svg {
 			width: 18px;
 			height: 18px;
-		}
-	}
-
-	// ── Newsletter Section ──
-
-	.newsletter-section {
-		background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-light));
-		border-radius: var(--radius-lg);
-		padding: var(--spacing-10) var(--spacing-8);
-		text-align: center;
-		margin-top: var(--spacing-6);
-		margin-bottom: var(--spacing-6);
-	}
-
-	.newsletter-inner {
-		max-width: 500px;
-		margin: 0 auto;
-	}
-
-	.newsletter-heading {
-		font-size: $font-size-2xl;
-		font-weight: $font-weight-bold;
-		color: var(--color-text);
-		margin-bottom: var(--spacing-3);
-	}
-
-	.newsletter-subtitle {
-		@include text-m;
-		color: var(--color-text-secondary);
-		margin-bottom: var(--spacing-6);
-	}
-
-	.newsletter-form {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--spacing-4);
-	}
-
-	.newsletter-input {
-		width: 100%;
-		padding: var(--spacing-3) var(--spacing-4);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: $font-size-base;
-		background: var(--color-bg);
-		color: var(--color-text);
-		outline: none;
-
-		&:focus {
-			border-color: var(--color-primary);
-		}
-
-		&::placeholder {
-			color: var(--color-text-muted);
-		}
-	}
-
-	.newsletter-submit {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-		padding: var(--spacing-3) var(--spacing-8);
-		background: var(--color-primary);
-		color: var(--sl-color-black);
-		border: none;
-		border-radius: var(--radius-md);
-		font-size: $font-size-base;
-		font-weight: $font-weight-semibold;
-		cursor: pointer;
-		transition: opacity 0.2s;
-
-		&:hover {
-			opacity: 0.85;
-		}
-
-		&:disabled {
-			cursor: default;
-			opacity: 0.7;
-		}
-	}
-
-	.newsletter-submit-spinner {
-		display: none;
-		width: 16px;
-		height: 16px;
-		border: 2px solid currentColor;
-		border-top-color: transparent;
-		border-radius: 50%;
-		animation: newsletter-submit-spin 0.7s linear infinite;
-	}
-
-	.newsletter-submit.is-loading .newsletter-submit-spinner {
-		display: inline-block;
-	}
-
-	@keyframes newsletter-submit-spin {
-		to {
-			transform: rotate(360deg);
 		}
 	}
 
