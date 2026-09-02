@@ -21,8 +21,7 @@ const posts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueO
 const featuredPosts = posts.filter((p) => !p.data.excludeFromCarousel).slice(0, 5);
 
 // Only categories at least one post uses become filter chips (in
-// BLOG_CATEGORIES order) — the full taxonomy is broader than this blog,
-// and an empty category would filter to "no posts".
+// BLOG_CATEGORIES order) — an empty category would filter to "no posts".
 const usedCategories = new Set(posts.flatMap((p) => p.data.categories ?? []));
 const chipCategories = BLOG_CATEGORIES.filter((cat) => usedCategories.has(cat));
 

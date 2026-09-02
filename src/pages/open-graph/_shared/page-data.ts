@@ -15,7 +15,6 @@ import type { CardProps } from './Card';
 import { getDocsProductMeta } from './product-meta';
 import { getMarketingOverride, getMarketingSection } from './marketing-meta';
 import { BLOG_AUTHORS } from '~/data/blog/authors';
-import { CATEGORY_LABELS } from '~/data/blog/categories';
 
 export interface CardInput {
 	/** URL-shaped slug used as the path parameter in the endpoint */
@@ -50,7 +49,7 @@ function authorName(slug: string): string {
 	return BLOG_AUTHORS.find((a) => a.slug === slug)?.name ?? slug;
 }
 
-/** blog collection — posts + index + author landings + category landings. */
+/** blog collection — posts + index + author landings. */
 export async function getBlogCardInputs(): Promise<CardInput[]> {
 	const posts = await getCollection('blog', ({ data }) => !data.draft);
 	const inputs: CardInput[] = [];
@@ -90,19 +89,6 @@ export async function getBlogCardInputs(): Promise<CardInput[]> {
 				sectionName: 'Blog',
 				eyebrow: 'Author',
 				title: author.name,
-			},
-		});
-	}
-
-	// /blog/category/{category-slug}/
-	for (const [slug, label] of Object.entries(CATEGORY_LABELS)) {
-		inputs.push({
-			slug: `category/${slug}`,
-			props: {
-				variant: 'logo' as const,
-				sectionName: 'Blog',
-				eyebrow: 'Category',
-				title: label,
 			},
 		});
 	}
