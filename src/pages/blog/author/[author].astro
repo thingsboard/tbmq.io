@@ -46,7 +46,8 @@ const posts = await getSortedBlogPosts((p) => p.data.author === author.slug);
 	@use '../../../styles/_variables.scss' as *;
 
 	.author-page .author-container { @include container; max-width: 1200px; }
-	.author-page { padding: #{$spacing-10} 0 #{$spacing-16}; }
+	// Top offset includes the fixed header — BaseLayout doesn't pad below it.
+	.author-page { padding: calc(#{$header-height} + #{$spacing-10}) 0 #{$spacing-16}; }
 
 	.breadcrumbs { margin-bottom: var(--spacing-6); }
 

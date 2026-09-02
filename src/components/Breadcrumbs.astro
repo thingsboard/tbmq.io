@@ -85,18 +85,13 @@ const breadcrumbSchema = jsonLd
 	}
 
 	.breadcrumbs__link {
-		color: var(--color-primary);
+		color: var(--color-brand);
 		text-decoration: none;
 		transition: color $transition-fast;
 
 		&:hover,
 		&:focus-visible {
 			text-decoration: underline;
-		}
-
-		:global([data-theme='dark']) & {
-			// Light lavender on dark — matches the brand indigo's dark value.
-			color: var(--color-brand);
 		}
 	}
 
