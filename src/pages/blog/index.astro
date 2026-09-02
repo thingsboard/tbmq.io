@@ -20,6 +20,12 @@ const allPosts = (await getCollection('blog', ({ data }) => !(data as BlogData).
 const posts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const featuredPosts = posts.filter((p) => !p.data.excludeFromCarousel).slice(0, 5);
 
+// Only categories at least one post uses become filter chips (in
+// BLOG_CATEGORIES order) — the full taxonomy is broader than this blog,
+// and an empty category would filter to "no posts".
+const usedCategories = new Set(posts.flatMap((p) => p.data.categories ?? []));
+const chipCategories = BLOG_CATEGORIES.filter((cat) => usedCategories.has(cat));
+
 const siteOrigin = new URL(Astro.site!).origin;
 const blogUrl = new URL('/blog/', Astro.site).href;
 ---
@@ -118,7 +124,7 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 			<div class="filter-bar">
 				<div class="category-chips">
 					<a href="/blog/" class="category-chip active" data-category="">All</a>
-					{BLOG_CATEGORIES.map((cat) => (
+					{chipCategories.map((cat) => (
 						<a href={`/blog/?category=${cat}`} class="category-chip" data-category={cat}>
 							{CATEGORY_LABELS[cat]}
 						</a>
