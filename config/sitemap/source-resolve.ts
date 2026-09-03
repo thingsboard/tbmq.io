@@ -7,10 +7,28 @@ import { matchRouteComponent } from './route-match';
  * Repo-relative source file(s) a non-docs page is built from, so the sitemap can
  * git-date them: the route's `.astro` component plus the data/JSON it imports for
  * content. Docs are handled by the route-middleware registry; everything else
- * (the marketing and MQTT-learn pages) lands here. `[]` (→ no `<lastmod>`) when
- * nothing maps.
+ * (the marketing, MQTT-learn and blog pages) lands here. `[]` (→ no `<lastmod>`)
+ * when nothing maps.
  */
+
+/**
+ * Slug → the content file behind a page rendered by a shared `[...slug].astro`.
+ * Pointing at the per-item file means editing one post moves only its
+ * `<lastmod>`, not every sibling's.
+ */
+const SITEMAP_DATA_RULES: { re: RegExp; file: (m: RegExpMatchArray) => string }[] = [
+	{ re: /^\/blog\/(.+)\/$/, file: (m) => `src/content/blog/${m[1]}.mdx` },
+];
 export function resolveNonDocSources(pathname: string): string[] {
+	for (const rule of SITEMAP_DATA_RULES) {
+		const match = pathname.match(rule.re);
+		if (!match) continue;
+		const file = rule.file(match);
+		// Trust the rule only if its file exists; greedy rules also match sibling
+		// URLs (e.g. `/blog/author/…/`), which fall through to the route component.
+		if (existsSync(join(getRepoRoot(), file))) return [file];
+		break;
+	}
 	const component = matchRouteComponent(pathname);
 	if (!component) return [];
 	return [component, ...scanContentImports(component)];

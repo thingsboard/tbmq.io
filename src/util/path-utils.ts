@@ -1,6 +1,6 @@
 // Language system
 import { Products } from '@models/site.models.ts';
-import { SITE_NAME } from '@root/consts';
+import { SECTION_LABELS, SITE_NAME } from '@root/consts';
 
 export type SupportedLanguage = 'en' | 'uk';
 
@@ -90,6 +90,16 @@ export function getVersionPrefix(version: Products): string {
 /** Get the SEO brand form of a product name, used in <title> tags. */
 export function getProductTitleName(version: Products): string {
 	return productVersions[version]?.titleName ?? SITE_NAME;
+}
+
+/** Marketing-section label for a pathname (e.g. 'Blog'), or undefined when the page
+ *  is not inside a tracked section (defined in SECTION_LABELS). */
+export function getSectionFromPath(pathname: string): string | undefined {
+	const p = pathname.endsWith('/') ? pathname : pathname + '/';
+	for (const [prefix, label] of Object.entries(SECTION_LABELS)) {
+		if (p.startsWith(prefix)) return label;
+	}
+	return undefined;
 }
 
 /** Get the base/landing URL for a product version (in English). */

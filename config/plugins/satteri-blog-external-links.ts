@@ -1,0 +1,37 @@
+import type { HastPluginDefinition } from 'satteri';
+import { isExternalHref } from '../../src/util/external-href';
+import { isBlogPost } from './blog-scope';
+
+/**
+ * Sätteri hast plugin for blog-post body links (scoped to `src/content/blog/`):
+ * off-site links open in a new tab, internal ones navigate in place. Links that
+ * already declare a `target` are left as authored, and an authored `rel` is
+ * merged with `noopener noreferrer` rather than replaced by it.
+ *
+ * Blog-only on purpose — the docs keep Starlight's default same-tab links, and
+ * the marketing landings have their own, broader rule (`OpenContentLinksInNewTab`).
+ */
+export function satteriBlogExternalLinks(): HastPluginDefinition {
+	return {
+		name: 'blog-external-links',
+		element: {
+			filter: ['a'],
+			visit: (node, ctx) => {
+				if (!isBlogPost(ctx)) return;
+				const props = node.properties ?? {};
+				if (props.target != null) return;
+				const href = typeof props.href === 'string' ? props.href : '';
+				if (!isExternalHref(href)) return;
+				ctx.setProperty(node, 'target', '_blank');
+				ctx.setProperty(node, 'rel', [...new Set([...relTokens(props.rel), 'noopener', 'noreferrer'])].join(' '));
+			},
+		},
+	};
+}
+
+/** hast may hold a space-separated property as a string or as a token array; an authored `rel` must survive either way. */
+function relTokens(rel: unknown): string[] {
+	if (Array.isArray(rel)) return rel.map(String);
+	if (typeof rel === 'string') return rel.split(/\s+/).filter(Boolean);
+	return [];
+}
