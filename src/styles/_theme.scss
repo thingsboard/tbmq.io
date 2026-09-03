@@ -36,8 +36,27 @@
 	--sl-text-h4: #{$font-size-h4};
 	--sl-text-h5: #{$font-size-h5};
 
+	// Spacing — the full SCSS scale, so a component reaching for any step gets a
+	// value rather than a silently invalid declaration
+	--spacing-0: #{$spacing-0};
+	--spacing-1: #{$spacing-1};
+	--spacing-2: #{$spacing-2};
+	--spacing-3: #{$spacing-3};
+	--spacing-4: #{$spacing-4};
+	--spacing-5: #{$spacing-5};
+	--spacing-6: #{$spacing-6};
+	--spacing-8: #{$spacing-8};
+	--spacing-10: #{$spacing-10};
+	--spacing-12: #{$spacing-12};
+	--spacing-16: #{$spacing-16};
+	--spacing-20: #{$spacing-20};
+	--spacing-24: #{$spacing-24};
+	--spacing-30: #{$spacing-30};
+
 	// Border radius
+	--radius-sm: #{$radius-sm};
 	--radius-md: #{$radius-md};
+	--radius-lg: #{$radius-lg};
 
 	// Shadows (theme-varying ones live in light-theme-tokens)
 	--shadow-xl: 0 30px 60px -30px rgba(0, 0, 0, 0.3), 0 50px 100px -20px rgba(0, 0, 0, 0.25);

@@ -1,0 +1,32 @@
+---
+// 24px viewBox, 2px round stroke.
+const CHEVRON_PATHS = {
+	left: 'm15 6-6 6 6 6',
+	right: 'm9 6 6 6-6 6',
+	down: 'm6 9 6 6 6-6',
+} as const;
+
+interface Props {
+	direction: keyof typeof CHEVRON_PATHS;
+	size?: number;
+	class?: string;
+}
+
+const { direction, size = 20, class: className } = Astro.props;
+---
+
+<svg
+	class={className}
+	width={size}
+	height={size}
+	viewBox="0 0 24 24"
+	fill="none"
+	aria-hidden="true"
+>
+	<path
+		d={CHEVRON_PATHS[direction]}
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"></path>
+</svg>

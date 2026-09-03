@@ -16,6 +16,23 @@ export const EDIT_BASE_URL = 'https://github.com/thingsboard/tbmq.io/edit/main';
 /** Global OG-card fallback for pages without a generated per-page card. */
 export const OG_FALLBACK = '/tbmq-og.png';
 
+/** Stable public URL of the TBMQ logo, referenced from JSON-LD `publisher.logo`. */
+export const SITE_LOGO = '/tbmq-logo.svg';
+
+export const BLOG_NAME = `${SITE_NAME} Blog`;
+export const BLOG_DESCRIPTION = 'Release announcements, benchmarks, and MQTT engineering write-ups.';
+
+/** schema.org Organization node shared by the blog's JSON-LD graphs as `publisher`. */
+export function organizationJsonLd(site: URL) {
+	return {
+		'@type': 'Organization',
+		'@id': new URL('/#organization', site).href,
+		name: SITE_NAME,
+		url: site.origin,
+		logo: { '@type': 'ImageObject', url: new URL(SITE_LOGO, site).href },
+	};
+}
+
 /**
  * Google Programmable Search Engine id (`cx`) behind the header search modal
  * and the /docs/search/ + /docs/pe/search/ pages. The domain the results come
@@ -27,14 +44,20 @@ export const GOOGLE_CSE_CX = 'a0cca37fad72c4a8e';
 
 const SEP = ` ${TITLE_SEPARATOR} `;
 
-// The blog-era section machinery (SECTION_LABELS / getSectionFromPath /
-// formatSectionIndexTitle and the `section` title segment) was removed with the
-// local blog — re-add a section registry when the site actually has a second
-// marketing section again.
-export function formatMarketingTitle(title: string): string {
+export const SECTION_LABELS: Record<string, string> = {
+	'/blog/': 'Blog',
+};
+
+export function formatSectionIndexTitle(section: string): string {
+	return `${section}${SEP}${SITE_NAME}`;
+}
+
+export function formatMarketingTitle(title: string, section?: string): string {
 	// Strip any legacy " | ThingsBoard" baked into the title prop (some pages include it themselves)
 	const clean = title.replace(/\s*\|\s*ThingsBoard\s*$/i, '').trim();
-	return `${clean}${SEP}${SITE_NAME}`;
+	if (!section) return `${clean}${SEP}${SITE_NAME}`;
+	if (clean === section) return formatSectionIndexTitle(section);
+	return `${clean}${SEP}${section}${SEP}${SITE_NAME}`;
 }
 
 export function formatDocsTitle(pageTitle: string, productName: string, isIndex: boolean): string {
