@@ -567,17 +567,10 @@ const jsonLd = {
 	// ── Title ──
 
 	h1 {
-		font-size: 40px;
-		font-weight: $font-weight-semibold;
-		line-height: 1.2;
+		@include section-title;
 		letter-spacing: -0.02em;
 		color: var(--color-text);
 		margin-bottom: var(--spacing-6);
-
-		@include media-down(md) {
-			font-size: 28px;
-			line-height: 1.25;
-		}
 	}
 
 	// ── Author Card ──

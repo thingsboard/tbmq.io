@@ -49,10 +49,10 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 			}
 		</script>
 		<div class="blog-blobs" aria-hidden="true">
-			<div class="blog-blob blog-blob--blue"></div>
-			<div class="blog-blob blog-blob--pink"></div>
-			<div class="blog-blob blog-blob--purple"></div>
-			<div class="blog-blob blog-blob--green"></div>
+			<div class="blog-blob blog-blob--top-right"></div>
+			<div class="blog-blob blog-blob--mid-left"></div>
+			<div class="blog-blob blog-blob--lower-right"></div>
+			<div class="blog-blob blog-blob--bottom-left"></div>
 		</div>
 		<div class="blog-container">
 			<h1 class="blog-title">Blog</h1>
@@ -361,35 +361,39 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		}
 	}
 
-	.blog-blob--blue {
+	// Anchored as fractions of the page (and to its bottom edge) rather than at
+	// fixed pixel offsets, so all four land on the page whether the grid holds
+	// one row or ten — .blog-blobs is inset: 0, so anything past the content
+	// height is simply clipped away.
+	.blog-blob--top-right {
 		width: 1100px;
 		height: 1100px;
-		background: #a8b4f0;
+		background: var(--color-brand);
 		top: 0;
 		right: -500px;
 	}
 
-	.blog-blob--pink {
+	.blog-blob--mid-left {
 		width: 900px;
 		height: 900px;
-		background: #f5a0c0;
-		top: 1400px;
+		background: var(--color-primary);
+		top: 35%;
 		left: -400px;
 	}
 
-	.blog-blob--purple {
+	.blog-blob--lower-right {
 		width: 1200px;
 		height: 1200px;
-		background: #c090e0;
-		top: 3000px;
+		background: var(--color-brand);
+		top: 65%;
 		right: -500px;
 	}
 
-	.blog-blob--green {
+	.blog-blob--bottom-left {
 		width: 800px;
 		height: 800px;
-		background: #80d0a0;
-		top: 4500px;
+		background: var(--color-primary);
+		bottom: -350px;
 		left: -350px;
 	}
 
@@ -406,14 +410,12 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	}
 
 	.blog-title {
-		font-size: 48px;
-		font-weight: $font-weight-semibold;
+		@include page-title;
 		color: var(--color-text);
 		margin-bottom: var(--spacing-8);
 		letter-spacing: -0.02em;
 		padding-left: var(--spacing-5);
 		padding-right: var(--spacing-5);
-		@include media-down(md) { font-size: 36px; }
 	}
 
 	// ── Carousel ──
