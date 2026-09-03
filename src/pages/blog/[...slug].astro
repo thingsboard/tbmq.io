@@ -1,7 +1,7 @@
 ---
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import Breadcrumbs from '@components/Breadcrumbs.astro';
-import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { render, type CollectionEntry } from 'astro:content';
 import { getSortedBlogPosts } from '@data/blog/posts';
 import { getAuthor } from '~/data/blog/authors';
 import { CATEGORY_LABELS } from '~/data/blog/categories';
@@ -9,7 +9,7 @@ import { Icon } from 'astro-icon/components';
 import { BLOG_NAME, organizationJsonLd } from '~/consts';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	const posts = await getSortedBlogPosts();
 	return posts.map((post) => ({
 		params: { slug: post.id },
 		props: { post },

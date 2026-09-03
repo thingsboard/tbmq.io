@@ -1,5 +1,4 @@
 // src/pages/open-graph/_shared/page-data.ts
-import { getCollection } from 'astro:content';
 import fs from 'node:fs';
 import path from 'node:path';
 import { allPages } from '~/content';
@@ -15,6 +14,7 @@ import type { CardProps } from './Card';
 import { getDocsProductMeta } from './product-meta';
 import { getMarketingOverride, getMarketingSection } from './marketing-meta';
 import { BLOG_AUTHORS, getAuthor } from '~/data/blog/authors';
+import { getSortedBlogPosts } from '~/data/blog/posts';
 import { BLOG_NAME } from '~/consts';
 
 export interface CardInput {
@@ -48,7 +48,7 @@ export async function getDocsCardInputs(): Promise<CardInput[]> {
 
 /** blog collection — posts + index + author landings. */
 export async function getBlogCardInputs(): Promise<CardInput[]> {
-	const posts = await getCollection('blog', ({ data }) => !data.draft);
+	const posts = await getSortedBlogPosts();
 	const inputs: CardInput[] = [];
 
 	// /blog/{post-slug}/

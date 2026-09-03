@@ -8,7 +8,7 @@ import { Icon } from 'astro-icon/components';
 import { BLOG_CATEGORIES, CATEGORY_LABELS } from '~/data/blog/categories';
 import { BLOG_DESCRIPTION, BLOG_NAME, organizationJsonLd } from '~/consts';
 
-const posts = await getSortedBlogPosts((p) => !p.data.draft);
+const posts = await getSortedBlogPosts();
 const featuredPosts = posts.filter((p) => !p.data.excludeFromCarousel).slice(0, 5);
 
 // Only categories at least one post uses become filter chips (in
