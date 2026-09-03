@@ -5,18 +5,12 @@ import { isBlogPost } from './blog-scope';
 /**
  * Sätteri hast plugin for blog-post body links (scoped to `src/content/blog/`):
  * off-site links open in a new tab, internal ones navigate in place. Links that
- * already declare a `target` are left as authored.
+ * already declare a `target` are left as authored, and an authored `rel` is
+ * merged with `noopener noreferrer` rather than replaced by it.
  *
  * Blog-only on purpose — the docs keep Starlight's default same-tab links, and
  * the marketing landings have their own, broader rule (`OpenContentLinksInNewTab`).
  */
-/** hast may hold a space-separated property as a string or as a token array; an authored `rel` must survive either way. */
-function relTokens(rel: unknown): string[] {
-	if (Array.isArray(rel)) return rel.map(String);
-	if (typeof rel === 'string') return rel.split(/\s+/).filter(Boolean);
-	return [];
-}
-
 export function satteriBlogExternalLinks(): HastPluginDefinition {
 	return {
 		name: 'blog-external-links',
@@ -33,4 +27,11 @@ export function satteriBlogExternalLinks(): HastPluginDefinition {
 			},
 		},
 	};
+}
+
+/** hast may hold a space-separated property as a string or as a token array; an authored `rel` must survive either way. */
+function relTokens(rel: unknown): string[] {
+	if (Array.isArray(rel)) return rel.map(String);
+	if (typeof rel === 'string') return rel.split(/\s+/).filter(Boolean);
+	return [];
 }
