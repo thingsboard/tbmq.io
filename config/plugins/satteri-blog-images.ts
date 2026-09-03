@@ -1,7 +1,7 @@
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import type { HastPluginDefinition, HastVisitorContext } from 'satteri';
+import type { HastPluginDefinition } from 'satteri';
+import { isBlogPost } from './blog-scope';
 
 /**
  * Sätteri hast plugin for blog-post body images (scoped to `src/content/blog/`),
@@ -46,11 +46,6 @@ async function readDims(absPath: string): Promise<Dims | null> {
 
 /** Key the per-document first-image state lives under on `ctx.data`. */
 const STATE_KEY = '__blogImages';
-
-function isBlogPost(ctx: HastVisitorContext): boolean {
-	if (!ctx.fileURL) return false;
-	return fileURLToPath(ctx.fileURL).replaceAll('\\', '/').includes('/src/content/blog/');
-}
 
 export function satteriBlogImages(): HastPluginDefinition {
 	return {

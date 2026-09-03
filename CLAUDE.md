@@ -154,6 +154,7 @@ Plugin and visitor types come from the `satteri` package (an explicit devDepende
 
 - `config/plugins/satteri-mdx-include-headings.ts` — extracts headings from `_includes` MDX files and injects them into the page TOC; supports `<ConditionalHeading>` for product-conditional headings
 - `config/plugins/satteri-blog-images.ts` — for `src/content/blog/` only: injects intrinsic `width`/`height` on body `<img>` tags (read via `sharp` from `public/`) and lazy-loads every image after the first
+- `config/plugins/satteri-blog-external-links.ts` — for `src/content/blog/` only: off-site body links get `target="_blank"` + `rel="noopener noreferrer"`; internal links stay same-tab (`BlogCTA` applies the same rule via `src/util/external-href.ts`)
 - `config/plugins/expressive-code-max-lines.mjs` — powers the `maxLines`/`collapsible` code-block meta options
 
 Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-slug` and `remark-smartypants`); `smartPunctuation.dashes` stays off so `--` is left alone in CLI snippets.
