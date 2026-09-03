@@ -407,27 +407,35 @@ const jsonLd = {
 	if (contentImages.length) {
 		const overlay = document.createElement('div');
 		overlay.className = 'blog-lightbox';
+		overlay.setAttribute('role', 'dialog');
+		overlay.setAttribute('aria-modal', 'true');
+		overlay.setAttribute('aria-label', 'Image preview');
 		overlay.innerHTML =
-			'<img alt="Enlarged image" /><button class="blog-lightbox__close" aria-label="Close">&times;</button>';
+			'<img alt="" /><button type="button" class="blog-lightbox__close" aria-label="Close">&times;</button>';
 		document.body.appendChild(overlay);
 
 		const lbImg = overlay.querySelector('img')!;
-		const closeBtn = overlay.querySelector('.blog-lightbox__close')!;
+		const closeBtn = overlay.querySelector<HTMLButtonElement>('.blog-lightbox__close')!;
+		let opener: HTMLElement | null = null;
 
 		function openLightbox(src: string, alt: string) {
+			opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			lbImg.src = src;
 			lbImg.alt = alt;
 			overlay.classList.add('active');
 			lockScroll();
+			closeBtn.focus();
 		}
 
 		function closeLightbox() {
+			if (!overlay.classList.contains('active')) return;
 			overlay.classList.remove('active');
 			unlockScroll();
+			opener?.focus();
+			opener = null;
 		}
 
 		contentImages.forEach((img) => {
-			img.style.cursor = 'pointer';
 			img.addEventListener('click', () => openLightbox(img.src, img.alt));
 		});
 
@@ -435,7 +443,14 @@ const jsonLd = {
 			if (e.target === overlay || e.target === closeBtn) closeLightbox();
 		});
 		document.addEventListener('keydown', (e) => {
+			if (!overlay.classList.contains('active')) return;
 			if (e.key === 'Escape') closeLightbox();
+			// The close button is the dialog's only focusable element, so keeping
+			// focus inside it is the whole focus trap.
+			if (e.key === 'Tab') {
+				e.preventDefault();
+				closeBtn.focus();
+			}
 		});
 	}
 </script>
@@ -655,6 +670,7 @@ const jsonLd = {
 			border-radius: var(--radius-md);
 			margin: var(--spacing-4) 0;
 			display: block;
+			cursor: pointer;
 		}
 
 		// Caption pattern: a paragraph containing only an image, immediately followed by
