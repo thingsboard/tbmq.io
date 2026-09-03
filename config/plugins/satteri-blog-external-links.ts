@@ -10,6 +10,13 @@ import { isBlogPost } from './blog-scope';
  * Blog-only on purpose — the docs keep Starlight's default same-tab links, and
  * the marketing landings have their own, broader rule (`OpenContentLinksInNewTab`).
  */
+/** hast may hold a space-separated property as a string or as a token array; an authored `rel` must survive either way. */
+function relTokens(rel: unknown): string[] {
+	if (Array.isArray(rel)) return rel.map(String);
+	if (typeof rel === 'string') return rel.split(/\s+/).filter(Boolean);
+	return [];
+}
+
 export function satteriBlogExternalLinks(): HastPluginDefinition {
 	return {
 		name: 'blog-external-links',
@@ -22,7 +29,7 @@ export function satteriBlogExternalLinks(): HastPluginDefinition {
 				const href = typeof props.href === 'string' ? props.href : '';
 				if (!isExternalHref(href)) return;
 				ctx.setProperty(node, 'target', '_blank');
-				ctx.setProperty(node, 'rel', 'noopener noreferrer');
+				ctx.setProperty(node, 'rel', [...new Set([...relTokens(props.rel), 'noopener', 'noreferrer'])].join(' '));
 			},
 		},
 	};
