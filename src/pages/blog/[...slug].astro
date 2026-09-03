@@ -436,7 +436,17 @@ const jsonLd = {
 		}
 
 		contentImages.forEach((img) => {
+			// Markdown gives us bare <img>s, so the image itself has to be the button.
+			img.classList.add('is-zoomable');
+			img.tabIndex = 0;
+			img.setAttribute('role', 'button');
+			img.setAttribute('aria-label', img.alt ? `Enlarge image: ${img.alt}` : 'Enlarge image');
 			img.addEventListener('click', () => openLightbox(img.src, img.alt));
+			img.addEventListener('keydown', (e) => {
+				if (e.key !== 'Enter' && e.key !== ' ') return;
+				e.preventDefault();
+				openLightbox(img.src, img.alt);
+			});
 		});
 
 		overlay.addEventListener('click', (e) => {
@@ -663,7 +673,12 @@ const jsonLd = {
 			border-radius: var(--radius-md);
 			margin: var(--spacing-4) 0;
 			display: block;
-			cursor: pointer;
+
+			// Set by the lightbox script, so images only advertise themselves as
+			// clickable once something actually handles the click.
+			&.is-zoomable {
+				cursor: pointer;
+			}
 		}
 
 		// Caption pattern: a paragraph containing only an image, immediately followed by
