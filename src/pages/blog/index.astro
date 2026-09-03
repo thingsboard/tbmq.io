@@ -50,9 +50,9 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		</script>
 		<div class="blog-blobs" aria-hidden="true">
 			<div class="blog-blob blog-blob--top-right"></div>
-			<div class="blog-blob blog-blob--mid-left"></div>
+			<div class="blog-blob blog-blob--soft blog-blob--mid-left"></div>
 			<div class="blog-blob blog-blob--lower-right"></div>
-			<div class="blog-blob blog-blob--bottom-left"></div>
+			<div class="blog-blob blog-blob--soft blog-blob--bottom-left"></div>
 		</div>
 		<div class="blog-container">
 			<h1 class="blog-title">Blog</h1>
@@ -345,10 +345,15 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		overflow: hidden;
 	}
 
+	// One colour, two strengths: a single-hue wash keeps the page on the brand
+	// green (the link blue is a separate accent and shouldn't leak into the
+	// background), while the alternating opacity keeps the four blobs from
+	// reading as one flat tint.
 	.blog-blob {
 		position: absolute;
 		border-radius: 50%;
 		filter: blur(180px);
+		background: var(--color-brand);
 		opacity: 0.18;
 		// Promote each blob to its own GPU layer so Safari rasterizes the huge
 		// 180px blur once instead of every time a sibling (e.g. the carousel)
@@ -361,6 +366,14 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 		}
 	}
 
+	.blog-blob--soft {
+		opacity: 0.1;
+
+		[data-theme='dark'] & {
+			opacity: 0.03;
+		}
+	}
+
 	// Anchored as fractions of the page (and to its bottom edge) rather than at
 	// fixed pixel offsets, so all four land on the page whether the grid holds
 	// one row or ten — .blog-blobs is inset: 0, so anything past the content
@@ -368,7 +381,6 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	.blog-blob--top-right {
 		width: 1100px;
 		height: 1100px;
-		background: var(--color-brand);
 		top: 0;
 		right: -500px;
 	}
@@ -376,7 +388,6 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	.blog-blob--mid-left {
 		width: 900px;
 		height: 900px;
-		background: var(--color-primary);
 		top: 35%;
 		left: -400px;
 	}
@@ -384,7 +395,6 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	.blog-blob--lower-right {
 		width: 1200px;
 		height: 1200px;
-		background: var(--color-brand);
 		top: 65%;
 		right: -500px;
 	}
@@ -392,7 +402,6 @@ const blogUrl = new URL('/blog/', Astro.site).href;
 	.blog-blob--bottom-left {
 		width: 800px;
 		height: 800px;
-		background: var(--color-primary);
 		bottom: -350px;
 		left: -350px;
 	}
