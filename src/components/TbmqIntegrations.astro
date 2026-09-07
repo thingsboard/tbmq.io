@@ -173,6 +173,14 @@ const links = integrations
 		height: 2.25rem;
 	}
 
+	/* A solid mark whose inner detail is drawn by knocking the circle's own
+	   colour back out of it — a thin outline instead reads far lighter than the
+	   filled marks beside it, especially on the light theme. Keep this in step
+	   with .logo's background above. */
+	.logo :global(.logo-cutout) {
+		fill: var(--sl-color-gray-7, var(--sl-color-gray-6));
+	}
+
 	span {
 		font-size: var(--sl-text-body);
 		font-weight: 600;
