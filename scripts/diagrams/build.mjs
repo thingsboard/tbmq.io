@@ -71,6 +71,11 @@ const DIAGRAMS = {
 	'http-integration': { file: 'tbmq-http-integration', dir: 'integrations', build: integrations.httpIntegration },
 	'mqtt-integration': { file: 'tbmq-mqtt-integration', dir: 'integrations', build: integrations.mqttIntegration },
 	'kafka-integration': { file: 'tbmq-kafka-integration', dir: 'integrations', build: integrations.kafkaIntegration },
+	'postgresql-integration': {
+		file: 'tbmq-postgresql-integration',
+		dir: 'integrations',
+		build: integrations.postgreSqlIntegration,
+	},
 	'http-payload-encoding': {
 		file: 'tbmq-http-payload-encoding',
 		dir: 'integrations',

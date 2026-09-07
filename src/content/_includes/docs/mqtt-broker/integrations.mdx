@@ -1,5 +1,7 @@
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
 
 **Integrations** in TBMQ forward MQTT messages from connected clients to external systems such as HTTP endpoints, Kafka brokers, or other MQTT brokers.
 They connect IoT devices with the broader data infrastructure, allowing the MQTT broker to act as a central integration point in your architecture.
@@ -20,11 +22,20 @@ If you upgraded from an earlier version, confirm you added it: with no reachable
 
 ## Supported integration types
 
-- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages to REST APIs or webhooks via HTTP(S).
-- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication.
-- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages into Kafka topics for real-time processing.
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages and [client lifecycle events](#client-lifecycle-events) to REST APIs or webhooks via HTTP(S).
+- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication, with [client lifecycle events](#client-lifecycle-events) on a topic of their own.
+- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages and [client lifecycle events](#client-lifecycle-events) into Kafka topics for real-time processing.
+</ShowFor>
 
-Each guide walks through creating an integration of that type end to end. The rest of this page describes the architecture and the operational behavior that all three share — read it when you need to tune, scale, or troubleshoot them.
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages and [client lifecycle events](#client-lifecycle-events) to REST APIs or webhooks via HTTP(S).
+- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication, with [client lifecycle events](#client-lifecycle-events) on a topic of their own.
+- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages and [client lifecycle events](#client-lifecycle-events) into Kafka topics for real-time processing.
+- <DocLink product={props.product} path="integrations/postgresql">PostgreSQL Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own PostgreSQL database, through SQL templates you control.
+</ShowFor>
+
+Each guide walks through creating an integration of that type end to end. The rest of this page describes the architecture and the operational behavior they all share — read it when you need to tune, scale, or troubleshoot them.
 
 ## How a message flows
 
@@ -70,7 +81,7 @@ Integration logic is intentionally kept separate from the broker:
 
 Integration entities are stored in TBMQ's PostgreSQL database and are used for management via the Web UI and REST API. Each integration entity includes:
 
-- **Type** — HTTP, Kafka, or MQTT.
+- **Type** — the external system the integration delivers to; see [Supported integration types](#supported-integration-types).
 - **Name** — a human-readable name.
 - **Description** — optional free-form notes.
 - **Enabled** — whether the integration is active.
@@ -113,9 +124,18 @@ The first three are the **control plane** — a fixed set of topics shared by al
 
 TBMQ uses **Kafka compact topics** for downlink communication, one per integration type:
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 - `tbmq.ie.downlink.http`
 - `tbmq.ie.downlink.mqtt`
 - `tbmq.ie.downlink.kafka`
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+- `tbmq.ie.downlink.http`
+- `tbmq.ie.downlink.mqtt`
+- `tbmq.ie.downlink.kafka`
+- `tbmq.ie.downlink.postgresql`
+</ShowFor>
 
 These topics deliver integration configuration events (create, update, delete) and trigger connection validation requests.
 
@@ -354,11 +374,22 @@ A publish denied by an authorization rule:
 
 Each integration type reuses the connection it already has, but the destination differs:
 
-| Type | Where events go |
-|---|---|
-| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. |
-| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers — the same destination as messages. |
-| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated **Events topic name** on the external broker, always with QoS 1 and the retain flag off. |
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+| Type | Where events go | Setting that controls it |
+|---|---|---|
+| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. | Shared with messages |
+| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers. | Shared with messages |
+| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated topic on the external broker, always with QoS 1 and the retain flag off. | **Events topic name** |
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+| Type | Where events go | Setting that controls it |
+|---|---|---|
+| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. | Shared with messages |
+| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers. | Shared with messages |
+| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated topic on the external broker, always with QoS 1 and the retain flag off. | **Events topic name** |
+| <DocLink product={props.product} path="integrations/postgresql">PostgreSQL</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
+</ShowFor>
 
 ### Delivery guarantees
 
@@ -649,6 +680,6 @@ Reading the two blocks side by side tells you which stream is in trouble: an unr
 
 Upcoming integration capabilities:
 
-- **New outbound integration types** — Redis, PostgreSQL, RabbitMQ, and more.
+- **New outbound integration types** — Redis, RabbitMQ, and more.
 - **Inbound (source) integrations** — receive messages from external systems (e.g., Kafka consumers, MQTT subscribers).
 - **Message transformation and filtering** — dynamic processing before forwarding to external targets.

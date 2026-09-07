@@ -692,7 +692,7 @@ export const validationTimeout = (kit) => {
 };
 
 // =============================================================================
-// 25 / 26 / 27 — One integration type end to end: HTTP, MQTT, Kafka
+// 25 / 26 / 27 / 29 — One integration type end to end: HTTP, MQTT, Kafka, PostgreSQL
 // =============================================================================
 function integrationType(kit, spec) {
 	const T = themeOf(kit);
@@ -702,10 +702,18 @@ function integrationType(kit, spec) {
 	const H = 480;
 	const P = [];
 
+	// The target card is the only one whose label length varies enough to matter
+	// ("HTTP endpoint" against "PostgreSQL database"), so its box is the one a
+	// spec may move and widen. The defaults reproduce the original geometry
+	// exactly, and the incoming arrow and its protocol chip follow the box.
+	const targetX = spec.targetX ?? 1060;
+	const targetW = spec.targetW ?? 210;
+	const targetArrowEnd = targetX - 4;
+
 	P.push(rr(700, 170, 280, 140, 14, { stroke: T.dashTeal, sw: 1, dash: '5 5' }));
 	P.push(arrow('M254,240 H398', T.violetLine, { bidir: true }));
 	P.push(arrow('M584,240 H696', T.blueLine, { bidir: true }));
-	P.push(arrow('M984,240 H1056', T.tealLine));
+	P.push(arrow(`M984,240 H${targetArrowEnd}`, T.tealLine));
 
 	P.push(text(W / 2, cyOf(64, 22, 1.35), spec.title, { size: 22, weight: 500, fill: T.txt, anchor: 'middle' }));
 	P.push(groupLabel(718, 182, 'TBMQ Integration Executor'));
@@ -757,9 +765,9 @@ function integrationType(kit, spec) {
 	);
 	P.push(
 		iconRow(k, {
-			x: 1060,
+			x: targetX,
 			y: 200,
-			w: 210,
+			w: targetW,
 			h: 80,
 			border: T.slate,
 			tileBg: T.slateTile,
@@ -773,7 +781,7 @@ function integrationType(kit, spec) {
 
 	P.push(chipLabel(326, cyOf(206, 12.5), 'MQTT(S)'));
 	P.push(chipLabel(640, cyOf(206, 12.5), 'TCP(TLS)'));
-	P.push(chipLabel(1020, cyOf(206, 12.5), spec.protocol));
+	P.push(chipLabel((984 + targetArrowEnd) / 2, cyOf(206, 12.5), spec.protocol));
 
 	P.push(
 		legend(W, 396, [
@@ -827,6 +835,21 @@ export const kafkaIntegration = (kit) =>
 		caption:
 			'Matched messages are produced to an external Kafka cluster — separate from the cluster TBMQ uses ' +
 			'internally.',
+	});
+
+export const postgreSqlIntegration = (kit) =>
+	integrationType(kit, {
+		title: 'PostgreSQL integration',
+		integration: 'PostgreSQL',
+		targetIco: 'db',
+		target: 'PostgreSQL database',
+		targetX: 1036,
+		targetW: 246,
+		protocol: 'TCP(TLS)',
+		legendTarget: 'External PostgreSQL database',
+		caption:
+			'Matched messages and client lifecycle events are written by the executor into a PostgreSQL database ' +
+			'of your own, through the SQL templates configured on the integration.',
 	});
 
 // =============================================================================

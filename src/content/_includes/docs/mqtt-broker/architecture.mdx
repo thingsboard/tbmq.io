@@ -374,7 +374,7 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 | `tbmq.sys.app.removed` | global | Events for removal of an APPLICATION client's Kafka topic (client type changed to DEVICE) |
 | `tbmq.client.blocked` | global | Distributes and stores the blocked clients list across the cluster. Compacted |
 | `tbmq.msg.ie.$INTEGRATION_ID` | per-integration | Published messages matched by one integration, for the Integration Executor to deliver. One single-partition topic per integration, created and deleted with the integration |
-| `tbmq.ie.downlink.{http,kafka,mqtt}` | per-type | Integration configuration and validation requests, broker → executor. Compacted, one topic per integration type |
+| `tbmq.ie.downlink.$INTEGRATION_TYPE` | per-type | Integration configuration and validation requests, broker → executor. Compacted, one topic per integration type |
 | `tbmq.ie.uplink` | global | Integration lifecycle, statistics, and error events, executor → broker |
 | `tbmq.ie.uplink.notifications.$SERVICE_ID` | per-node | Validation responses routed back to the node that asked |
 | `tbmq.ie.event.$INTEGRATION_ID` | per-integration | MQTT **client** lifecycle events (connected, disconnected, subscribed, unsubscribed, authentication/authorization failed, connection failed) for the integrations configured to receive them, broker → executor. One single-partition topic per integration, created by the executor |
@@ -590,7 +590,7 @@ memory and makes no direct calls, and every exchange is a Kafka topic. Messages 
 `tbmq.msg.ie.$INTEGRATION_ID` — **one topic per integration**, created when the integration starts and deleted with it,
 so a slow or failing target backs up only its own queue and never the other integrations'. Integration definitions and
 validation requests travel the other way on the compacted
-`tbmq.ie.downlink.{http,kafka,mqtt}` topics — one per integration type — so a starting executor rebuilds the current set
+`tbmq.ie.downlink.$INTEGRATION_TYPE` topics — one per integration type — so a starting executor rebuilds the current set
 of integrations from a snapshot, the same trick the broker uses for sessions and subscriptions. Results flow back as
 lifecycle, statistics, and error **events** on `tbmq.ie.uplink`, which the broker persists so the UI can show each
 integration's state and failures.

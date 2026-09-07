@@ -80,6 +80,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'HTTP', slug: `${prefix}/integrations/http` },
 				{ label: 'MQTT', slug: `${prefix}/integrations/mqtt` },
 				{ label: 'Kafka', slug: `${prefix}/integrations/kafka` },
+				...(isPE ? [{ label: 'PostgreSQL', slug: `${prefix}/integrations/postgresql` }] : []),
 			],
 		},
 		{
