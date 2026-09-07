@@ -1,35 +1,41 @@
 ---
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { docsLink, type Products } from '~/models/site.models';
+import { docsLink, Products } from '~/models/site.models';
 import { Icon } from '@astrojs/starlight/components';
 
 export interface Props {
 	product: Products;
 }
 
-const integrations = [
-  { name: 'HTTP', icon: 'http', path: 'integrations/http/' },
-  { name: 'MQTT', icon: 'mqtt', path: 'integrations/mqtt/' },
-  { name: 'Kafka', icon: 'kafka', path: 'integrations/kafka/' },
+// `products` restricts an entry to the editions that ship it; leave it off for
+// one both editions have. PostgreSQL is PE-only — CE's IntegrationType has no
+// POSTGRESQL member, and there is no CE page to link to.
+const integrations: { name: string; icon: string; path: string; products?: Products[] }[] = [
+	{ name: 'HTTP', icon: 'http', path: 'integrations/http/' },
+	{ name: 'MQTT', icon: 'mqtt', path: 'integrations/mqtt/' },
+	{ name: 'Kafka', icon: 'kafka', path: 'integrations/kafka/' },
+	{ name: 'PostgreSQL', icon: 'postgresql', path: 'integrations/postgresql/', products: [Products.TBMQ_PE] },
 ];
 
 const { product } = Astro.props;
 
-const links = integrations.map((item) => {
-	const svgPath = join(process.cwd(), 'public', 'logos', 'integration', `${item.icon}.svg`);
-	let svg = '';
-	try {
-		svg = fs.readFileSync(svgPath, 'utf-8');
-	} catch {
-		/* file not found — svg stays empty */
-	}
-	return {
-		...item,
-		href: docsLink(product, item.path),
-		svg,
-	};
-});
+const links = integrations
+	.filter((item) => !item.products || item.products.includes(product))
+	.map((item) => {
+		const svgPath = join(process.cwd(), 'public', 'logos', 'integration', `${item.icon}.svg`);
+		let svg = '';
+		try {
+			svg = fs.readFileSync(svgPath, 'utf-8');
+		} catch {
+			/* file not found — svg stays empty */
+		}
+		return {
+			...item,
+			href: docsLink(product, item.path),
+			svg,
+		};
+	});
 ---
 
 <h2 class="integrations-heading">
