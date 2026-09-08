@@ -29,7 +29,7 @@ test('normaliseHref canonicalises same-origin pages', () => {
 // Regression guard: a prototype that skipped this rewrite reported four false
 // orphans, because parts of the build emit absolute same-origin hrefs.
 test('normaliseHref rewrites absolute same-origin URLs to pathnames', () => {
-	assert.equal(normaliseHref('https://tbmq.io/community/'), '/community/');
+	assert.equal(normaliseHref('https://tbmq.io/pricing/'), '/pricing/');
 	assert.equal(normaliseHref('https://tbmq.io/docs/pe/why-tbmq/'), '/docs/pe/why-tbmq/');
 	assert.equal(normaliseHref('https://tbmq.io'), '/');
 });
