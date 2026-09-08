@@ -2,6 +2,13 @@
 title: "Thank you!"
 description: Thank you for subscribing to the ThingsBoard newsletter.
 tableOfContents: false
+# Inherited from thingsboard.io: no subscription form on this site leads here, so
+# keep the page out of search results and (via the rendered tag) the sitemap.
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex, follow
 ---
 
 Thank you for your interest in ThingsBoard! Have a great day!

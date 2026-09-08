@@ -178,7 +178,7 @@ Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-
 ### Pages vs Content
 
 - `src/content/docs/` — documentation pages rendered by Starlight (the TBMQ docs tree)
-- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing, `privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `community/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`
+- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing, `privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`
 
 ### Typography & Design System
 
