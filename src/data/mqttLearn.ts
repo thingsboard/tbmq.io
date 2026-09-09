@@ -584,6 +584,23 @@ export const mqttTopics: MqttTopic[] = [
 		seoDescription:
 			'MQTT vs CoAP compared — broker-based pub/sub over TCP vs RESTful request/response over UDP, and when to choose each for constrained IoT devices.',
 	},
+	{
+		slug: 'mosquitto-alternative',
+		readingMinutes: 7,
+		title: 'Mosquitto Alternative: Moving to a Clustered Broker',
+		navLabel: 'Mosquitto alternative',
+		cardSummary:
+			'When one broker is no longer enough: what changes when you move from Mosquitto to a clustered MQTT broker.',
+		eyebrow: 'BROKER COMPARISON',
+		quickAnswer:
+			'Mosquitto is a single-node MQTT broker. When a deployment needs more connections than one broker can hold, message durability that survives losing a host, or isolation between device traffic and backend consumers, the alternative is a clustered broker. TBMQ is an open-source MQTT broker that clusters symmetrically, stores every acknowledged message in Kafka, and runs device and application traffic on separate paths.',
+		tbmqTieIn:
+			'TBMQ clusters symmetrically with no coordinator, and stores every acknowledged message in Kafka before delivering it.',
+		related: ['mqtt-broker', 'shared-subscriptions', 'persistent-session', 'mqtt-vs-kafka'],
+		status: 'full',
+		seoDescription:
+			'Looking for a Mosquitto alternative? Where single-node MQTT brokers hit their limits — and what changes when you move to a clustered broker.',
+	},
 ];
 
 const bySlug = new Map(mqttTopics.map((t) => [t.slug, t]));
@@ -688,6 +705,13 @@ export const mqttCategories: MqttCategory[] = [
 		tag: 'Transports',
 		accent: 'teal',
 		slugs: ['websocket', 'mqtt-vs-http', 'mqtt-vs-kafka', 'mqtt-vs-amqp', 'mqtt-vs-coap'],
+	},
+	{
+		id: 'broker-comparisons',
+		label: 'Broker comparisons',
+		tag: 'Brokers',
+		accent: 'rose',
+		slugs: ['mosquitto-alternative'],
 	},
 ];
 
