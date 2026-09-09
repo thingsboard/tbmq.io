@@ -51,7 +51,7 @@ TBMQ PostgreSQL Integration writes MQTT messages and client lifecycle events str
 
 Topic filters define **MQTT-based subscriptions** that trigger the integration. When TBMQ receives a message matching a configured topic filter, the integration binds it into the message SQL template and executes it.
 
-Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two.
+Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two. The form enforces that from the other side too: the last topic filter cannot be removed until an event type is selected, so to make an integration events-only, pick the event type first and then delete `tbmq/#`. Without topic filters the **SQL query template** disappears, since no message can arrive to bind it.
 
 For example, with the topic filter `tbmq/devices/+/status`, any of the following messages will trigger the integration:
 
@@ -83,8 +83,8 @@ tbmq/devices/gateway-01/status
 |---|---|---|
 | **SSL mode** | `Disable` | How the connection is encrypted and verified. See the four modes below. |
 | **Provide certificates** | off | Enables the PEM fields below. Requires an **SSL mode** other than `Disable`. |
-| **CA certificate** | — | PEM of the CA that signed the server certificate. Used in every mode other than `Disable`. |
-| **Certificate** / **Private key** | — | PEM client certificate and its key, for certificate authentication. Both are required together. |
+| **CA certificate file** | — | PEM of the CA that signed the server certificate. Used in every mode other than `Disable`. |
+| **Certificate file** / **Private key file** | — | PEM client certificate and its key, for certificate authentication. Both are required together. |
 | **Private key password** | — | Password of an encrypted private key. |
 
 The four SSL modes map one-to-one onto the PostgreSQL driver's `sslmode` values:
@@ -106,10 +106,12 @@ Use **Verify full** in production. Each step up adds one check: encryption, then
 
 | Field | Default | Description |
 |---|---|---|
-| **SQL query template** | An `INSERT` into `mqtt_messages` | Executed once per message matched by the topic filters. Required. |
+| **SQL query template** | An `INSERT` into `mqtt_messages` | Executed once per message matched by the topic filters. Shown and required only while at least one topic filter is configured. |
 | **Lifecycle events SQL template** | An `INSERT` into `mqtt_client_events` | Executed once per selected [client lifecycle event](#client-lifecycle-events). Shown and required only while at least one lifecycle event type is selected. |
 
 Both fields are SQL editors — use the expand icon in the corner for a full-screen view. See [SQL templates](#sql-templates) for the rules both templates follow.
+
+Each template belongs to its own trigger, and a template whose trigger is not selected is not shown, not validated on save, not planned by **Check connection**, and never bound. A stale statement left behind a hidden field therefore cannot block the integration — but it is also not checked until you select that trigger again.
 
 ### Advanced settings
 
@@ -131,7 +133,7 @@ A template is a single SQL statement with `${...}` placeholders where values go.
 
 - It must be **exactly one** statement, starting with `INSERT`, `UPDATE` or `WITH`. A `;` anywhere outside a quoted literal is rejected, including a trailing one.
 - Placeholders are written **bare**, never inside quotes: `VALUES (${clientId})`, not `VALUES ('${clientId}')`.
-- A placeholder name must be one of the fields listed below for that template's envelope. `${metadata.…}` and `${props.…}` always need a key — `${metadata}` on its own is rejected.
+- A placeholder name must be one of the fields listed below for that template's envelope. `${metadata.…}` and `${props.…}` always need a key — `${metadata}` on its own is rejected. `${props.…}` exists only in the message envelope; the events template rejects it.
 - A bare `?` outside a quoted literal is rejected, because the JDBC driver would read it as a parameter marker. Write PostgreSQL's JSON operators `?`, `?|` and `?&` doubled: `??`, `??|`, `??&`.
 - The template must not exceed 10 000 characters.
 - A placeholder whose field is absent from the arriving envelope binds `NULL`, so every column a template writes must be nullable unless the field is always present.
@@ -194,7 +196,7 @@ Pick the event types on the **Filters and events** step while creating the integ
 
 <Steps>
 1. Open the integration on the **Integrations** page and click the **Toggle edit mode** button (pencil icon).
-2. Click the **Lifecycle events** field to list the available event types, then select the ones you need: **Client connected**, **Client disconnected**, **Client subscribed**, **Client unsubscribed**, **Client authentication failed**, **Client authorization failed**, **Client connection failed**. Each one is added as a chip; remove it with its **x**.
+2. In the **Lifecycle events** section, click the **Event types** field to list the available event types, then select the ones you need: **Client connected**, **Client disconnected**, **Client subscribed**, **Client unsubscribed**, **Client authentication failed**, **Client authorization failed**, **Client connection failed**. Each one is added as a chip; remove it with its **x**.
 3. Fill in the **Lifecycle events SQL template** that appears under **SQL configuration**.
 4. Click **Apply changes**.
 </Steps>
@@ -226,7 +228,7 @@ Type-specific fields, added on top:
 | `${protocolVersion}` | `CLIENT_CONNECTED`, `CLIENT_AUTHENTICATION_FAILED` | MQTT protocol level: `3`, `4` or `5`. | `integer` |
 | `${sessionExpiryInterval}` | `CLIENT_CONNECTED` | Session expiry interval (seconds). | `bigint` |
 | `${disconnectReason}` | `CLIENT_DISCONNECTED` | Name of the MQTT reason code, e.g. `NORMAL_DISCONNECT`. | `text` |
-| `${subscriptions}` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` | The granted or removed subscriptions, bound as JSON text. | `jsonb` |
+| `${subscriptions}` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` | The granted or removed subscriptions, bound as a JSON array. A `CLIENT_SUBSCRIBED` entry carries `topicFilter`, `qos` and an `options` object, plus `shareName` and `subscriptionId` when present; a `CLIENT_UNSUBSCRIBED` entry carries `topicFilter` and, for a shared subscription, `shareName`. An empty list binds `[]`, not `NULL`. | `jsonb` |
 | `${reason}` | `CLIENT_AUTHENTICATION_FAILED`, `CLIENT_CONNECTION_FAILED` | Why authentication or the connection failed. | `text` |
 | `${action}` | `CLIENT_AUTHORIZATION_FAILED` | The denied operation: `publish` or `subscribe`. | `text` |
 | `${topic}` | `CLIENT_AUTHORIZATION_FAILED` | The topic or topic filter that was denied. | `text` |
@@ -272,17 +274,17 @@ WHERE event_type = 'CLIENT_SUBSCRIBED'
 
 ## Check connection
 
-**Check connection** does more than open a socket. It connects with the configured settings through a single-connection pool, runs `SELECT 1`, then asks the server to parse, plan and permission-check **each** template — the message one, and the events one when lifecycle events are selected — with every placeholder bound to `NULL`, inside a transaction that is always rolled back.
+**Check connection** does more than open a socket. It connects with the configured settings through a single-connection pool, runs `SELECT 1`, then asks the server to parse, plan and permission-check **each template that is in play** — the message one when topic filters are configured, the events one when lifecycle events are selected — with every placeholder bound to `NULL`, inside a transaction that is always rolled back.
 
 That means a misspelled table or column, or a role without the `INSERT` grant, fails here instead of failing every message after the integration has started. Nothing is written: the statement is planned, never executed, so no row is inserted, no trigger fires and no constraint is evaluated.
 
-All four timeouts are clamped for the probe so the answer comes back before the API request deadline.
+All four timeouts are clamped for the probe to the executor's own connect-timeout limit, so no single step of it runs past the API request deadline. The clamp bounds each step, not their sum.
 
 ## Delivery semantics
 
-Delivery is **at-least-once**, and PostgreSQL rows are the visible consequence:
+Delivery is **not exactly-once**, and PostgreSQL rows are the visible consequence:
 
-- A statement that fails is logged, counted, saved as an error event, and reported as a failure. It is **never** acknowledged as a success. What happens next is decided by the executor's <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> — `SKIP_ALL` (the default) drops the message, `RETRY_ALL` redelivers it.
+- A statement that fails is logged, counted, saved as an error event, and reported as a failure. It is **never** acknowledged as a success. What happens next is decided by the executor's <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> — `SKIP_ALL` (the default) drops the message, so a row can simply be missing; `RETRY_ALL` redelivers it up to the configured retry limit.
 - A statement can still commit **after** the executor has given up on its message pack. The retry then inserts the same row a second time.
 
 Where duplicates matter, make the insert idempotent — add a unique key and `ON CONFLICT DO NOTHING`:
@@ -314,7 +316,7 @@ Client lifecycle events are weaker still — they are best-effort hints, and can
 **Connection pool size** is **per integration**, not per node. Each PostgreSQL integration gets its own pool and its own worker threads, so that one slow database cannot starve the other integrations running on the same executor. Budget accordingly:
 
 - An integration holds **at most `poolSize` connections** while it is busy, and runs statements on at most `poolSize` threads.
-- An idle integration shrinks back to **one** connection: the pool's idle floor is 1, so a connection that has been unused for the driver's idle timeout (10 minutes by default) is closed. The price is one connect per extra worker on the first burst after such a lull, bounded by **Pool connection wait timeout**.
+- An idle integration shrinks back to **one** connection: the pool's idle floor is 1, so a connection that has been unused for the connection pool's idle timeout (HikariCP's default of 10 minutes) is closed. The price is one connect per extra worker on the first burst after such a lull, bounded by **Pool connection wait timeout**.
 - The worst case on a node is therefore the sum of `poolSize` over the integrations that executor owns. Ten integrations at the default `5` can reach 50 connections; ten at the maximum `50` can reach 500. Check that against the server's `max_connections`.
 - Which executor pays that cost depends on <DocLink product={props.product} path="integrations/#downlink-topics" bold={false}>partition ownership</DocLink> — each integration is owned by exactly one executor instance at a time.
 
@@ -328,9 +330,9 @@ Size `poolSize` for the throughput of the individual integration, not for the no
 
 These are the **integration's own** events, recorded inside TBMQ for debugging and troubleshooting. They are not the client lifecycle events described above: those are about MQTT clients and are written to your database, while these describe the integration itself and never leave TBMQ.
 
-- **Lifecycle Events** — logs events such as `Started`, `Created`, `Updated`, `Stopped`.
-- **Statistics** — insights into integration performance, including processed message counts and error rates.
-- **Errors** — captures failures such as an unreachable database, a rejected statement, or an expired timeout. A failed statement is recorded with its SQLState, which is the fastest way to tell a permissions problem (`42501`) from a bad column (`42703`) or a constraint violation (`23505`).
+- **Lifecycle Events** — logs events such as `Created`, `Updated`, `Started`, `Stopped`, `Failed`.
+- **Statistics** — the integration's own counters: messages processed and errors occurred.
+- **Errors** — captures failures such as an unreachable database, a rejected statement, or an expired timeout. Each entry carries the message PostgreSQL itself returned, e.g. `permission denied for table mqtt_messages`, which names the table or column at fault. The SQLState behind it — `42501` for a missing grant, `42703` for a bad column, `23505` for a unique violation — is written to the Integration Executor log rather than stored with the event.
 
 ## Send an uplink message
 
