@@ -614,7 +614,7 @@ export const learnNavTopics: MqttTopic[] = learnNavSlugs.map((slug) => getTopic(
 // fails the build if it ever drifts from the topic registry.
 // Per-category accent color for the hub grid (filter pill dot, section chip +
 // rule, and card tag). Resolved to concrete CSS custom properties in TopicGrid.
-export type MqttAccent = 'green' | 'blue' | 'purple' | 'amber' | 'teal';
+export type MqttAccent = 'green' | 'blue' | 'purple' | 'amber' | 'teal' | 'rose';
 
 export interface MqttCategory {
 	id: string;
