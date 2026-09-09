@@ -586,7 +586,7 @@ export const mqttTopics: MqttTopic[] = [
 	},
 	{
 		slug: 'mosquitto-alternative',
-		readingMinutes: 8,
+		readingMinutes: 12,
 		title: 'Mosquitto Alternative: Moving to a Clustered Broker',
 		navLabel: 'Mosquitto alternative',
 		cardSummary:
