@@ -60,6 +60,12 @@ export function formatMarketingTitle(title: string, section?: string): string {
 	return `${clean}${SEP}${section}${SEP}${SITE_NAME}`;
 }
 
+/**
+ * `Page title | TBMQ Docs` / `Page title | TBMQ PE Docs`. The edition sits inside
+ * the suffix so CE/PE pairs stay distinct while the boilerplate stays short
+ * enough to leave the page title visible in search results.
+ */
 export function formatDocsTitle(pageTitle: string, productName: string, isIndex: boolean): string {
-	return isIndex ? `${DOCS_SUFFIX}${SEP}${productName}` : `${pageTitle}${SEP}${DOCS_SUFFIX}${SEP}${productName}`;
+	const suffix = `${productName} ${DOCS_SUFFIX}`;
+	return isIndex ? suffix : `${pageTitle}${SEP}${suffix}`;
 }
