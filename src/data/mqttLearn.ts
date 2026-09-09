@@ -152,7 +152,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-reason-codes',
 		readingMinutes: 8,
-		title: 'MQTT Reason Codes',
+		title: 'MQTT Reason Codes Explained (MQTT 5.0)',
 		navLabel: 'Reason codes',
 		cardSummary: 'Single-byte status values attached to control packets to report outcomes.',
 		eyebrow: 'MQTT GUIDE',
@@ -168,7 +168,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-user-properties',
 		readingMinutes: 3,
-		title: 'MQTT User Properties',
+		title: 'MQTT User Properties Explained (MQTT 5.0)',
 		navLabel: 'User properties',
 		cardSummary: 'Arbitrary key–value pairs that travel with a message, like custom headers.',
 		eyebrow: 'MQTT GUIDE',
@@ -184,7 +184,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-topic-alias',
 		readingMinutes: 2,
-		title: 'MQTT Topic Alias',
+		title: 'MQTT Topic Alias Explained (MQTT 5.0)',
 		navLabel: 'Topic alias',
 		cardSummary: 'Replace a long topic name with a small integer for the life of a connection.',
 		eyebrow: 'MQTT GUIDE',
@@ -200,7 +200,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-flow-control',
 		readingMinutes: 2,
-		title: 'MQTT Flow Control',
+		title: 'MQTT Flow Control and Receive Maximum',
 		navLabel: 'Flow control',
 		cardSummary: 'The Receive Maximum property caps in-flight QoS 1 and 2 messages per side.',
 		eyebrow: 'MQTT GUIDE',
@@ -266,7 +266,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'retained-messages',
 		readingMinutes: 3,
-		title: 'MQTT Retained Messages',
+		title: 'MQTT Retained Messages Explained',
 		navLabel: 'Retained messages',
 		cardSummary: 'The last message on a topic, delivered immediately to any new subscriber.',
 		eyebrow: 'MQTT GUIDE',
@@ -314,7 +314,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-tls',
 		readingMinutes: 3,
-		title: 'MQTT over TLS/SSL',
+		title: 'MQTT over TLS/SSL (MQTTS) Explained',
 		navLabel: 'TLS / SSL',
 		cardSummary: 'Wrapping the MQTT connection in an encrypted channel on port 8883.',
 		eyebrow: 'MQTT GUIDE',
@@ -330,7 +330,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-authentication',
 		readingMinutes: 3,
-		title: 'MQTT Authentication',
+		title: 'MQTT Authentication Methods Explained',
 		navLabel: 'Authentication',
 		cardSummary: 'How the broker verifies a client’s identity: passwords, tokens, or certificates.',
 		eyebrow: 'MQTT GUIDE',
@@ -394,7 +394,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'websocket',
 		readingMinutes: 3,
-		title: 'MQTT over WebSocket',
+		title: 'MQTT over WebSocket Explained',
 		navLabel: 'MQTT over WebSocket',
 		cardSummary: 'Carrying MQTT inside a WebSocket so browsers can publish and subscribe.',
 		eyebrow: 'MQTT GUIDE',
