@@ -1,7 +1,23 @@
 import InstallationCardGrid from '~/components/InstallationCardGrid.astro';
 import Tabs    from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
+import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
+
+Every option below installs the same broker; they differ in where it runs and how far it scales. A standalone
+container is enough to evaluate TBMQ or develop against it, while production traffic runs on a cluster of broker nodes
+backed by Kafka, Redis and PostgreSQL.
+
+- **Live Demo** — the public `demo.tbmq.io` broker, for pointing an MQTT client at TBMQ without installing anything.
+- **On-premises** — a standalone broker with Docker on Linux, macOS or Windows, or a local cluster with Docker Compose
+  or Minikube.
+- **Cloud** — production clusters on Amazon EKS, Azure AKS or Google Kubernetes Engine, using each provider's managed
+  PostgreSQL, Kafka and cache services.
+- **Helm** — the official TBMQ Helm chart for any Kubernetes cluster, with walkthroughs for Minikube, EKS, AKS and GKE.
+
+After the broker is up, the <DocLink product={props.product} path="installation/config" bold={false}>configuration reference</DocLink> lists
+every parameter and its default, and the <DocLink product={props.product} path="installation/upgrade-instructions" bold={false}>upgrade instructions</DocLink> cover
+moving to a newer version.
 
 <Tabs defaultTab="on-premises" urlParam="installationType">
   <TabItem label="Live Demo" id="live-demo" icon="tabler:device-analytics">

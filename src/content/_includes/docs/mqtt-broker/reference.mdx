@@ -3,7 +3,15 @@ import Card from '~/components/Landing/Card.astro'
 import ListCard from '~/components/Landing/ListCard.astro'
 import DocLink from '@components/DocLink.astro';
 
+The reference section is where the numbers live: how the broker is put together, what it does under sustained load,
+and the exact names and defaults of every setting and REST endpoint. Start with the architecture pages to understand
+the cluster design, use the benchmarks to size a deployment, and keep the configuration and API references at hand
+while you operate TBMQ.
+
 ## Platform internals
+
+How TBMQ processes MQTT traffic across a cluster, and how it behaves when pushed: three published benchmarks cover
+point-to-point throughput, single-node fan-out and a 100-million-connection fan-in test.
 
 <CardGrid>
   <ListCard headingLevel={3} title="Architecture" icon="puzzle">
@@ -20,6 +28,9 @@ import DocLink from '@components/DocLink.astro';
 </CardGrid>
 
 ## Configuration & API
+
+Every environment variable of the broker and the integration executor with its default value, plus the REST APIs for
+automating users, client credentials and application shared subscriptions.
 
 <CardGrid>
   <ListCard headingLevel={3} title="Configuration reference" icon="setting">
