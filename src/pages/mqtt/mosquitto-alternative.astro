@@ -104,6 +104,12 @@ const faq: FaqItem[] = [
 		node failure, any node in the cluster can resume its session. Starting a node is the entire scaling operation:
 		consumer groups rebalance, load spreads across the larger cluster, and there is no resharding and no downtime.
 	</p>
+	<p>
+		Identical nodes are also what keeps the deployment ordinary. TBMQ ships
+		<a href="/docs/installation/cluster/helm-cluster-setup-aws/">Helm charts</a> for EKS, AKS, GKE and minikube, and every
+		node exposes a <a href="/docs/other/health/">health endpoint</a> — so draining and replacing one is a Kubernetes rollout
+		rather than a broker-specific procedure. No node has to go last.
+	</p>
 
 	<h3>Device and application traffic never share a path</h3>
 	<p>
@@ -169,6 +175,35 @@ const faq: FaqItem[] = [
 		All active subscriptions live in an in-memory Trie. Lookup time is proportional to the length of the topic, not the
 		number of subscriptions — a broker holding a million subscriptions matches a topic as fast as one holding a
 		thousand. Adding subscribers does not slow down routing.
+	</p>
+
+	<h3>Shared subscriptions that add throughput</h3>
+	<p>
+		Mosquitto implements MQTT 5.0 shared subscriptions and so does TBMQ, so this is not a support difference — it is a
+		difference in what adding a member does. Register an
+		<a href="/docs/application-shared-subscription/">application shared subscription</a> and the group gets its own Kafka
+		topic; each subscribing APPLICATION client joins that topic's consumer group, so an extra instance picks up a share of
+		the partitions and the group rebalances when one dies. Messages keep accumulating in Kafka while every member is offline,
+		and delivery resumes from the committed offset.
+		<a href="/docs/user-guide/shared-subscriptions/">Shared subscriptions</a> covers the DEVICE-client behavior and the load-balancing
+		strategies.
+	</p>
+
+	<h3>The running cluster is inspectable</h3>
+	<p>
+		Mosquitto's operational surface is a log file and the <code>$SYS</code> topic tree. TBMQ answers the same questions from
+		a <a href="/docs/user-guide/ui/monitoring/">web UI</a> over the live cluster: which
+		<a href="/docs/user-guide/ui/sessions/">sessions</a> are connected and what each is subscribed to, per-client and cluster-wide
+		metrics, which connection attempts were rejected and why, and a built-in
+		<a href="/docs/user-guide/ui/websocket-client/">WebSocket client</a> for publishing a test message without leaving the
+		browser. The same objects are reachable over the <a href="/docs/rest-api/">REST API</a>, and metrics export to
+		<a href="/docs/prometheus-metrics/">Prometheus</a>.
+	</p>
+
+	<p>
+		All of that is Community Edition, <a href="https://github.com/thingsboard/tbmq">Apache 2.0</a>, commercial use
+		included. <a href="/pricing/">Professional Edition</a> adds OAuth 2.0 single sign-on, role-based access control, audit
+		logs, domain management and white labeling — on the same broker, not a different one.
 	</p>
 
 	<h2>What the architecture is built to do</h2>
