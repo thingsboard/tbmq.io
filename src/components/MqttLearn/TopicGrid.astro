@@ -203,10 +203,23 @@ const categoryIcon: Record<string, string> = {
 		max-width: 1160px;
 		margin: 0 auto;
 		padding: 12px $spacing-6;
+		// Phones keep the single-line chip carousel: swiping makes the overflow
+		// discoverable, and a wrapped row would cost ~4 lines of a sticky bar.
 		overflow-x: auto;
 		scrollbar-width: none;
 		&::-webkit-scrollbar {
 			display: none;
+		}
+
+		// Everywhere else, wrap. Six categories no longer fit one 1160px line, and
+		// because the scrollbar above is hidden, scrolling drops the last pill off
+		// the container edge with no affordance — so a category silently disappears.
+		// Keyed on width rather than `hover: none`, which a touch-capable laptop
+		// also reports.
+		@include media-up(md) {
+			flex-wrap: wrap;
+			justify-content: center;
+			overflow-x: visible;
 		}
 	}
 	.mqtt-pill {
