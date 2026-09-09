@@ -228,7 +228,7 @@ Type-specific fields, added on top:
 | `${protocolVersion}` | `CLIENT_CONNECTED`, `CLIENT_AUTHENTICATION_FAILED` | MQTT protocol level: `3`, `4` or `5`. | `integer` |
 | `${sessionExpiryInterval}` | `CLIENT_CONNECTED` | Session expiry interval (seconds). | `bigint` |
 | `${disconnectReason}` | `CLIENT_DISCONNECTED` | Name of the MQTT reason code, e.g. `NORMAL_DISCONNECT`. | `text` |
-| `${subscriptions}` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` | The granted or removed subscriptions, bound as a JSON array. A `CLIENT_SUBSCRIBED` entry carries `topicFilter`, `qos` and an `options` object, plus `shareName` and `subscriptionId` when present; a `CLIENT_UNSUBSCRIBED` entry carries `topicFilter` and, for a shared subscription, `shareName`. An empty list binds `[]`, not `NULL`. | `jsonb` |
+| `${subscriptions}` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` | The granted or removed subscriptions, bound as a JSON array. A `CLIENT_SUBSCRIBED` entry carries `topicFilter`, `qos` and an `options` object, plus `shareName` and `subscriptionId` when present; a `CLIENT_UNSUBSCRIBED` entry carries `topicFilter` and, for a shared subscription, `shareName`. | `jsonb` |
 | `${reason}` | `CLIENT_AUTHENTICATION_FAILED`, `CLIENT_CONNECTION_FAILED` | Why authentication or the connection failed. | `text` |
 | `${action}` | `CLIENT_AUTHORIZATION_FAILED` | The denied operation: `publish` or `subscribe`. | `text` |
 | `${topic}` | `CLIENT_AUTHORIZATION_FAILED` | The topic or topic filter that was denied. | `text` |
