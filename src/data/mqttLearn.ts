@@ -599,7 +599,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-broker', 'shared-subscriptions', 'persistent-session', 'mqtt-vs-kafka'],
 		status: 'full',
 		seoDescription:
-			'Looking for a Mosquitto alternative? Where single-node MQTT brokers hit their limits — and what changes when you move to a clustered broker.',
+			'Looking for a Mosquitto alternative? Where single-node MQTT brokers hit their limits — and how TBMQ clusters, persists to Kafka, and migrates with no flag day.',
 	},
 ];
 

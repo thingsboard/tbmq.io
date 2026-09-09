@@ -8,7 +8,7 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'Is TBMQ a drop-in replacement for Mosquitto?',
-		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no changes. Operationally, no: TBMQ runs with Kafka and Redis alongside it, which is a different deployment shape than a single binary.',
+		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no changes. Operationally, no: TBMQ runs with Kafka, Redis and PostgreSQL alongside it, which is a different deployment shape than a single binary.',
 	},
 	{
 		q: 'Can I run TBMQ on a Raspberry Pi like Mosquitto?',
@@ -25,6 +25,14 @@ const faq: FaqItem[] = [
 	{
 		q: 'Is TBMQ free?',
 		a: 'TBMQ Community Edition is open source under the Apache 2.0 license, including commercial use. Professional Edition adds single sign-on, role-based access control, audit logs and white labeling.',
+	},
+	{
+		q: 'How many concurrent connections can Mosquitto handle?',
+		a: 'There is no official figure — the Mosquitto project publishes no connection or throughput number. The ceiling depends on file descriptors, memory and the fact that message handling runs in one event loop on one host. Published numbers for Mosquitto come from competing vendors running their own harnesses, and they disagree with each other by orders of magnitude, so none of them is a safe planning input. <strong>The useful answer is that the limit is one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
+	},
+	{
+		q: 'Can I run TBMQ on a single node?',
+		a: 'Yes, and it is how most people start. The standard Docker install runs one TBMQ node with Kafka, Redis and PostgreSQL beside it, which gives you the durability guarantee and the separate device and application paths without a cluster; you add nodes when you need the headroom or the availability. What a single node does not give you is a single binary — that is the trade this page is about.',
 	},
 ];
 ---
@@ -270,7 +278,7 @@ const faq: FaqItem[] = [
 						>Official Helm charts for EKS, AKS, GKE and minikube</td
 					></tr
 				>
-				<tr><td>Footprint</td><td>Single binary, a few MB</td><td>JVM + Kafka + Redis</td></tr>
+				<tr><td>Footprint</td><td>Single binary, a few MB</td><td>JVM + Kafka + Redis + PostgreSQL</td></tr>
 				<tr><td>License</td><td>EPL-2.0 / EDL-1.0</td><td>Apache-2.0, commercial use included</td></tr>
 			</tbody>
 		</table>
@@ -344,9 +352,47 @@ const faq: FaqItem[] = [
 		bridges come down.
 	</p>
 
+	<h3>The parts that are easy to forget</h3>
+	<p>Six things that are not in the diagram and are the usual source of surprises.</p>
+
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:users-group" title="Set a client type per credential">
+			TBMQ routes persistent clients by <a href="/docs/user-guide/mqtt-client-type/">client type</a>, so a backend
+			consumer left as DEVICE gets a per-client queue instead of its own Kafka topic. Decide this before you repoint,
+			not after.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:key" title="Re-provision credentials">
+			A Mosquitto password file and ACL file do not carry over. Create the matching
+			<a href="/docs/user-guide/ui/mqtt-client-credentials/">client credentials</a> and topic rules in TBMQ first —
+			<a href="/docs/other/bulk-provisioning/">bulk provisioning</a> takes a file rather than one form per device.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:route" title="Keep the two bridge legs disjoint">
+			Both legs are running at once, so overlapping topic filters will round-trip a message between the brokers. Split
+			the filters explicitly and check them before enabling the second leg.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:pin" title="Decide what happens to retained messages">
+			The retained set is per-broker state. Plan to re-publish the retained messages that still matter against TBMQ
+			rather than assuming a bridge reproduces them.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:list-check" title="Verify each batch before the next">
+			After repointing a batch, confirm in TBMQ's <a href="/docs/user-guide/ui/sessions/">sessions view</a> that every client
+			is connected with the subscriptions you expect. A silently missing subscription is the failure mode worth catching early.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:arrow-back-up" title="Keep the rollback until the end">
+			Leave both bridges up until the last batch has run clean. Until they come down, reverting a batch is repointing it
+			back — no data movement and no restore.
+		</LearnIconRow>
+	</LearnIconRows>
+
 	<p>
+		<a href="/docs/getting-started/">Quickstart →</a>
+		&nbsp;·&nbsp;
 		<a href="/docs/installation/cluster/docker-compose-setup/">Cluster setup →</a>
 		&nbsp;·&nbsp;
 		<a href="/docs/integrations/mqtt/">MQTT Integration →</a>
+		&nbsp;·&nbsp;
+		<a href="/live-demo/">Try the live demo →</a>
+		&nbsp;·&nbsp;
+		<a href="/contact-us/">Talk to us →</a>
 	</p>
 </MqttTopicLayout>
