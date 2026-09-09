@@ -1,0 +1,301 @@
+---
+import MqttTopicLayout from '@components/MqttLearn/MqttTopicLayout.astro';
+import MqttDiagram from '@components/MqttLearn/MqttDiagram.astro';
+import LearnIconRows from '@components/MqttLearn/LearnIconRows.astro';
+import LearnIconRow from '@components/MqttLearn/LearnIconRow.astro';
+import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
+
+const faq: FaqItem[] = [
+	{
+		q: 'Is TBMQ a drop-in replacement for Mosquitto?',
+		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no changes. Operationally, no: TBMQ runs with Kafka and Redis alongside it, which is a different deployment shape than a single binary.',
+	},
+	{
+		q: 'Can I run TBMQ on a Raspberry Pi like Mosquitto?',
+		a: 'No. They target different classes of hardware, and Mosquitto is the right choice on a constrained device. TBMQ is built for server-class nodes in a cluster.',
+	},
+	{
+		q: 'Does Mosquitto support clustering?',
+		a: 'No. Bridging forwards messages between brokers, but it shares no session or subscription state — so a bridged pair behaves as two brokers, not one cluster, and a session cannot resume on the other node.',
+	},
+	{
+		q: 'How do I migrate from Mosquitto without downtime?',
+		a: "Run both brokers with two bridge legs: Mosquitto's own bridge forwarding into TBMQ, and TBMQ's MQTT Integration forwarding back. Then repoint clients in batches and remove the bridges. No flag day and no maintenance window.",
+	},
+	{
+		q: 'Is TBMQ free?',
+		a: 'TBMQ Community Edition is open source under the Apache 2.0 license, including commercial use. Professional Edition adds single sign-on, role-based access control, audit logs and white labeling.',
+	},
+];
+---
+
+<MqttTopicLayout slug="mosquitto-alternative" faq={faq}>
+	<h2>What Mosquitto gets right</h2>
+	<p>
+		It is worth being clear about why Mosquitto is everywhere. It is a single binary of a few megabytes that will run on
+		a router, a single-board computer or a spare VM, and it starts in milliseconds. It is packaged in every mainstream
+		Linux distribution. <code>mosquitto_pub</code> and <code>mosquitto_sub</code> are the tools most people reach for when
+		they need to test <em>any</em> broker — including this one. It implements MQTT 5.0 in full, shared subscriptions included.
+		And it is governed by the Eclipse Foundation rather than a vendor, with fifteen years of production use behind it.
+	</p>
+	<p>
+		If your deployment fits on one host, Mosquitto is very hard to beat, and most of this page will not apply to you.
+		<a href="#stay">When to stay on Mosquitto</a> says so in more detail.
+	</p>
+
+	<h2>The three walls</h2>
+	<p>
+		Deployments outgrow Mosquitto in three specific ways. They are worth naming precisely, because only the third one is
+		really about scale.
+	</p>
+
+	<h3>The cluster wall</h3>
+	<p>
+		Mosquitto runs as a single broker. It can bridge to another broker, and a bridge does forward messages — but it
+		shares no session state and no subscription state. Two bridged brokers are two brokers, not one logical broker: a
+		client's session lives on the node it connected to, and if that node is gone, the session is gone with it. Vertical
+		scaling is the only headroom you have, and one machine is the ceiling.
+	</p>
+
+	<h3>The durability wall</h3>
+	<p>
+		When Mosquitto returns a PUBACK, the message is in that process's memory, and it will reach disk at the next
+		autosave of a single file on that single host. For a broker designed to stay small, that is a reasonable trade. It
+		does mean the acknowledgement your publisher receives is a promise about one process on one machine.
+	</p>
+
+	<h3>The mixed-traffic wall</h3>
+	<p>
+		This is the one nobody markets against, and it is usually what actually hurts. IoT traffic is not one kind of
+		traffic. Thousands of devices publish telemetry continuously. A handful of backend applications subscribe to
+		high-volume streams and must not miss anything. Commands target one specific client and need low latency even when
+		that client is briefly offline. Through a single delivery path those three contend for the same memory: one slow
+		backend consumer applies backpressure that devices feel, and a burst of device publishing delays the command you
+		just sent.
+	</p>
+
+	<h2>How TBMQ answers each one</h2>
+	<p>
+		TBMQ is built on <a href="https://kafka.apache.org/">Kafka</a> for durability and distribution,
+		<a href="https://netty.io/">Netty</a> for non-blocking transport, an actor per client for concurrency, and an in-memory
+		Trie for subscription matching. Those are not incidental choices — each one maps onto a wall above.
+	</p>
+
+	<h3>Acknowledged means stored</h3>
+	<p>
+		TBMQ does not send a PUBACK or PUBREC until Kafka has confirmed the write. Once the publisher holds that
+		acknowledgement, the message no longer depends on the node that received it: if that node dies, another picks up
+		from Kafka and continues delivery. Being precise about the limit — the shipped defaults keep a single copy (<code
+			>acks=1</code
+		>, replication factor <code>1</code>), so surviving the loss of a Kafka broker means running a replicated Kafka with
+		matching producer acknowledgements. The guarantee is real; how far it extends is something you configure.
+	</p>
+
+	<h3>One cluster, no coordinator</h3>
+	<p>
+		Every TBMQ node is identical. There is no master, no leader election, and nothing that becomes a bottleneck or a
+		single point of failure. Session and subscription state is shared through Kafka, so when a client reconnects after a
+		node failure, any node in the cluster can resume its session. Starting a node is the entire scaling operation:
+		consumer groups rebalance, load spreads across the larger cluster, and there is no resharding and no downtime.
+	</p>
+
+	<h3>Device and application traffic never share a path</h3>
+	<p>
+		TBMQ classifies persistent clients by how they actually behave. <strong>DEVICE</strong> clients publish often and subscribe
+		to little; while one is offline its messages wait in a per-client queue in Redis or Valkey, which absorbs high write rates
+		and hands the queue back quickly on reconnect. <strong>APPLICATION</strong> clients subscribe to high-volume topics, and
+		each one gets a dedicated Kafka topic and its own consumer, so a backlog accumulates safely in Kafka and is replayed in
+		order from that client's committed offset. A device publishing spike cannot delay an application subscriber, and a slow
+		application subscriber cannot delay a command to a device.
+	</p>
+
+	<MqttDiagram
+		caption="One message, two delivery paths. Kafka holds the durable record for both; neither path can stall the other."
+	>
+		<svg
+			viewBox="0 0 680 246"
+			role="img"
+			aria-label="Publishers send MQTT PUBLISH packets to a TBMQ node, which stores each message in Kafka before acknowledging it. Application clients then consume from their own dedicated Kafka topic with offset replay, while messages for offline device clients wait in a per-client queue in Redis or Valkey — two separate paths that cannot delay each other."
+		>
+			<text class="d-tiny" x="462" y="22">APPLICATION PATH</text>
+			<text class="d-tiny" x="462" y="177">DEVICE PATH</text>
+
+			<rect class="d-actor" x="8" y="108" width="80" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="48" y="137" style="font-size:12px">Publishers</text>
+
+			<rect class="d-actor d-actor--hero" x="164" y="108" width="104" height="48" rx="10"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="216" y="127">TBMQ node</text>
+			<text class="d-tiny d-mid" x="216" y="144">actor per client</text>
+
+			<rect class="d-actor" x="336" y="108" width="56" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="364" y="137">Kafka</text>
+
+			<line class="d-line d-line--green" x1="88" y1="132" x2="160" y2="132" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="94" y="121" width="56" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="122" y="136" style="font-size:11px">PUBLISH</text>
+
+			<line class="d-line d-line--green" x1="268" y1="132" x2="332" y2="132" marker-end="url(#arGreen)"></line>
+			<rect class="d-chip d-chip--green" x="276" y="121" width="44" height="22" rx="11"></rect>
+			<text class="d-ctext d-ctext--green d-mid" x="298" y="136" style="font-size:11px">store</text>
+
+			<text class="d-note d-mid" x="200" y="177">PUBACK only after Kafka confirms the write</text>
+
+			<path class="d-line" d="M392 124 C 424 124 424 56 459 56" marker-end="url(#arGray)"></path>
+			<rect class="d-actor" x="462" y="32" width="210" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="567" y="51">APPLICATION client</text>
+			<text class="d-tiny d-mid" x="567" y="68">own Kafka topic · offset replay</text>
+
+			<path class="d-line" d="M392 140 C 424 140 424 210 459 210" marker-end="url(#arGray)"></path>
+			<rect class="d-actor" x="462" y="186" width="106" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="515" y="205" style="font-size:12px">Redis / Valkey</text>
+			<text class="d-tiny d-mid" x="515" y="222">offline queue</text>
+
+			<line class="d-line" x1="568" y1="210" x2="595" y2="210" marker-end="url(#arGray)"></line>
+
+			<rect class="d-actor" x="598" y="186" width="74" height="48" rx="10"></rect>
+			<text class="d-alabel d-mid" x="635" y="205">DEVICE</text>
+			<text class="d-alabel d-mid" x="635" y="221">client</text>
+		</svg>
+	</MqttDiagram>
+
+	<h3>Matching cost does not grow with subscriptions</h3>
+	<p>
+		All active subscriptions live in an in-memory Trie. Lookup time is proportional to the length of the topic, not the
+		number of subscriptions — a broker holding a million subscriptions matches a topic as fast as one holding a
+		thousand. Adding subscribers does not slow down routing.
+	</p>
+
+	<h2>What the architecture is built to do</h2>
+	<p>Each figure comes from a published test, with its hardware and load profile documented.</p>
+
+	<LearnIconRows>
+		<LearnIconRow icon="tabler:arrows-split-2" title="3M msg/sec">
+			fan-out delivery from a single 32-vCPU node, at 7.4 ms average latency and 54% CPU.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:plug-connected" title="100M connections">
+			held on a 25-node cluster across 100M unique topics, while moving 6M messages per second at QoS 1.
+		</LearnIconRow>
+		<LearnIconRow icon="tabler:arrows-right-left" title="1M msg/sec point-to-point">
+			500,000 publishers to 500,000 persistent device subscribers at QoS 1, on five nodes.
+		</LearnIconRow>
+	</LearnIconRows>
+
+	<p>
+		One caveat, stated plainly: <strong>Mosquitto publishes no comparable figures</strong> — its homepage makes no numeric
+		connection or throughput claim at all. These are TBMQ tests on TBMQ hardware, not a same-hardware comparison, and they
+		should not be read as one.
+	</p>
+	<p><a href="/performance/">Full benchmark methodology and results →</a></p>
+
+	<h2>At a glance</h2>
+	<div class="overflow-x">
+		<table>
+			<thead>
+				<tr><th>&nbsp;</th><th>Mosquitto</th><th>TBMQ</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>MQTT versions</td><td>3.1, 3.1.1, 5.0</td><td>3.1, 3.1.1, 5.0</td></tr>
+				<tr><td>Shared subscriptions</td><td>Yes</td><td>Yes</td></tr>
+				<tr><td>Clustering</td><td>None — bridging between brokers</td><td>Symmetric multi-node, no coordinator</td></tr
+				>
+				<tr
+					><td>Session &amp; subscription state</td><td>Per broker</td><td>Shared via Kafka, resumable on any node</td
+					></tr
+				>
+				<tr
+					><td>Message durability</td><td>Periodic file autosave on the host</td><td>PUBACK only after Kafka stores</td
+					></tr
+				>
+				<tr
+					><td>Offline queues</td><td>In-memory cap per session</td><td
+						>Per-client Redis/Valkey queue, or dedicated Kafka topic with offset replay</td
+					></tr
+				>
+				<tr
+					><td>Authentication</td><td>Password file, TLS, X.509, plugins</td><td
+						>Basic, X.509, JWT, HTTP, SCRAM + topic rules</td
+					></tr
+				>
+				<tr
+					><td>Management UI</td><td>None — CLI and <code>$SYS</code> topics</td><td
+						>Sessions, subscriptions, metrics, WebSocket client</td
+					></tr
+				>
+				<tr><td>REST API</td><td>None</td><td>Sessions, subscriptions, credentials</td></tr>
+				<tr><td>Built-in integrations</td><td>None</td><td>HTTP, MQTT, Kafka (PostgreSQL in PE)</td></tr>
+				<tr><td>Footprint</td><td>Single binary, a few MB</td><td>JVM + Kafka + Redis</td></tr>
+				<tr><td>License</td><td>EPL-2.0 / EDL-1.0</td><td>Apache-2.0</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2 id="stay">When to stay on Mosquitto</h2>
+	<p>Three cases where moving would be the wrong call.</p>
+
+	<h3>One host is enough</h3>
+	<p>
+		Hundreds to a few thousand clients, and no availability requirement beyond restarting a service. TBMQ's Kafka and
+		Redis dependencies buy you nothing here, and cost you operational surface.
+	</p>
+
+	<h3>The hardware is constrained</h3>
+	<p>
+		A gateway, a single-board computer, an edge box with a few hundred megabytes of RAM. TBMQ is not built for that
+		envelope and will not fit it. Mosquitto is the right answer, and this is the case it was designed for.
+	</p>
+
+	<h3>You want the protocol and nothing else</h3>
+	<p>
+		No cluster, no web UI, no REST API, no integrations. Every additional moving part is a liability rather than a
+		feature, and a broker that does exactly one thing is the correct tool.
+	</p>
+
+	<h2>Moving over without a flag day</h2>
+	<p>
+		You do not have to cut over at once, and the two directions come from different sides. TBMQ's MQTT Integration is
+		<em>outbound</em> — it bridges TBMQ to an external broker — so the inbound leg uses Mosquitto's own bridge.
+	</p>
+
+	<MqttDiagram caption="Both legs run at once, in opposite directions, for as long as the migration takes.">
+		<svg
+			viewBox="0 0 680 196"
+			role="img"
+			aria-label="Two bridge legs run in opposite directions during a migration: Mosquitto's own connection bridge forwards messages to TBMQ, and TBMQ's outbound MQTT Integration forwards messages back to Mosquitto, so publishers and legacy consumers can be repointed in batches."
+		>
+			<rect class="d-actor" x="30" y="76" width="160" height="52" rx="10"></rect>
+			<text class="d-alabel d-mid" x="110" y="98">Mosquitto</text>
+			<text class="d-tiny d-mid" x="110" y="115">existing publishers</text>
+
+			<rect class="d-actor d-actor--hero" x="490" y="76" width="160" height="52" rx="10"></rect>
+			<text class="d-alabel d-alabel--hero d-mid" x="570" y="98">TBMQ</text>
+			<text class="d-tiny d-mid" x="570" y="115">repointed clients</text>
+
+			<path class="d-line d-line--green" d="M190 92 C 300 40 380 40 487 92" marker-end="url(#arGreen)"></path>
+			<text class="d-feat d-mid" x="340" y="42">Mosquitto&apos;s own connection bridge</text>
+
+			<path class="d-line" d="M490 112 C 380 164 300 164 193 112" marker-end="url(#arGray)"></path>
+			<text class="d-note d-mid" x="340" y="178">TBMQ MQTT Integration (outbound)</text>
+		</svg>
+	</MqttDiagram>
+
+	<h3>Point Mosquitto's bridge at TBMQ</h3>
+	<p>Every existing publisher keeps its current endpoint and its current configuration. Nothing on that side moves.</p>
+
+	<h3>Add TBMQ's MQTT Integration back to Mosquitto</h3>
+	<p>
+		Legacy consumers keep reading from the broker they already read from, so backend systems need no coordinated change.
+		Keep the two legs on disjoint topic filters so a message cannot round-trip between the brokers.
+	</p>
+
+	<h3>Repoint clients in batches, then drop both bridges</h3>
+	<p>
+		Devices first, backend consumers last. No maintenance window, and every batch is independently reversible until the
+		bridges come down.
+	</p>
+
+	<p>
+		<a href="/docs/installation/cluster/docker-compose-setup/">Cluster setup →</a>
+		&nbsp;·&nbsp;
+		<a href="/docs/integrations/mqtt/">MQTT Integration →</a>
+	</p>
+</MqttTopicLayout>
