@@ -20,7 +20,8 @@ export const OG_FALLBACK = '/tbmq-og.png';
 export const SITE_LOGO = '/tbmq-logo.svg';
 
 export const BLOG_NAME = `${SITE_NAME} Blog`;
-export const BLOG_DESCRIPTION = 'Release announcements, benchmarks, and MQTT engineering write-ups.';
+export const BLOG_DESCRIPTION =
+	'The TBMQ blog: release announcements, performance benchmarks, MQTT protocol deep dives and engineering write-ups from the team behind the broker.';
 
 /** schema.org Organization node shared by the blog's JSON-LD graphs as `publisher`. */
 export function organizationJsonLd(site: URL) {
