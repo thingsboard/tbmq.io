@@ -9,6 +9,11 @@ import ComparisonTable from '../components/Landing/ComparisonTable.astro';
 import BottomFeaturesSection from '../components/MqttBroker/BottomFeaturesSection.astro';
 import GetStartedSection from '../components/MqttBroker/GetStartedSection.astro';
 import { Products } from '@models/site.models';
+import { homeJsonLd } from '~/util/structuredData';
+
+const description =
+	'Deliver 3M+ MQTT messages/sec with TBMQ — a fault-tolerant open-source MQTT broker with clustering and message durability.';
+const jsonLd = homeJsonLd(description);
 
 const tbmqGroups = [
 	{
@@ -187,11 +192,12 @@ const tbmqGroups = [
 <BaseLayout
 	forceLightTheme
 	title="Open Source MQTT Broker - Scalable IoT Messaging"
-	description="Deliver 3M+ MQTT messages/sec with TBMQ — a fault-tolerant open-source MQTT broker with clustering and message durability."
+	description={description}
 	pageId="mqtt-broker"
 	gitHubPlatform={Products.TBMQ}
 	preloadLcpImage="/hero/tbmq-cover.webp"
 	openContentLinksInNewTab
+	jsonLd={jsonLd}
 >
 	<main>
 		<Hero

@@ -17,6 +17,8 @@ import {
 import { getCanonicalPathname } from '~/util/canonical';
 import { DOCS_SUFFIX, EDIT_BASE_URL, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
+import { prettifySegment } from '~/util/ogContext';
+import { docsJsonLd, type Crumb } from '~/util/structuredData';
 // No alias covers `config/`; relative import is the only option here.
 import {
 	getRepoRoot,
@@ -40,6 +42,20 @@ const API_SECTION_NAMES: Record<string, string> = {
 
 /** Memoization cache for `linkMatchesVersion(href) && linkMatchesLanguage(href)`. */
 const sidebarLinkMatchCache = new Map<string, boolean>();
+
+/**
+ * Every docs route that exists, derived from the content files at build time.
+ * The JSON-LD breadcrumb trail only names intermediate sections that have a
+ * page of their own — a crumb pointing at a 404 is worse than a shorter trail.
+ */
+const DOCS_ROUTES = new Set(
+	Object.keys(import.meta.glob('/src/content/docs/docs/**/*.mdx')).map((file) =>
+		file
+			.replace(/^\/src\/content\/docs\/docs\//, '/docs/')
+			.replace(/(?:\/index)?\.mdx$/, '')
+			.concat('/')
+	)
+);
 
 const INCLUDES_IMPORT_REGEX = /^\s*import\s+\w+\s+from\s+['"]@includes\/([^'"]+)['"]/gm;
 const JSX_COMPONENT_REGEX = /^\s*<[A-Z][A-Za-z0-9]*\b/gm;
@@ -275,6 +291,8 @@ function updateHead(context: APIContext) {
 	// pages. Marketing pages render through `StarlightPage` too, so gate the
 	// docs-only work here to skip their per-page version/slug/canonical lookups.
 	const isDocs = docsPathRegex.test(pathname);
+	// The page's own name, before the ` | TBMQ Docs` suffix is appended — the JSON-LD headline.
+	let docsHeadline: string | undefined;
 
 	if (isDocs && title && title.content) {
 		const product = getVersionFromURL(pathname);
@@ -287,6 +305,7 @@ function updateHead(context: APIContext) {
 		const customDocsTitle = (entry.data as { customDocsTitle?: string }).customDocsTitle;
 		if (customDocsTitle) {
 			title.content = customDocsTitle;
+			docsHeadline = customDocsTitle.split(` ${TITLE_SEPARATOR} `)[0];
 		} else {
 			const productTitleName = getProductTitleName(product);
 			const versionBase = `/${getLanguagePrefix(lang)}docs/${getVersionPrefix(product)}`;
@@ -303,6 +322,7 @@ function updateHead(context: APIContext) {
 			}
 
 			title.content = formatDocsTitle(pageTitle, productTitleName, isIndex);
+			docsHeadline = isIndex ? title.content : pageTitle;
 		}
 		if (ogTitle) ogTitle.attrs!['content'] = title.content;
 	}
@@ -338,5 +358,55 @@ function updateHead(context: APIContext) {
 			if (canonical) canonical.attrs!['href'] = targetCanonical;
 			if (ogUrl) ogUrl.attrs!['content'] = targetCanonical;
 		}
+
+		// Structured data for indexable docs pages. Built from the canonical
+		// pathname, so a CE page carries the same graph as the PE page it
+		// canonicalises to — the two must not disagree about what the article is.
+		if (title?.content && !hasNoindexMeta(head)) {
+			const { title: sidebarTitle, description } = entry.data as { title: string; description?: string };
+			head.push({
+				tag: 'script',
+				attrs: { type: 'application/ld+json' },
+				content: JSON.stringify(
+					docsJsonLd({
+						url: new URL(canonicalPathname, context.site).href,
+						headline: docsHeadline ?? title.content,
+						description,
+						crumbs: docsBreadcrumbs(canonicalPathname, sidebarTitle, context.site!),
+					})
+				),
+			});
+		}
 	}
+}
+
+function hasNoindexMeta(head: StarlightRouteData['head']): boolean {
+	return head.some(
+		(item) => item.tag === 'meta' && item.attrs?.name === 'robots' && /\bnoindex\b/i.test(String(item.attrs.content))
+	);
+}
+
+/**
+ * Home → `TBMQ Docs` / `TBMQ PE Docs` → each ancestor section that has an index
+ * page of its own → the page. The last crumb carries the sidebar title, which is
+ * the label a reader navigated by.
+ */
+function docsBreadcrumbs(canonicalPathname: string, pageTitle: string, site: URL): Crumb[] {
+	const product = getVersionFromURL(canonicalPathname);
+	const lang = getLanguageFromURL(canonicalPathname);
+	const docsRoot = `/${getLanguagePrefix(lang)}docs/${getVersionPrefix(product)}`;
+	const crumbs: Crumb[] = [
+		{ name: 'Home', item: new URL('/', site).href },
+		{ name: formatDocsTitle('', getProductTitleName(product), true), item: new URL(docsRoot, site).href },
+	];
+	if (canonicalPathname === docsRoot) return crumbs;
+
+	const segments = canonicalPathname.slice(docsRoot.length).split('/').filter(Boolean);
+	let current = docsRoot;
+	for (const segment of segments.slice(0, -1)) {
+		current += `${segment}/`;
+		if (DOCS_ROUTES.has(current)) crumbs.push({ name: prettifySegment(segment), item: new URL(current, site).href });
+	}
+	crumbs.push({ name: pageTitle, item: new URL(canonicalPathname, site).href });
+	return crumbs;
 }

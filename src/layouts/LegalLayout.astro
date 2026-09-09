@@ -10,9 +10,10 @@ interface Props {
 	description?: string;
 	ogImage?: string;
 	noIndex?: boolean;
+	jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, ogImage: ogImageProp, noIndex = false } = Astro.props;
+const { title, description, ogImage: ogImageProp, noIndex = false, jsonLd } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const pageTitle = formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
@@ -30,6 +31,7 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 			canonicalUrl={canonicalUrl}
 			ogImage={ogImage}
 			noIndex={noIndex}
+			jsonLd={jsonLd}
 		/>
 		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
 	</head>

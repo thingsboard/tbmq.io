@@ -1,12 +1,19 @@
 ---
 import LegalLayout from '@layouts/LegalLayout.astro';
+import { marketingJsonLd } from '~/util/structuredData';
 
 const title = 'Terms of Use for the TBMQ Website and Software';
 const description =
 	'The terms and conditions for using the TBMQ website and software: permitted use, intellectual property, warranties and liability, and how the terms may change.';
+const jsonLd = marketingJsonLd({
+	path: '/product/terms-of-use/',
+	name: title,
+	description,
+	breadcrumb: 'Terms of Use',
+});
 ---
 
-<LegalLayout title={title} description={description}>
+<LegalLayout title={title} description={description} jsonLd={jsonLd}>
 	<h1>TERMS OF USE</h1>
 	<h2>PLEASE READ THESE TERMS AND CONDITIONS</h2>
 	<p class="date">As of February 4, 2026</p>

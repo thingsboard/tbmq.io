@@ -1,13 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ContactForm from '../components/ContactForm.astro';
+import { marketingJsonLd } from '~/util/structuredData';
 
 const title = 'Contact the TBMQ Team: Sales and Support';
 const description =
 	'Contact the TBMQ team about licensing, TBMQ Professional Edition trials, Private Cloud and technical support. Send a message through the form and we will reply.';
+const jsonLd = marketingJsonLd({ path: '/contact-us/', name: title, description, breadcrumb: 'Contact Us' });
 ---
 
-<BaseLayout title={title} description={description} pageId="contact-us">
+<BaseLayout title={title} description={description} pageId="contact-us" jsonLd={jsonLd}>
 	<div class="contact-us-page">
 		<ContactForm mode="page" />
 	</div>

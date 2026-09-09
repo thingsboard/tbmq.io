@@ -2,13 +2,15 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductSection from '../../components/Installations/ProductSection.astro';
 import { mqttBrokerProduct } from '~/data/installations';
+import { marketingJsonLd } from '~/util/structuredData';
 
 const title = 'Install TBMQ: Docker, Kubernetes and Cloud Options';
 const description =
 	'Compare the ways to install TBMQ: the public live demo, Docker on Linux, macOS and Windows, Docker Compose and Kubernetes clusters, and AWS, Azure or GCP.';
+const jsonLd = marketingJsonLd({ path: '/installations/', name: title, description, breadcrumb: 'Installations' });
 ---
 
-<BaseLayout forceLightTheme title={title} description={description} pageId="installations">
+<BaseLayout forceLightTheme title={title} description={description} pageId="installations" jsonLd={jsonLd}>
 	<div class="install-content">
 		<ProductSection data={mqttBrokerProduct} />
 	</div>

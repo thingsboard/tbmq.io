@@ -16,6 +16,11 @@ import { tbmqSelfManagedData } from '@data/pricing/tbmq-self-managed.ts';
 import { tbmqPrivateCloudData } from '@data/pricing/tbmq-private-cloud.ts';
 import FaqSection from '../../components/Pricing/FaqSection.astro';
 import { pricingFaqData } from '@data/pricing/faq';
+import { pricingJsonLd } from '~/util/structuredData';
+
+const description =
+	'TBMQ MQTT broker pricing — compare the free Community Edition, Self-Managed, and Private Cloud plans with transparent subscription and perpetual licensing.';
+const jsonLd = pricingJsonLd(description);
 
 import ceIcon from '../../assets/pricing/community-edition-icon.svg?raw';
 import pcIcon from '../../assets/pricing/private-cloud-icon.svg?raw';
@@ -87,8 +92,9 @@ const tbmqSubTabs = enrichTabs([
 
 <BaseLayout
 	title="TBMQ Pricing: MQTT Broker Plans and Editions"
-	description="TBMQ MQTT broker pricing — compare the free Community Edition, Self-Managed, and Private Cloud plans with transparent subscription and perpetual licensing."
+	description={description}
 	pageId="pricing"
+	jsonLd={jsonLd}
 >
 	<PricingBackground />
 	<main class="pricing-page">
