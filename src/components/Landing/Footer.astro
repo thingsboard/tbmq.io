@@ -19,6 +19,11 @@ const currentYear = new Date().getFullYear();
 
 		<div class="deepmost">
 			<div class="copyright">&copy; {currentYear} The ThingsBoard Authors</div>
+			<nav class="legal" aria-label="Legal">
+				<a href="/product/privacy-policy/">Privacy Policy</a>
+				<a href="/product/terms-of-use/">Terms of Use</a>
+				<a href="/cookie-policy/">Cookie Policy</a>
+			</nav>
 			<SocialNetworks />
 		</div>
 	</div>
@@ -147,6 +152,29 @@ const currentYear = new Date().getFullYear();
 			.copyright {
 				color: #8e8292;
 				font-size: 0.875rem;
+			}
+
+			.legal {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0 1.25rem;
+
+				a {
+					color: #8e8292;
+					font-size: 0.875rem;
+					text-decoration: none;
+					transition: color 300ms;
+
+					&:hover {
+						color: white;
+						text-decoration: underline;
+					}
+				}
+
+				@media screen and (max-width: 768px) {
+					justify-content: center;
+					padding-top: 1rem;
+				}
 			}
 		}
 	}
