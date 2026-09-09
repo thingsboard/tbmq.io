@@ -1,7 +1,9 @@
 import { Aside } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
+import LearnLink from '@components/LearnLink.astro';
 
 TBMQ supports running the MQTT server and MQTT over WebSocket over SSL. Both one-way and two-way SSL are supported.
+For the protocol-level view of encrypted MQTT — the handshake, the default ports, and one-way versus mutual TLS — see <LearnLink slug="mqtt-tls">MQTT over TLS/SSL (MQTTS)</LearnLink>.
 
 Most TBMQ environments use the load balancer as a termination point for the SSL connection between the devices and the broker.
 In other words, MQTT traffic is encrypted between the device and the load balancer but is decrypted between the load balancer and broker services.

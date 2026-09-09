@@ -1,0 +1,19 @@
+---
+/**
+ * Link from the docs into the /mqtt/ learn hub. The counterpart of `DocLink`
+ * for the other tree: it takes the topic slug, not a path, and fails the build
+ * on a slug the hub does not have, so a renamed guide cannot leave dead links
+ * behind in the shared `_includes` content.
+ */
+import { mqttTopics, topicHref } from '~/data/mqttLearn';
+
+interface Props {
+	slug: string;
+}
+const { slug } = Astro.props;
+if (!mqttTopics.some((topic) => topic.slug === slug)) {
+	throw new Error(`LearnLink: no /mqtt/ topic with slug "${slug}"`);
+}
+---
+
+<a href={topicHref(slug)}><slot /></a>
