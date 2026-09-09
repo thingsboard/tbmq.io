@@ -228,7 +228,7 @@ Type-specific fields, added on top:
 | `${protocolVersion}` | `CLIENT_CONNECTED`, `CLIENT_AUTHENTICATION_FAILED` | MQTT protocol level: `3`, `4` or `5`. | `integer` |
 | `${sessionExpiryInterval}` | `CLIENT_CONNECTED` | Session expiry interval (seconds). | `bigint` |
 | `${disconnectReason}` | `CLIENT_DISCONNECTED` | Name of the MQTT reason code, e.g. `NORMAL_DISCONNECT`. | `text` |
-| `${subscriptions}` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` | The granted or removed subscriptions, bound as a JSON array. A `CLIENT_SUBSCRIBED` entry carries `topicFilter`, `qos` and an `options` object, plus `shareName` and `subscriptionId` when present; a `CLIENT_UNSUBSCRIBED` entry carries `topicFilter` and, for a shared subscription, `shareName`. | `jsonb` |
+| `${subscriptions}` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` | The granted or removed subscriptions, as a JSON array — see [below](#the-subscriptions-array). | `jsonb` |
 | `${reason}` | `CLIENT_AUTHENTICATION_FAILED`, `CLIENT_CONNECTION_FAILED` | Why authentication or the connection failed. | `text` |
 | `${action}` | `CLIENT_AUTHORIZATION_FAILED` | The denied operation: `publish` or `subscribe`. | `text` |
 | `${topic}` | `CLIENT_AUTHORIZATION_FAILED` | The topic or topic filter that was denied. | `text` |
@@ -236,6 +236,28 @@ Type-specific fields, added on top:
 One template serves every selected event type, so a placeholder that does not apply to the event that arrives binds `NULL` — a `CLIENT_DISCONNECTED` row written by a template that also references `${subscriptions}` simply has `NULL` there. Keep every column but `event_type` nullable.
 
 Text fields are omitted from the envelope when they have no value rather than sent empty, so expect `NULL` in `username` when authentication is disabled, and in `client_cert_cn` unless the client authenticated with an X.509 certificate.
+
+#### The subscriptions array
+
+`${subscriptions}` binds a JSON array. A `CLIENT_SUBSCRIBED` entry carries the topic filter, the granted QoS and the MQTT 5 subscription options, with `shareName` and `subscriptionId` present only when the client sent them:
+
+```json
+[
+  {
+    "topicFilter": "tbmq/devices/+/status",
+    "qos": 1,
+    "shareName": "group-a",
+    "subscriptionId": 7,
+    "options": {
+      "noLocal": false,
+      "retainAsPublish": false,
+      "retainHandling": "SEND"
+    }
+  }
+]
+```
+
+`retainHandling` is one of `SEND`, `SEND_IF_NOT_EXISTS` or `DONT_SEND`. A `CLIENT_UNSUBSCRIBED` entry is just `topicFilter`, plus `shareName` for a shared subscription.
 
 ### Example: storing lifecycle events
 
