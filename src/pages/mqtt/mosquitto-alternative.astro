@@ -42,6 +42,12 @@ const faq: FaqItem[] = [
 		If your deployment fits on one host, Mosquitto is very hard to beat, and most of this page will not apply to you.
 		<a href="#stay">When to stay on Mosquitto</a> says so in more detail.
 	</p>
+	<p>
+		One scoping note, because it changes what follows: <strong
+			>Mosquitto here means the open-source Eclipse project</strong
+		>. Cedalo ships a commercial Pro Edition on top of it that adds high availability, a management console and
+		integrations — a different product with a different comparison, and not what the sections below are about.
+	</p>
 
 	<h2>The three walls</h2>
 	<p>
@@ -170,7 +176,8 @@ const faq: FaqItem[] = [
 
 	<LearnIconRows>
 		<LearnIconRow icon="tabler:arrows-split-2" title="3M msg/sec">
-			fan-out delivery from a single 32-vCPU node, at 7.4 ms average latency and 54% CPU.
+			fan-out from a single 32-vCPU node — 100 publishers to 3,000 subscribers at QoS 0, 7.4 ms average latency, 54%
+			CPU.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:plug-connected" title="100M connections">
 			held on a 25-node cluster across 100M unique topics, while moving 6M messages per second at QoS 1.
@@ -222,12 +229,21 @@ const faq: FaqItem[] = [
 					></tr
 				>
 				<tr><td>REST API</td><td>None</td><td>Sessions, subscriptions, credentials</td></tr>
-				<tr><td>Built-in integrations</td><td>None</td><td>HTTP, MQTT, Kafka (PostgreSQL in PE)</td></tr>
+				<tr><td>Built-in integrations</td><td>None</td><td>HTTP, MQTT, Kafka</td></tr>
+				<tr
+					><td>Kubernetes deployment</td><td>Official Docker image, community Helm charts</td><td
+						>Official Helm charts for EKS, AKS, GKE and minikube</td
+					></tr
+				>
 				<tr><td>Footprint</td><td>Single binary, a few MB</td><td>JVM + Kafka + Redis</td></tr>
-				<tr><td>License</td><td>EPL-2.0 / EDL-1.0</td><td>Apache-2.0</td></tr>
+				<tr><td>License</td><td>EPL-2.0 / EDL-1.0</td><td>Apache-2.0, commercial use included</td></tr>
 			</tbody>
 		</table>
 	</div>
+	<p>
+		Every Mosquitto column above describes the open-source Eclipse broker at its defaults. Several of these gaps are
+		things Cedalo's commercial Pro Edition fills; none of them are things open-source Mosquitto claims to do.
+	</p>
 
 	<h2 id="stay">When to stay on Mosquitto</h2>
 	<p>Three cases where moving would be the wrong call.</p>
