@@ -16,6 +16,9 @@ import { Icon } from 'astro-icon/components';
 			</a>
 			<a class="btn btn-outline" href="/docs/pe/getting-started/">Get started</a>
 		</div>
+		<p class="compare reveal" style="--reveal-delay: 260ms">
+			<a href="/mqtt/mosquitto-alternative/">Outgrowing Mosquitto? See what a cluster changes →</a>
+		</p>
 	</div>
 </section>
 
@@ -53,6 +56,17 @@ import { Icon } from 'astro-icon/components';
 			color: rgba(255, 255, 255, 0.8);
 			margin: 0 0 40px;
 			max-width: 640px;
+		}
+
+		.compare {
+			margin: $spacing-6 0 0;
+			font-size: $font-size-sm;
+
+			a {
+				color: $color-brand-dark;
+				text-decoration: underline;
+				text-underline-offset: 2px;
+			}
 		}
 	}
 

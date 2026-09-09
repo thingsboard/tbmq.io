@@ -63,7 +63,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT is a lightweight pub/sub protocol for connecting devices over unreliable networks; Apache Kafka is a distributed event-streaming log for high-throughput backend data pipelines. They solve different problems and are frequently used together — MQTT at the edge, Kafka in the data center.',
 		tbmqTieIn:
 			'TBMQ uses Kafka as its internal backbone for message durability, and can bridge MQTT traffic straight into your own Kafka topics.',
-		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session'],
+		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session', 'mosquitto-alternative'],
 		status: 'full',
 		seoDescription:
 			'MQTT vs Kafka compared: pub/sub protocol vs event-streaming log, delivery guarantees, scale, and when to use each — or both together.',
