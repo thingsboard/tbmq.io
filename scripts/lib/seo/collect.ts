@@ -34,7 +34,8 @@ export function normaliseHref(href: string | undefined, origin: string = PROD_OR
 	return raw.endsWith('/') ? raw : `${raw}/`;
 }
 
-export function collectFacts(html: string, pathname: string): PageFacts {
+/** Everything one document says about itself; `inSitemap` needs the sitemap and is added by `collectPages`. */
+export function collectFacts(html: string, pathname: string): Omit<PageFacts, 'inSitemap'> {
 	const dom = parseDocument(html);
 	const tags = (name: string, root: AnyNode = dom) => DomUtils.getElementsByTagName(name, root, true) as Element[];
 	const metas = tags('meta');
@@ -52,11 +53,13 @@ export function collectFacts(html: string, pathname: string): PageFacts {
 	};
 
 	const text = mainEl ? DomUtils.innerText(mainEl).trim() : '';
+	const robots = metas.find((m) => m.attribs.name?.toLowerCase() === 'robots')?.attribs.content ?? '';
 
 	return {
 		pathname,
 		section: sectionOf(pathname),
 		isRedirect: metas.some((m) => m.attribs['http-equiv']?.toLowerCase() === 'refresh'),
+		isNoindex: /\bnoindex\b/i.test(robots),
 		title: titleEl ? DomUtils.innerText(titleEl).trim() : '',
 		description: metas.find((m) => m.attribs.name?.toLowerCase() === 'description')?.attribs.content?.trim() ?? '',
 		h1Count: tags('h1').length,
@@ -69,6 +72,34 @@ export function collectFacts(html: string, pathname: string): PageFacts {
 		outboundPathnames: linkedPages(dom),
 		mainOutboundPathnames: mainEl ? linkedPages(mainEl) : [],
 	};
+}
+
+/** The `<loc>` entries of one sitemap document as normalised same-origin pathnames, in file order. */
+export function parseSitemapPathnames(xml: string): string[] {
+	const pathnames: string[] = [];
+	for (const match of xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)) {
+		const pathname = normaliseHref(match[1]);
+		if (pathname) pathnames.push(pathname);
+	}
+	return pathnames;
+}
+
+/**
+ * Every page URL the build's sitemap lists, read through `sitemap-index.xml`.
+ * A missing sitemap is an error rather than an empty set: an empty set would
+ * report every page as `sitemap-missing` and bury the real findings.
+ */
+export function readSitemapPathnames(buildOutputDir: string): Set<string> {
+	const indexPath = path.join(buildOutputDir, 'sitemap-index.xml');
+	if (!fs.existsSync(indexPath)) {
+		throw new Error(`no sitemap-index.xml in "${buildOutputDir}" — run pnpm build:linkcheck first`);
+	}
+	const pathnames = new Set<string>();
+	for (const sitemapFile of parseSitemapPathnames(fs.readFileSync(indexPath, 'utf8'))) {
+		const xml = fs.readFileSync(path.join(buildOutputDir, sitemapFile), 'utf8');
+		for (const pathname of parseSitemapPathnames(xml)) pathnames.add(pathname);
+	}
+	return pathnames;
 }
 
 export function collectPages(buildOutputDir = './dist'): PageFacts[] {
@@ -84,7 +115,9 @@ export function collectPages(buildOutputDir = './dist'): PageFacts[] {
 	if (pathnames.length === 0) {
 		throw new Error(`"${buildOutputDir}" exists but contains no pages — run pnpm build:linkcheck first`);
 	}
-	return pathnames.map((pathname) =>
-		collectFacts(fs.readFileSync(path.join(buildOutputDir, pathname, 'index.html'), 'utf8'), pathname)
-	);
+	const sitemap = readSitemapPathnames(buildOutputDir);
+	return pathnames.map((pathname) => ({
+		...collectFacts(fs.readFileSync(path.join(buildOutputDir, pathname, 'index.html'), 'utf8'), pathname),
+		inSitemap: sitemap.has(pathname),
+	}));
 }

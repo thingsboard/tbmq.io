@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkLinkGraph, checkMetadata, runChecks } from './checks.ts';
+import { checkLinkGraph, checkMetadata, checkSitemap, runChecks } from './checks.ts';
 import type { PageFacts } from './types.ts';
 
 /**
@@ -14,9 +14,11 @@ function page(overrides: Partial<PageFacts> = {}): PageFacts {
 		pathname: '/mqtt/qos/',
 		section: 'mqtt',
 		isRedirect: false,
+		isNoindex: false,
+		inSitemap: true,
 		title: 'MQTT QoS 0, 1 and 2 Explained in Depth',
 		description:
-			'How each MQTT quality-of-service level behaves in practice, and which one to choose for a given IoT workload.',
+			'How each MQTT quality-of-service level behaves in practice, and which one to choose for a given IoT workload and network.',
 		h1Count: 1,
 		wordCount: 1200,
 		hasJsonLd: true,
@@ -38,6 +40,10 @@ test('redirect stubs are skipped entirely', () => {
 	assert.deepEqual(checkMetadata([page({ isRedirect: true, title: '', description: '', canonical: null })]), []);
 });
 
+test('noindex pages are skipped by the metadata checks', () => {
+	assert.deepEqual(checkMetadata([page({ isNoindex: true, title: '', description: '', hasJsonLd: false })]), []);
+});
+
 test('missing title and description are high severity', () => {
 	const findings = checkMetadata([page({ title: '', description: '' })]);
 	assert.deepEqual(checkIds(findings), ['description-missing', 'title-missing']);
@@ -51,9 +57,12 @@ test('title length is bounded on both sides', () => {
 	assert.deepEqual(checkMetadata([page({ title: 'x'.repeat(30) })]), []);
 });
 
+// Ahrefs' bounds: a description under 110 reads as "too short" in its report.
 test('description length is bounded on both sides', () => {
 	assert.deepEqual(checkIds(checkMetadata([page({ description: 'x'.repeat(161) })])), ['description-too-long']);
-	assert.deepEqual(checkIds(checkMetadata([page({ description: 'x'.repeat(69) })])), ['description-too-short']);
+	assert.deepEqual(checkIds(checkMetadata([page({ description: 'x'.repeat(109) })])), ['description-too-short']);
+	assert.deepEqual(checkMetadata([page({ description: 'x'.repeat(160) })]), []);
+	assert.deepEqual(checkMetadata([page({ description: 'x'.repeat(110) })]), []);
 });
 
 test('exactly one h1 is required', () => {
@@ -135,6 +144,18 @@ test('redirect stubs are excluded from the link graph', () => {
 	assert.equal(findings.filter((f) => f.pathname === '/b/').length, 0);
 });
 
+// A noindex page is still crawled and its links followed, so it must keep
+// feeding inbound counts even though it gets no findings of its own.
+test('noindex pages get no link-graph findings but their links still count as inbound', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', isNoindex: true, section: 'docs', outboundPathnames: ['/b/'], mainOutboundPathnames: [] }),
+		page({ pathname: '/b/', outboundPathnames: [] }),
+	]);
+	assert.equal(findings.filter((f) => f.pathname === '/a/').length, 0);
+	assert.equal(findings.filter((f) => f.check === 'orphan-page' && f.pathname === '/b/').length, 0);
+	assert.equal(findings.filter((f) => f.check === 'near-orphan-page' && f.pathname === '/b/').length, 1);
+});
+
 test('a learn-hub page that links to no docs page is flagged', () => {
 	const findings = checkLinkGraph([
 		page({ pathname: '/mqtt/qos/', section: 'mqtt', mainOutboundPathnames: ['/mqtt/topics/'] }),
@@ -196,7 +217,39 @@ test('inbound counting still uses chrome links', () => {
 	assert.equal(findings.filter((f) => f.check === 'near-orphan-page' && f.pathname === '/b/').length, 1);
 });
 
-test('runChecks merges both check families and sorts deterministically', () => {
+test('a self-canonical page listed in the sitemap produces no sitemap findings', () => {
+	assert.deepEqual(checkSitemap([page()]), []);
+});
+
+test('a noindex page or a redirect stub listed in the sitemap is flagged at high severity', () => {
+	const noindex = checkSitemap([page({ isNoindex: true, inSitemap: true })]);
+	assert.deepEqual(checkIds(noindex), ['sitemap-noindex']);
+	assert.equal(noindex[0].severity, 'high');
+	assert.deepEqual(checkIds(checkSitemap([page({ isRedirect: true, isNoindex: true, inSitemap: true })])), [
+		'sitemap-noindex',
+	]);
+});
+
+// The CE docs tree canonicalises onto PE, so its pages are correctly absent from
+// the sitemap; one of them turning up there is the defect, not their absence.
+test('a page canonicalised elsewhere is flagged only when it is listed in the sitemap', () => {
+	const ce = { pathname: '/docs/qos/', canonical: 'https://tbmq.io/docs/pe/qos/' };
+	assert.deepEqual(checkIds(checkSitemap([page({ ...ce, inSitemap: true })])), ['sitemap-non-canonical']);
+	assert.deepEqual(checkSitemap([page({ ...ce, inSitemap: false })]), []);
+});
+
+test('an indexable self-canonical page missing from the sitemap is flagged', () => {
+	const findings = checkSitemap([page({ inSitemap: false })]);
+	assert.deepEqual(checkIds(findings), ['sitemap-missing']);
+	assert.equal(findings[0].severity, 'medium');
+});
+
+test('noindex pages and redirect stubs are not expected in the sitemap', () => {
+	assert.deepEqual(checkSitemap([page({ isNoindex: true, inSitemap: false })]), []);
+	assert.deepEqual(checkSitemap([page({ isRedirect: true, isNoindex: true, inSitemap: false })]), []);
+});
+
+test('runChecks merges every check family and sorts deterministically', () => {
 	const pages = [
 		page({ pathname: '/b/', title: '', outboundPathnames: [] }),
 		page({ pathname: '/a/', outboundPathnames: ['/b/'] }),

@@ -21,11 +21,21 @@ export function resolveDistDir(args: string[]): string {
 
 export function buildReport(buildOutputDir: string): AuditReport {
 	const pages = collectPages(buildOutputDir);
-	const sectionCounts = pages.reduce<Record<string, number>>((counts, page) => {
+	const counted = pages.filter((page) => !page.isRedirect && !page.isNoindex);
+	const sectionCounts = counted.reduce<Record<string, number>>((counts, page) => {
 		counts[page.section] = (counts[page.section] ?? 0) + 1;
 		return counts;
 	}, {});
-	return { generatedFor: buildOutputDir, pageCount: pages.length, sectionCounts, findings: runChecks(pages) };
+	return {
+		generatedFor: buildOutputDir,
+		pageCount: counted.length,
+		sectionCounts,
+		skipped: {
+			noindex: pages.filter((page) => !page.isRedirect && page.isNoindex).length,
+			redirect: pages.filter((page) => page.isRedirect).length,
+		},
+		findings: runChecks(pages),
+	};
 }
 
 export function toJson(report: AuditReport): string {
@@ -37,7 +47,9 @@ export function formatText(report: AuditReport): string {
 		.sort(([a], [b]) => a.localeCompare(b))
 		.map(([section, count]) => `${section}=${count}`)
 		.join(' ');
-	const lines = [`SEO audit of ${report.generatedFor}`, `${report.pageCount} pages (${census})`, ''];
+	const { noindex, redirect } = report.skipped;
+	const skipped = noindex || redirect ? `, skipped ${noindex} noindex + ${redirect} redirect` : '';
+	const lines = [`SEO audit of ${report.generatedFor}`, `${report.pageCount} pages (${census})${skipped}`, ''];
 
 	if (report.findings.length === 0) {
 		lines.push('no issues found');

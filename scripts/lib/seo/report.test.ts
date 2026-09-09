@@ -4,7 +4,13 @@ import { formatText, resolveDistDir, toJson } from './report.ts';
 import type { AuditReport, Finding } from './types.ts';
 
 function report(findings: Finding[]): AuditReport {
-	return { generatedFor: './dist', pageCount: 3, sectionCounts: { docs: 1, mqtt: 1, other: 1 }, findings };
+	return {
+		generatedFor: './dist',
+		pageCount: 3,
+		sectionCounts: { docs: 1, mqtt: 1, other: 1 },
+		skipped: { noindex: 0, redirect: 0 },
+		findings,
+	};
 }
 
 const low = (pathname: string): Finding => ({ check: 'thin-content', severity: 'low', pathname, detail: '10 words' });
@@ -14,6 +20,12 @@ test('formatText reports the page census', () => {
 	assert.match(text, /3 pages/);
 	assert.match(text, /docs=1/);
 	assert.match(text, /mqtt=1/);
+});
+
+test('formatText reports how many noindex and redirect pages were skipped', () => {
+	const text = formatText({ ...report([]), skipped: { noindex: 5, redirect: 1 } });
+	assert.match(text, /skipped 5 noindex \+ 1 redirect/);
+	assert.ok(!formatText(report([])).includes('skipped'), 'nothing to say when nothing was skipped');
 });
 
 test('formatText says so explicitly when there are no findings', () => {

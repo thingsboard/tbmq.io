@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectFacts, collectPages, normaliseHref, sectionOf } from './collect.ts';
+import {
+	collectFacts,
+	collectPages,
+	normaliseHref,
+	parseSitemapPathnames,
+	readSitemapPathnames,
+	sectionOf,
+} from './collect.ts';
 
 test('sectionOf classifies by path prefix', () => {
 	assert.equal(sectionOf('/docs/getting-started/'), 'docs');
@@ -118,6 +125,34 @@ test('collectFacts detects meta-refresh redirect stubs', () => {
 	const html =
 		'<!doctype html><html><head><meta http-equiv="refresh" content="0;url=/new/"></head><body></body></html>';
 	assert.equal(collectFacts(html, '/old/').isRedirect, true);
+});
+
+test('collectFacts reads noindex from the robots meta', () => {
+	const withRobots = (content: string) =>
+		`<!doctype html><html><head><meta name="robots" content="${content}"></head><body></body></html>`;
+	assert.equal(collectFacts(withRobots('noindex, follow'), '/x/').isNoindex, true);
+	assert.equal(collectFacts(withRobots('NOINDEX'), '/x/').isNoindex, true);
+	assert.equal(collectFacts(withRobots('index, follow'), '/x/').isNoindex, false);
+	assert.equal(collectFacts(PAGE, '/mqtt/qos/').isNoindex, false);
+});
+
+const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://tbmq.io/</loc><lastmod>2026-08-27T12:12:43.000Z</lastmod></url><url><loc>https://tbmq.io/docs/pe/qos/</loc></url><url><loc>
+	https://tbmq.io/mqtt/qos
+</loc></url></urlset>`;
+
+test('parseSitemapPathnames returns a normalised pathname for every loc, in file order', () => {
+	assert.deepEqual(parseSitemapPathnames(SITEMAP), ['/', '/docs/pe/qos/', '/mqtt/qos/']);
+});
+
+test('parseSitemapPathnames also resolves the sitemap files an index points at', () => {
+	const index = '<sitemapindex><sitemap><loc>https://tbmq.io/sitemap-0.xml</loc></sitemap></sitemapindex>';
+	assert.deepEqual(parseSitemapPathnames(index), ['/sitemap-0.xml']);
+});
+
+// The orphan-page tasks all hinge on "in the sitemap, yet…", so a missing
+// sitemap must fail loudly rather than mark every page `sitemap-missing`.
+test('readSitemapPathnames throws when the build has no sitemap index', () => {
+	assert.throws(() => readSitemapPathnames('./scripts/lib/seo'), /no sitemap-index\.xml/);
 });
 
 // A missing build output must be a loud error, not a silent "0 pages, no
