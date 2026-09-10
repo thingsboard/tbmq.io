@@ -701,7 +701,7 @@ export const mqttCategories: MqttCategory[] = [
 	},
 	{
 		id: 'comparisons',
-		label: 'Transports & comparisons',
+		label: 'Transports & protocols',
 		tag: 'Transports',
 		accent: 'teal',
 		slugs: ['websocket', 'mqtt-vs-http', 'mqtt-vs-kafka', 'mqtt-vs-amqp', 'mqtt-vs-coap'],

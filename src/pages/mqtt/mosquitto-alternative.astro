@@ -28,7 +28,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'How many concurrent connections can Mosquitto handle?',
-		a: 'There is no official figure — the Mosquitto project publishes no connection or throughput number. The ceiling depends on file descriptors, memory and the fact that message handling runs in one event loop on one host. Published numbers for Mosquitto come from competing vendors running their own harnesses, and they disagree with each other by orders of magnitude, so none of them is a safe planning input. <strong>The useful answer is that the limit is one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
+		a: 'There is no official figure — the Mosquitto project publishes no connection or throughput number. The ceiling depends on file descriptors, memory and the fact that message handling runs in one event loop on one host. <strong>The useful answer is that the limit is one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
 	},
 	{
 		q: 'Can I run TBMQ on a single node?',
@@ -44,7 +44,7 @@ const faq: FaqItem[] = [
 		a router, a single-board computer or a spare VM, and it starts in milliseconds. It is packaged in every mainstream
 		Linux distribution. <code>mosquitto_pub</code> and <code>mosquitto_sub</code> are the tools most people reach for when
 		they need to test <em>any</em> broker — including this one. It implements MQTT 5.0 in full, shared subscriptions included.
-		And it is governed by the Eclipse Foundation rather than a vendor, with fifteen years of production use behind it.
+		And it is governed by the Eclipse Foundation rather than a vendor, with over fifteen years of production use behind it.
 	</p>
 	<p>
 		If your deployment fits on one host, Mosquitto is very hard to beat, and most of this page will not apply to you.
@@ -178,6 +178,9 @@ const faq: FaqItem[] = [
 		</svg>
 	</MqttDiagram>
 
+	<h2>What else you get</h2>
+	<p>Three things that are not answers to a wall, and one licensing note.</p>
+
 	<h3>Matching cost does not grow with subscriptions</h3>
 	<p>
 		All active subscriptions live in an in-memory Trie. Lookup time is proportional to the length of the topic, not the
@@ -208,8 +211,9 @@ const faq: FaqItem[] = [
 		<a href="/docs/prometheus-metrics/">Prometheus</a>.
 	</p>
 
+	<h3>Open source, and what Professional Edition adds</h3>
 	<p>
-		All of that is Community Edition, <a href="https://github.com/thingsboard/tbmq">Apache 2.0</a>, commercial use
+		Everything above is Community Edition, <a href="https://github.com/thingsboard/tbmq">Apache 2.0</a>, commercial use
 		included. <a href="/pricing/">Professional Edition</a> adds OAuth 2.0 single sign-on, role-based access control, audit
 		logs, domain management and white labeling — on the same broker, not a different one.
 	</p>
@@ -218,9 +222,9 @@ const faq: FaqItem[] = [
 	<p>Each figure comes from a published test, with its hardware and load profile documented.</p>
 
 	<LearnIconRows>
-		<LearnIconRow icon="tabler:arrows-split-2" title="3M msg/sec">
-			fan-out from a single 32-vCPU node — 100 publishers to 3,000 subscribers at QoS 0, 7.4 ms average latency, 54%
-			CPU.
+		<LearnIconRow icon="tabler:arrows-split-2" title="3M msg/sec delivered">
+			fan-out from a single 32-vCPU node — 1k msg/sec in, 3M out (100 publishers → 3,000 subscribers, QoS 0), 7.4 ms
+			average latency, 54% CPU.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:plug-connected" title="100M connections">
 			held on a 25-node cluster across 100M unique topics, while moving 6M messages per second at QoS 1.
@@ -257,7 +261,7 @@ const faq: FaqItem[] = [
 					></tr
 				>
 				<tr
-					><td>Offline queues</td><td>In-memory cap per session</td><td
+					><td>Offline queues</td><td>Per-session message cap, persisted on the same autosave</td><td
 						>Per-client Redis/Valkey queue, or dedicated Kafka topic with offset replay</td
 					></tr
 				>
@@ -293,8 +297,8 @@ const faq: FaqItem[] = [
 
 	<h3>One host is enough</h3>
 	<p>
-		Hundreds to a few thousand clients, and no availability requirement beyond restarting a service. TBMQ's Kafka and
-		Redis dependencies buy you nothing here, and cost you operational surface.
+		Hundreds to a few thousand clients, and no availability requirement beyond restarting a service. TBMQ's Kafka, Redis
+		and PostgreSQL dependencies buy you nothing here, and cost you operational surface.
 	</p>
 
 	<h3>The hardware is constrained</h3>
@@ -343,14 +347,10 @@ const faq: FaqItem[] = [
 	<h3>Add TBMQ's MQTT Integration back to Mosquitto</h3>
 	<p>
 		Legacy consumers keep reading from the broker they already read from, so backend systems need no coordinated change.
-		Keep the two legs on disjoint topic filters so a message cannot round-trip between the brokers.
 	</p>
 
 	<h3>Repoint clients in batches, then drop both bridges</h3>
-	<p>
-		Devices first, backend consumers last. No maintenance window, and every batch is independently reversible until the
-		bridges come down.
-	</p>
+	<p>Devices first, backend consumers last, and no maintenance window at any point.</p>
 
 	<h3>The parts that are easy to forget</h3>
 	<p>Six things that are not in the diagram and are the usual source of surprises.</p>
