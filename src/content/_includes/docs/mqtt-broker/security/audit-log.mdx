@@ -54,7 +54,7 @@ TBMQ records audit log entries for the following entity types:
 | Kafka topic | Kafka topics used internally for message routing and storage |
 | MQTT auth provider | Authentication provider configurations (e.g., Basic, X.509, JWT, SCRAM, HTTP) |
 | MQTT client credentials | Credentials used to authenticate MQTT clients connecting to the broker |
-| MQTT message | Messages published through the <DocLink product={props.product} path="publish-message">REST publish API</DocLink>. Disabled by default |
+| MQTT message | Messages published through the <DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink>. Disabled by default |
 | MQTT session | Active and persistent MQTT client sessions |
 | OAuth2 client | OAuth 2.0 client configurations used for user authentication |
 | Retained message | MQTT retained messages stored by the broker |
@@ -148,11 +148,11 @@ Every entity type defaults to `W` — write operations only — except `mqtt_mes
 To disable logging for a specific entity type, set its value to `OFF`.
 To also log read operations, set the value to `RW`.
 
-`mqtt_message` is the exception because it writes one record per REST publish request, which a busy deployment
-may not want in the audit table. Set `AUDIT_LOG_MASK_MQTT_MESSAGE=W` when publishes through the
-<DocLink product={props.product} path="publish-message">REST publish API</DocLink> have to be traceable to a
-user. Entries record the topic, QoS, retain flag, payload encoding, and MQTT 5 properties of each call — never
-the payload.
+`mqtt_message` is off by default because it writes one record per REST publish request, which a busy deployment may
+not want in the audit table. Set `AUDIT_LOG_MASK_MQTT_MESSAGE=W` when publishes through the
+<DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink> have to be traceable to a
+user. Each entry is recorded with the **Published** action type, attributed to the calling user, and carries the
+topic, QoS, retain flag, payload encoding, and MQTT 5 properties of the call. The payload itself is never stored.
 
 ### Data retention
 

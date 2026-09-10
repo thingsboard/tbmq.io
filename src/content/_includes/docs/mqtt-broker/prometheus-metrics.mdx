@@ -52,15 +52,24 @@ Every PUBLISH TBMQ accepts from a client is produced onto the `tbmq.msg.all` Kaf
 | `incomingPublishMsg_consumed_total` | counter | `consumerId`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs`, `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations`, `failedIterations` | One series set per consumer; count set by `queue.msg-all.consumers-count` (default 4) |
 | `incomingPublishMsg_consumed_processing_time_seconds` | timer | `consumerId` | Per-message dispatch latency |
 | `incomingPublishMsg_consumed_pack_processing_time_seconds` | timer | `consumerId` | Per-poll-batch latency |
-| `restPublishMsgs_total` | counter | `result` = `accepted`, `quota_exceeded`, `failed` | REST publish calls that reached the publish path |
+| `restPublishMsgs_total` | counter | `result` = `accepted`, `quota_exceeded`, `failed` | Not a per-PUBLISH series: REST publish calls that reached the publish path. Note the `result` label |
 
 `tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. On the main ingest pipeline this only happens under the non-default `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so both stay at zero here regardless of load. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
 
 `restPublishMsgs_total` sits in front of that pipeline: it counts calls to the
-<DocLink product={props.product} path="publish-message">REST publish API</DocLink> rather than MQTT PUBLISH
-packets. `accepted` means the publish queue took the message — it then continues through
-`incomingPublishMsg_published_total` like any other publish. `quota_exceeded` is a refusal by the total incoming
-throughput quota, `failed` a queue rejection; both also count toward `droppedMsgs_total`.
+<DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink> rather than MQTT PUBLISH
+packets, and a call rejected before it reaches the publish path — on authorization or request validation — is not
+counted at all. `accepted` means the publish queue took the message, which then continues through
+`incomingPublishMsg_published_total` like any other publish. `quota_exceeded` is a refusal by the cluster-wide
+throughput quota, `failed` a queue rejection. The tag follows the queue's own answer, so a call that timed out with
+`503` still counts `accepted` if the queue acknowledged it afterwards.
+
+All three outcomes can move `droppedMsgs_total`, `accepted` included: a publish accepted with no matching
+subscription is counted there like any other no-subscriber PUBLISH. Publishing to topics nothing subscribes to is a
+normal use of the API and answers `202`, so on a deployment that does it routinely `droppedMsgs_total` climbs
+one-for-one without anything being lost.
+
+This series is also the one exception to the `statsName` convention above — its outcome label is `result`.
 
 ## Persistent DEVICE clients
 
