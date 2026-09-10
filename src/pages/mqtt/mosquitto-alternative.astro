@@ -28,11 +28,12 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'How many concurrent connections can Mosquitto handle?',
-		a: 'There is no official figure — the Mosquitto project publishes no connection or throughput number. The ceiling depends on file descriptors, memory and the fact that message handling runs in one event loop on one host. <strong>The useful answer is that the limit is one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
+		// 8,192: Mosquitto's own README-windows.txt, the only capacity figure the project documents.
+		a: 'There is no published benchmark — the 2.0 announcement said figures were planned and none followed, and the only capacity number the project documents is a Windows platform ceiling of roughly 8,192 connections. The real ceiling depends on file descriptors, memory and the fact that message handling runs in one event loop on one host. <strong>The useful answer is that the limit is one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
 	},
 	{
 		q: 'Does Mosquitto have a web UI?',
-		a: "Since 2.1 it does — a dashboard built on the <code>$SYS</code> topics showing connected clients, throughput, retained topics and uptime, served by an <code>http_api</code> listener the project labels experimental. It is <strong>read-only</strong>: broker configuration is still <code>mosquitto.conf</code> plus a restart, and runtime changes are limited to authentication and authorization over <code>$CONTROL</code> topics. TBMQ's UI and REST API create and edit credentials, topic rules, integrations and shared subscriptions on a running cluster.",
+		a: "Since 2.1 it does — a dashboard over the <code>$SYS</code> counters, served by an <code>http_api</code> listener the manual describes as a very simple webserver with some broker-information endpoints. It reports totals and rates: how many clients are connected, how much traffic moved, how many messages are retained, how long the broker has been up. It is <strong>read-only</strong>, and it has no view of <em>which</em> — no client list, no subscription list, no topic browser. Runtime change is limited to authentication and authorization over <code>$CONTROL</code> topics. TBMQ's UI and REST API create and edit credentials, topic rules, integrations and shared subscriptions on a running cluster.",
 	},
 	{
 		q: 'Can I run TBMQ on a single node?',
@@ -73,10 +74,15 @@ const faq: FaqItem[] = [
 	</p>
 
 	<h3>The durability wall</h3>
+	{
+		/* 5s = persist-sqlite plugin_opt_flush_period default; 30min = autosave_interval default. Both Mosquitto 2.1.2 defaults. */
+	}
 	<p>
-		When Mosquitto returns a PUBACK, the message is in that process's memory, and it will reach disk at the next
-		autosave of a single file on that single host. The acknowledgement your publisher receives is therefore a promise
-		about one process on one machine.
+		When Mosquitto returns a PUBACK, the message is in that process's memory. It reaches disk afterwards — with 2.1's
+		SQLite persistence plugin, at the next commit five seconds later; with the built-in persistence, at the next
+		autosave, thirty minutes by default. Lose the process in between and the queued messages, the retained set and the
+		sessions holding them go with it. The acknowledgement your publisher already holds is therefore a promise about one
+		process on one machine.
 	</p>
 
 	<h3>The mixed-traffic wall</h3>
@@ -184,9 +190,9 @@ const faq: FaqItem[] = [
 
 	<h3>Matching cost does not grow with subscriptions</h3>
 	<p>
-		All active subscriptions live in an in-memory Trie. Lookup time is proportional to the length of the topic, not the
-		number of subscriptions — a broker holding a million subscriptions matches a topic as fast as one holding a
-		thousand. Adding subscribers does not slow down routing.
+		All active subscriptions live in an in-memory Trie. Finding the subscribers for a topic is a walk down that topic's
+		own levels, so the lookup cost tracks how deep the topic is, not how many subscriptions the broker is holding.
+		Growing the subscription table does not slow the matching down.
 	</p>
 
 	<h3>Shared subscriptions that add throughput</h3>
@@ -203,12 +209,18 @@ const faq: FaqItem[] = [
 
 	<h3>You can change it while it runs, not just watch it</h3>
 	<p>
-		Mosquitto 2.1 added a dashboard over the <code>$SYS</code> topics, so seeing broker state is no longer the gap it was
-		— connected clients, throughput, retained topics and uptime are all there. What it does not do is change anything: it
-		is read-only, served by a listener the project labels experimental. Broker configuration is still
-		<code>mosquitto.conf</code>, a reload signal re-reads only part of it — bridges are not among the parts — and adding
-		a listener means a restart. Runtime changes are limited to authentication and authorization, driven over
-		<code>$CONTROL</code> topics with <code>mosquitto_ctrl</code>.
+		Mosquitto 2.1 added a dashboard over the <code>$SYS</code> counters, so seeing broker state is no longer the gap it was.
+		What it reports is totals and rates — how many clients are connected, how much traffic moved, how many messages are retained.
+		What it cannot tell you is <em>which</em>: there is no client list, no subscription list, no topic browser. And it
+		changes nothing, because it is read-only.
+	</p>
+	<p>
+		Configuration is a file, and a reload signal does re-read much of it — but it cannot add or remove a listener, and
+		it cannot load or reconfigure a plugin. In 2.1 that second limit reaches further than it sounds, because
+		authentication, authorization and persistence are all plugins now. Adding password authentication to a running
+		broker is a restart, not a reload: ask for it with a reload and <code>allow_anonymous false</code> takes effect while
+		the plugin holding the passwords does not, which locks out everyone. Runtime change is limited to authentication and authorization,
+		driven over <code>$CONTROL</code> topics with <code>mosquitto_ctrl</code>.
 	</p>
 	<p>
 		In TBMQ those are entities, not file entries. <a href="/docs/user-guide/ui/mqtt-client-credentials/">Credentials</a> and
@@ -249,8 +261,8 @@ const faq: FaqItem[] = [
 
 	<p>
 		On methodology: these are TBMQ tests on TBMQ hardware, not a same-hardware comparison.
-		<strong>Mosquitto publishes no comparable figures</strong> — the project makes no numeric connection or throughput claim
-		at all — so there is no authoritative head-to-head number to quote, from us or anyone else.
+		<strong>Mosquitto publishes no benchmark results</strong> — the 2.0 announcement said some were planned and none followed
+		— so there is no authoritative head-to-head number to quote, from us or anyone else.
 	</p>
 	<p><a href="/performance/">Full benchmark methodology and results →</a></p>
 
@@ -270,32 +282,33 @@ const faq: FaqItem[] = [
 					></tr
 				>
 				<tr
-					><td>Message durability</td><td>Periodic file autosave on the host</td><td>PUBACK only after Kafka stores</td
+					><td>Message durability</td><td>Written after the ack — 5 s SQLite commit or 30 min autosave</td><td
+						>PUBACK only after Kafka stores</td
 					></tr
 				>
 				<tr
-					><td>Offline queues</td><td>Per-session message cap, persisted on the same autosave</td><td
+					><td>Offline queues</td><td>Per-session cap of 1,000, silently dropped past it</td><td
 						>Per-client Redis/Valkey queue, or dedicated Kafka topic with offset replay</td
 					></tr
 				>
 				<tr
-					><td>Authentication</td><td>Password file, TLS, X.509, plugins</td><td
+					><td>Authentication</td><td>Password file, TLS-PSK, X.509, dynamic-security plugin, custom plugins</td><td
 						>Basic, X.509, JWT, HTTP, SCRAM + topic rules</td
 					></tr
 				>
 				<tr
-					><td>Management UI</td><td>Read-only <code>$SYS</code> dashboard (2.1, experimental)</td><td
+					><td>Management UI</td><td>Read-only <code>$SYS</code> dashboard (2.1) — totals, no client list</td><td
 						>Sessions, subscriptions, metrics, credentials, WebSocket client</td
 					></tr
 				>
 				<tr
-					><td>REST API</td><td>Experimental <code>http_api</code>, broker info only (2.1)</td><td
+					><td>REST API</td><td>Read-only <code>http_api</code> — broker info only (2.1)</td><td
 						>Full admin API — sessions, subscriptions, credentials, integrations</td
 					></tr
 				>
-				<tr><td>Built-in integrations</td><td>None</td><td>HTTP, MQTT, Kafka</td></tr>
+				<tr><td>Built-in integrations</td><td>MQTT bridge only</td><td>HTTP, MQTT, Kafka</td></tr>
 				<tr
-					><td>Kubernetes deployment</td><td>Official Docker image, community Helm charts</td><td
+					><td>Kubernetes deployment</td><td>Official Docker image, no official Helm chart</td><td
 						>Official Helm charts for EKS, AKS, GKE and minikube</td
 					></tr
 				>
@@ -377,8 +390,9 @@ const faq: FaqItem[] = [
 			the filters explicitly and check them before enabling the second leg.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:pin" title="Decide what happens to retained messages">
-			The retained set is per-broker state. Plan to re-publish the retained messages that still matter against TBMQ
-			rather than assuming a bridge reproduces them.
+			A bridge carries the retained messages published from the moment it comes up, not the ones already sitting in the
+			broker. Plan to re-publish the retained messages that still matter against TBMQ rather than assuming the bridge
+			reproduces them.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:list-check" title="Verify each batch before the next">
 			After repointing a batch, confirm in TBMQ's <a href="/docs/user-guide/ui/sessions/">sessions view</a> that every client
