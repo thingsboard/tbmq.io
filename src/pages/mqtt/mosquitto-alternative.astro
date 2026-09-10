@@ -12,7 +12,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Can I run TBMQ on a Raspberry Pi like Mosquitto?',
-		a: 'No. They target different classes of hardware, and Mosquitto is the right choice on a constrained device. TBMQ is built for server-class nodes in a cluster.',
+		a: "No — TBMQ targets server-class nodes in a cluster, not a constrained device. The usual pattern is a lightweight broker on the device or gateway bridging into a central TBMQ cluster, which is what Mosquitto's bridge and TBMQ's MQTT Integration are for.",
 	},
 	{
 		q: 'Does Mosquitto support clustering?',
@@ -38,23 +38,21 @@ const faq: FaqItem[] = [
 ---
 
 <MqttTopicLayout slug="mosquitto-alternative" faq={faq}>
-	<h2>What Mosquitto gets right</h2>
+	<h2>What Mosquitto is built for</h2>
 	<p>
-		It is worth being clear about why Mosquitto is everywhere. It is a single binary of a few megabytes that will run on
-		a router, a single-board computer or a spare VM, and it starts in milliseconds. It is packaged in every mainstream
-		Linux distribution. <code>mosquitto_pub</code> and <code>mosquitto_sub</code> are the tools most people reach for when
-		they need to test <em>any</em> broker — including this one. It implements MQTT 5.0 in full, shared subscriptions included.
-		And it is governed by the Eclipse Foundation rather than a vendor, with over fifteen years of production use behind it.
+		Mosquitto is a single binary of a few megabytes that runs on a router, a single-board computer or a spare VM, and it
+		is packaged in every mainstream Linux distribution. It implements MQTT 5.0, shared subscriptions included. That
+		combination is what makes it the usual choice for a first deployment — and it is a design that commits,
+		deliberately, to one process on one host.
 	</p>
 	<p>
-		If your deployment fits on one host, Mosquitto is very hard to beat, and most of this page will not apply to you.
-		<a href="#stay">When to stay on Mosquitto</a> says so in more detail.
+		That commitment is the whole story of this page. What Mosquitto does well follows from staying small, and what it
+		cannot do follows from the same decision. So the question is not whether it is a good broker — it is whether your
+		deployment has outgrown a single one.
 	</p>
 	<p>
-		One scoping note, because it changes what follows: <strong
-			>Mosquitto here means the open-source Eclipse project</strong
-		>. Cedalo ships a commercial Pro Edition on top of it that adds high availability, a management console and
-		integrations — a different product with a different comparison, and not what the sections below are about.
+		One scoping note: <strong>Mosquitto here means the open-source Eclipse project</strong>. Cedalo's commercial Pro
+		Edition is a separate product with its own feature set and licence, and is not what the sections below compare.
 	</p>
 
 	<h2>The three walls</h2>
@@ -74,8 +72,8 @@ const faq: FaqItem[] = [
 	<h3>The durability wall</h3>
 	<p>
 		When Mosquitto returns a PUBACK, the message is in that process's memory, and it will reach disk at the next
-		autosave of a single file on that single host. For a broker designed to stay small, that is a reasonable trade. It
-		does mean the acknowledgement your publisher receives is a promise about one process on one machine.
+		autosave of a single file on that single host. The acknowledgement your publisher receives is therefore a promise
+		about one process on one machine.
 	</p>
 
 	<h3>The mixed-traffic wall</h3>
@@ -235,9 +233,9 @@ const faq: FaqItem[] = [
 	</LearnIconRows>
 
 	<p>
-		One caveat, stated plainly: <strong>Mosquitto publishes no comparable figures</strong> — its homepage makes no numeric
-		connection or throughput claim at all. These are TBMQ tests on TBMQ hardware, not a same-hardware comparison, and they
-		should not be read as one.
+		On methodology: these are TBMQ tests on TBMQ hardware, not a same-hardware comparison.
+		<strong>Mosquitto publishes no comparable figures</strong> — the project makes no numeric connection or throughput claim
+		at all — so there is no authoritative head-to-head number to quote, from us or anyone else.
 	</p>
 	<p><a href="/performance/">Full benchmark methodology and results →</a></p>
 
@@ -292,25 +290,14 @@ const faq: FaqItem[] = [
 		things Cedalo's commercial Pro Edition fills; none of them are things open-source Mosquitto claims to do.
 	</p>
 
-	<h2 id="stay">When to stay on Mosquitto</h2>
-	<p>Three cases where moving would be the wrong call.</p>
-
-	<h3>One host is enough</h3>
+	<h2 id="stay">Where Mosquitto still fits</h2>
 	<p>
-		Hundreds to a few thousand clients, and no availability requirement beyond restarting a service. TBMQ's Kafka, Redis
-		and PostgreSQL dependencies buy you nothing here, and cost you operational surface.
-	</p>
-
-	<h3>The hardware is constrained</h3>
-	<p>
-		A gateway, a single-board computer, an edge box with a few hundred megabytes of RAM. TBMQ is not built for that
-		envelope and will not fit it. Mosquitto is the right answer, and this is the case it was designed for.
-	</p>
-
-	<h3>You want the protocol and nothing else</h3>
-	<p>
-		No cluster, no web UI, no REST API, no integrations. Every additional moving part is a liability rather than a
-		feature, and a broker that does exactly one thing is the correct tool.
+		Three cases where the move is not worth making yet. If your deployment is a few thousand clients on one host with no
+		availability requirement beyond restarting a service, TBMQ's Kafka, Redis and PostgreSQL dependencies cost you
+		operational surface and buy you nothing. If the hardware is a gateway or an edge box with a few hundred megabytes of
+		RAM, TBMQ is not built for that envelope — though a small broker there can still bridge into a central TBMQ cluster,
+		which is the usual shape once there is more than one site. And if you want the protocol and nothing else — no
+		cluster, no web UI, no REST API, no integrations — the extra moving parts are a cost rather than a feature.
 	</p>
 
 	<h2>Moving over without a flag day</h2>
