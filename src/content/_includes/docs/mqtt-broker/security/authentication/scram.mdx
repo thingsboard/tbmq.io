@@ -1,6 +1,6 @@
 import { Aside } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
-import LearnLink from '~/components/LearnLink.astro';
+import LearnLink from '@components/LearnLink.astro';
 
 SCRAM (Salted Challenge Response Authentication Mechanism) is a secure challenge-response authentication method that allows clients to prove their identity without transmitting the actual password over the network. It is one of the <LearnLink slug="mqtt-authentication">MQTT authentication methods</LearnLink> TBMQ supports, alongside Basic, X.509, JWT, and HTTP.
 It is a SASL mechanism (defined in RFC 5802 and RFC 7677); rather than being part of MQTT itself, TBMQ carries it over the MQTT 5.0 enhanced-authentication framework — the `AUTH` packet together with the `Authentication Method` and `Authentication Data` properties. It provides stronger security guarantees than Basic authentication, and TBMQ supports two mechanisms: `SCRAM-SHA-256` and `SCRAM-SHA-512`.
