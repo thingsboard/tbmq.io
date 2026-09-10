@@ -1,6 +1,7 @@
 ---
 import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
 import SocialNetworks from '~/components/Landing/SocialNetworks.astro';
+import LegalLinks from '~/components/Landing/LegalLinks.astro';
 
 const currentYear = new Date().getFullYear();
 ---
@@ -16,11 +17,7 @@ const currentYear = new Date().getFullYear();
 	</nav>
 	<div class="deepmost">
 		<div class="copyright">&copy; {currentYear} The ThingsBoard Authors</div>
-		<nav class="legal" aria-label="Legal">
-			<a href="/product/privacy-policy/">Privacy Policy</a>
-			<a href="/product/terms-of-use/">Terms of Use</a>
-			<a href="/cookie-policy/">Cookie Policy</a>
-		</nav>
+		<LegalLinks />
 		<SocialNetworks />
 	</div>
 </div>
@@ -72,6 +69,8 @@ const currentYear = new Date().getFullYear();
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		--sn-color: var(--sl-color-gray-3);
+		--legal-color: var(--sl-color-gray-3);
+		--legal-hover-color: var(--sl-color-white);
 	}
 
 	.deepmost :global(.social) {
@@ -90,24 +89,5 @@ const currentYear = new Date().getFullYear();
 	.copyright {
 		font-size: 0.875rem;
 		color: var(--sl-color-gray-3);
-	}
-
-	.legal {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0 1.25rem;
-		margin-bottom: 0;
-	}
-
-	.legal a {
-		font-size: 0.875rem;
-		color: var(--sl-color-gray-3);
-		text-decoration: none;
-		white-space: nowrap;
-	}
-
-	.legal a:hover {
-		color: var(--sl-color-white);
-		text-decoration: underline;
 	}
 </style>
