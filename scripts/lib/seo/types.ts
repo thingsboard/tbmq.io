@@ -18,7 +18,11 @@ export interface PageFacts {
 	/** Pathname with a trailing slash, e.g. `/mqtt/qos/`. */
 	pathname: string;
 	section: Section;
-	/** True when the page is a meta-refresh redirect stub; every check skips those. */
+	/**
+	 * True when the page is a meta-refresh redirect stub. It gets no findings of its
+	 * own and its links are not followed; only the sitemap check names it, when the
+	 * sitemap lists it.
+	 */
 	isRedirect: boolean;
 	/**
 	 * True when `<meta name="robots">` carries `noindex`. Such a page gets no findings
@@ -50,6 +54,15 @@ export interface PageFacts {
 	 * the full one it is answered by the chrome and can never fire.
 	 */
 	mainOutboundPathnames: string[];
+}
+
+/**
+ * A page that gets findings of its own and belongs in the census: neither a
+ * redirect stub nor noindex. The checks, the report and the sitemap test all
+ * mean this one thing by "indexable".
+ */
+export function isIndexable(page: Pick<PageFacts, 'isRedirect' | 'isNoindex'>): boolean {
+	return !page.isRedirect && !page.isNoindex;
 }
 
 export interface Finding {

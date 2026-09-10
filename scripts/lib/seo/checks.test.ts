@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkLinkGraph, checkMetadata, checkSitemap, runChecks } from './checks.ts';
-import type { PageFacts } from './types.ts';
+import { isIndexable, type PageFacts } from './types.ts';
 
 /**
  * A page that trips no check, so each test can vary exactly one field.
@@ -10,8 +10,9 @@ import type { PageFacts } from './types.ts';
  * subset of it — the invariant real pages have.
  */
 function page(overrides: Partial<PageFacts> = {}): PageFacts {
+	const pathname = overrides.pathname ?? '/mqtt/qos/';
 	const facts: PageFacts = {
-		pathname: '/mqtt/qos/',
+		pathname,
 		section: 'mqtt',
 		isRedirect: false,
 		isNoindex: false,
@@ -22,7 +23,7 @@ function page(overrides: Partial<PageFacts> = {}): PageFacts {
 		h1Count: 1,
 		wordCount: 1200,
 		hasJsonLd: true,
-		canonical: 'https://tbmq.io/mqtt/qos/',
+		canonical: `https://tbmq.io${pathname}`,
 		outboundPathnames: ['/docs/getting-started/'],
 		mainOutboundPathnames: ['/docs/getting-started/'],
 		...overrides,
@@ -34,6 +35,12 @@ const checkIds = (findings: { check: string }[]) => findings.map((f) => f.check)
 
 test('a clean page produces no findings', () => {
 	assert.deepEqual(checkMetadata([page()]), []);
+});
+
+test('isIndexable is the one definition of which pages get findings', () => {
+	assert.equal(isIndexable(page()), true);
+	assert.equal(isIndexable(page({ isRedirect: true })), false);
+	assert.equal(isIndexable(page({ isNoindex: true })), false);
 });
 
 test('redirect stubs are skipped entirely', () => {
@@ -95,6 +102,25 @@ test('duplicate titles are reported once, site-wide, naming every page', () => {
 	assert.equal(duplicates.length, 1);
 	assert.equal(duplicates[0].pathname, '');
 	assert.match(duplicates[0].detail, /\/a\/.*\/b\//);
+});
+
+// The CE tree canonicalises onto PE and the pairs deliberately share their text,
+// so only the indexed copies are compared.
+test('a page canonicalised elsewhere is not counted as a duplicate', () => {
+	const shared = 'Quality of Service Levels in TBMQ, Explained';
+	const findings = checkMetadata([
+		page({ pathname: '/docs/pe/qos/', title: shared }),
+		page({ pathname: '/docs/qos/', title: shared, canonical: 'https://tbmq.io/docs/pe/qos/' }),
+	]);
+	assert.deepEqual(
+		findings.filter((f) => f.check === 'title-duplicate'),
+		[]
+	);
+});
+
+test('two indexed pages sharing a description are still reported', () => {
+	const findings = checkMetadata([page({ pathname: '/a/' }), page({ pathname: '/b/' })]);
+	assert.equal(findings.filter((f) => f.check === 'description-duplicate').length, 1);
 });
 
 test('a unique title produces no duplicate finding', () => {
@@ -234,7 +260,9 @@ test('a noindex page or a redirect stub listed in the sitemap is flagged at high
 // the sitemap; one of them turning up there is the defect, not their absence.
 test('a page canonicalised elsewhere is flagged only when it is listed in the sitemap', () => {
 	const ce = { pathname: '/docs/qos/', canonical: 'https://tbmq.io/docs/pe/qos/' };
-	assert.deepEqual(checkIds(checkSitemap([page({ ...ce, inSitemap: true })])), ['sitemap-non-canonical']);
+	const listed = checkSitemap([page({ ...ce, inSitemap: true })]);
+	assert.deepEqual(checkIds(listed), ['sitemap-non-canonical']);
+	assert.equal(listed[0].severity, 'high');
 	assert.deepEqual(checkSitemap([page({ ...ce, inSitemap: false })]), []);
 });
 
@@ -253,12 +281,17 @@ test('runChecks merges every check family and sorts deterministically', () => {
 	const pages = [
 		page({ pathname: '/b/', title: '', outboundPathnames: [] }),
 		page({ pathname: '/a/', outboundPathnames: ['/b/'] }),
+		page({ pathname: '/c/', inSitemap: false, outboundPathnames: ['/a/', '/b/'] }),
 	];
 	const first = runChecks(pages);
 	const second = runChecks([...pages].reverse());
 	assert.deepEqual(first, second, 'findings must not depend on input order');
 	const keys = first.map((f) => `${f.check} ${f.pathname}`);
 	assert.deepEqual(keys, [...keys].sort(), 'findings must be sorted by (check, pathname)');
+	const ids = new Set(checkIds(first));
+	assert.ok(ids.has('title-missing'), 'metadata family');
+	assert.ok(ids.has('orphan-page'), 'link-graph family');
+	assert.ok(ids.has('sitemap-missing'), 'sitemap family');
 });
 
 test('self-links do not count as inbound links', () => {

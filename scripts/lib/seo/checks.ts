@@ -2,6 +2,7 @@ import { PROD_ORIGIN } from '../../../src/consts.ts';
 import {
 	DESC_MAX,
 	DESC_MIN,
+	isIndexable,
 	THIN_WORDS,
 	TITLE_MAX,
 	TITLE_MIN,
@@ -14,9 +15,9 @@ function finding(check: string, severity: Severity, pathname: string, detail: st
 	return { check, severity, pathname, detail };
 }
 
-/** Pages that get findings of their own: neither redirect stubs nor noindex pages. */
-function indexable(pages: PageFacts[]): PageFacts[] {
-	return pages.filter((page) => !page.isRedirect && !page.isNoindex);
+/** True when the canonical names another URL, so this page is not the copy search engines index. */
+function canonicalisesElsewhere(page: PageFacts): boolean {
+	return page.canonical !== null && page.canonical !== `${PROD_ORIGIN}${page.pathname}`;
 }
 
 /** Groups pathnames by a page value, so duplicates can be reported once site-wide. */
@@ -32,7 +33,7 @@ function groupBy(pages: PageFacts[], value: (page: PageFacts) => string): Map<st
 
 export function checkMetadata(pages: PageFacts[]): Finding[] {
 	const findings: Finding[] = [];
-	const live = indexable(pages);
+	const live = pages.filter(isIndexable);
 
 	for (const page of live) {
 		const at = page.pathname;
@@ -75,7 +76,12 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 		}
 	}
 
-	for (const [title, paths] of groupBy(live, (page) => page.title)) {
+	// Duplicates are only compared across the pages search engines actually index: a
+	// CE page that canonicalises onto its PE twin is meant to carry the same text, and
+	// the 86 pairs doing so would otherwise bury every genuine collision.
+	const indexed = live.filter((page) => !canonicalisesElsewhere(page));
+
+	for (const [title, paths] of groupBy(indexed, (page) => page.title)) {
 		if (paths.length > 1) {
 			findings.push(
 				finding(
@@ -87,7 +93,7 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 			);
 		}
 	}
-	for (const [, paths] of groupBy(live, (page) => page.description)) {
+	for (const [, paths] of groupBy(indexed, (page) => page.description)) {
 		if (paths.length > 1) {
 			findings.push(
 				finding(
@@ -105,7 +111,7 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 
 export function checkLinkGraph(pages: PageFacts[]): Finding[] {
 	const findings: Finding[] = [];
-	const live = indexable(pages);
+	const live = pages.filter(isIndexable);
 	const known = new Set(live.map((page) => page.pathname));
 	// A noindex page is still crawled and its links followed, so it keeps feeding
 	// inbound counts even though it gets no findings of its own.
@@ -149,23 +155,26 @@ export function checkLinkGraph(pages: PageFacts[]): Finding[] {
  * page that is noindex, a redirect stub or canonicalised elsewhere contradicts
  * itself; an indexable page left out is invisible to a crawler that starts from
  * the sitemap. Orphan pages inherited from another site show up as the former.
+ *
+ * `sitemap-noindex` covers redirect stubs too — the id is the one the backlog and
+ * the weekly diffs already use, so the detail text names which of the two it is.
  */
 export function checkSitemap(pages: PageFacts[]): Finding[] {
 	const findings: Finding[] = [];
 	for (const page of pages) {
 		const at = page.pathname;
-		const canonicalElsewhere = page.canonical !== null && page.canonical !== `${PROD_ORIGIN}${at}`;
-		if (page.inSitemap) {
-			if (page.isRedirect || page.isNoindex) {
-				const what = page.isRedirect ? 'redirect stub' : 'noindex page';
-				findings.push(finding('sitemap-noindex', 'high', at, `${what} listed in the sitemap`));
-			} else if (canonicalElsewhere) {
-				findings.push(
-					finding('sitemap-non-canonical', 'high', at, `listed in the sitemap, canonical points at ${page.canonical}`)
-				);
-			}
-		} else if (!page.isRedirect && !page.isNoindex && !canonicalElsewhere) {
+		const belongsInSitemap = isIndexable(page) && !canonicalisesElsewhere(page);
+		if (page.inSitemap === belongsInSitemap) continue;
+
+		if (!page.inSitemap) {
 			findings.push(finding('sitemap-missing', 'medium', at, 'indexable self-canonical page missing from the sitemap'));
+		} else if (isIndexable(page)) {
+			findings.push(
+				finding('sitemap-non-canonical', 'high', at, `listed in the sitemap, canonical points at ${page.canonical}`)
+			);
+		} else {
+			const what = page.isRedirect ? 'redirect stub' : 'noindex page';
+			findings.push(finding('sitemap-noindex', 'high', at, `${what} listed in the sitemap`));
 		}
 	}
 	return findings;
