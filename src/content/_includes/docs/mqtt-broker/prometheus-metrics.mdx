@@ -40,6 +40,7 @@ The tables below list the names as Prometheus scrapes them. TBMQ's source instru
 - Counters gain a `_total` suffix — the meter `droppedMsgs` scrapes as `droppedMsgs_total`.
 - Timers expand into four series: `_seconds` (carrying a `quantile` label), `_seconds_count`, `_seconds_sum`, and `_seconds_max`. Which quantiles appear on the `_seconds` series is controlled by `STATS_TIMER_PERCENTILES`, default `0.5`.
 - Gauges keep their name unchanged.
+- Where a meter has several possible outcomes, TBMQ puts the outcome in a `statsName` label rather than minting a separate metric name per outcome. For example, `deviceProcessor_total` is a single counter that covers all eight outcomes, and a query selects one of them with `{statsName="failedMsgs"}`.
 
 ## Ingest pipeline
 
