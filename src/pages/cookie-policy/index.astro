@@ -1,14 +1,12 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { marketingJsonLd } from '~/util/structuredData';
 
-const title = 'Cookie Policy for the TBMQ Website';
+const title = 'Cookie Policy: How the Website Uses Cookies';
 const description =
 	'How the TBMQ website uses cookies and similar technologies: which cookies are set, what each one is for, and how you can manage or withdraw your consent.';
-const jsonLd = marketingJsonLd({ path: '/cookie-policy/', name: title, description, breadcrumb: 'Cookie Policy' });
 ---
 
-<BaseLayout title={title} description={description} jsonLd={jsonLd}>
+<BaseLayout title={title} description={description} breadcrumb="Cookie Policy">
 	<div class="cookie-policy-page">
 		<div class="cookie-policy-content">
 			<h1>Cookie Policy</h1>

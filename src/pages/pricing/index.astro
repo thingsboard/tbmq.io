@@ -18,9 +18,9 @@ import FaqSection from '../../components/Pricing/FaqSection.astro';
 import { pricingFaqData } from '@data/pricing/faq';
 import { pricingJsonLd } from '~/util/structuredData';
 
+const title = 'MQTT Broker Pricing: Plans and Editions';
 const description =
 	'TBMQ MQTT broker pricing — compare the free Community Edition, Self-Managed, and Private Cloud plans with transparent subscription and perpetual licensing.';
-const jsonLd = pricingJsonLd(description);
 
 import ceIcon from '../../assets/pricing/community-edition-icon.svg?raw';
 import pcIcon from '../../assets/pricing/private-cloud-icon.svg?raw';
@@ -88,14 +88,10 @@ const tbmqSubTabs = enrichTabs([
 		faqId: 'tbmq-stand-for',
 	},
 ]);
+const jsonLd = pricingJsonLd({ name: title, description, planCount: tbmqSubTabs.length });
 ---
 
-<BaseLayout
-	title="TBMQ Pricing: MQTT Broker Plans and Editions"
-	description={description}
-	pageId="pricing"
-	jsonLd={jsonLd}
->
+<BaseLayout title={title} description={description} pageId="pricing" jsonLd={jsonLd}>
 	<PricingBackground />
 	<main class="pricing-page">
 		<PricingHero />
