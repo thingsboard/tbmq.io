@@ -74,11 +74,17 @@ export function collectFacts(html: string, pathname: string): Omit<PageFacts, 'i
 	};
 }
 
-/** The `<loc>` entries of one sitemap document as normalised same-origin pathnames, in file order. */
+/**
+ * The `<loc>` entries of one sitemap document as normalised pathnames, in file order.
+ * Only the pathname is read: a preview build (`PUBLIC_SITE_URL` / `CF_PAGES_URL`)
+ * writes its own origin into every `<loc>`, and a sitemap only ever lists pages of
+ * the one site it was built for — so an origin check would empty the set and
+ * report every page as `sitemap-missing`.
+ */
 export function parseSitemapPathnames(xml: string): string[] {
 	const pathnames: string[] = [];
 	for (const match of xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)) {
-		const pathname = normaliseHref(match[1]);
+		const pathname = normaliseHref(new URL(match[1]!, PROD_ORIGIN).pathname);
 		if (pathname) pathnames.push(pathname);
 	}
 	return pathnames;
@@ -86,8 +92,8 @@ export function parseSitemapPathnames(xml: string): string[] {
 
 /**
  * Every page URL the build's sitemap lists, read through `sitemap-index.xml`.
- * A missing sitemap is an error rather than an empty set: an empty set would
- * report every page as `sitemap-missing` and bury the real findings.
+ * A missing or empty sitemap is an error rather than an empty set: an empty set
+ * would report every page as `sitemap-missing` and bury the real findings.
  */
 export function readSitemapPathnames(buildOutputDir: string): Set<string> {
 	const indexPath = path.join(buildOutputDir, 'sitemap-index.xml');
@@ -98,6 +104,9 @@ export function readSitemapPathnames(buildOutputDir: string): Set<string> {
 	for (const sitemapFile of parseSitemapPathnames(fs.readFileSync(indexPath, 'utf8'))) {
 		const xml = fs.readFileSync(path.join(buildOutputDir, sitemapFile), 'utf8');
 		for (const pathname of parseSitemapPathnames(xml)) pathnames.add(pathname);
+	}
+	if (pathnames.size === 0) {
+		throw new Error(`the sitemap in "${buildOutputDir}" lists no pages — is this a complete build?`);
 	}
 	return pathnames;
 }
