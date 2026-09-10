@@ -164,7 +164,9 @@ subscriber on that version receives the payload without them.
 - contains a wildcard character — `#` or `+`;
 - starts with `$`;
 - is empty, or longer than 65535 bytes;
-- has more segments than `MQTT_TOPIC_MAX_SEGMENTS_COUNT` allows, when that limit is enabled (`0`, the default, disables it).
+- contains more forward slashes than `MQTT_TOPIC_MAX_SEGMENTS_COUNT` allows, when that limit is enabled (`0`, the
+  default, disables it). Despite its name the setting bounds separators, not segments — see
+  <DocLink product={props.product} path="user-guide/topics">Topics</DocLink>.
 
 The same rules apply to `responseTopic`.
 
@@ -175,6 +177,7 @@ The same rules apply to `responseTopic`.
 | `200 OK` | Queued, and at least one subscription matched the topic. Body carries reason code `0`. |
 | `202 Accepted` | Queued, but no subscription matched. Body carries reason code `16`. A retained message is still stored. |
 | `400 Bad Request` | Invalid topic, payload, encoding, or MQTT property. |
+| `401 Unauthorized` | The `X-Authorization` token is missing, expired, or invalid. |
 | `403 Forbidden` | The account is not allowed to publish. |
 | `411 Length Required` | The request carried no `Content-Length` header. Chunked bodies are not accepted. |
 | `413 Payload Too Large` | The request body exceeds the size guard. See [Configuration](#configuration). |
