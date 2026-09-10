@@ -264,12 +264,6 @@ rejected with `400`.
 Keep `REST_PUBLISH_MAX_PAYLOAD_SIZE` below the Kafka producer's `max.request.size`, or an oversized message is
 accepted by the API and then fails on its way to the queue.
 
-<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-A third limit sits in front of both: `HTTP_MAX_PAYLOAD_SIZE_LIMIT_CONFIGURATION` caps the request body per URL
-pattern, and `/api/**` defaults to 16 MB. It never binds at the default payload size, but it becomes the real ceiling
-before `REST_PUBLISH_MAX_PAYLOAD_SIZE` reaches 8 MB, so raise it alongside.
-</ShowFor>
-
 ## Publisher client ID
 
 Messages published through this API are stamped with the client ID `tbmq_rest_api`, and TBMQ treats them as coming
