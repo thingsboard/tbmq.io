@@ -31,6 +31,10 @@ const faq: FaqItem[] = [
 		a: 'There is no official figure — the Mosquitto project publishes no connection or throughput number. The ceiling depends on file descriptors, memory and the fact that message handling runs in one event loop on one host. <strong>The useful answer is that the limit is one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
 	},
 	{
+		q: 'Does Mosquitto have a web UI?',
+		a: "Since 2.1 it does — a dashboard built on the <code>$SYS</code> topics showing connected clients, throughput, retained topics and uptime, served by an <code>http_api</code> listener the project labels experimental. It is <strong>read-only</strong>: broker configuration is still <code>mosquitto.conf</code> plus a restart, and runtime changes are limited to authentication and authorization over <code>$CONTROL</code> topics. TBMQ's UI and REST API create and edit credentials, topic rules, integrations and shared subscriptions on a running cluster.",
+	},
+	{
 		q: 'Can I run TBMQ on a single node?',
 		a: 'Yes, and it is how most people start. The standard Docker install runs one TBMQ node with Kafka, Redis and PostgreSQL beside it, which gives you the durability guarantee and the separate device and application paths without a cluster; you add nodes when you need the headroom or the availability. What a single node does not give you is a single binary — that is the trade this page is about.',
 	},
@@ -197,15 +201,27 @@ const faq: FaqItem[] = [
 		strategies.
 	</p>
 
-	<h3>The running cluster is inspectable</h3>
+	<h3>You can change it while it runs, not just watch it</h3>
 	<p>
-		Mosquitto's operational surface is a log file and the <code>$SYS</code> topic tree. TBMQ answers the same questions from
-		a <a href="/docs/user-guide/ui/monitoring/">web UI</a> over the live cluster: which
-		<a href="/docs/user-guide/ui/sessions/">sessions</a> are connected and what each is subscribed to, per-client and cluster-wide
-		metrics, which connection attempts were rejected and why, and a built-in
+		Mosquitto 2.1 added a dashboard over the <code>$SYS</code> topics, so seeing broker state is no longer the gap it was
+		— connected clients, throughput, retained topics and uptime are all there. What it does not do is change anything: it
+		is read-only, served by a listener the project labels experimental. Broker configuration is still
+		<code>mosquitto.conf</code>, a reload signal re-reads only part of it — bridges are not among the parts — and adding
+		a listener means a restart. Runtime changes are limited to authentication and authorization, driven over
+		<code>$CONTROL</code> topics with <code>mosquitto_ctrl</code>.
+	</p>
+	<p>
+		In TBMQ those are entities, not file entries. <a href="/docs/user-guide/ui/mqtt-client-credentials/">Credentials</a> and
+		topic rules, <a href="/docs/integrations/">integrations</a>,
+		<a href="/docs/application-shared-subscription/">shared subscriptions</a>, blocked clients and
+		<a href="/docs/user-guide/ui/users/">users</a> are created and edited while the cluster runs, from the
+		<a href="/docs/user-guide/ui/monitoring/">web UI</a> or the <a href="/docs/rest-api/">REST API</a>, with no restart
+		and no file to ship to every node. The same views answer the operational questions — which
+		<a href="/docs/user-guide/ui/sessions/">sessions</a> are connected and what each is subscribed to, which connection attempts
+		were rejected and why — plus a built-in
 		<a href="/docs/user-guide/ui/websocket-client/">WebSocket client</a> for publishing a test message without leaving the
-		browser. The same objects are reachable over the <a href="/docs/rest-api/">REST API</a>, and metrics export to
-		<a href="/docs/prometheus-metrics/">Prometheus</a>.
+		browser, and metrics export to <a href="/docs/prometheus-metrics/">Prometheus</a>. Broker-level tuning is a config
+		file and a restart in both, and TBMQ is no different there.
 	</p>
 
 	<h3>Open source, and what Professional Edition adds</h3>
@@ -268,11 +284,15 @@ const faq: FaqItem[] = [
 					></tr
 				>
 				<tr
-					><td>Management UI</td><td>None — CLI and <code>$SYS</code> topics</td><td
-						>Sessions, subscriptions, metrics, WebSocket client</td
+					><td>Management UI</td><td>Read-only <code>$SYS</code> dashboard (2.1, experimental)</td><td
+						>Sessions, subscriptions, metrics, credentials, WebSocket client</td
 					></tr
 				>
-				<tr><td>REST API</td><td>None</td><td>Sessions, subscriptions, credentials</td></tr>
+				<tr
+					><td>REST API</td><td>Experimental <code>http_api</code>, broker info only (2.1)</td><td
+						>Full admin API — sessions, subscriptions, credentials, integrations</td
+					></tr
+				>
 				<tr><td>Built-in integrations</td><td>None</td><td>HTTP, MQTT, Kafka</td></tr>
 				<tr
 					><td>Kubernetes deployment</td><td>Official Docker image, community Helm charts</td><td
@@ -296,7 +316,7 @@ const faq: FaqItem[] = [
 		operational surface and buy you nothing. If the hardware is a gateway or an edge box with a few hundred megabytes of
 		RAM, TBMQ is not built for that envelope — though a small broker there can still bridge into a central TBMQ cluster,
 		which is the usual shape once there is more than one site. And if you want the protocol and nothing else — no
-		cluster, no web UI, no REST API, no integrations — the extra moving parts are a cost rather than a feature.
+		cluster, no admin API, no integrations — the extra moving parts are a cost rather than a feature.
 	</p>
 
 	<h2>Moving over without a flag day</h2>
