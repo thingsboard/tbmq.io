@@ -15,9 +15,9 @@ import {
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
-import { DOCS_SUFFIX, EDIT_BASE_URL, formatDocsTitle, OG_FALLBACK, TITLE_SEPARATOR } from '~/consts';
+import { allPages } from '~/content';
+import { DOCS_SUFFIX, docsRootTitle, EDIT_BASE_URL, formatDocsTitle, OG_FALLBACK, TITLE_SEP } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
-import { prettifySegment } from '~/util/ogContext';
 import { docsJsonLd, type Crumb } from '~/util/structuredData';
 // No alias covers `config/`; relative import is the only option here.
 import {
@@ -44,18 +44,14 @@ const API_SECTION_NAMES: Record<string, string> = {
 const sidebarLinkMatchCache = new Map<string, boolean>();
 
 /**
- * Every docs route that exists, derived from the content files at build time.
- * The JSON-LD breadcrumb trail only names intermediate sections that have a
- * page of their own — a crumb pointing at a 404 is worse than a shorter trail.
+ * Route → frontmatter title of every docs page, from the content collection.
+ * The JSON-LD breadcrumb trail names an intermediate section only when it has a
+ * page of its own — a crumb pointing at a 404 is worse than a shorter trail —
+ * and labels every crumb with that page's title, the label a reader navigated by.
  */
-const DOCS_ROUTES = new Set(
-	Object.keys(import.meta.glob('/src/content/docs/docs/**/*.mdx')).map((file) =>
-		file
-			.replace(/^\/src\/content\/docs\/docs\//, '/docs/')
-			.replace(/(?:\/index)?\.mdx$/, '')
-			.concat('/')
-	)
-);
+const DOCS_TITLES = new Map(allPages.map((page) => [`/${page.id}/`, page.data.title]));
+
+type HeadItem = StarlightRouteData['head'][number];
 
 const INCLUDES_IMPORT_REGEX = /^\s*import\s+\w+\s+from\s+['"]@includes\/([^'"]+)['"]/gm;
 const JSX_COMPONENT_REGEX = /^\s*<[A-Z][A-Za-z0-9]*\b/gm;
@@ -132,22 +128,29 @@ function recordSitemapSources(context: APIContext, starlightRoute: StarlightRout
 
 /** True when the computed head has no `noindex` and any canonical points at the page itself. */
 function isIndexableSelfCanonical(context: APIContext, starlightRoute: StarlightRouteData): boolean {
+	if (hasNoindexMeta(starlightRoute.head)) return false;
 	const selfPath = normalizeSitemapPath(context.url.pathname);
 	for (const item of starlightRoute.head) {
-		if (item.tag === 'meta' && item.attrs?.name === 'robots') {
-			const content = item.attrs.content;
-			if (typeof content === 'string' && /\bnoindex\b/i.test(content)) return false;
-		} else if (item.tag === 'link' && item.attrs?.rel === 'canonical') {
-			const href = item.attrs.href;
-			if (typeof href !== 'string') continue;
-			try {
-				if (normalizeSitemapPath(new URL(href).pathname) !== selfPath) return false;
-			} catch {
-				// Unparseable canonical — keep the page rather than silently dropping it.
-			}
+		if (item.tag !== 'link' || item.attrs?.rel !== 'canonical') continue;
+		const href = item.attrs.href;
+		if (typeof href !== 'string') continue;
+		try {
+			if (normalizeSitemapPath(new URL(href).pathname) !== selfPath) return false;
+		} catch {
+			// Unparseable canonical — keep the page rather than silently dropping it.
 		}
 	}
 	return true;
+}
+
+function hasNoindexMeta(head: StarlightRouteData['head']): boolean {
+	return head.some(
+		(item) =>
+			item.tag === 'meta' &&
+			item.attrs?.name === 'robots' &&
+			typeof item.attrs.content === 'string' &&
+			/\bnoindex\b/i.test(item.attrs.content)
+	);
 }
 
 /**
@@ -252,8 +255,9 @@ function linkMatchesLanguage(href: string, lang: SupportedLanguage): boolean {
 }
 
 const docsPathRegex = /^\/(uk\/)?docs(\/|$)/;
-const escapedSep = TITLE_SEPARATOR.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-const docsSuffixMatcher = new RegExp(` ${escapedSep} ${DOCS_SUFFIX}$`);
+const escapedSep = TITLE_SEP.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+/** Starlight's own ` | Docs` suffix (its `title:` is `Docs`), stripped before ours is appended. */
+const docsSuffixMatcher = new RegExp(`${escapedSep}${DOCS_SUFFIX}$`);
 const apiPathMatcher = /^reference\/([^/]+)\//;
 
 function updateHead(context: APIContext) {
@@ -283,49 +287,12 @@ function updateHead(context: APIContext) {
 		}
 	}
 
-	const entryHead = (entry.data as { head: StarlightRouteData['head'] }).head;
-	const frontmatterTitle = entryHead.find((item) => item.tag === 'title');
-
 	const pathname = context.url.pathname;
 	// Title formatting and canonical consolidation only apply to real `/docs/`
 	// pages. Marketing pages render through `StarlightPage` too, so gate the
 	// docs-only work here to skip their per-page version/slug/canonical lookups.
 	const isDocs = docsPathRegex.test(pathname);
-	// The page's own name, before the ` | TBMQ Docs` suffix is appended — the JSON-LD headline.
-	let docsHeadline: string | undefined;
-
-	if (isDocs && title && title.content) {
-		const product = getVersionFromURL(pathname);
-		const lang = getLanguageFromURL(pathname);
-		const pageSlug = getPageSlugFromURL(pathname);
-
-		// Per-page `customDocsTitle` frontmatter overrides the auto-formatted
-		// docs title entirely. Used by product index pages that want a
-		// non-default <title> (e.g. "Docs | ThingsBoard Professional Edition").
-		const customDocsTitle = (entry.data as { customDocsTitle?: string }).customDocsTitle;
-		if (customDocsTitle) {
-			title.content = customDocsTitle;
-			docsHeadline = customDocsTitle.split(` ${TITLE_SEPARATOR} `)[0];
-		} else {
-			const productTitleName = getProductTitleName(product);
-			const versionBase = `/${getLanguagePrefix(lang)}docs/${getVersionPrefix(product)}`;
-			const isIndex = pathname === versionBase;
-			let pageTitle = title.content.replace(docsSuffixMatcher, '');
-
-			// Auto-append API section name to disambiguate sibling reference pages
-			// (e.g. several `/reference/<x>-api/attributes/` pages all share H1 "Attributes").
-			// Skipped when the page sets its own <title> via frontmatter `head`.
-			if (!frontmatterTitle) {
-				const apiMatch = pageSlug.match(apiPathMatcher);
-				const apiName = apiMatch ? API_SECTION_NAMES[apiMatch[1]!] : undefined;
-				if (apiName) pageTitle = `${pageTitle} - ${apiName}`;
-			}
-
-			title.content = formatDocsTitle(pageTitle, productTitleName, isIndex);
-			docsHeadline = isIndex ? title.content : pageTitle;
-		}
-		if (ogTitle) ogTitle.attrs!['content'] = title.content;
-	}
+	const docsHeadline = isDocs && title?.content ? applyDocsTitle(pathname, entry, title, ogTitle) : undefined;
 
 	// Marketing pages author their own `og:image` in frontmatter; only emit ours
 	// when none is present, else BaseLayout pages get a duplicate `og:image`.
@@ -343,70 +310,131 @@ function updateHead(context: APIContext) {
 		head.push({ tag: 'meta', attrs: { name: 'robots', content: 'noindex, follow' } });
 	}
 
-	// Canonical: free product versions → professional equivalents, plus explicit
-	// frontmatter overrides. See `getCanonicalPathname` — also drives sitemap
-	// exclusion so the two stay in lockstep. Docs-only: a marketing page's
-	// synthetic `entry.id` would default to CE and rewrite e.g. `/` → `/docs/pe/`.
+	// Docs-only: a marketing page's synthetic `entry.id` would default to CE and
+	// rewrite e.g. `/` → `/docs/pe/`.
 	if (isDocs) {
-		const canonicalPathname = getCanonicalPathname(
-			entry.id,
-			entry.data as { selfCanonical?: boolean; canonicalUrl?: string }
-		);
-		const selfPathname = pathname.endsWith('/') ? pathname : pathname + '/';
-		if (canonicalPathname !== selfPathname) {
-			const targetCanonical = new URL(canonicalPathname, context.site).href;
-			if (canonical) canonical.attrs!['href'] = targetCanonical;
-			if (ogUrl) ogUrl.attrs!['content'] = targetCanonical;
-		}
-
-		// Structured data for indexable docs pages. Built from the canonical
-		// pathname, so a CE page carries the same graph as the PE page it
-		// canonicalises to — the two must not disagree about what the article is.
-		if (title?.content && !hasNoindexMeta(head)) {
-			const { title: sidebarTitle, description } = entry.data as { title: string; description?: string };
-			head.push({
-				tag: 'script',
-				attrs: { type: 'application/ld+json' },
-				content: JSON.stringify(
-					docsJsonLd({
-						url: new URL(canonicalPathname, context.site).href,
-						headline: docsHeadline ?? title.content,
-						description,
-						crumbs: docsBreadcrumbs(canonicalPathname, sidebarTitle, context.site!),
-					})
-				),
-			});
+		const canonicalPathname = applyDocsCanonical(context, entry, canonical, ogUrl);
+		if (docsHeadline && !hasNoindexMeta(head)) {
+			pushDocsJsonLd(head, entry, canonicalPathname, docsHeadline, context.site!);
 		}
 	}
 }
 
-function hasNoindexMeta(head: StarlightRouteData['head']): boolean {
-	return head.some(
-		(item) => item.tag === 'meta' && item.attrs?.name === 'robots' && /\bnoindex\b/i.test(String(item.attrs.content))
+/**
+ * Formats a docs page's `<title>` (and `og:title`) and returns the page's own
+ * name — the part before the ` | TBMQ Docs` suffix, which the JSON-LD uses as
+ * its headline.
+ */
+function applyDocsTitle(
+	pathname: string,
+	entry: StarlightRouteData['entry'],
+	title: HeadItem,
+	ogTitle: HeadItem | undefined
+): string {
+	// Per-page `customDocsTitle` frontmatter overrides the auto-formatted docs
+	// title entirely. Used by the two docs roots, whose <title> names the product
+	// rather than the page ("TBMQ Docs | Open-Source MQTT Broker Documentation").
+	const customDocsTitle = (entry.data as { customDocsTitle?: string }).customDocsTitle;
+	let headline: string;
+	if (customDocsTitle) {
+		title.content = customDocsTitle;
+		headline = customDocsTitle.split(TITLE_SEP)[0]!;
+	} else {
+		const product = getVersionFromURL(pathname);
+		const productTitleName = getProductTitleName(product);
+		const versionBase = `/${getLanguagePrefix(getLanguageFromURL(pathname))}docs/${getVersionPrefix(product)}`;
+		if (pathname === versionBase) {
+			headline = docsRootTitle(productTitleName);
+			title.content = headline;
+		} else {
+			let pageTitle = title.content!.replace(docsSuffixMatcher, '');
+			// Auto-append API section name to disambiguate sibling reference pages
+			// (e.g. several `/reference/<x>-api/attributes/` pages all share H1 "Attributes").
+			// Skipped when the page sets its own <title> via frontmatter `head`.
+			const entryHead = (entry.data as { head: StarlightRouteData['head'] }).head;
+			if (!entryHead.some((item) => item.tag === 'title')) {
+				const apiMatch = getPageSlugFromURL(pathname).match(apiPathMatcher);
+				const apiName = apiMatch ? API_SECTION_NAMES[apiMatch[1]!] : undefined;
+				if (apiName) pageTitle = `${pageTitle} - ${apiName}`;
+			}
+			headline = pageTitle;
+			title.content = formatDocsTitle(pageTitle, productTitleName);
+		}
+	}
+	if (ogTitle) ogTitle.attrs!['content'] = title.content;
+	return headline;
+}
+
+/**
+ * Canonical: free product versions → professional equivalents, plus explicit
+ * frontmatter overrides. See `getCanonicalPathname` — also drives sitemap
+ * exclusion so the two stay in lockstep. Returns the canonical pathname.
+ */
+function applyDocsCanonical(
+	context: APIContext,
+	entry: StarlightRouteData['entry'],
+	canonical: HeadItem | undefined,
+	ogUrl: HeadItem | undefined
+): string {
+	const canonicalPathname = getCanonicalPathname(
+		entry.id,
+		entry.data as { selfCanonical?: boolean; canonicalUrl?: string }
 	);
+	const pathname = context.url.pathname;
+	const selfPathname = pathname.endsWith('/') ? pathname : pathname + '/';
+	if (canonicalPathname !== selfPathname) {
+		const targetCanonical = new URL(canonicalPathname, context.site).href;
+		if (canonical) canonical.attrs!['href'] = targetCanonical;
+		if (ogUrl) ogUrl.attrs!['content'] = targetCanonical;
+	}
+	return canonicalPathname;
+}
+
+/**
+ * Structured data for an indexable docs page, built from the canonical pathname
+ * so a CE page carries the same graph as the PE page it canonicalises to — the
+ * two must not disagree about what the article is.
+ */
+function pushDocsJsonLd(
+	head: StarlightRouteData['head'],
+	entry: StarlightRouteData['entry'],
+	canonicalPathname: string,
+	headline: string,
+	site: URL
+) {
+	const { description } = entry.data as { description?: string };
+	head.push({
+		tag: 'script',
+		attrs: { type: 'application/ld+json' },
+		content: JSON.stringify(
+			docsJsonLd({
+				url: new URL(canonicalPathname, site).href,
+				headline,
+				description,
+				crumbs: docsBreadcrumbs(canonicalPathname, site),
+			})
+		),
+	});
 }
 
 /**
  * Home → `TBMQ Docs` / `TBMQ PE Docs` → each ancestor section that has an index
- * page of its own → the page. The last crumb carries the sidebar title, which is
- * the label a reader navigated by.
+ * page of its own → the page, every crumb below the root named by its page's title.
  */
-function docsBreadcrumbs(canonicalPathname: string, pageTitle: string, site: URL): Crumb[] {
+function docsBreadcrumbs(canonicalPathname: string, site: URL): Crumb[] {
 	const product = getVersionFromURL(canonicalPathname);
 	const lang = getLanguageFromURL(canonicalPathname);
 	const docsRoot = `/${getLanguagePrefix(lang)}docs/${getVersionPrefix(product)}`;
 	const crumbs: Crumb[] = [
 		{ name: 'Home', item: new URL('/', site).href },
-		{ name: formatDocsTitle('', getProductTitleName(product), true), item: new URL(docsRoot, site).href },
+		{ name: docsRootTitle(getProductTitleName(product)), item: new URL(docsRoot, site).href },
 	];
-	if (canonicalPathname === docsRoot) return crumbs;
 
-	const segments = canonicalPathname.slice(docsRoot.length).split('/').filter(Boolean);
 	let current = docsRoot;
-	for (const segment of segments.slice(0, -1)) {
+	for (const segment of canonicalPathname.slice(docsRoot.length).split('/').filter(Boolean)) {
 		current += `${segment}/`;
-		if (DOCS_ROUTES.has(current)) crumbs.push({ name: prettifySegment(segment), item: new URL(current, site).href });
+		const title = DOCS_TITLES.get(current);
+		if (title) crumbs.push({ name: title, item: new URL(current, site).href });
 	}
-	crumbs.push({ name: pageTitle, item: new URL(canonicalPathname, site).href });
 	return crumbs;
 }

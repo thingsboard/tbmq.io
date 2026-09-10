@@ -4,23 +4,35 @@
 // reads as one publisher. Ratings are deliberately absent everywhere: a rich
 // result that quotes them would need real review data behind it.
 
-import { OG_FALLBACK, organizationJsonLd, PROD_ORIGIN, SITE_NAME } from '~/consts';
+import { GITHUB_REPO_URL, OG_FALLBACK, ORGANIZATION_NODE, organizationJsonLd, PROD_ORIGIN, SITE_NAME } from '~/consts';
 import { TBMQ_VER } from '~/data/versions';
 
 const SITE = new URL(PROD_ORIGIN);
-const GITHUB_REPO = 'https://github.com/thingsboard/tbmq';
+
+/** Absolute production URL of a site path — every `url`, `@id` and `item` below goes through it. */
+function absolute(path: string): string {
+	return new URL(path, SITE).href;
+}
+
+const ORGANIZATION_ID = absolute(ORGANIZATION_NODE);
+const WEBSITE_ID = absolute('/#website');
+
+/** A reference to a node defined elsewhere in the graph. */
+function ref(id: string) {
+	return { '@id': id };
+}
 
 function organization() {
-	return { ...organizationJsonLd(SITE), sameAs: [GITHUB_REPO, 'https://x.com/thingsboard'] };
+	return organizationJsonLd(SITE);
 }
 
 function webSite() {
 	return {
 		'@type': 'WebSite',
-		'@id': `${PROD_ORIGIN}/#website`,
+		'@id': WEBSITE_ID,
 		name: SITE_NAME,
-		url: `${PROD_ORIGIN}/`,
-		publisher: { '@id': `${PROD_ORIGIN}/#organization` },
+		url: absolute('/'),
+		publisher: ref(ORGANIZATION_ID),
 	};
 }
 
@@ -38,20 +50,32 @@ function breadcrumbList(url: string, crumbs: Crumb[]) {
 	};
 }
 
+function webPage(url: string, name: string, description?: string) {
+	return {
+		'@type': 'WebPage',
+		'@id': `${url}#webpage`,
+		url,
+		name,
+		...(description ? { description } : {}),
+		inLanguage: 'en-US',
+	};
+}
+
 export interface MarketingJsonLdOptions {
 	/** Page path with leading and trailing slash, e.g. '/performance/'. */
 	path: string;
 	/** Clean page name (without the ' | TBMQ' title suffix). */
 	name: string;
 	/** Page meta description (reuse the same string passed to BaseLayout). */
-	description: string;
+	description?: string;
 	/** Breadcrumb leaf label, e.g. 'Performance'. */
 	breadcrumb: string;
 }
 
 /**
  * Build a schema.org @graph (WebPage + BreadcrumbList) for a marketing page.
- * Pass the result to BaseLayout's `jsonLd` prop.
+ * `BaseLayout` and `LegalLayout` build it from their `breadcrumb` prop; pass the
+ * result to their `jsonLd` prop only for a page that needs a different graph.
  */
 export function marketingJsonLd({
 	path,
@@ -59,32 +83,29 @@ export function marketingJsonLd({
 	description,
 	breadcrumb,
 }: MarketingJsonLdOptions): Record<string, unknown> {
-	const url = `${PROD_ORIGIN}${path}`;
+	const url = absolute(path.endsWith('/') ? path : `${path}/`);
 	return {
 		'@context': 'https://schema.org',
 		'@graph': [
-			{
-				'@type': 'WebPage',
-				'@id': `${url}#webpage`,
-				url,
-				name,
-				description,
-				inLanguage: 'en-US',
-			},
+			webPage(url, name, description),
 			breadcrumbList(url, [
-				{ name: 'Home', item: `${PROD_ORIGIN}/` },
+				{ name: 'Home', item: absolute('/') },
 				{ name: breadcrumb, item: url },
 			]),
 		],
 	};
 }
 
+export interface HomeJsonLdOptions {
+	description: string;
+}
+
 /**
  * Home page: the Organization, the WebSite and TBMQ itself as a free
  * SoftwareApplication, so search engines read the domain as a product site.
  */
-export function homeJsonLd(description: string): Record<string, unknown> {
-	const url = `${PROD_ORIGIN}/`;
+export function homeJsonLd({ description }: HomeJsonLdOptions): Record<string, unknown> {
+	const url = absolute('/');
 	return {
 		'@context': 'https://schema.org',
 		'@graph': [
@@ -101,37 +122,39 @@ export function homeJsonLd(description: string): Record<string, unknown> {
 				operatingSystem: 'Linux, macOS, Windows, Kubernetes',
 				softwareVersion: TBMQ_VER,
 				license: 'https://www.apache.org/licenses/LICENSE-2.0',
-				downloadUrl: `${PROD_ORIGIN}/installations/`,
-				installUrl: `${PROD_ORIGIN}/docs/installation/`,
-				softwareHelp: { '@type': 'CreativeWork', url: `${PROD_ORIGIN}/docs/` },
-				sameAs: GITHUB_REPO,
-				author: { '@id': `${PROD_ORIGIN}/#organization` },
-				offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', url: `${PROD_ORIGIN}/pricing/` },
+				downloadUrl: absolute('/installations/'),
+				installUrl: absolute('/docs/installation/'),
+				softwareHelp: { '@type': 'CreativeWork', url: absolute('/docs/') },
+				sameAs: GITHUB_REPO_URL,
+				author: ref(ORGANIZATION_ID),
+				offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', url: absolute('/pricing/') },
 			},
 		],
 	};
 }
 
+export interface PricingJsonLdOptions {
+	/** Clean page name (without the ' | TBMQ' title suffix). */
+	name: string;
+	description: string;
+	/** Number of plans the page presents — read it off the same data that renders them. */
+	planCount: number;
+}
+
 /**
  * Pricing page: TBMQ as a Product with one AggregateOffer spanning the free
  * Community Edition and the paid plans. The paid plans are usage-priced, so
- * only the floor (0, the free edition) is stated as a number.
+ * only the floor (0, the free edition) is stated as a number and the plans are
+ * not listed as individual Offers — an Offer without a price fails validation.
  */
-export function pricingJsonLd(description: string): Record<string, unknown> {
-	const url = `${PROD_ORIGIN}/pricing/`;
+export function pricingJsonLd({ name, description, planCount }: PricingJsonLdOptions): Record<string, unknown> {
+	const url = absolute('/pricing/');
 	return {
 		'@context': 'https://schema.org',
 		'@graph': [
-			{
-				'@type': 'WebPage',
-				'@id': `${url}#webpage`,
-				url,
-				name: 'TBMQ Pricing',
-				description,
-				inLanguage: 'en-US',
-			},
+			webPage(url, name, description),
 			breadcrumbList(url, [
-				{ name: 'Home', item: `${PROD_ORIGIN}/` },
+				{ name: 'Home', item: absolute('/') },
 				{ name: 'Pricing', item: url },
 			]),
 			{
@@ -139,19 +162,14 @@ export function pricingJsonLd(description: string): Record<string, unknown> {
 				'@id': `${url}#product`,
 				name: SITE_NAME,
 				description,
-				image: `${PROD_ORIGIN}${OG_FALLBACK}`,
-				brand: { '@id': `${PROD_ORIGIN}/#organization` },
+				image: absolute(OG_FALLBACK),
+				brand: ref(ORGANIZATION_ID),
 				offers: {
 					'@type': 'AggregateOffer',
 					url,
 					priceCurrency: 'USD',
 					lowPrice: '0',
-					offerCount: 3,
-					offers: [
-						{ '@type': 'Offer', name: 'Community Edition', price: '0', priceCurrency: 'USD', url },
-						{ '@type': 'Offer', name: 'Self-Managed Professional Edition', priceCurrency: 'USD', url },
-						{ '@type': 'Offer', name: 'Private Cloud', priceCurrency: 'USD', url },
-					],
+					offerCount: planCount,
 				},
 			},
 			organization(),
@@ -181,9 +199,9 @@ export function docsJsonLd({ url, headline, description, crumbs }: DocsJsonLdOpt
 				url,
 				mainEntityOfPage: url,
 				inLanguage: 'en-US',
-				isPartOf: { '@id': `${PROD_ORIGIN}/#website` },
-				author: { '@id': `${PROD_ORIGIN}/#organization` },
-				publisher: { '@id': `${PROD_ORIGIN}/#organization` },
+				isPartOf: ref(WEBSITE_ID),
+				author: ref(ORGANIZATION_ID),
+				publisher: ref(ORGANIZATION_ID),
 			},
 			breadcrumbList(url, crumbs),
 			webSite(),

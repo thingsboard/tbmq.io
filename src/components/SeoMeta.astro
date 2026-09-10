@@ -1,5 +1,5 @@
 ---
-import { OG_FALLBACK, SITE_NAME } from '@root/consts';
+import { OG_FALLBACK, SITE_NAME, X_HANDLE } from '@root/consts';
 
 interface Props {
 	title: string;
@@ -54,7 +54,7 @@ const ogImageUrl = new URL(ogImage ?? OG_FALLBACK, Astro.url.origin).href;
 {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content="@thingsboard" />
+<meta name="twitter:site" content={X_HANDLE} />
 
 {jsonLd && (
 	<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
