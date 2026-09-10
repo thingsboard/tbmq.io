@@ -1,0 +1,249 @@
+import { Aside } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import { Products } from '~/models/site.models';
+
+TBMQ can publish an MQTT message on behalf of the broker itself, over REST. A backend service that already
+authenticates against the broker's REST API can push a message to subscribers without opening an MQTT connection.
+
+The message travels the same path as a PUBLISH received from a connected client — the incoming throughput quota, the
+retained message store, the publish queue, and delivery — so retained flags, MQTT 5 properties, and QoS behave exactly
+as they do for a normal publisher.
+
+<Aside type="caution">
+  This is an administrative API, not a substitute for an MQTT client. It requires a broker administrator token, it is
+  not subject to the publish authorization rules configured on
+  <DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials">client credentials</DocLink>, and a
+  successful response means the broker queue accepted the message — not that any client received it.
+</Aside>
+
+All examples below use `curl`. Replace `localhost:8083` with your server address if TBMQ is running remotely.
+
+## Authentication
+
+Obtain an access token by logging in:
+
+```bash
+curl --location --request POST 'http://localhost:8083/api/auth/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "username":"sysadmin@thingsboard.org",
+    "password":"sysadmin"
+}'
+```
+
+The response contains a `token` field. Export it for use in subsequent requests:
+
+```bash
+export ACCESS_TOKEN=PLACE_YOUR_TOKEN_HERE
+```
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Publishing is a write operation, so the account must hold the **Administrator**
+<DocLink product={props.product} path="security/rbac">role</DocLink>. A **Viewer** is rejected with
+`403 Forbidden`.
+</ShowFor>
+
+## Publish a message
+
+```bash
+curl --location --request POST 'http://localhost:8083/api/mqtt/publish' \
+--header "X-Authorization: Bearer $ACCESS_TOKEN" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "topic": "devices/a/commands",
+    "payload": "eyJjbWQiOiAicmVib290In0=",
+    "qos": 1
+}'
+```
+
+The payload is Base64 by default, so the request above publishes the bytes `{"cmd": "reboot"}`.
+
+A successful call returns the PUBACK reason code the broker would have sent to an MQTT publisher:
+
+```json
+{"reasonCode":0,"message":"Success"}
+```
+
+### Request fields
+
+| Field | Required | Default | Description |
+|---|---|---|---|
+| `topic` | yes | — | Topic name to publish to. See [Topic rules](#topic-rules). |
+| `payload` | yes | — | Message payload, in the form declared by `payloadEncoding`. |
+| `payloadEncoding` | no | `BASE64` | How to read `payload`. See [Payload encodings](#payload-encodings). |
+| `qos` | no | `0` | Quality of Service: `0`, `1`, or `2`. |
+| `retain` | no | `false` | Store the message as the retained message for the topic. |
+| `properties` | no | — | MQTT 5 PUBLISH properties. See [MQTT 5 properties](#mqtt-5-properties). |
+
+A `null` payload is rejected. To clear a retained message, publish an empty payload with `retain` set to `true`.
+
+## Payload encodings
+
+`payloadEncoding` decides how the broker turns the JSON `payload` field into message bytes.
+
+| Encoding | `payload` must be | Published bytes |
+|---|---|---|
+| `BASE64` | a string | the decoded bytes — use this for binary payloads |
+| `TEXT` | a string | its UTF-8 bytes |
+| `JSON` | any JSON value | its compact JSON text, UTF-8 encoded |
+
+`TEXT` is the convenient choice for a plain string:
+
+```bash
+curl --location --request POST 'http://localhost:8083/api/mqtt/publish' \
+--header "X-Authorization: Bearer $ACCESS_TOKEN" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "topic": "devices/a/commands",
+    "payload": "reboot",
+    "payloadEncoding": "TEXT"
+}'
+```
+
+`JSON` lets you embed a JSON document directly instead of escaping it into a string. The broker publishes its compact
+form, so the message below is delivered as `{"cmd":"reboot","delay":5}`:
+
+```bash
+curl --location --request POST 'http://localhost:8083/api/mqtt/publish' \
+--header "X-Authorization: Bearer $ACCESS_TOKEN" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "topic": "devices/a/commands",
+    "payload": {"cmd": "reboot", "delay": 5},
+    "payloadEncoding": "JSON"
+}'
+```
+
+Under `BASE64` and `TEXT` the payload has to be a JSON string — passing an object or an array is rejected with
+`400 Bad Request`. Use `JSON` to publish a JSON value.
+
+## MQTT 5 properties
+
+Every field of the optional `properties` object maps to the MQTT 5 PUBLISH property of the same name, and every one of
+them is optional.
+
+| Property | Type | Description |
+|---|---|---|
+| `payloadFormatIndicator` | `0` or `1` | `0` — unspecified bytes, `1` — UTF-8 character data |
+| `messageExpiryInterval` | seconds | How long the message stays valid |
+| `contentType` | string | MIME type of the payload |
+| `responseTopic` | string | Response topic for request/response messaging; must be a valid topic name |
+| `correlationData` | Base64 string | Correlation data, decoded before it is attached |
+| `userProperties` | object | Free-form key-value pairs |
+
+```bash
+curl --location --request POST 'http://localhost:8083/api/mqtt/publish' \
+--header "X-Authorization: Bearer $ACCESS_TOKEN" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "topic": "devices/a/commands",
+    "payload": {"cmd": "reboot"},
+    "payloadEncoding": "JSON",
+    "qos": 1,
+    "retain": false,
+    "properties": {
+        "payloadFormatIndicator": 1,
+        "messageExpiryInterval": 3600,
+        "contentType": "application/json",
+        "responseTopic": "devices/a/replies",
+        "correlationData": "cmVxLTQy",
+        "userProperties": {"source": "backend"}
+    }
+}'
+```
+
+These properties reach MQTT 5 subscribers as sent. MQTT 3.1.1 has no properties in its PUBLISH packet, so a
+subscriber on that version receives the payload without them.
+
+## Topic rules
+
+`topic` is a topic **name**, not a topic filter. The broker rejects a request with `400 Bad Request` when the topic:
+
+- contains a wildcard character — `#` or `+`;
+- starts with `$`;
+- is empty, or longer than 65535 bytes;
+- has more segments than `MQTT_TOPIC_MAX_SEGMENTS_COUNT` allows, when that limit is enabled (`0`, the default, disables it).
+
+The same rules apply to `responseTopic`.
+
+## Response codes
+
+| Code | Meaning |
+|---|---|
+| `200 OK` | Queued, and at least one subscription matched the topic. Body carries reason code `0`. |
+| `202 Accepted` | Queued, but no subscription matched. Body carries reason code `16`. A retained message is still stored. |
+| `400 Bad Request` | Invalid topic, payload, encoding, or MQTT property. |
+| `403 Forbidden` | The account is not allowed to publish. |
+| `411 Length Required` | The request carried no `Content-Length` header. Chunked bodies are not accepted. |
+| `413 Payload Too Large` | The request body exceeds the size guard. See [Configuration](#configuration). |
+| `415 Unsupported Media Type` | `Content-Type` is not `application/json`. |
+| `429 Too Many Requests` | Refused by the total incoming throughput quota. |
+| `503 Service Unavailable` | The publish queue rejected the message, or did not acknowledge it in time. |
+
+`202` is not an error. It is the REST equivalent of the `NO_MATCHING_SUBSCRIBERS` PUBACK reason code, and it is the
+normal answer when you publish to a topic nobody is subscribed to.
+
+<Aside type="caution">
+  A `503` caused by the acknowledgement timeout is ambiguous: the message may still have been published. Retrying it
+  can therefore deliver a duplicate.
+</Aside>
+
+## Configuration
+
+| Environment variable | Default | Description |
+|---|---|---|
+| `REST_PUBLISH_MAX_PAYLOAD_SIZE` | `65536` | Largest decoded message payload accepted, in bytes |
+| `REST_PUBLISH_TIMEOUT_MS` | `30000` | How long to wait for the publish queue to acknowledge before answering `503` |
+
+Two size checks apply. The request body is measured against its `Content-Length` before it is read, and is refused with
+`413` above twice `REST_PUBLISH_MAX_PAYLOAD_SIZE` plus 16 KB — headroom for Base64 growth, `\uXXXX` escaping, and the
+JSON envelope around the payload. The decoded payload is then measured against `REST_PUBLISH_MAX_PAYLOAD_SIZE` itself,
+and a payload over the limit is rejected with `400`.
+
+Keep `REST_PUBLISH_MAX_PAYLOAD_SIZE` below the Kafka producer's `max.request.size`, or an oversized message is accepted
+by the API and then fails on its way to the queue.
+
+## The publisher client ID
+
+Messages published through this API are stamped with the reserved client ID `tbmq_rest_api`. It identifies them as
+the sender in the broker logs and drives the MQTT 5 `noLocal` subscription option, so no MQTT client should connect
+using it.
+
+## Monitoring
+
+Calls that reach the publish path increment the `restPublishMsgs_total` counter, tagged by outcome — `accepted`,
+`quota_exceeded`, or `failed`. A request rejected earlier, by authorization or by request validation, does not reach
+it. The tag follows the publish queue's own answer, so a call that timed out with `503` is still counted `accepted`
+if the queue acknowledged it afterwards. See
+<DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="dropped-messages-from-rest-publishes" showFor="mqtt-broker-pe">Dropped messages</ConditionalHeading>
+
+A REST publish that is lost is recorded on the
+<DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page like any other
+reception-side loss, under the client ID `tbmq_rest_api`:
+
+- **Rate limits** — the total throughput quota refused the message, and the call returned `429`.
+- **Internal error** — the publish queue rejected the message, and the call returned `503`.
+- **No subscribers** — the message was queued and processed, but no subscriber topic filter matched it. The call
+  returned `202`.
+
+<ConditionalHeading level={3} id="audit-logs-for-rest-publishes" showFor="mqtt-broker-pe">Audit logs</ConditionalHeading>
+
+TBMQ can record every REST publish as an <DocLink product={props.product} path="security/audit-log">audit log</DocLink>
+entry, attributing it to the user who made the call. Because that writes one record per request, it is **disabled by
+default**. Enable it by setting the `MQTT message` entity type's logging level to `W`:
+
+```yaml
+audit-log:
+  logging-level:
+    mask:
+      "mqtt_message": "${AUDIT_LOG_MASK_MQTT_MESSAGE:OFF}"
+```
+
+Each entry is recorded with the **Published** action type, succeeds or fails with the call, and carries the topic, QoS,
+retain flag, payload encoding, and MQTT 5 properties. The payload itself is never stored.
+</ShowFor>

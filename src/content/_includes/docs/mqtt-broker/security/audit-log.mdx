@@ -54,6 +54,7 @@ TBMQ records audit log entries for the following entity types:
 | Kafka topic | Kafka topics used internally for message routing and storage |
 | MQTT auth provider | Authentication provider configurations (e.g., Basic, X.509, JWT, SCRAM, HTTP) |
 | MQTT client credentials | Credentials used to authenticate MQTT clients connecting to the broker |
+| MQTT message | Messages published through the <DocLink product={props.product} path="publish-message">REST publish API</DocLink>. Disabled by default |
 | MQTT session | Active and persistent MQTT client sessions |
 | OAuth2 client | OAuth 2.0 client configurations used for user authentication |
 | Retained message | MQTT retained messages stored by the broker |
@@ -88,6 +89,7 @@ Each audit log entry records one of the following action types:
 | Timeseries deleted | Time series data deleted |
 | Blocked | Client blocked |
 | Unblocked | Client unblocked |
+| Published | MQTT message published through the REST API |
 
 ## Configuration
 
@@ -139,11 +141,18 @@ audit-log:
       "ws_subscription": "${AUDIT_LOG_MASK_WS_SUBSCRIPTION:W}"
       "white_labeling": "${AUDIT_LOG_MASK_WHITE_LABELING:W}"
       "event": "${AUDIT_LOG_MASK_EVENT:W}"
+      "mqtt_message": "${AUDIT_LOG_MASK_MQTT_MESSAGE:OFF}"
 ```
 
-By default, all entity types are set to `W` — write operations only.
+Every entity type defaults to `W` — write operations only — except `mqtt_message`, which defaults to `OFF`.
 To disable logging for a specific entity type, set its value to `OFF`.
 To also log read operations, set the value to `RW`.
+
+`mqtt_message` is the exception because it writes one record per REST publish request, which a busy deployment
+may not want in the audit table. Set `AUDIT_LOG_MASK_MQTT_MESSAGE=W` when publishes through the
+<DocLink product={props.product} path="publish-message">REST publish API</DocLink> have to be traceable to a
+user. Entries record the topic, QoS, retain flag, payload encoding, and MQTT 5 properties of each call — never
+the payload.
 
 ### Data retention
 

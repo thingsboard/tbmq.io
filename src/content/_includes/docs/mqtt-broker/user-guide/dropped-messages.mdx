@@ -24,6 +24,8 @@ Each entry also has a direction:
 - **Reception** — the message was lost on its way into the broker. The entry is keyed by the **publishing** client.
 - **Delivery** — the message was lost on its way out to a subscriber. The entry is keyed by the **intended subscriber**.
 
+A message published through the <DocLink product={props.product} path="publish-message">REST publish API</DocLink> has no client session behind it, so its reception drops are keyed by the reserved client ID `tbmq_rest_api`.
+
 ## Dropped messages table
 
 Each row of the table shows:
