@@ -236,6 +236,7 @@ const tbmqReferenceItems = (prefix: string): SidebarConfig => [
 				label: 'Application shared subscriptions management',
 				slug: `${prefix}/application-shared-subscription`,
 			},
+			{ label: 'MQTT message publishing', slug: `${prefix}/mqtt-message-publishing` },
 		],
 	},
 ];
