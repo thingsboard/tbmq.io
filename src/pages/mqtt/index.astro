@@ -4,18 +4,11 @@ import ScrollReveal from '@components/ScrollReveal.astro';
 import TopicGrid from '@components/MqttLearn/TopicGrid.astro';
 import LearnCta from '@components/MqttLearn/LearnCta.astro';
 import { Products } from '@models/site.models';
-import { marketingJsonLd } from '~/util/structuredData';
 import { mqttTopics, mqttCategoryGroups } from '~/data/mqttLearn';
 
 const title = 'MQTT Guide — Learn the Protocol Behind Modern IoT';
 const description =
-	'Clear, practical guides to MQTT: what it is, QoS levels, MQTT 5.0, shared subscriptions, MQTT vs Kafka, and more — from the team behind the open-source TBMQ broker.';
-const jsonLd = marketingJsonLd({
-	path: '/mqtt/',
-	name: title,
-	description,
-	breadcrumb: 'Learn',
-});
+	'Practical guides to MQTT from the team behind the open-source TBMQ broker: what it is, QoS levels, MQTT 5.0, shared subscriptions and MQTT vs Kafka.';
 
 const guideCount = mqttTopics.length;
 const categoryCount = mqttCategoryGroups.length;
@@ -27,7 +20,7 @@ const categoryCount = mqttCategoryGroups.length;
 	description={description}
 	pageId="mqtt-learn"
 	gitHubPlatform={Products.TBMQ}
-	jsonLd={jsonLd}
+	breadcrumb="Learn"
 	ogImageAlt="MQTT Guide by TBMQ"
 >
 	<main class="mqtt-hub">
@@ -74,11 +67,16 @@ const categoryCount = mqttCategoryGroups.length;
 						connection to a production cluster.
 					</p>
 				</div>
+				{
+					/* The CE tree, like every other hub-to-docs link: the CE pages canonicalise
+				    onto their PE twins, so both trees consolidate to the same URL either way,
+				    and a reader arriving from a protocol guide has not chosen an edition yet. */
+				}
 				<ul class="mqtt-hub__docs-links">
-					<li><a href="/docs/pe/getting-started/">Getting started</a></li>
-					<li><a href="/docs/pe/installation/">Installation options</a></li>
-					<li><a href="/docs/pe/security/overview/">Security overview</a></li>
-					<li><a href="/docs/pe/user-guide/">User guides</a></li>
+					<li><a href="/docs/getting-started/">Getting started</a></li>
+					<li><a href="/docs/installation/">Installation options</a></li>
+					<li><a href="/docs/security/overview/">Security overview</a></li>
+					<li><a href="/docs/user-guide/">User guides</a></li>
 				</ul>
 			</div>
 		</section>
