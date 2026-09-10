@@ -173,10 +173,10 @@ them is optional.
 |---|---|---|
 | `payloadFormatIndicator` | `0` or `1` | `0` — unspecified bytes, `1` — UTF-8 character data |
 | `messageExpiryInterval` | seconds | How long the message stays valid |
-| `contentType` | string | MIME type of the payload |
+| `contentType` | string | MIME type of the payload; at most 65535 bytes of UTF-8 |
 | `responseTopic` | string | Response topic for request/response messaging; must be a valid topic name |
 | `correlationData` | Base64 string | Correlation data, decoded before it is attached |
-| `userProperties` | object | Free-form key-value pairs |
+| `userProperties` | object | Free-form key-value pairs. A `null` value is rejected with `400` |
 
 ```bash
 curl --location --request POST 'http://localhost:8083/api/mqtt/publish' \
@@ -255,9 +255,11 @@ finer-grained than the HTTP status — `31` above is a bad request parameter.
 | `REST_PUBLISH_TIMEOUT_MS` | `30000` | How long to wait for the publish queue to acknowledge before answering `503` |
 
 Two size checks apply. The request body is measured against its `Content-Length` before it is read, and is refused
-with `413` above a bound comfortably larger than `REST_PUBLISH_MAX_PAYLOAD_SIZE` — the extra room covers Base64
-growth, `\uXXXX` escaping, and the JSON envelope around the payload. The decoded payload is then measured against
-`REST_PUBLISH_MAX_PAYLOAD_SIZE` itself, and a payload over the limit is rejected with `400`.
+with `413` above six times `REST_PUBLISH_MAX_PAYLOAD_SIZE` plus 16 KB — room for the JSON envelope and for the worst
+case of a `\uXXXX`-escaped string, which is six bytes on the wire per payload byte. The bound is taken on the raw body,
+so whitespace in a pretty-printed `JSON` payload counts against it even though the broker publishes the compact form.
+The decoded payload is then measured against `REST_PUBLISH_MAX_PAYLOAD_SIZE` itself, and a payload over the limit is
+rejected with `400`.
 
 Keep `REST_PUBLISH_MAX_PAYLOAD_SIZE` below the Kafka producer's `max.request.size`, or an oversized message is
 accepted by the API and then fails on its way to the queue.
@@ -280,7 +282,7 @@ theirs.
 
 ## Monitoring
 
-Calls that reach the publish path increment the `restPublishMsgs_total` counter, tagged `accepted`, `quota_exceeded`,
+Calls that reach the publish path increment the `restPublishMsgs_total` counter, tagged `accepted`, `quotaExceeded`,
 or `failed`. A request rejected earlier, by authorization or by request validation, does not reach it.
 <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink> describes what each tag value
 counts.
