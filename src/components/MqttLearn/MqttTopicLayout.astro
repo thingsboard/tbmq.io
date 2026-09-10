@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { Products } from '@models/site.models';
-import { marketingJsonLd } from '~/util/structuredData';
-import { getTopic, topicHref } from '~/data/mqttLearn';
+import { getTopic } from '~/data/mqttLearn';
 import QuickAnswer from './QuickAnswer.astro';
 import TopicSeriesNav from './TopicSeriesNav.astro';
 import HowTbmqBlock from './HowTbmqBlock.astro';
@@ -17,14 +16,8 @@ interface Props {
 const { slug, faq = [] } = Astro.props;
 const topic = getTopic(slug);
 
-const title = topic.title;
+const title = topic.seoTitle ?? topic.title;
 const description = topic.seoDescription;
-const jsonLd = marketingJsonLd({
-	path: topicHref(slug),
-	name: title,
-	description,
-	breadcrumb: topic.navLabel,
-});
 ---
 
 <BaseLayout
@@ -33,7 +26,7 @@ const jsonLd = marketingJsonLd({
 	description={description}
 	pageId="mqtt-learn"
 	gitHubPlatform={Products.TBMQ}
-	jsonLd={jsonLd}
+	breadcrumb={topic.navLabel}
 	ogImageAlt={title}
 >
 	<main class="learn-page">

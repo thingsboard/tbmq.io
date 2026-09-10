@@ -4,8 +4,10 @@
 export interface MqttTopic {
 	/** URL slug → /mqtt/<slug>/ */
 	slug: string;
-	/** H1 + <title> (before the ' | TBMQ' suffix BaseLayout adds) */
+	/** H1, and the <title> (before the ' | TBMQ' suffix BaseLayout adds) unless `seoTitle` is set */
 	title: string;
+	/** Optional <title> that says more than the H1 should (e.g. a version tag); falls back to `title` */
+	seoTitle?: string;
 	/** Short label for the nav dropdown + hub card */
 	navLabel: string;
 	/** Optional nav-dropdown icon: path under /src/assets/images/landings/nav/ (inlined + tinted). */
@@ -152,7 +154,8 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-reason-codes',
 		readingMinutes: 8,
-		title: 'MQTT Reason Codes Explained (MQTT 5.0)',
+		title: 'MQTT Reason Codes',
+		seoTitle: 'MQTT Reason Codes Explained (MQTT 5.0)',
 		navLabel: 'Reason codes',
 		cardSummary: 'Single-byte status values attached to control packets to report outcomes.',
 		eyebrow: 'MQTT GUIDE',
@@ -168,7 +171,8 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-user-properties',
 		readingMinutes: 3,
-		title: 'MQTT User Properties Explained (MQTT 5.0)',
+		title: 'MQTT User Properties',
+		seoTitle: 'MQTT User Properties Explained (MQTT 5.0)',
 		navLabel: 'User properties',
 		cardSummary: 'Arbitrary key–value pairs that travel with a message, like custom headers.',
 		eyebrow: 'MQTT GUIDE',
@@ -184,7 +188,8 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-topic-alias',
 		readingMinutes: 2,
-		title: 'MQTT Topic Alias Explained (MQTT 5.0)',
+		title: 'MQTT Topic Alias',
+		seoTitle: 'MQTT Topic Alias Explained (MQTT 5.0)',
 		navLabel: 'Topic alias',
 		cardSummary: 'Replace a long topic name with a small integer for the life of a connection.',
 		eyebrow: 'MQTT GUIDE',
@@ -314,7 +319,8 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'mqtt-tls',
 		readingMinutes: 3,
-		title: 'MQTT over TLS/SSL (MQTTS) Explained',
+		title: 'MQTT over TLS/SSL',
+		seoTitle: 'MQTT over TLS/SSL (MQTTS) Explained',
 		navLabel: 'TLS / SSL',
 		cardSummary: 'Wrapping the MQTT connection in an encrypted channel on port 8883.',
 		eyebrow: 'MQTT GUIDE',
