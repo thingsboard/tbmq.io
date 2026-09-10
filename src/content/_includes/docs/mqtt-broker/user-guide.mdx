@@ -5,7 +5,14 @@ import DocLink from '@components/DocLink.astro';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
+The guides explain how TBMQ implements each part of MQTT and how to operate the broker day to day. They are grouped by
+task: securing the connection and authenticating clients, using the protocol's features, forwarding data to other
+systems, and administering the broker from its web UI.
+
 ## Security
+
+Encrypt MQTT and HTTP traffic, choose among the authentication providers TBMQ ships with, and restrict what each
+client may publish or subscribe to.
 
 <CardGrid>
   <ListCard headingLevel={3} title="Transport security" icon="tabler:shield-lock">
@@ -42,6 +49,9 @@ import { Products } from '~/models/site.models';
 
 ## MQTT features
 
+How the broker handles topics, QoS, persistent sessions, retained messages, shared subscriptions, Last Will and Keep
+Alive, and how MQTT over WebSocket works.
+
 <CardGrid>
   <ListCard headingLevel={3} title="MQTT fundamentals" icon="open-book">
     - <DocLink product={props.product} path="user-guide/mqtt-protocol" bold={false}>MQTT protocol</DocLink>
@@ -63,6 +73,8 @@ import { Products } from '~/models/site.models';
 
 ## Data integration
 
+Forward MQTT messages from TBMQ to ThingsBoard, HTTP endpoints, other MQTT brokers or Apache Kafka.
+
 <CardGrid>
   <Card headingLevel={3} title="ThingsBoard integration" icon="tabler:plug-connected">
     Connect TBMQ to a ThingsBoard instance to forward MQTT messages for device management, telemetry processing, and dashboards. For details, see <DocLink product={props.product} path="user-guide/integrations/how-to-connect-thingsboard-to-tbmq" bold={false}>Integration with ThingsBoard</DocLink>.
@@ -77,6 +89,9 @@ import { Products } from '~/models/site.models';
 </CardGrid>
 
 ## Administration & monitoring
+
+Watch broker health and traffic, inspect sessions and subscriptions, manage credentials, and tune delivery,
+backpressure and client blocking.
 
 <CardGrid>
   <ListCard headingLevel={3} title="Management console" icon="laptop">

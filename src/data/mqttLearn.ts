@@ -4,8 +4,10 @@
 export interface MqttTopic {
 	/** URL slug → /mqtt/<slug>/ */
 	slug: string;
-	/** H1 + <title> (before the ' | TBMQ' suffix BaseLayout adds) */
+	/** H1, and the <title> (before the ' | TBMQ' suffix BaseLayout adds) unless `seoTitle` is set */
 	title: string;
+	/** Optional <title> that says more than the H1 should (e.g. a version tag); falls back to `title` */
+	seoTitle?: string;
 	/** Short label for the nav dropdown + hub card */
 	navLabel: string;
 	/** Optional nav-dropdown icon: path under /src/assets/images/landings/nav/ (inlined + tinted). */
@@ -98,7 +100,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-5', 'shared-subscriptions', 'retained-messages', 'topics'],
 		status: 'full',
 		seoDescription:
-			'MQTT subscription options and identifiers explained — the No Local, Retain As Published and Retain Handling flags, the per-subscription maximum QoS, and the MQTT 5.0 subscription identifier the broker echoes back.',
+			'MQTT subscription options and identifiers explained — the No Local, Retain As Published and Retain Handling flags, maximum QoS, and MQTT 5.0 subscription IDs.',
 	},
 	{
 		slug: 'qos',
@@ -147,12 +149,13 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-5', 'persistent-session', 'retained-messages'],
 		status: 'full',
 		seoDescription:
-			'MQTT session expiry and message expiry intervals explained — how MQTT 5.0 controls how long a disconnected session is kept and how long a queued message stays valid.',
+			'MQTT session and message expiry intervals explained — how MQTT 5.0 controls how long a disconnected session is kept and how long a queued message stays valid.',
 	},
 	{
 		slug: 'mqtt-reason-codes',
 		readingMinutes: 8,
 		title: 'MQTT Reason Codes',
+		seoTitle: 'MQTT Reason Codes Explained (MQTT 5.0)',
 		navLabel: 'Reason codes',
 		cardSummary: 'Single-byte status values attached to control packets to report outcomes.',
 		eyebrow: 'MQTT GUIDE',
@@ -169,6 +172,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-user-properties',
 		readingMinutes: 3,
 		title: 'MQTT User Properties',
+		seoTitle: 'MQTT User Properties Explained (MQTT 5.0)',
 		navLabel: 'User properties',
 		cardSummary: 'Arbitrary key–value pairs that travel with a message, like custom headers.',
 		eyebrow: 'MQTT GUIDE',
@@ -179,12 +183,13 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-5', 'mqtt-payload-format', 'publish-subscribe', 'mqtt-request-response'],
 		status: 'full',
 		seoDescription:
-			'MQTT user properties explained — the MQTT 5.0 key–value metadata you attach to messages like HTTP headers, how they are carried end to end, and what to use them for.',
+			'MQTT user properties explained — the MQTT 5.0 key–value metadata you attach to messages like HTTP headers, how they travel end to end, and what to use them for.',
 	},
 	{
 		slug: 'mqtt-topic-alias',
 		readingMinutes: 2,
 		title: 'MQTT Topic Alias',
+		seoTitle: 'MQTT Topic Alias Explained (MQTT 5.0)',
 		navLabel: 'Topic alias',
 		cardSummary: 'Replace a long topic name with a small integer for the life of a connection.',
 		eyebrow: 'MQTT GUIDE',
@@ -195,12 +200,12 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-5', 'topics', 'mqtt-packets'],
 		status: 'full',
 		seoDescription:
-			'MQTT topic alias explained — how MQTT 5.0 replaces a long topic string with a short integer per connection to save bandwidth, and how Topic Alias Maximum is negotiated.',
+			'MQTT topic alias explained — how MQTT 5.0 replaces a long topic string with a short integer to save bandwidth, and how Topic Alias Maximum is negotiated.',
 	},
 	{
 		slug: 'mqtt-flow-control',
 		readingMinutes: 2,
-		title: 'MQTT Flow Control',
+		title: 'MQTT Flow Control and Receive Maximum',
 		navLabel: 'Flow control',
 		cardSummary: 'The Receive Maximum property caps in-flight QoS 1 and 2 messages per side.',
 		eyebrow: 'MQTT GUIDE',
@@ -211,7 +216,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-5', 'qos', 'persistent-session'],
 		status: 'full',
 		seoDescription:
-			'MQTT flow control explained — how the MQTT 5.0 Receive Maximum limits unacknowledged QoS 1 and 2 messages in flight so a fast sender cannot overwhelm a receiver.',
+			'MQTT flow control explained — how the MQTT 5.0 Receive Maximum caps unacknowledged QoS 1 and 2 messages in flight so a fast sender cannot overwhelm a receiver.',
 	},
 	{
 		slug: 'mqtt-payload-format',
@@ -227,7 +232,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-5', 'mqtt-user-properties', 'mqtt-request-response'],
 		status: 'full',
 		seoDescription:
-			'MQTT payload format indicator and content type explained — the MQTT 5.0 properties that flag a payload as UTF-8 or bytes and label it with a MIME-like content type.',
+			'MQTT payload format indicator and content type explained — the MQTT 5.0 properties that flag a payload as UTF-8 or bytes and give it a MIME-like content type.',
 	},
 	{
 		slug: 'persistent-session',
@@ -266,7 +271,7 @@ export const mqttTopics: MqttTopic[] = [
 	{
 		slug: 'retained-messages',
 		readingMinutes: 3,
-		title: 'MQTT Retained Messages',
+		title: 'MQTT Retained Messages Explained',
 		navLabel: 'Retained messages',
 		cardSummary: 'The last message on a topic, delivered immediately to any new subscriber.',
 		eyebrow: 'MQTT GUIDE',
@@ -315,6 +320,7 @@ export const mqttTopics: MqttTopic[] = [
 		slug: 'mqtt-tls',
 		readingMinutes: 3,
 		title: 'MQTT over TLS/SSL',
+		seoTitle: 'MQTT over TLS/SSL (MQTTS) Explained',
 		navLabel: 'TLS / SSL',
 		cardSummary: 'Wrapping the MQTT connection in an encrypted channel on port 8883.',
 		eyebrow: 'MQTT GUIDE',
@@ -325,12 +331,12 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['security', 'mqtt-client-certificates', 'mqtt-connection'],
 		status: 'full',
 		seoDescription:
-			'MQTT over TLS/SSL explained — how MQTTS encrypts the connection on port 8883, the TLS handshake, one-way vs mutual TLS, and why plaintext 1883 should not face the internet.',
+			'MQTT over TLS explained — how MQTTS encrypts port 8883 traffic, the TLS handshake, one-way vs mutual TLS, and why plaintext 1883 should not face the internet.',
 	},
 	{
 		slug: 'mqtt-authentication',
 		readingMinutes: 3,
-		title: 'MQTT Authentication',
+		title: 'MQTT Authentication Methods Explained',
 		navLabel: 'Authentication',
 		cardSummary: 'How the broker verifies a client’s identity: passwords, tokens, or certificates.',
 		eyebrow: 'MQTT GUIDE',
@@ -341,7 +347,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['security', 'mqtt-client-certificates', 'mqtt-authorization'],
 		status: 'full',
 		seoDescription:
-			'MQTT authentication explained — verifying clients with username/password, JWT tokens and SCRAM challenge-response, how the broker checks credentials on CONNECT, and how OAuth fits in.',
+			'MQTT authentication explained — verifying clients with username/password, JWT and SCRAM, how the broker checks credentials on CONNECT, and where OAuth fits in.',
 	},
 	{
 		slug: 'mqtt-client-certificates',
@@ -357,7 +363,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['security', 'mqtt-tls', 'mqtt-authentication'],
 		status: 'full',
 		seoDescription:
-			'MQTT client certificate authentication explained — how mutual TLS (mTLS) uses an X.509 client certificate to identify a client during the handshake, with no password sent.',
+			'MQTT client certificate authentication explained — how mutual TLS (mTLS) uses an X.509 certificate to identify a client in the handshake, with no password sent.',
 	},
 	{
 		slug: 'mqtt-authorization',
@@ -373,7 +379,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['security', 'mqtt-authentication', 'topics'],
 		status: 'full',
 		seoDescription:
-			'MQTT authorization and ACLs explained — how brokers restrict which topics an authenticated client may publish to or subscribe from, and why authentication alone is not enough.',
+			'MQTT authorization and ACLs explained — how brokers restrict which topics a client may publish or subscribe to, and why authentication alone is not enough.',
 	},
 	{
 		slug: 'mqtt-payload-encryption',
@@ -389,12 +395,12 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['security', 'mqtt-tls', 'mqtt-user-properties'],
 		status: 'full',
 		seoDescription:
-			'MQTT payload encryption explained — encrypting the message payload end to end so it stays private even from the broker, how it differs from TLS, and where it fits.',
+			'MQTT payload encryption explained — encrypting the payload end to end so it stays private even from the broker, how it differs from TLS, and where it fits.',
 	},
 	{
 		slug: 'websocket',
 		readingMinutes: 3,
-		title: 'MQTT over WebSocket',
+		title: 'MQTT over WebSocket Explained',
 		navLabel: 'MQTT over WebSocket',
 		cardSummary: 'Carrying MQTT inside a WebSocket so browsers can publish and subscribe.',
 		eyebrow: 'MQTT GUIDE',
@@ -454,7 +460,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['what-is-mqtt', 'topics', 'shared-subscriptions', 'mqtt-request-response'],
 		status: 'full',
 		seoDescription:
-			'MQTT publish/subscribe explained — how the pub/sub model decouples publishers and subscribers through topics, and how the PUBLISH, SUBSCRIBE and UNSUBSCRIBE operations work.',
+			'MQTT publish/subscribe explained — how the pub/sub model decouples publishers and subscribers through topics, and how PUBLISH, SUBSCRIBE and UNSUBSCRIBE work.',
 	},
 	{
 		slug: 'mqtt-connection',
@@ -502,7 +508,7 @@ export const mqttTopics: MqttTopic[] = [
 		related: ['mqtt-connection', 'qos', 'publish-subscribe'],
 		status: 'full',
 		seoDescription:
-			'MQTT packets explained — the control packet types (CONNECT, PUBLISH, SUBSCRIBE, PINGREQ, DISCONNECT, AUTH), the fixed and variable header structure, and the 2-byte minimum overhead.',
+			'MQTT packets explained — the packet types (CONNECT, PUBLISH, SUBSCRIBE, DISCONNECT, AUTH), the fixed and variable headers, and the 2-byte minimum overhead.',
 	},
 	{
 		slug: 'mqtt-request-response',

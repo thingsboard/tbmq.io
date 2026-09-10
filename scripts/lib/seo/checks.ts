@@ -2,6 +2,7 @@ import { PROD_ORIGIN } from '../../../src/consts.ts';
 import {
 	DESC_MAX,
 	DESC_MIN,
+	isIndexable,
 	THIN_WORDS,
 	TITLE_MAX,
 	TITLE_MIN,
@@ -12,6 +13,11 @@ import {
 
 function finding(check: string, severity: Severity, pathname: string, detail: string): Finding {
 	return { check, severity, pathname, detail };
+}
+
+/** True when the canonical names another URL, so this page is not the copy search engines index. */
+function canonicalisesElsewhere(page: PageFacts): boolean {
+	return page.canonical !== null && page.canonical !== `${PROD_ORIGIN}${page.pathname}`;
 }
 
 /** Groups pathnames by a page value, so duplicates can be reported once site-wide. */
@@ -27,7 +33,7 @@ function groupBy(pages: PageFacts[], value: (page: PageFacts) => string): Map<st
 
 export function checkMetadata(pages: PageFacts[]): Finding[] {
 	const findings: Finding[] = [];
-	const live = pages.filter((page) => !page.isRedirect);
+	const live = pages.filter(isIndexable);
 
 	for (const page of live) {
 		const at = page.pathname;
@@ -70,7 +76,12 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 		}
 	}
 
-	for (const [title, paths] of groupBy(live, (page) => page.title)) {
+	// Duplicates are only compared across the pages search engines actually index: a
+	// CE page that canonicalises onto its PE twin is meant to carry the same text, and
+	// the 86 pairs doing so would otherwise bury every genuine collision.
+	const indexed = live.filter((page) => !canonicalisesElsewhere(page));
+
+	for (const [title, paths] of groupBy(indexed, (page) => page.title)) {
 		if (paths.length > 1) {
 			findings.push(
 				finding(
@@ -82,7 +93,7 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 			);
 		}
 	}
-	for (const [, paths] of groupBy(live, (page) => page.description)) {
+	for (const [, paths] of groupBy(indexed, (page) => page.description)) {
 		if (paths.length > 1) {
 			findings.push(
 				finding(
@@ -100,12 +111,15 @@ export function checkMetadata(pages: PageFacts[]): Finding[] {
 
 export function checkLinkGraph(pages: PageFacts[]): Finding[] {
 	const findings: Finding[] = [];
-	const live = pages.filter((page) => !page.isRedirect);
+	const live = pages.filter(isIndexable);
 	const known = new Set(live.map((page) => page.pathname));
+	// A noindex page is still crawled and its links followed, so it keeps feeding
+	// inbound counts even though it gets no findings of its own.
+	const linking = pages.filter((page) => !page.isRedirect);
 
 	const inbound = new Map<string, number>();
 	for (const page of live) inbound.set(page.pathname, 0);
-	for (const page of live) {
+	for (const page of linking) {
 		for (const target of page.outboundPathnames) {
 			if (known.has(target) && target !== page.pathname) inbound.set(target, (inbound.get(target) ?? 0) + 1);
 		}
@@ -137,11 +151,41 @@ export function checkLinkGraph(pages: PageFacts[]): Finding[] {
 }
 
 /**
+ * The sitemap must list exactly the indexable, self-canonical pages. A listed
+ * page that is noindex, a redirect stub or canonicalised elsewhere contradicts
+ * itself; an indexable page left out is invisible to a crawler that starts from
+ * the sitemap. Orphan pages inherited from another site show up as the former.
+ *
+ * `sitemap-noindex` covers redirect stubs too — the id is the one the backlog and
+ * the weekly diffs already use, so the detail text names which of the two it is.
+ */
+export function checkSitemap(pages: PageFacts[]): Finding[] {
+	const findings: Finding[] = [];
+	for (const page of pages) {
+		const at = page.pathname;
+		const belongsInSitemap = isIndexable(page) && !canonicalisesElsewhere(page);
+		if (page.inSitemap === belongsInSitemap) continue;
+
+		if (!page.inSitemap) {
+			findings.push(finding('sitemap-missing', 'medium', at, 'indexable self-canonical page missing from the sitemap'));
+		} else if (isIndexable(page)) {
+			findings.push(
+				finding('sitemap-non-canonical', 'high', at, `listed in the sitemap, canonical points at ${page.canonical}`)
+			);
+		} else {
+			const what = page.isRedirect ? 'redirect stub' : 'noindex page';
+			findings.push(finding('sitemap-noindex', 'high', at, `${what} listed in the sitemap`));
+		}
+	}
+	return findings;
+}
+
+/**
  * The audit's single entry point. Sorting here is what makes two runs over one
  * `dist/` byte-identical, which is the property the weekly diff depends on.
  */
 export function runChecks(pages: PageFacts[]): Finding[] {
-	return [...checkMetadata(pages), ...checkLinkGraph(pages)].sort(
+	return [...checkMetadata(pages), ...checkLinkGraph(pages), ...checkSitemap(pages)].sort(
 		(a, b) => a.check.localeCompare(b.check) || a.pathname.localeCompare(b.pathname) || a.detail.localeCompare(b.detail)
 	);
 }

@@ -16,12 +16,12 @@ export const productVersions: Record<Products, { label: string; prefix: string; 
 	[Products.TBMQ]: {
 		label: 'TBMQ Broker',
 		prefix: '',
-		titleName: 'ThingsBoard TBMQ',
+		titleName: 'TBMQ',
 	},
 	[Products.TBMQ_PE]: {
 		label: 'TBMQ PE Broker',
 		prefix: 'pe/',
-		titleName: 'ThingsBoard TBMQ PE',
+		titleName: 'TBMQ PE',
 	},
 };
 

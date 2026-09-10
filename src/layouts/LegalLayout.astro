@@ -4,18 +4,25 @@ import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
 import { formatMarketingTitle } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
+import { marketingJsonLd } from '~/util/structuredData';
 
 interface Props {
 	title: string;
 	description?: string;
 	ogImage?: string;
 	noIndex?: boolean;
+	/** Breadcrumb leaf label; emits the default WebPage + BreadcrumbList graph, as on BaseLayout. */
+	breadcrumb?: string;
+	jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, ogImage: ogImageProp, noIndex = false } = Astro.props;
+const { title, description, ogImage: ogImageProp, noIndex = false, breadcrumb, jsonLd } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const pageTitle = formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
+const structuredData =
+	jsonLd ??
+	(breadcrumb ? marketingJsonLd({ path: Astro.url.pathname, name: title, description, breadcrumb }) : undefined);
 ---
 
 <!doctype html>
@@ -30,6 +37,7 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 			canonicalUrl={canonicalUrl}
 			ogImage={ogImage}
 			noIndex={noIndex}
+			jsonLd={structuredData}
 		/>
 		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
 	</head>

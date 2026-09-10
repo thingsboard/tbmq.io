@@ -1,0 +1,36 @@
+---
+/**
+ * The legal pages, linked from both footers. Colour comes from the host via
+ * `--legal-color` / `--legal-hover-color`, the way `SocialNetworks` reads `--sn-color`.
+ */
+const legalLinks = [
+	{ href: '/product/privacy-policy/', label: 'Privacy Policy' },
+	{ href: '/product/terms-of-use/', label: 'Terms of Use' },
+	{ href: '/cookie-policy/', label: 'Cookie Policy' },
+];
+---
+
+<nav class="legal" aria-label="Legal">
+	{legalLinks.map(({ href, label }) => <a href={href}>{label}</a>)}
+</nav>
+
+<style>
+	.legal {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 1.25rem;
+	}
+
+	.legal a {
+		font-size: 0.875rem;
+		color: var(--legal-color, #8e8292);
+		text-decoration: none;
+		white-space: nowrap;
+		transition: color 300ms;
+	}
+
+	.legal a:hover {
+		color: var(--legal-hover-color, #fff);
+		text-decoration: underline;
+	}
+</style>

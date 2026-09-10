@@ -2,14 +2,13 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductSection from '../../components/Installations/ProductSection.astro';
 import { mqttBrokerProduct } from '~/data/installations';
+
+const title = 'Installation Options: Docker, Kubernetes and Cloud';
+const description =
+	'Compare the ways to install TBMQ: the public live demo, Docker on Linux, macOS and Windows, Docker Compose and Kubernetes clusters, and AWS, Azure or GCP.';
 ---
 
-<BaseLayout
-	forceLightTheme
-	title="TBMQ Installation"
-	description="Choose the best TBMQ installation method for your IoT project."
-	pageId="installations"
->
+<BaseLayout forceLightTheme title={title} description={description} pageId="installations" breadcrumb="Installations">
 	<div class="install-content">
 		<ProductSection data={mqttBrokerProduct} />
 	</div>

@@ -7,17 +7,10 @@ import BenchmarkTrust from '@components/Performance/BenchmarkTrust.astro';
 import BenchmarkCta from '@components/Performance/BenchmarkCta.astro';
 import ScrollReveal from '@components/ScrollReveal.astro';
 import { Products } from '@models/site.models';
-import { marketingJsonLd } from '~/util/structuredData';
 
 const title = 'MQTT Broker Benchmark – 100M Connections, 3M+ msg/sec';
 const description =
 	'TBMQ MQTT broker benchmarks: 100M concurrent connections at 6M msg/sec, 3M+ messages/sec on a single node, and 1M msg/sec point-to-point — fully reproducible.';
-const jsonLd = marketingJsonLd({
-	path: '/performance/',
-	name: title,
-	description,
-	breadcrumb: 'Performance',
-});
 ---
 
 <BaseLayout
@@ -26,7 +19,7 @@ const jsonLd = marketingJsonLd({
 	description={description}
 	pageId="performance"
 	gitHubPlatform={Products.TBMQ}
-	jsonLd={jsonLd}
+	breadcrumb="Performance"
 	ogImageAlt="TBMQ MQTT broker performance benchmarks at 100M connections and 3M+ msg/sec"
 	openContentLinksInNewTab
 >

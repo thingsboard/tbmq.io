@@ -8,6 +8,7 @@ import { Products } from '~/models/site.models';
 import { TBMQ_BRANCH } from '~/data/versions';
 import Tabs from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
+import LearnLink from '@components/LearnLink.astro';
 
 export const linuxInstall = `wget https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/msa/tbmq/configs/tbmq-install-and-run.sh &&
 sudo chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
@@ -25,6 +26,7 @@ export const windowsPeInstall = `Invoke-WebRequest -Uri "https://raw.githubuserc
 
 By the end of this guide you will have a broker to talk to, a set of MQTT client credentials, and a message
 published by one client and received by another — with the client session visible in the TBMQ UI.
+If the protocol itself is new to you, start with <LearnLink slug="publish-subscribe">how MQTT publish/subscribe works</LearnLink>.
 
 Start by choosing where the broker runs:
 
