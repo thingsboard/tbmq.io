@@ -40,8 +40,6 @@ The tables below list the names as Prometheus scrapes them. TBMQ's source instru
 - Counters gain a `_total` suffix — the meter `droppedMsgs` scrapes as `droppedMsgs_total`.
 - Timers expand into four series: `_seconds` (carrying a `quantile` label), `_seconds_count`, `_seconds_sum`, and `_seconds_max`. Which quantiles appear on the `_seconds` series is controlled by `STATS_TIMER_PERCENTILES`, default `0.5`.
 - Gauges keep their name unchanged.
-- Labels come in two shapes, and the shape decides whether a series can be summed. The processor and consumer families carry a `statsName` label that names *which counter* of the family you are reading — `deviceProcessor_total` is one metric name covering eight counters, and a query selects one with `{statsName="failedMsgs"}`. Those values **overlap**: `totalMsgs` already includes `successfulMsgs` and `failedMsgs`, and the `*Iterations` values count poll batches rather than messages. Always select a single `statsName`; `sum()` across them double-counts.
-- Outcome counters carry a purpose-named label instead — `result` on `restPublishMsgs_total`, `cause` on `throughputQuotaDegraded_total`, `state` on `integration_stats_counter_total`. Each event lands under exactly one value, so `sum()` over the label is the total and `sum by (label)` is a breakdown.
 
 ## Ingest pipeline
 
