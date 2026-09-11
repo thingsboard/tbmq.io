@@ -390,9 +390,10 @@ const faq: FaqItem[] = [
 			the filters explicitly and check them before enabling the second leg.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:pin" title="Decide what happens to retained messages">
-			A bridge carries the retained messages published from the moment it comes up, not the ones already sitting in the
-			broker. Plan to re-publish the retained messages that still matter against TBMQ rather than assuming the bridge
-			reproduces them.
+			Mosquitto&apos;s bridge does forward the retained messages it already holds when it connects, but only for the
+			topics in its outbound filters, and TBMQ&apos;s integration does not replay TBMQ&apos;s retained set back. Check
+			the retained topics that matter on both brokers after each leg comes up, and re-publish the ones that did not
+			cross.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:list-check" title="Verify each batch before the next">
 			After repointing a batch, confirm in TBMQ's <a href="/docs/user-guide/ui/sessions/">sessions view</a> that every client
