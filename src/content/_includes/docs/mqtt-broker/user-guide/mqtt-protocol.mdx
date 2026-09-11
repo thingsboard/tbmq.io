@@ -36,7 +36,7 @@ TBMQ enforces — and lets you tune — a number of protocol-level behaviors. Ea
 |---|---|---|
 | Max keep-alive (caps the value MQTT 5 clients request) | 600 s | `MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC` |
 | Topic aliases per connection (`0` disables the feature) | 10 | `MQTT_TOPIC_ALIAS_MAX` |
-| Max topic segments (`0` = unlimited) | 0 | `MQTT_TOPIC_MAX_SEGMENTS_COUNT` |
+| Max topic segments, i.e. slash-separated levels (`0` = unlimited) | 0 | `MQTT_TOPIC_MAX_SEGMENTS_COUNT` |
 | Allow subscribing to the root `#` wildcard | enabled | `MQTT_SUBSCRIPTION_ROOT_MULTI_LVL_WILDCARD` |
 | Flow control / Receive Maximum | enabled | `MQTT_FLOW_CONTROL_ENABLED` |
 | Receive Maximum applied to MQTT 3.x clients | 65535 | `MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX` |

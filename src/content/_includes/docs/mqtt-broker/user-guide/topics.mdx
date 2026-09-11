@@ -91,11 +91,11 @@ In this case, TBMQ delivers the message **once**, using the subscription with th
 
 ## Configuring maximum topic segments
 
-You can define the maximum number of forward slashes (`/`) allowed in a topic using the `MQTT_TOPIC_MAX_SEGMENTS_COUNT` environment variable.
+You can define the maximum number of segments (levels) allowed in a topic name or topic filter using the `MQTT_TOPIC_MAX_SEGMENTS_COUNT` environment variable. Segments are separated by forward slashes (`/`), so a topic with N slashes has N + 1 segments. Leading, trailing, and adjacent slashes produce empty segments, which count toward the limit.
 
 By default, this is set to `0` (disabled — no restriction).
 
-**Example:** Setting `MQTT_TOPIC_MAX_SEGMENTS_COUNT=2` causes the broker to reject topics with more than two slashes. A topic like `sensors/floor1/room1/temperature` (three slashes) would be rejected.
+**Example:** Setting `MQTT_TOPIC_MAX_SEGMENTS_COUNT=3` causes the broker to reject topics with more than three segments. A topic like `sensors/floor1/temperature` (three segments) is accepted, while `sensors/floor1/room1/temperature` (four segments) is rejected.
 
 <Aside type="note">
   Excessive topic depth increases the complexity of matching and routing, which can lead to higher latency and resource consumption.
