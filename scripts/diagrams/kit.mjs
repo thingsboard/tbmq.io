@@ -42,7 +42,9 @@ export const THEMES = {
 		xnode: '#e08a1e',
 		legendBg: '#ffffff',
 		kinds: {
-			core: { stroke: '#1f8b4d', fill: '#e7f7ee', ink: '#166c37' },
+			// #1a7f46, not #1f8b4d: the accessible-green rebrand restroked every committed light SVG to
+			// this value but left the token behind, so a plain `pnpm diagrams:arch` used to revert 12 of them.
+			core: { stroke: '#1a7f46', fill: '#e7f7ee', ink: '#166c37' },
 			kafka: { stroke: '#3d50f5', fill: '#eaecfe', ink: '#2c39bd' },
 			redis: { stroke: '#d29a1f', fill: '#fbf0d4', ink: '#8a6410' },
 			pg: { stroke: '#0f9e91', fill: '#dbf1ee', ink: '#046a60' },

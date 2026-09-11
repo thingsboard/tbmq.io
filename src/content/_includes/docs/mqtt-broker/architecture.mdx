@@ -2,6 +2,9 @@ import { Aside, CardGrid } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import AttributeCard from '~/components/AttributeCard.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import { Products } from '~/models/site.models';
 
 TBMQ is designed with four core attributes:
 
@@ -353,7 +356,12 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 ]} />
 
 <details>
-  <summary>Full topic reference — all 21 topics, with scope and defaults</summary>
+  <ShowFor product={props.product} show={[Products.TBMQ]}>
+    <summary>Full topic reference — all 21 topics, with scope and defaults</summary>
+  </ShowFor>
+  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+    <summary>Full topic reference — all 22 topics, with scope and defaults</summary>
+  </ShowFor>
 
 | Topic | Scope | Description |
 |---|---|---|
@@ -378,6 +386,15 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 | `tbmq.ie.uplink` | global | Integration lifecycle, statistics, and error events, executor → broker |
 | `tbmq.ie.uplink.notifications.$SERVICE_ID` | per-node | Validation responses routed back to the node that asked |
 | `tbmq.ie.event.$INTEGRATION_ID` | per-integration | MQTT **client** lifecycle events (connected, disconnected, subscribed, unsubscribed, authentication/authorization failed, connection failed) for the integrations configured to receive them, broker → executor. One single-partition topic per integration, created by the executor |
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+One more topic exists in TBMQ PE only, for the inbound direction:
+
+| Topic | Scope | Description |
+|---|---|---|
+| `tbmq.ie.source` | global | Publishes sourced by an inbound integration, executor → broker. 6 partitions by default, keyed `$INTEGRATION_ID:$SOURCE_PARTITION`. Shared by every source integration rather than one topic per integration, and deliberately separate from `tbmq.ie.uplink` so a busy source cannot delay control traffic |
+
+</ShowFor>
 
 </details>
 
@@ -575,9 +592,19 @@ See <DocLink product={props.product} path="concepts/clustering">Clustering</DocL
 
 ## Integration Executor
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
 broker to external systems without adding load to the message path. It consumes messages from Kafka and pushes them to
 the configured targets, supporting **HTTP**, **MQTT**, and **Kafka** integration types.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
+broker to external systems without adding load to the message path. Most of its work is outbound: it consumes messages
+from Kafka and pushes them to the configured targets, supporting **HTTP**, **MQTT**, **Kafka**, and **PostgreSQL**
+integration types. The **Kafka source** type runs the other way — it consumes an external Kafka topic and feeds the
+broker instead; see [Source integrations](#source-integrations) below.
+</ShowFor>
 
 Because it is deployed and scaled independently of the broker, a slow or failing external endpoint never back-pressures
 MQTT traffic, and integration throughput can be scaled by running more executor instances. The unit of distribution is
@@ -610,9 +637,33 @@ so they never hold up a client's connection.
   },
 ]} />
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="source-integrations" showFor="mqtt-broker-pe">Source integrations</ConditionalHeading>
+
+A **source** integration inverts the whole exchange. Nothing inside the broker triggers it: it polls its external
+system on a thread of its own inside the executor, so no `tbmq.msg.ie.$INTEGRATION_ID` and no
+`tbmq.ie.event.$INTEGRATION_ID` topic is ever created for it. Every record it reads is produced to one shared data
+topic, `tbmq.ie.source`, keyed by integration and source partition; a consumer on each broker node reads that topic,
+revalidates the record, charges the licensed incoming throughput quota, and injects it into the publish pipeline as a
+publish from the client ID `ie-source-<integrationId>` — from there it is an ordinary message on `tbmq.msg.all`.
+
+Keeping the sourced data off `tbmq.ie.uplink` is deliberate: the uplink carries lifecycle, statistics and error events
+that a busy source must not be able to delay. The <DocLink product={props.product} path="integrations/kafka-source">Kafka
+source integration</DocLink> is the only type of this kind today.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 Integrations are available in both editions. See <DocLink product={props.product} path="integrations">Integrations</DocLink>
 for the supported types and <DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink>
 for deployment and tuning.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Integrations are available in both editions, though the PostgreSQL and Kafka source types are Professional Edition only.
+See <DocLink product={props.product} path="integrations">Integrations</DocLink> for the supported types and
+<DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink> for
+deployment and tuning.
+</ShowFor>
 
 ## Programming languages
 

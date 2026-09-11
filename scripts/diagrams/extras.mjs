@@ -354,9 +354,33 @@ export function subscriptionTrie(k) {
 // =============================================================================
 // N4 — Kafka topics map
 // =============================================================================
-export function kafkaTopicsMap(k) {
+/**
+ * @param {object} [spec]
+ * @param {boolean} [spec.source] Include the PE-only `tbmq.ie.source` data topic and list the PE
+ *   set of downlink topics. The IE group grows by one row, so its box, the two captions and the
+ *   canvas height all follow the row count rather than being hand-tuned per variant.
+ */
+export function kafkaTopicsMap(k, spec = {}) {
+	const ieRows = spec.source
+		? [
+				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
+				['tbmq.ie.downlink.{http,kafka,kafka_source,mqtt,postgresql}', 'per-type', 'downlink config · compacted'],
+				['tbmq.ie.source', 'global', 'sourced publishes → broker'],
+				['tbmq.ie.uplink', 'global', 'events → broker'],
+				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
+				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
+			]
+		: [
+				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
+				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
+				['tbmq.ie.uplink', 'global', 'events → broker'],
+				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
+				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
+			];
+	const ieHeight = 250 + (ieRows.length - 5) * 44;
+	const grow = ieHeight - 250;
 	const W = 1280,
-		H = 970;
+		H = 970 + grow;
 	const P = [];
 	const groups = [
 		{
@@ -419,16 +443,10 @@ export function kafkaTopicsMap(k) {
 			x: 40,
 			y: 624,
 			w: 1200,
-			h: 250,
+			h: ieHeight,
 			kind: 'ie',
 			label: 'Integration Executor',
-			rows: [
-				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
-				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
-				['tbmq.ie.uplink', 'global', 'events → broker'],
-				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
-				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
-			],
+			rows: ieRows,
 		},
 	];
 
@@ -459,7 +477,7 @@ export function kafkaTopicsMap(k) {
 		cap(
 			k,
 			W,
-			906,
+			906 + grow,
 			// Names every scope tag used above rather than only three of them, and stays
 			// short enough to keep the caption clear of the canvas edges.
 			'Global topics are shared by all nodes (consumer groups rebalance across them); per-node, per-client, per-filter and per-integration topics each name their single owner in the suffix.'
@@ -469,7 +487,7 @@ export function kafkaTopicsMap(k) {
 		cap(
 			k,
 			W,
-			936,
+			936 + grow,
 			'All topic names carry an optional queue.kafka.kafka-prefix (empty by default). Client IDs / topic filters in suffixes are sanitised or SHA-256 hashed.',
 			{ size: 12 }
 		)
