@@ -26,6 +26,8 @@ Each entry also has a direction:
 
 A message published through the <DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink> has no client session behind it, so its reception drops are keyed by the client ID `tbmq_rest_api`. Nothing stops an MQTT client from connecting under that ID, so its own drops would be listed alongside them.
 
+A message injected by a <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> has no session either, so its reception drops are keyed by `ie-source-` followed by the integration's UUID. Those entries are always **Reception**, and the reason is **Rate limits** when the licensed throughput quota refused the publish or **Internal error** when the broker could not queue it. The same drops are also reported on the integration itself as error events, rate-limited to one a minute.
+
 ## Dropped messages table
 
 Each row of the table shows:

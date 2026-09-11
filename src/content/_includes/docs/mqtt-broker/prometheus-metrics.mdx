@@ -243,7 +243,23 @@ TBMQ batches writes to the relational database — events, timeseries, and the u
 | `integrationProcessor_total` | counter | `integrationId`, `statsName` = `totalMsgs`, `successfulMsgs`, `tmpTimeout`, `tmpFailed`, `timeoutMsgs`, `failedMsgs`, `successfulIterations`, `failedIterations` |
 | `integrationEventProcessor_total` | counter | `integrationId`, same eight `statsName` values |
 
-`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` reports integration lifecycle and uplink-message activity: `name` is *which* metric is being reported — `start`, `stop`, or `msgUplink` — not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`. `integration_stats_gauge` only ever carries `name="start"`: it reports the current count of integrations of each `type` that are running (`state="success"`) versus failed (`state="failed"`), not a per-event start/stop/uplink breakdown.
+`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` reports integration lifecycle and message activity: `name` is *which* metric is being reported — not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`. `integration_stats_gauge` only ever carries `name="start"`: it reports the current count of integrations of each `type` that are running (`state="success"`) versus failed (`state="failed"`), not a per-event breakdown.
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+Observed `name` values on `integration_stats_counter_total` are `start`, `stop` and `msgUplink`.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Observed `name` values on `integration_stats_counter_total` are `start`, `stop`, `msgUplink` and `msgDownlink`. Direction is from the Integration Executor's point of view: an outbound integration counts every delivery to its external system as `msgUplink`, and a <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> integration counts every record it consumes as `msgDownlink` — so `type="KAFKA_SOURCE"` appears only under `msgDownlink`, and the other types only under `msgUplink`.
+
+One more series belongs to the same family:
+
+| Series | Type | Labels |
+|---|---|---|
+| `ie_source_published_total` | counter | `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs` |
+
+`ie_source_published_total` is the executor-side producer for `tbmq.ie.source`, the topic that carries sourced publishes into the broker — the inbound counterpart of `ie_uplink_published_total`. It is registered on the Integration Executor whether or not any source integration exists, so a flat zero is the normal reading on a deployment with none.
+</ShowFor>
 
 <Aside type="note">
   This family is gated by `stats.ie.enabled`, which defaults to `true` on the integration executor but is **not defined in the broker configuration**. On a broker node these series are absent unless `STATS_IE_ENABLED` is set explicitly. To scrape them, add the Integration Executor as its own Prometheus target — it serves the same `/actuator/prometheus` path on its own HTTP port (`HTTP_BIND_PORT`, default `8082`), separate from the broker nodes in the example above.
@@ -329,6 +345,10 @@ Upgrading from 2.3 renames a handful of series and reshapes a couple of label se
 | `clientSubscriptionsConsumer_total{statsName="totalSubscriptions"\|"acceptedSubscriptions"\|"ignoredSubscriptions"}` | `clientSubscriptionsConsumer_total{statsName="totalRecords"\|"acceptedRecords"\|"ignoredRecords"}` |
 | `integration_stats_counter_total{name="msgDownlink"}` | Removed — the series was never emitted |
 | `processedBytes` historical key | Removed — was never incremented |
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The `msgDownlink` row describes the 2.3 → 2.4 upgrade only. Since **2.4.1** the name is emitted again, with a meaning it never had before: it counts records a <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> integration consumed from its external system. A 2.3 dashboard panel reading it is still wrong — it was measuring nothing then — but the series is no longer absent.
+</ShowFor>
 
 <Aside type="caution">
   The `clientSubscriptions` → `subscriptions` row is the one change where renaming the selector in a query isn't enough: the quantity itself changed. A 2.3 dashboard reading `clientSubscriptions` was showing *how many clients have at least one subscription*; pointing that same panel at `subscriptions` after the upgrade shows *the total number of subscriptions* instead, which is equal or higher for the same fleet — often much higher, wherever clients typically hold more than one subscription each.

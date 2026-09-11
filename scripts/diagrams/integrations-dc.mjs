@@ -853,6 +853,123 @@ export const postgreSqlIntegration = (kit) =>
 	});
 
 // =============================================================================
+// 30 — The inbound direction: an external Kafka topic feeding MQTT subscribers
+// =============================================================================
+/**
+ * The one diagram whose flow runs the other way. `integrationType` draws
+ * devices → broker → executor → target; a source integration reverses every
+ * arrow, so the cards are laid out as their own row rather than squeezed into
+ * that spec.
+ */
+export function kafkaSourceIntegration(kit) {
+	const T = themeOf(kit);
+	const k = makeDcKit(T);
+	const { text, rr, arrow, groupLabel, chipLabel, legend, wrap, frame } = k;
+	const W = 1320;
+	const H = 480;
+	const P = [];
+
+	P.push(rr(355, 170, 290, 140, 14, { stroke: T.dashTeal, sw: 1, dash: '5 5' }));
+	P.push(arrow('M274,240 H351', T.slateLine));
+	P.push(arrow('M649,240 H746', T.tealLine));
+	P.push(arrow('M934,240 H1016', T.blueLine));
+
+	P.push(
+		text(W / 2, cyOf(64, 22, 1.35), 'Kafka source integration', {
+			size: 22,
+			weight: 500,
+			fill: T.txt,
+			anchor: 'middle',
+		})
+	);
+	P.push(groupLabel(373, 182, 'TBMQ Integration Executor'));
+
+	P.push(
+		iconRow(k, {
+			x: 40,
+			y: 200,
+			w: 230,
+			h: 80,
+			border: T.slate,
+			tileBg: T.slateTile,
+			ico: 'kafka',
+			icoColor: T.slateIco,
+			icoSize: 20,
+			label: 'Kafka cluster',
+			size: 16,
+		})
+	);
+	P.push(
+		iconRow(k, {
+			x: 375,
+			y: 208,
+			w: 250,
+			h: 64,
+			border: T.teal,
+			tileBg: T.tealTile,
+			ico: 'login',
+			icoColor: T.tealIco,
+			icoSize: 20,
+			label: 'Kafka source integration',
+			size: 15,
+		})
+	);
+	P.push(
+		iconRow(k, {
+			x: 750,
+			y: 200,
+			w: 180,
+			h: 80,
+			border: T.blue,
+			tileBg: T.blueTile,
+			ico: 'hub',
+			icoColor: T.blueIco,
+			icoSize: 20,
+			label: 'TBMQ',
+			size: 16,
+		})
+	);
+	P.push(
+		iconRow(k, {
+			x: 1020,
+			y: 200,
+			w: 250,
+			h: 80,
+			border: T.violet,
+			tileBg: T.violetTile,
+			ico: 'chip',
+			icoColor: T.violetIco,
+			icoSize: 20,
+			label: 'MQTT subscribers',
+			size: 16,
+		})
+	);
+
+	P.push(chipLabel(312, cyOf(206, 12.5), 'TCP(TLS)'));
+	P.push(chipLabel(697, cyOf(206, 12.5), 'tbmq.ie.source'));
+	P.push(chipLabel(975, cyOf(206, 12.5), 'MQTT(S)'));
+
+	P.push(
+		legend(W, 396, [
+			[T.slateLine, 'External Kafka cluster'],
+			[T.teal, 'Integration Executor'],
+			[T.blue, 'Broker'],
+			[T.violet, 'Subscribers'],
+		])
+	);
+	wrap(
+		'The executor consumes an external Kafka topic and injects every record into the broker as an MQTT ' +
+			'publish, which TBMQ then delivers to the clients subscribed to the resolved topic.',
+		14,
+		1020
+	).forEach((line, i) => {
+		P.push(text(W / 2, cyOf(432, 14, 1.35) + i * 19, line, { size: 14, fill: T.faint, anchor: 'middle' }));
+	});
+
+	return frame(W, H, P);
+}
+
+// =============================================================================
 // 28 — Two settings decide the outgoing body: content type, then envelope
 // =============================================================================
 export function payloadEncoding(kit) {

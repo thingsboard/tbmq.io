@@ -1,0 +1,385 @@
+import { Aside, Steps } from '@astrojs/starlight/components';
+import ImageGallery from '~/components/ImageGallery.astro';
+import DocLink from '@components/DocLink.astro';
+
+TBMQ Kafka source integration is an **inbound** integration: instead of pushing MQTT messages out, it consumes records
+from a topic on an **Apache Kafka** cluster of your own and injects each one into the broker as an MQTT publish. Clients
+subscribed to the resolved topic receive it like any other message. This is useful for the following scenarios:
+
+- **Commands and configuration from a backend** — a service that already produces to Kafka can reach devices over MQTT
+  without speaking MQTT itself.
+- **Bridging an existing stream into MQTT** — replay or fan out a Kafka topic to MQTT subscribers.
+- **Decoupling producers from the broker** — Kafka absorbs the producer's bursts, and the integration feeds the broker
+  at its own pace.
+
+Every other integration type is outbound. This one is the only direction reversal, and it changes what the integration
+entity carries: a source integration has **no topic filters and no client lifecycle events**, because nothing inside
+TBMQ triggers it.
+
+## Data flow
+
+<Steps>
+1. **A producer writes a record** to the external Kafka topic.
+2. **The Integration Executor polls that topic** with a consumer group of its own and resolves an MQTT topic for each
+   record from the configured template.
+3. **The executor sends the record to the broker** over TBMQ's internal `tbmq.ie.source` topic, keyed so that the
+   records of one source partition stay in order.
+4. **TBMQ injects it into the publish pipeline** as a publish from the client ID `ie-source-<integrationId>`, and
+   delivers it to every subscriber whose topic filter matches.
+</Steps>
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-kafka-source-integration.svg',
+    alt: 'Kafka source integration data flow: an external Kafka cluster is consumed over TCP(TLS) by the Kafka source integration running inside the TBMQ Integration Executor; the executor sends each record to TBMQ over the internal tbmq.ie.source topic, and TBMQ delivers it over MQTT(S) to the subscribed clients.',
+    caption: 'External Kafka cluster → Integration Executor → TBMQ → MQTT subscribers',
+  },
+]} />
+
+## Prerequisites
+
+- A running <DocLink product={props.product} path="installation">TBMQ</DocLink> instance, **version 2.4.1 or later**,
+  with the <DocLink product={props.product} path="integrations/#tbmq-integration-executor">TBMQ Integration Executor</DocLink>
+  service running. Without a reachable executor, saving an integration fails with a validation timeout.
+- An external Kafka cluster with the topic to consume, reachable from the Integration Executor.
+- A client capable of subscribing to MQTT topics (e.g., <DocLink product={props.product} path="user-guide/ui/websocket-client">TBMQ WebSocket Client</DocLink>).
+
+<Aside type="caution">
+  This integration consumes a Kafka cluster **of your own**, separate from the Kafka that TBMQ uses internally. Never
+  point it at a TBMQ internal topic: the records there are not application payloads, and a consumer group of your own
+  on those topics interferes with infrastructure the broker depends on.
+</Aside>
+
+## Create TBMQ Kafka source integration
+
+A source integration has no **Filters and events** step — the wizard goes straight from the type to the configuration.
+
+<Steps>
+1. Go to the **Integrations** page and click the **"+"** button.
+2. Select **Kafka source** as the integration type, give the integration a **Name**, and click **Next**.
+3. On the **Configuration** step, under **Kafka source**, set the **Bootstrap servers** of your Kafka cluster and the
+   **Kafka topic** to consume. See [Connecting to Kafka](#connecting-to-kafka) for SASL/SSL clusters.
+4. Under **MQTT target**, set the **MQTT topic template** — the topic the records are published to. Keep the default
+   `tbmq/kafka/messages` to publish every record to one fixed topic, or use a placeholder to derive it from the record;
+   see [MQTT topic template](#mqtt-topic-template).
+5. Leave **QoS** at **At least once**, or pick another level.
+6. Click **Check connection** to confirm the cluster is reachable and the topic exists, then click **Add** to save the
+   integration.
+</Steps>
+
+## Configuration
+
+### Kafka source
+
+| Field | Default | Description |
+|---|---|---|
+| **Bootstrap servers** | `localhost:9092` | Kafka broker addresses as a comma-separated list of `host:port` pairs. Every entry must have a port in `1`–`65535`. Required. |
+| **Kafka topic** | `tbmq.source.messages` | The Kafka topic to consume from. Required. |
+| **Consumer group ID** | — | Consumer group the integration joins. Leave empty to use `tbmq-ie-kafka-source-<integrationId>`, which is unique to this integration. Changing it moves the integration to a group with no committed offsets, so its starting position comes from **Auto offset reset** again. |
+| **Client ID prefix** | — | Prefix for the Kafka client ID. Leave empty for `tbmq-ie-kafka-source`. The full ID is `<prefix>-<integrationId>-<executorServiceId>`, so the consumer is identifiable in the Kafka cluster. |
+
+### MQTT target
+
+| Field | Default | Description |
+|---|---|---|
+| **MQTT topic template** | `tbmq/kafka/messages` | The MQTT topic each record is published to, optionally with `${key}` and `${header.<name>}` placeholders. Required. See [MQTT topic template](#mqtt-topic-template). |
+| **QoS** | **At least once** | QoS of the injected publish: **At most once** (0), **At least once** (1) or **Exactly once** (2). Applies to every record. |
+
+The retain flag is **always off**. TBMQ rejects a retained sourced publish outright, so a Kafka record can never
+become a <DocLink product={props.product} path="user-guide/retained-messages">retained message</DocLink>.
+
+### Advanced settings
+
+| Field | Default | Description |
+|---|---|---|
+| **Auto offset reset** | **Latest** | Where a consumer group with no committed offset starts. **Latest** consumes only records produced after the integration joins; **Earliest** consumes everything still retained in the topic. It has no effect once the group has committed an offset. |
+| **Max records per poll** | `500` | Records fetched per poll (`max.poll.records`). This is both the in-flight window and the redelivery window: a batch that fails is retried whole, so a smaller value narrows the duplicates a failure can produce. Must be at least `1`. |
+| **Other properties** | — | Additional Kafka **consumer** properties as key-value pairs — this is where SASL/SSL settings go. Some keys are reserved; see [Other properties](#other-properties). |
+| **Description** | — | Free-form notes on the integration. |
+| **Metadata** | — | Custom key-value pairs stored on the integration. They are **not** attached to sourced publishes — an injected message carries only its topic, payload and QoS — so they serve as documentation here, not as data. |
+
+<Aside>
+  Choose **Earliest** deliberately. On a fresh consumer group it replays the whole retained history of the topic into
+  MQTT as fast as the broker accepts it, which for a topic with days of retention can be a very large burst.
+</Aside>
+
+## MQTT topic template
+
+The template is resolved once per record. Two placeholders are supported:
+
+| Placeholder | Resolves to |
+|---|---|
+| `${key}` | The record key, read as a UTF-8 string. |
+| `${header.<name>}` | The value of the record header `<name>`, read as a UTF-8 string. |
+
+Anything outside a placeholder is literal text, and a template with no placeholder at all is valid — every record then
+goes to the same topic.
+
+```plaintext
+tbmq/kafka/messages              → every record to one fixed topic
+devices/${key}/commands          → the record key becomes a topic level
+${header.region}/${key}/state    → a header and the key together
+```
+
+The template is validated when the integration is saved:
+
+- An unsupported placeholder (`${topic}`, `${value}`, `${header.}`) is rejected, naming the placeholder.
+- The topic the template produces must be a valid MQTT **publish** topic once the placeholders are filled: no `+` or
+  `#` wildcards, no leading `$`, not empty, no null character (U+0000), and at most 65 535 characters.
+
+What validation cannot check is the record. These are decided per record, at runtime:
+
+- The template reads `${key}` but the record has **no key**.
+- The template reads `${header.x}` but the record carries no header `x`.
+- The resolved topic has more levels than the broker's `MQTT_TOPIC_MAX_SEGMENTS_COUNT` allows — a limit the executor
+  cannot see, so it is the broker that refuses the message.
+
+The first two make the record [unmappable](#unmappable-records); the third is a [broker-side refusal](#what-the-broker-enforces).
+
+## Other properties
+
+**Other properties** are passed to the Kafka consumer as-is, so this is where a secured cluster is configured. Two
+rules apply:
+
+- A key that holds PEM material — `ssl.keystore.certificate.chain`, `ssl.keystore.key`, `ssl.truststore.certificates` —
+  may be pasted with literal `\n` sequences; the integration converts them to real newlines.
+- Any `ssl.*` property requires `security.protocol` to be set as well. Without it the Kafka client would silently stay
+  on `PLAINTEXT` and ignore the TLS settings, so the integration refuses to save instead.
+
+The properties the integration manages itself are **rejected** rather than quietly overridden, because a user value
+there would break delivery — `enable.auto.commit=true` would commit records that were never published, and a different
+deserializer would break the record loop:
+
+```plaintext
+bootstrap.servers        client.id                group.id
+auto.offset.reset        enable.auto.commit       auto.commit.interval.ms
+max.poll.records         key.deserializer         value.deserializer
+```
+
+Each of these has its own field, or is fixed by the delivery model. Set them through the form, not here.
+
+### Connecting to Kafka
+
+For a cluster that requires SASL over TLS — Confluent Cloud, for example — add these **Other properties**:
+
+| Key | Value |
+|---|---|
+| `ssl.endpoint.identification.algorithm` | `https` |
+| `sasl.mechanism` | `PLAIN` |
+| `sasl.jaas.config` | `org.apache.kafka.common.security.plain.PlainLoginModule required username="CLUSTER_API_KEY" password="CLUSTER_API_SECRET";` |
+| `security.protocol` | `SASL_SSL` |
+
+Replace `CLUSTER_API_KEY` and `CLUSTER_API_SECRET` with your cluster's API key and secret.
+
+## Check connection
+
+**Check connection** creates a Kafka admin client with the configured connection settings — including the same PEM
+unescaping the consumer applies — lists the cluster's topics, and reports whether the configured **Kafka topic** is
+among them. It confirms three things at once: the bootstrap servers resolve, the security settings are accepted, and
+the topic exists.
+
+Unlike the outbound <DocLink product={props.product} path="integrations/kafka">Kafka integration</DocLink>, a missing
+topic here is a real problem: a source integration only reads, so nothing will ever create the topic for it. The
+integration can still be saved, and it will consume the topic as soon as it appears.
+
+## Record mapping
+
+| MQTT publish | Comes from |
+|---|---|
+| Topic | The resolved [MQTT topic template](#mqtt-topic-template). |
+| Payload | The record value, byte for byte. A record with a `null` value — a tombstone — becomes an empty publish. |
+| QoS | The **QoS** field, the same for every record. |
+| Retain | Always `false`. |
+| Client ID | `ie-source-<integrationId>`. |
+
+Nothing else from the record travels with the message: the key and the headers are only inputs to the topic template,
+and Kafka offsets, timestamps and partitions are not carried into MQTT.
+
+### Publisher identity
+
+A sourced publish has no MQTT session behind it, so the broker derives its identity from the integration ID in the
+message itself: the client ID is `ie-source-` followed by the integration's UUID. The executor cannot influence it,
+which is what keeps one integration from publishing as another.
+
+That ID is what you will see wherever the broker names the publisher of such a message: in an outbound integration's
+JSON envelope as `clientId`, and on the
+<DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page if one of these
+publishes is dropped. There is no session to open for it.
+
+<Aside type="caution">
+  A sourced publish is **broker-trusted**: it bypasses MQTT authorization entirely. The integration is an
+  admin-configured component with no MQTT credentials, so the topic template you configure *is* the authorization
+  decision — a template that resolves into a topic tree clients are normally not allowed to publish to grants exactly
+  that. Per-client rate limits do not apply either, having no session to be keyed by; the licensed throughput quota
+  still does.
+</Aside>
+
+## Delivery semantics
+
+Delivery is **at-least-once**, and ordering is **per source partition**.
+
+The executor polls a batch, publishes every record of it, waits until each one has settled, and only then commits the
+batch's offsets. Auto-commit is off — an offset is never committed for a record that was not acknowledged. If any
+record of the batch fails transiently, the whole batch's partitions are rewound to their first offset, the integration
+backs off, and the batch is retried. The backoff starts at 1 second and doubles up to 60 seconds, resetting on the
+first batch that commits.
+
+The consequences worth planning for:
+
+- **Duplicates are possible, bounded by one batch.** A failure after some records of a batch were already published
+  redelivers the whole batch, so those records reach MQTT twice. **Max records per poll** is the bound: lower it if
+  duplicates are expensive for your subscribers.
+- **The first failure in a batch stops the rest of it.** The remaining records are not attempted, are rewound together
+  with the failed one, and are retried on the next cycle. Nothing is lost, and a dead broker connection costs one
+  failed send per cycle instead of one per record.
+- **Order is preserved only within a source partition.** The records of one Kafka partition share an internal partition
+  and are handed to the publish pipeline in poll order. Records from different source partitions have no order relative
+  to each other — as in Kafka itself. If a group of messages must stay ordered, produce them under the same Kafka key.
+- **A stopped integration abandons the batch in flight.** Nothing is committed, so disabling and re-enabling the
+  integration, or restarting the executor, redelivers that batch.
+- **A pack the broker has accepted is committed even if some of it is still in flight.** The broker awaits every record
+  of a pack before committing its own offsets, bounded by `TB_IE_SOURCE_PACK_PROCESSING_TIMEOUT` (20 000 ms by
+  default); it then commits regardless, so that one stuck publish cannot stall every other source integration. A broker
+  crash inside that window loses the outstanding records.
+
+### Unmappable records
+
+A record that can never be published — no matter how many times it is retried — is **skipped for good**: it is counted
+as an error, saved as an error event on the integration, and its offset is committed so the partition moves on. This
+covers:
+
+- A template that cannot be resolved for this record: `${key}` with no key, `${header.x}` with no such header.
+- A resolved topic that is not a valid publish topic.
+- A record too large for the internal topic that carries it — see [Payload size](#payload-size).
+- A record the internal producer rejects for what it is, rather than for a transient condition.
+
+Blocking the partition on such a record would stop every record behind it, which is why the offset advances instead.
+The Integration Executor log records one warning per batch with the number of records skipped; the per-record reason is
+logged at `DEBUG` level and carried by the error event.
+
+### Payload size
+
+Before a record is sent to the broker, the executor checks it against the internal topic's producer limit
+(`max.request.size`, `1048576` bytes by default). What is measured is the record payload plus the resolved topic plus a
+fixed 1024-byte allowance for the envelope, so the usable payload is a little under 1 MiB. A record over the limit is
+[unmappable](#unmappable-records) — it is skipped, not retried.
+
+To raise it, set `max.request.size` in `TB_KAFKA_IE_SOURCE_ADDITIONAL_PRODUCER_CONFIG` on the Integration Executor.
+It has to be that per-topic key: a value in the common producer configuration is not seen by this check. Raise the
+broker-side limits to match, or the larger records will simply be refused a step later.
+
+## What the broker enforces
+
+A sourced publish is validated again on the broker side, and a refusal there is **permanent** — by the time the broker
+sees the record, the executor has already committed its Kafka offset, so there is nobody to hand it back to. The
+message is counted as a dropped message and reported on the integration as an error event.
+
+| Check | Result when it fails |
+|---|---|
+| Topic validity, including `MQTT_TOPIC_MAX_SEGMENTS_COUNT` | The publish is rejected and reported on the integration. |
+| Retain flag off | A retained sourced publish is rejected. The executor never sets the flag, so this guards the path, not the configuration. |
+| QoS in `0`–`2` | The publish is rejected. |
+| Licensed incoming throughput quota | The publish is dropped with reason **Rate limits**, exactly like a client publish over the quota. |
+| Hand-off to the internal message topic | The publish is dropped with reason **Internal error**. |
+
+Because a broken configuration can fail on every record, these error events are rate-limited to **one per integration
+per minute**. The event carries the reason of the drop that opened the window and how many further drops were
+suppressed since the previous one, so a sustained refusal costs one row a minute instead of one per message. The
+integration's own error counter is not rate-limited and stays the accurate measure of how much is failing.
+
+<Aside type="caution">
+  **Avoid a publish loop.** If the MQTT topic template resolves into a topic that an outbound
+  <DocLink product={props.product} path="integrations/kafka">Kafka integration</DocLink> matches, and that integration
+  produces to the same external topic this one consumes, every record circulates forever. Nothing detects it — keep
+  the source template out of the topic filters of any outbound integration that writes back to the source topic.
+</Aside>
+
+## Integration events
+
+These are the **integration's own** events, recorded inside TBMQ for debugging and troubleshooting.
+
+- **Lifecycle Events** — `Created`, `Updated`, `Started`, `Stopped`, `Failed`.
+- **Statistics** — the integration's own counters: messages processed and errors occurred.
+- **Errors** — every failure that concerns this integration: a record skipped as unmappable, a consumer that had to be
+  recreated, and the broker-side refusals above.
+
+A Kafka cluster that becomes unreachable does **not** move the integration to `Failed`. The consumer is recreated in
+the background, with the same backoff, and the integration stays **Active** while reporting the failure as an error
+event — the same way an outbound integration reports an unreachable sink. It resumes from its committed offset once the
+cluster is back.
+
+## Statistics
+
+A source integration consumes *into* the executor, so its throughput is counted in the **downlink** direction —
+direction is always from the Integration Executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink`
+topics.
+
+- In the executor's <DocLink product={props.product} path="integrations/#current-integration-activity" bold={false}>current integration activity</DocLink>
+  statistics and in the `integration_stats_counter_total` Prometheus series, the metric name is **`msgDownlink`**, with
+  `type=KAFKA_SOURCE`. Outbound types report `msgUplink`.
+- The producer that writes to the internal `tbmq.ie.source` topic reports its own
+  <DocLink product={props.product} path="integrations/#integration-uplink-queue-stats" bold={false}>queue statistics</DocLink>
+  under `ie.source.published`.
+
+See <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink> for the full series list.
+
+## Advanced configuration
+
+The internal topic that carries sourced publishes from the executors to the broker is configured on both services:
+
+<div class="config-def-list">
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_TOPIC</code> · <span class="config-def-label">Default</span> <code>tbmq.ie.source</code></p>
+    <p class="config-def-desc">Name of the data topic carrying sourced publishes. Lifecycle events and heartbeats stay on `tbmq.ie.uplink`, so a busy source cannot delay them.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_TOPIC_PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties for `tbmq.ie.source`. Its `partitions` count bounds how much sourced traffic the broker side can consume in parallel.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_ADDITIONAL_PRODUCER_CONFIG</code> · <span class="config-def-label">Default</span> <code>&nbsp;</code></p>
+    <p class="config-def-desc">Additional producer configuration for `tbmq.ie.source`. A `max.request.size` set here is also the [payload limit](#payload-size) the executor enforces before sending a record — the check does not read the common producer configuration.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_ADDITIONAL_CONSUMER_CONFIG</code> · <span class="config-def-label">Default</span> <code>&nbsp;</code></p>
+    <p class="config-def-desc">Additional consumer configuration for `tbmq.ie.source`, used by the broker. `max.poll.records` (Kafka's default of `500`) bounds the pack the broker awaits before committing.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_SOURCE_POLL_INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
+    <p class="config-def-desc">How often the broker polls `tbmq.ie.source` (ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB_IE_SOURCE_PACK_PROCESSING_TIMEOUT</code> · <span class="config-def-label">Default</span> <code>20000</code></p>
+    <p class="config-def-desc">How long the broker waits for a pack of sourced publishes to settle before committing anyway (ms). Each one charges the licensed throughput quota with a blocking call that may wait on a Redis round trip, so do not set this below the Redis connect and read timeouts if Redis stalls are expected.</p>
+  </div>
+</div>
+
+Configuration for the integration's own type — the compact topic that carries its configuration to the executors — follows
+the pattern of the other types, under `tbmq.ie.downlink.kafka_source`: `TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_TOPIC_PROPERTIES`,
+`TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_ADDITIONAL_CONSUMER_CONFIG` and
+`TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_ADDITIONAL_PRODUCER_CONFIG`. See
+<DocLink product={props.product} path="integrations/#downlink-topics">Downlink topics</DocLink>.
+
+## Receive a Kafka record over MQTT
+
+<Steps>
+1. Create the integration as described above, keeping the default **MQTT topic template** `tbmq/kafka/messages`, and
+   make sure its status is **Active**.
+2. Navigate to the **WebSocket Client** page.
+3. Select **WebSocket Default Connection** (or any working connection) and click **Connect**. Verify the connection
+   status shows `Connected`.
+4. Add a subscription for the topic filter `tbmq/kafka/messages`.
+5. Produce a record to the integration's **Kafka topic** with the payload `{"temperature": 25}`. With `kafka-console-producer`:
+
+   ```bash
+   kafka-console-producer.sh --bootstrap-server localhost:9092 --topic tbmq.source.messages
+   ```
+   ```plaintext
+   {"temperature": 25}
+   ```
+6. The message appears in the WebSocket client's **Messages** list, on the topic `tbmq/kafka/messages` with QoS 1.
+</Steps>
+
+If nothing arrives, check in this order: the integration's status and its **Errors** tab, then whether the records were
+produced **after** the integration joined the group — with **Auto offset reset** at its default **Latest**, records
+that predate it are not consumed.

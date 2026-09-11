@@ -76,6 +76,11 @@ const DIAGRAMS = {
 		dir: 'integrations',
 		build: integrations.postgreSqlIntegration,
 	},
+	'kafka-source-integration': {
+		file: 'tbmq-kafka-source-integration',
+		dir: 'integrations',
+		build: integrations.kafkaSourceIntegration,
+	},
 	'http-payload-encoding': {
 		file: 'tbmq-http-payload-encoding',
 		dir: 'integrations',
