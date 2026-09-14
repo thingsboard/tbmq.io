@@ -279,11 +279,11 @@ are not — the MQTT path treats a malformed publish from a client the same way,
 
 | Check | Result when it fails | Also counted as |
 |---|---|---|
-| Topic validity, including `MQTT_TOPIC_MAX_SEGMENTS_COUNT` | The publish is rejected and reported on the integration. | Protocol error — not a dropped message |
-| Retain flag off | A retained sourced publish is rejected. The executor never sets the flag, so this guards the path, not the configuration. | Protocol error — not a dropped message |
-| QoS in `0`–`2` | The publish is rejected. | Protocol error — not a dropped message |
-| Licensed incoming throughput quota | The publish is dropped, exactly like a client publish over the quota. | Dropped message, reason **Rate limits** |
-| Hand-off to the internal message topic | The publish is dropped because the broker could not queue it. | Dropped message, reason **Internal error** |
+| Topic validity | The publish is rejected. This is the check that applies `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, the one topic rule the executor cannot pre-check. | Protocol error |
+| Retain flag off | A retained sourced publish is rejected. The executor never sets the flag, so this guards the path, not the configuration. | Protocol error |
+| QoS in `0`–`2` | The publish is rejected. | Protocol error |
+| Throughput quota | The publish is dropped, exactly like a client publish over the licensed quota. | Dropped message — **Rate limits** |
+| Hand-off to `tbmq.msg.all` | The publish is dropped because the broker could not queue it. | Dropped message — **Internal error** |
 
 Because a broken configuration can fail on every record, these error events are rate-limited to **one per integration
 per broker node per minute** — the window is held in memory on each node, not shared across the cluster. The event
