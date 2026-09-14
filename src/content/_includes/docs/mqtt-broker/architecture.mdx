@@ -6,9 +6,11 @@ import ShowFor from '~/components/ShowFor.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { Products } from '~/models/site.models';
 
-{/* Shared by the two per-edition entries of the Kafka topics gallery below; PE appends to it. */}
+{/* Alt text for the Kafka topics gallery below. The `-tbmq-pe` filename suffix gives each edition its own
+    SVG but not its own alt, so the PE variant is spelled out here and picked per edition at the call site. */}
 export const kafkaTopicsAlt =
 	'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).';
+export const kafkaTopicsAltPe = `${kafkaTopicsAlt} The Integration Executor group also lists tbmq.ie.source, the global topic carrying sourced publishes to the broker, and the per-type downlink topics for http, kafka, kafka.source, mqtt and postgresql.`;
 
 TBMQ is designed with four core attributes:
 
@@ -354,17 +356,7 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    products: [Products.TBMQ],
-    alt: kafkaTopicsAlt,
-    caption: 'Kafka topics grouped by function and scope',
-  },
-  {
-    // Same `src` on purpose: ImageGallery filters on `products` first, then resolves the `-tbmq-pe`
-    // suffix, so each edition still gets its own file. The entry is split only so the alt text can
-    // describe the diagram actually rendered — the PE variant carries two topics the CE one does not.
-    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    products: [Products.TBMQ_PE],
-    alt: `${kafkaTopicsAlt} The Integration Executor group also lists tbmq.ie.source, the global topic carrying sourced publishes to the broker, and the per-type downlink topics for http, kafka, kafka.source, mqtt and postgresql.`,
+    alt: props.product === Products.TBMQ_PE ? kafkaTopicsAltPe : kafkaTopicsAlt,
     caption: 'Kafka topics grouped by function and scope',
   },
 ]} />

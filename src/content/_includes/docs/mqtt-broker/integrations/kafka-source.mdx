@@ -1,6 +1,7 @@
 import { Aside, Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ConfluentCloudProperties from '@includes/docs/mqtt-broker/integrations/confluent-cloud-properties.mdx';
 
 TBMQ Kafka source integration is an **inbound** integration: instead of pushing MQTT messages out, it consumes records
 from a topic on an **Apache Kafka** cluster of your own and injects each one into the broker as an MQTT publish. Clients
@@ -164,14 +165,7 @@ Each of these has its own field, or is fixed by the delivery model. Set them thr
 
 For a cluster that requires SASL over TLS — Confluent Cloud, for example — add these **Other properties**:
 
-| Key | Value |
-|---|---|
-| `ssl.endpoint.identification.algorithm` | `https` |
-| `sasl.mechanism` | `PLAIN` |
-| `sasl.jaas.config` | `org.apache.kafka.common.security.plain.PlainLoginModule required username="CLUSTER_API_KEY" password="CLUSTER_API_SECRET";` |
-| `security.protocol` | `SASL_SSL` |
-
-Replace `CLUSTER_API_KEY` and `CLUSTER_API_SECRET` with your cluster's API key and secret.
+<ConfluentCloudProperties />
 
 ## Check connection
 

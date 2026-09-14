@@ -3,6 +3,7 @@ import Tabs from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ConfluentCloudProperties from '@includes/docs/mqtt-broker/integrations/confluent-cloud-properties.mdx';
 
 TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBMQ to publish messages to external Kafka clusters. This is useful for the following scenarios:
 
@@ -71,15 +72,7 @@ TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBM
 
     **Step 2:** Add the following **Other properties** key-value pairs for SASL/SSL authentication:
 
-    | Key | Value |
-    |---|---|
-    | `ssl.endpoint.identification.algorithm` | `https` |
-    | `sasl.mechanism` | `PLAIN` |
-    | `sasl.jaas.config` | `org.apache.kafka.common.security.plain.PlainLoginModule required username="CLUSTER_API_KEY" password="CLUSTER_API_SECRET";` |
-    | `security.protocol` | `SASL_SSL` |
-
-    Replace `CLUSTER_API_KEY` and `CLUSTER_API_SECRET` with your Confluent cluster API key and secret.
-    To generate an API key, go to **Data Integration → API Keys → Create key** in your Confluent cluster.
+    <ConfluentCloudProperties />
 
     <ImageGallery product={props.product} images={[
       { src: '/src/assets/images/docs/mqtt-broker/user-guide/ui/kafka-integration-cloud-properties-1.png', alt: 'Add ssl.endpoint.identification.algorithm property', caption: 'Add ssl.endpoint.identification.algorithm property' },
