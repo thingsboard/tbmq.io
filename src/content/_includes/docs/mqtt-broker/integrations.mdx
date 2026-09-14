@@ -645,9 +645,11 @@ IntegrationStatisticsKey(integrationStatisticsMetricName=START, success=true, in
 - `MSGS_UPLINK` — number of messages forwarded from the executor to external systems.
 - `success=true | false` — whether the attempt succeeded or failed.
 - `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
-
-Direction is from the executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink` topics: `MSGS_UPLINK` is what leaves the executor for an external system.
 </ShowFor>
+
+{/* The bullets stay duplicated per edition on purpose: <ShowFor> is a block element, so gating the
+    MSGS_DOWNLINK bullet in place splits one <ul> into three on PE and two on CE. Only the trailing
+    sentence is shared — it is written to be true on both editions, with the PE half wrapped. */}
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 - `START` — number of times an integration startup was attempted.
@@ -656,8 +658,12 @@ Direction is from the executor's point of view, as with the `tbmq.ie.uplink` and
 - `MSGS_DOWNLINK` — number of messages a [source integration](#source-integrations) consumed from its external system.
 - `success=true | false` — whether the attempt succeeded or failed.
 - `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
+</ShowFor>
 
-Direction is always from the executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink` topics: `MSGS_UPLINK` leaves the executor, `MSGS_DOWNLINK` enters it. Only source types report `MSGS_DOWNLINK`, and only outbound types report `MSGS_UPLINK`.
+Direction is from the executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink` topics: `MSGS_UPLINK` is what leaves the executor for an external system.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+`MSGS_DOWNLINK` is the opposite direction. Only source types report it, and only outbound types report `MSGS_UPLINK`.
 </ShowFor>
 
 ### Integration state summary

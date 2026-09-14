@@ -350,7 +350,17 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24). The Professional Edition variant of this diagram additionally shows the tbmq.ie.source topic and the PE set of per-type downlink topics.',
+    products: [Products.TBMQ],
+    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
+    caption: 'Kafka topics grouped by function and scope',
+  },
+  {
+    // Same src: ImageGallery resolves the `-tbmq-pe` suffix per edition. The entry is duplicated
+    // only so each edition's reader gets alt text describing the diagram actually rendered — the
+    // PE variant carries two topics the CE one does not.
+    src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
+    products: [Products.TBMQ_PE],
+    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24). The Integration Executor group also lists tbmq.ie.source, the global topic carrying sourced publishes to the broker, and the per-type downlink topics for http, kafka, kafka.source, mqtt and postgresql.',
     caption: 'Kafka topics grouped by function and scope',
   },
 ]} />
@@ -643,8 +653,8 @@ node reads it and injects each record into the publish pipeline, where it become
 `tbmq.msg.all`.
 
 <DocLink product={props.product} path="integrations/#source-integrations">Source integrations</DocLink> covers the
-mechanism, and the <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink>
-— the only type of this kind today — the configuration.
+mechanism. The <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> —
+the only type of this kind today — covers the configuration.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>

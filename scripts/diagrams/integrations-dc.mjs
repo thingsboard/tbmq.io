@@ -48,12 +48,20 @@ const BORDER_DASH = '4 3';
  *
  * @param {*} k kit from `makeDcKit`
  * @param {string[]} P path accumulator, appended to in place
+ * @param {{ W: number, title: string }} o canvas width and the centred heading
  */
-function typeDiagramTitle(k, P, W, title) {
+function typeDiagramTitle(k, P, { W, title }) {
 	P.push(k.text(W / 2, cyOf(64, 22, 1.35), title, { size: 22, weight: 500, fill: k.T.txt, anchor: 'middle' }));
 }
 
-/** @param {object} o `{ W, legendItems, caption }` — see {@link typeDiagramTitle}. */
+/**
+ * Closing half of {@link typeDiagramTitle}'s chrome.
+ *
+ * @param {*} k kit from `makeDcKit`
+ * @param {string[]} P path accumulator, appended to in place
+ * @param {{ W: number, legendItems: [string, string][], caption: string }} o canvas width, the
+ *   legend's colour/label pairs, and the caption wrapped under it
+ */
 function typeDiagramTail(k, P, { W, legendItems, caption }) {
 	P.push(k.legend(W, 396, legendItems));
 	k.wrap(caption, 14, 1020).forEach((line, i) => {
@@ -744,7 +752,7 @@ function integrationType(kit, spec) {
 	P.push(arrow('M584,240 H696', T.blueLine, { bidir: true }));
 	P.push(arrow(`M984,240 H${targetArrowEnd}`, T.tealLine));
 
-	typeDiagramTitle(k, P, W, spec.title);
+	typeDiagramTitle(k, P, { W, title: spec.title });
 	P.push(groupLabel(718, 182, 'TBMQ Integration Executor'));
 
 	P.push(
@@ -1133,7 +1141,7 @@ export function kafkaSourceIntegration(kit) {
 	P.push(arrow('M649,240 H746', T.tealLine));
 	P.push(arrow('M934,240 H1016', T.blueLine));
 
-	typeDiagramTitle(k, P, W, 'Kafka source integration');
+	typeDiagramTitle(k, P, { W, title: 'Kafka source integration' });
 	P.push(groupLabel(373, 182, 'TBMQ Integration Executor'));
 
 	P.push(

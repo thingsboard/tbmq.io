@@ -272,22 +272,27 @@ broker-side limits to match, or the larger records will simply be refused a step
 
 A sourced publish is validated again on the broker side, and a refusal there is **permanent** — by the time the broker
 sees the record, the executor has already committed its Kafka offset, so there is nobody to hand it back to. Every
-refusal is reported on the integration as an error event. The last two below are *additionally* counted as
-<DocLink product={props.product} path="user-guide/dropped-messages">dropped messages</DocLink>; the first three are
-treated as protocol errors, the way the MQTT path treats a malformed publish, and never appear on that page.
+refusal is reported on the integration as an error event; the **Also counted as** column says which ones are
+*additionally* recorded on the
+<DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page. A protocol error
+is not — the MQTT path treats a malformed publish the same way.
 
-| Check | Result when it fails |
-|---|---|
-| Topic validity, including `MQTT_TOPIC_MAX_SEGMENTS_COUNT` | The publish is rejected and reported on the integration. |
-| Retain flag off | A retained sourced publish is rejected. The executor never sets the flag, so this guards the path, not the configuration. |
-| QoS in `0`–`2` | The publish is rejected. |
-| Licensed incoming throughput quota | The publish is dropped with reason **Rate limits**, exactly like a client publish over the quota. |
-| Hand-off to the internal message topic | The publish is dropped with reason **Internal error**. |
+| Check | Result when it fails | Also counted as |
+|---|---|---|
+| Topic validity, including `MQTT_TOPIC_MAX_SEGMENTS_COUNT` | The publish is rejected and reported on the integration. | Protocol error — not a dropped message |
+| Retain flag off | A retained sourced publish is rejected. The executor never sets the flag, so this guards the path, not the configuration. | Protocol error — not a dropped message |
+| QoS in `0`–`2` | The publish is rejected. | Protocol error — not a dropped message |
+| Licensed incoming throughput quota | The publish is dropped, exactly like a client publish over the quota. | Dropped message, reason **Rate limits** |
+| Hand-off to the internal message topic | The publish is dropped because the broker could not queue it. | Dropped message, reason **Internal error** |
 
 Because a broken configuration can fail on every record, these error events are rate-limited to **one per integration
-per minute**. The event carries the reason of the drop that opened the window and how many further drops were
-suppressed since the previous one, so a sustained refusal costs one row a minute instead of one per message. The
-integration's own error counter is not rate-limited and stays the accurate measure of how much is failing.
+per broker node per minute**. The event carries the reason of the drop that opened the window and how many further
+drops were suppressed since the previous one, so a sustained refusal costs one row a minute instead of one per message.
+
+The window is kept in memory on each broker node, not shared across the cluster, and `tbmq.ie.source` is consumed by
+every node — so on an *n*-node cluster a sustained refusal can produce up to *n* events a minute for the same
+integration. Each carries the service ID of the node that emitted it. The integration's own error counter is not
+rate-limited at all and stays the accurate measure of how much is failing.
 
 <Aside type="caution">
   **Avoid a publish loop.** If the MQTT topic template resolves into a topic that an outbound

@@ -357,10 +357,23 @@ export function subscriptionTrie(k) {
 /** Vertical pitch of a topic row inside a group box; the render loop below advances `ry` by it. */
 const ROW_PITCH = 44;
 
+/**
+ * The one Integration Executor row that differs between the editions, named so the PE variant
+ * can swap it by position rather than by matching its text — a rename would otherwise silently
+ * drop `tbmq.ie.source` from the PE diagram and still render a clean layout.
+ */
+const IE_DOWNLINK_ROW_CE = ['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'];
+const IE_DOWNLINK_ROW_PE = [
+	'tbmq.ie.downlink.{http,kafka,kafka.source,mqtt,postgresql}',
+	'per-type',
+	'downlink config · compacted',
+];
+const IE_SOURCE_ROW = ['tbmq.ie.source', 'global', 'sourced publishes → broker'];
+
 /** The CE Integration Executor rows, and the height the group box needs for exactly these. */
 const IE_ROWS_CE = [
 	['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
-	['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
+	IE_DOWNLINK_ROW_CE,
 	['tbmq.ie.uplink', 'global', 'events → broker'],
 	['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
 	['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
@@ -369,17 +382,16 @@ const IE_HEIGHT_CE = 250;
 
 /**
  * PE keeps every CE row and differs in two ways: two more per-type downlink topics in the brace
- * list, and the `tbmq.ie.source` data topic right after it. Expressed as an override of the CE
- * array so a rename of any shared row stays a one-line edit.
+ * list, and the `tbmq.ie.source` data topic right after it. Spliced at the downlink row's own
+ * index so a rename of any shared row stays a one-line edit, and so a row added before it cannot
+ * put `tbmq.ie.source` in the wrong place.
  */
-const IE_ROWS_PE = IE_ROWS_CE.flatMap(([name, scope, note]) =>
-	name.startsWith('tbmq.ie.downlink.')
-		? [
-				['tbmq.ie.downlink.{http,kafka,kafka.source,mqtt,postgresql}', scope, note],
-				['tbmq.ie.source', 'global', 'sourced publishes → broker'],
-			]
-		: [[name, scope, note]]
-);
+const IE_DOWNLINK_INDEX = IE_ROWS_CE.indexOf(IE_DOWNLINK_ROW_CE);
+if (IE_DOWNLINK_INDEX < 0) {
+	// Without this, toSpliced(-1, …) would splice one row from the end and still render cleanly.
+	throw new Error('IE_DOWNLINK_ROW_CE is no longer in IE_ROWS_CE — the PE topic map cannot be derived');
+}
+const IE_ROWS_PE = IE_ROWS_CE.toSpliced(IE_DOWNLINK_INDEX, 1, IE_DOWNLINK_ROW_PE, IE_SOURCE_ROW);
 
 /**
  * @param {object} [spec]
