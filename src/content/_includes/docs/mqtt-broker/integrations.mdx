@@ -10,7 +10,7 @@ They connect IoT devices with the broader data infrastructure, allowing the MQTT
 Besides messages, an integration can receive [client lifecycle events](#client-lifecycle-events) — clients connecting and disconnecting, subscription changes, and authentication or authorization failures.
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
-Integrations are **outbound only**: TBMQ pushes data to the external system. An integration never pulls data in or subscribes to the external system on your behalf — inbound (source) integrations are on the [roadmap](#roadmap).
+Integrations are **outbound only**: TBMQ pushes data to the external system. An integration never pulls data in or subscribes to the external system on your behalf. There are three types — HTTP, MQTT and Kafka — and that is the full set.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
@@ -755,8 +755,6 @@ Reading the two blocks side by side tells you which stream is in trouble: an unr
 Upcoming integration capabilities:
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
-- **New outbound integration types** — Redis, RabbitMQ, and more.
-- **Inbound (source) integrations** — receive messages from external systems (e.g., Kafka consumers, MQTT subscribers).
 - **Message transformation and filtering** — dynamic processing before forwarding to external targets.
 </ShowFor>
 
