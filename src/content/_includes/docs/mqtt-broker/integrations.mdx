@@ -530,10 +530,6 @@ An integration whose configuration is valid but whose target is unreachable is t
 
 When a message fails to be processed, the Integration Executor handles it based on the configured acknowledgment strategy:
 
-<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-This applies to the **outbound** stream — the per-integration message and event consumers. A [source integration](#source-integrations) has neither, and uses its own batch-and-commit model instead; see its guide for what a failure does there.
-</ShowFor>
-
 <div class="config-def-list">
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB_IE_MSG_POLL_INTERVAL</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
