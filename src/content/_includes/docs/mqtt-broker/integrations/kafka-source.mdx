@@ -274,8 +274,8 @@ A sourced publish is validated again on the broker side, and a refusal there is 
 sees the record, the executor has already committed its Kafka offset, so there is nobody to hand it back to. Every
 refusal is reported on the integration as an error event; the **Also counted as** column says which ones are
 *additionally* recorded on the
-<DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page. A protocol error
-is not — the MQTT path treats a malformed publish the same way.
+<DocLink product={props.product} path="user-guide/dropped-messages">Dropped messages</DocLink> page. Protocol errors
+are not — the MQTT path treats a malformed publish from a client the same way, and neither shows up on that page.
 
 | Check | Result when it fails | Also counted as |
 |---|---|---|
@@ -286,13 +286,16 @@ is not — the MQTT path treats a malformed publish the same way.
 | Hand-off to the internal message topic | The publish is dropped because the broker could not queue it. | Dropped message, reason **Internal error** |
 
 Because a broken configuration can fail on every record, these error events are rate-limited to **one per integration
-per broker node per minute**. The event carries the reason of the drop that opened the window and how many further
-drops were suppressed since the previous one, so a sustained refusal costs one row a minute instead of one per message.
+per broker node per minute** — the window is held in memory on each node, not shared across the cluster. The event
+carries the reason of the drop that opened the window, how many further drops were suppressed since the previous one,
+and the service ID of the node that emitted it, so a sustained refusal costs one row a minute per node instead of one
+per message.
 
-The window is kept in memory on each broker node, not shared across the cluster, and `tbmq.ie.source` is consumed by
-every node — so on an *n*-node cluster a sustained refusal can produce up to *n* events a minute for the same
-integration. Each carries the service ID of the node that emitted it. The integration's own error counter is not
-rate-limited at all and stays the accurate measure of how much is failing.
+How many nodes that is depends on partitioning, not on cluster size. A record's key is the integration ID and its
+**source** partition, so an integration reading a single-partition Kafka topic always lands on one `tbmq.ie.source`
+partition and therefore one node, however large the cluster. Reading a topic with more partitions spreads it across the
+nodes consuming those `tbmq.ie.source` partitions — at most `partitions` of them, 6 by default. The integration's own
+error counter is not rate-limited at all and stays the accurate measure of how much is failing.
 
 <Aside type="caution">
   **Avoid a publish loop.** If the MQTT topic template resolves into a topic that an outbound

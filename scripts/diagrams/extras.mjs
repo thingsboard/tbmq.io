@@ -358,19 +358,29 @@ export function subscriptionTrie(k) {
 const ROW_PITCH = 44;
 
 /**
+ * Height every group box is drawn at, and how many rows fit in one. Rows start at `g.y + 34` and
+ * step by `ROW_PITCH`, so five rows end at 248 and a sixth would spill past the bottom edge. The
+ * four groups in the 2×2 grid share the height regardless of their row counts (they hold 5, 4, 4
+ * and 3) — it is the grid's height, not a function of any one group's contents. Only the IE band
+ * below the grid is free to grow, which is what `GROUP_ROW_CAPACITY` is for.
+ */
+const GROUP_HEIGHT = 250;
+const GROUP_ROW_CAPACITY = 5;
+
+/**
  * The one Integration Executor row that differs between the editions, named so the PE variant
  * can swap it by position rather than by matching its text — a rename would otherwise silently
- * drop `tbmq.ie.source` from the PE diagram and still render a clean layout.
+ * drop `tbmq.ie.source` from the PE diagram and still render a clean layout. PE reuses the CE
+ * row's scope and note verbatim, so the two can only differ where they are meant to.
  */
 const IE_DOWNLINK_ROW_CE = ['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'];
 const IE_DOWNLINK_ROW_PE = [
 	'tbmq.ie.downlink.{http,kafka,kafka.source,mqtt,postgresql}',
-	'per-type',
-	'downlink config · compacted',
+	...IE_DOWNLINK_ROW_CE.slice(1),
 ];
 const IE_SOURCE_ROW = ['tbmq.ie.source', 'global', 'sourced publishes → broker'];
 
-/** The CE Integration Executor rows, and the height the group box needs for exactly these. */
+/** The CE Integration Executor rows. */
 const IE_ROWS_CE = [
 	['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
 	IE_DOWNLINK_ROW_CE,
@@ -378,7 +388,6 @@ const IE_ROWS_CE = [
 	['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
 	['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
 ];
-const IE_HEIGHT_CE = 250;
 
 /**
  * PE keeps every CE row and differs in two ways: two more per-type downlink topics in the brace
@@ -401,8 +410,10 @@ const IE_ROWS_PE = IE_ROWS_CE.toSpliced(IE_DOWNLINK_INDEX, 1, IE_DOWNLINK_ROW_PE
  */
 export function kafkaTopicsMap(k, spec = {}) {
 	const ieRows = spec.source ? IE_ROWS_PE : IE_ROWS_CE;
-	const grow = (ieRows.length - IE_ROWS_CE.length) * ROW_PITCH;
-	const ieHeight = IE_HEIGHT_CE + grow;
+	// Measured against the box's capacity rather than against the CE row count, so adding a row to
+	// IE_ROWS_CE grows the box too instead of spilling rows out of the bottom of a 250-tall band.
+	const grow = Math.max(0, ieRows.length - GROUP_ROW_CAPACITY) * ROW_PITCH;
+	const ieHeight = GROUP_HEIGHT + grow;
 	const W = 1280,
 		H = 970 + grow;
 	const P = [];
@@ -411,7 +422,7 @@ export function kafkaTopicsMap(k, spec = {}) {
 			x: 40,
 			y: 56,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'kafka',
 			label: 'Message flow',
 			rows: [
@@ -426,7 +437,7 @@ export function kafkaTopicsMap(k, spec = {}) {
 			x: 650,
 			y: 56,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'pg',
 			label: 'Session & subscription state',
 			rows: [
@@ -440,7 +451,7 @@ export function kafkaTopicsMap(k, spec = {}) {
 			x: 40,
 			y: 340,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'core',
 			label: 'Cross-node routing (per-node)',
 			rows: [
@@ -454,7 +465,7 @@ export function kafkaTopicsMap(k, spec = {}) {
 			x: 650,
 			y: 340,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'transport',
 			label: 'System & housekeeping',
 			rows: [

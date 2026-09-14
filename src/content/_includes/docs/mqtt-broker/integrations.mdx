@@ -639,6 +639,11 @@ Per-integration-type counters for the current reporting interval:
 IntegrationStatisticsKey(integrationStatisticsMetricName=START, success=true, integrationType=HTTP) = [0]
 ```
 
+{/* The two bullet lists below are duplicated per edition on purpose. <ShowFor> is a block element,
+    so gating the MSGS_DOWNLINK bullet in place ends the list: PE renders three <ul>s and CE two.
+    Only the closing sentence is shared — it is worded to be true on both editions, and the PE-only
+    half of it is in its own <ShowFor> below. */}
+
 <ShowFor product={props.product} show={[Products.TBMQ]}>
 - `START` — number of times an integration startup was attempted.
 - `STOP` — number of times integration shutdown was triggered.
@@ -646,10 +651,6 @@ IntegrationStatisticsKey(integrationStatisticsMetricName=START, success=true, in
 - `success=true | false` — whether the attempt succeeded or failed.
 - `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
 </ShowFor>
-
-{/* The bullets stay duplicated per edition on purpose: <ShowFor> is a block element, so gating the
-    MSGS_DOWNLINK bullet in place splits one <ul> into three on PE and two on CE. Only the trailing
-    sentence is shared — it is written to be true on both editions, with the PE half wrapped. */}
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 - `START` — number of times an integration startup was attempted.
