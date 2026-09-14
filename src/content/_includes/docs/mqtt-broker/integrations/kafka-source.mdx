@@ -190,7 +190,7 @@ integration can still be saved, and it will consume the topic as soon as it appe
 | Payload | The record value, byte for byte. A record with a `null` value — a tombstone — becomes an empty publish. |
 | QoS | The **QoS** field, the same for every record. |
 | Retain | Always `false`. |
-| Client ID | `ie-source-<integrationId>`. |
+| Client ID | The integration, not the record — see [Publisher identity](#publisher-identity). |
 
 Nothing else from the record travels with the message: the key and the headers are only inputs to the topic template,
 and Kafka offsets, timestamps and partitions are not carried into MQTT.
@@ -271,8 +271,10 @@ broker-side limits to match, or the larger records will simply be refused a step
 ## What the broker enforces
 
 A sourced publish is validated again on the broker side, and a refusal there is **permanent** — by the time the broker
-sees the record, the executor has already committed its Kafka offset, so there is nobody to hand it back to. The
-message is counted as a dropped message and reported on the integration as an error event.
+sees the record, the executor has already committed its Kafka offset, so there is nobody to hand it back to. Every
+refusal is reported on the integration as an error event. The last two below are *additionally* counted as
+<DocLink product={props.product} path="user-guide/dropped-messages">dropped messages</DocLink>; the first three are
+treated as protocol errors, the way the MQTT path treats a malformed publish, and never appear on that page.
 
 | Check | Result when it fails |
 |---|---|
@@ -308,11 +310,9 @@ the background, with the same backoff, and the integration stays **Active** whil
 event — the same way an outbound integration reports an unreachable sink. It resumes from its committed offset once the
 cluster is back.
 
-## Statistics
+## Throughput metrics
 
-A source integration consumes *into* the executor, so its throughput is counted in the **downlink** direction —
-direction is always from the Integration Executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink`
-topics.
+A source integration consumes *into* the executor, so its throughput is counted in the **downlink** direction.
 
 - In the executor's <DocLink product={props.product} path="integrations/#current-integration-activity" bold={false}>current integration activity</DocLink>
   statistics and in the `integration_stats_counter_total` Prometheus series, the metric name is **`msgDownlink`**, with
@@ -355,7 +355,7 @@ The internal topic that carries sourced publishes from the executors to the brok
 </div>
 
 Configuration for the integration's own type — the compact topic that carries its configuration to the executors — follows
-the pattern of the other types, under `tbmq.ie.downlink.kafka_source`: `TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_TOPIC_PROPERTIES`,
+the pattern of the other types, under `tbmq.ie.downlink.kafka.source`: `TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_TOPIC_PROPERTIES`,
 `TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_ADDITIONAL_CONSUMER_CONFIG` and
 `TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_ADDITIONAL_PRODUCER_CONFIG`. See
 <DocLink product={props.product} path="integrations/#downlink-topics">Downlink topics</DocLink>.
@@ -363,13 +363,14 @@ the pattern of the other types, under `tbmq.ie.downlink.kafka_source`: `TB_KAFKA
 ## Receive a Kafka record over MQTT
 
 <Steps>
-1. Create the integration as described above, keeping the default **MQTT topic template** `tbmq/kafka/messages`, and
-   make sure its status is **Active**.
+1. Create the integration as described above, keeping the defaults **Kafka topic** `tbmq.source.messages` and
+   **MQTT topic template** `tbmq/kafka/messages`, and make sure its status is **Active**.
 2. Navigate to the **WebSocket Client** page.
 3. Select **WebSocket Default Connection** (or any working connection) and click **Connect**. Verify the connection
    status shows `Connected`.
 4. Add a subscription for the topic filter `tbmq/kafka/messages`.
-5. Produce a record to the integration's **Kafka topic** with the payload `{"temperature": 25}`. With `kafka-console-producer`:
+5. Produce a record to the integration's **Kafka topic** with the payload `{"temperature": 25}`. With
+   `kafka-console-producer`, pointing `--bootstrap-server` at your own cluster:
 
    ```bash
    kafka-console-producer.sh --bootstrap-server localhost:9092 --topic tbmq.source.messages

@@ -160,7 +160,7 @@ TBMQ uses **Kafka compact topics** for downlink communication, one per integrati
 - `tbmq.ie.downlink.http`
 - `tbmq.ie.downlink.mqtt`
 - `tbmq.ie.downlink.kafka`
-- `tbmq.ie.downlink.kafka_source`
+- `tbmq.ie.downlink.kafka.source`
 - `tbmq.ie.downlink.postgresql`
 </ShowFor>
 
@@ -645,6 +645,8 @@ IntegrationStatisticsKey(integrationStatisticsMetricName=START, success=true, in
 - `MSGS_UPLINK` — number of messages forwarded from the executor to external systems.
 - `success=true | false` — whether the attempt succeeded or failed.
 - `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
+
+Direction is from the executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink` topics: `MSGS_UPLINK` is what leaves the executor for an external system.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
@@ -654,9 +656,9 @@ IntegrationStatisticsKey(integrationStatisticsMetricName=START, success=true, in
 - `MSGS_DOWNLINK` — number of messages a [source integration](#source-integrations) consumed from its external system.
 - `success=true | false` — whether the attempt succeeded or failed.
 - `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
-</ShowFor>
 
 Direction is always from the executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink` topics: `MSGS_UPLINK` leaves the executor, `MSGS_DOWNLINK` enters it. Only source types report `MSGS_DOWNLINK`, and only outbound types report `MSGS_UPLINK`.
+</ShowFor>
 
 ### Integration state summary
 

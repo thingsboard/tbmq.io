@@ -354,6 +354,33 @@ export function subscriptionTrie(k) {
 // =============================================================================
 // N4 — Kafka topics map
 // =============================================================================
+/** Vertical pitch of a topic row inside a group box; the render loop below advances `ry` by it. */
+const ROW_PITCH = 44;
+
+/** The CE Integration Executor rows, and the height the group box needs for exactly these. */
+const IE_ROWS_CE = [
+	['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
+	['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
+	['tbmq.ie.uplink', 'global', 'events → broker'],
+	['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
+	['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
+];
+const IE_HEIGHT_CE = 250;
+
+/**
+ * PE keeps every CE row and differs in two ways: two more per-type downlink topics in the brace
+ * list, and the `tbmq.ie.source` data topic right after it. Expressed as an override of the CE
+ * array so a rename of any shared row stays a one-line edit.
+ */
+const IE_ROWS_PE = IE_ROWS_CE.flatMap(([name, scope, note]) =>
+	name.startsWith('tbmq.ie.downlink.')
+		? [
+				['tbmq.ie.downlink.{http,kafka,kafka.source,mqtt,postgresql}', scope, note],
+				['tbmq.ie.source', 'global', 'sourced publishes → broker'],
+			]
+		: [[name, scope, note]]
+);
+
 /**
  * @param {object} [spec]
  * @param {boolean} [spec.source] Include the PE-only `tbmq.ie.source` data topic and list the PE
@@ -361,24 +388,9 @@ export function subscriptionTrie(k) {
  *   canvas height all follow the row count rather than being hand-tuned per variant.
  */
 export function kafkaTopicsMap(k, spec = {}) {
-	const ieRows = spec.source
-		? [
-				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
-				['tbmq.ie.downlink.{http,kafka,kafka_source,mqtt,postgresql}', 'per-type', 'downlink config · compacted'],
-				['tbmq.ie.source', 'global', 'sourced publishes → broker'],
-				['tbmq.ie.uplink', 'global', 'events → broker'],
-				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
-				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
-			]
-		: [
-				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
-				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
-				['tbmq.ie.uplink', 'global', 'events → broker'],
-				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
-				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
-			];
-	const ieHeight = 250 + (ieRows.length - 5) * 44;
-	const grow = ieHeight - 250;
+	const ieRows = spec.source ? IE_ROWS_PE : IE_ROWS_CE;
+	const grow = (ieRows.length - IE_ROWS_CE.length) * ROW_PITCH;
+	const ieHeight = IE_HEIGHT_CE + grow;
 	const W = 1280,
 		H = 970 + grow;
 	const P = [];
@@ -469,7 +481,7 @@ export function kafkaTopicsMap(k, spec = {}) {
 			P.push(k.text(tagX + tagW / 2, ry + 19, scope, { anchor: 'middle', size: 10.5, weight: 600, fill: k.T.inkSub }));
 			if (note)
 				P.push(k.text(tagX - 10, ry + 19, note, { anchor: 'end', size: 10.5, weight: 500, fill: k.T.inkMuted }));
-			ry += 44;
+			ry += ROW_PITCH;
 		}
 	}
 

@@ -350,18 +350,13 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
+    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24). The Professional Edition variant of this diagram additionally shows the tbmq.ie.source topic and the PE set of per-type downlink topics.',
     caption: 'Kafka topics grouped by function and scope',
   },
 ]} />
 
 <details>
-  <ShowFor product={props.product} show={[Products.TBMQ]}>
-    <summary>Full topic reference — all 21 topics, with scope and defaults</summary>
-  </ShowFor>
-  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-    <summary>Full topic reference — all 22 topics, with scope and defaults</summary>
-  </ShowFor>
+  <summary>Full topic reference — every topic, with scope and defaults</summary>
 
 | Topic | Scope | Description |
 |---|---|---|
@@ -640,16 +635,16 @@ so they never hold up a client's connection.
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={3} id="source-integrations" showFor="mqtt-broker-pe">Source integrations</ConditionalHeading>
 
-A **source** integration inverts the whole exchange. Nothing inside the broker triggers it: it polls its external
-system on a thread of its own inside the executor, so no `tbmq.msg.ie.$INTEGRATION_ID` and no
-`tbmq.ie.event.$INTEGRATION_ID` topic is ever created for it. Every record it reads is produced to one shared data
-topic, `tbmq.ie.source`, keyed by integration and source partition; a consumer on each broker node reads that topic,
-revalidates the record, charges the licensed incoming throughput quota, and injects it into the publish pipeline as a
-publish from the client ID `ie-source-<integrationId>` — from there it is an ordinary message on `tbmq.msg.all`.
+A **source** integration inverts the exchange: nothing inside the broker triggers it, so the arrows above run the other
+way and neither `tbmq.msg.ie.$INTEGRATION_ID` nor `tbmq.ie.event.$INTEGRATION_ID` is ever created for it. It reaches
+the broker on one shared data topic instead, `tbmq.ie.source` — deliberately separate from `tbmq.ie.uplink`, which
+carries lifecycle, statistics and error events that a busy source must not be able to delay. A consumer on each broker
+node reads it and injects each record into the publish pipeline, where it becomes an ordinary message on
+`tbmq.msg.all`.
 
-Keeping the sourced data off `tbmq.ie.uplink` is deliberate: the uplink carries lifecycle, statistics and error events
-that a busy source must not be able to delay. The <DocLink product={props.product} path="integrations/kafka-source">Kafka
-source integration</DocLink> is the only type of this kind today.
+<DocLink product={props.product} path="integrations/#source-integrations">Source integrations</DocLink> covers the
+mechanism, and the <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink>
+— the only type of this kind today — the configuration.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
