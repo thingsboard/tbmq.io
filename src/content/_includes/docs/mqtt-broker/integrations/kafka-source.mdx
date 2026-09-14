@@ -264,9 +264,11 @@ Before a record is sent to the broker, the executor checks it against the intern
 fixed 1024-byte allowance for the envelope, so the usable payload is a little under 1 MiB. A record over the limit is
 [unmappable](#unmappable-records) — it is skipped, not retried.
 
-To raise it, set `max.request.size` in `TB_KAFKA_IE_SOURCE_ADDITIONAL_PRODUCER_CONFIG` on the Integration Executor.
-It has to be that per-topic key: a value in the common producer configuration is not seen by this check. Raise the
-broker-side limits to match, or the larger records will simply be refused a step later.
+To raise it, set `max.request.size` in `TB_KAFKA_IE_SOURCE_ADDITIONAL_PRODUCER_CONFIG` on the
+<DocLink product={props.product} path="installation/ie-config">Integration Executor</DocLink>. It has to be that
+per-topic key: a value in the common producer configuration is not seen by this check. Raise the
+<DocLink product={props.product} path="installation/config">broker-side</DocLink> limits to match, or the larger
+records will simply be refused a step later.
 
 ## What the broker enforces
 
@@ -294,8 +296,8 @@ per message.
 How many nodes that is depends on partitioning, not on cluster size. A record's key is the integration ID and its
 **source** partition, so an integration reading a single-partition Kafka topic always lands on one `tbmq.ie.source`
 partition and therefore one node, however large the cluster. Reading a topic with more partitions spreads it across the
-nodes consuming those `tbmq.ie.source` partitions — at most `partitions` of them, 6 by default. The integration's own
-error counter is not rate-limited at all and stays the accurate measure of how much is failing.
+nodes consuming those `tbmq.ie.source` partitions — at most as many as that topic has, six by default. The
+integration's own error counter is not rate-limited at all and stays the accurate measure of how much is failing.
 
 <Aside type="caution">
   **Avoid a publish loop.** If the MQTT topic template resolves into a topic that an outbound
@@ -330,43 +332,6 @@ A source integration consumes *into* the executor, so its throughput is counted 
   under `ie.source.published`.
 
 See <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink> for the full series list.
-
-## Advanced configuration
-
-The internal topic that carries sourced publishes from the executors to the broker is configured on both services:
-
-<div class="config-def-list">
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_TOPIC</code> · <span class="config-def-label">Default</span> <code>tbmq.ie.source</code></p>
-    <p class="config-def-desc">Name of the data topic carrying sourced publishes. Lifecycle events and heartbeats stay on `tbmq.ie.uplink`, so a busy source cannot delay them.</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_TOPIC_PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
-    <p class="config-def-desc">Kafka topic properties for `tbmq.ie.source`. Its `partitions` count bounds how much sourced traffic the broker side can consume in parallel.</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_ADDITIONAL_PRODUCER_CONFIG</code> · <span class="config-def-label">Default</span> <code>&nbsp;</code></p>
-    <p class="config-def-desc">Additional producer configuration for `tbmq.ie.source`. A `max.request.size` set here is also the [payload limit](#payload-size) the executor enforces before sending a record — the check does not read the common producer configuration.</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB_KAFKA_IE_SOURCE_ADDITIONAL_CONSUMER_CONFIG</code> · <span class="config-def-label">Default</span> <code>&nbsp;</code></p>
-    <p class="config-def-desc">Additional consumer configuration for `tbmq.ie.source`, used by the broker. `max.poll.records` (Kafka's default of `500`) bounds the pack the broker awaits before committing.</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB_IE_SOURCE_POLL_INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
-    <p class="config-def-desc">How often the broker polls `tbmq.ie.source` (ms).</p>
-  </div>
-  <div class="config-def-item">
-    <p class="config-def-meta"><code class="config-def-env">TB_IE_SOURCE_PACK_PROCESSING_TIMEOUT</code> · <span class="config-def-label">Default</span> <code>20000</code></p>
-    <p class="config-def-desc">How long the broker waits for a pack of sourced publishes to settle before committing anyway (ms). Each one charges the licensed throughput quota with a blocking call that may wait on a Redis round trip, so do not set this below the Redis connect and read timeouts if Redis stalls are expected.</p>
-  </div>
-</div>
-
-Configuration for the integration's own type — the compact topic that carries its configuration to the executors — follows
-the pattern of the other types, under `tbmq.ie.downlink.kafka.source`: `TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_TOPIC_PROPERTIES`,
-`TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_ADDITIONAL_CONSUMER_CONFIG` and
-`TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_ADDITIONAL_PRODUCER_CONFIG`. See
-<DocLink product={props.product} path="integrations/#downlink-topics">Downlink topics</DocLink>.
 
 ## Receive a Kafka record over MQTT
 
