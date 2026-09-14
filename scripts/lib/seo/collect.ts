@@ -53,10 +53,18 @@ export function collectFacts(html: string, pathname: string): PageFacts {
 
 	const text = mainEl ? DomUtils.innerText(mainEl).trim() : '';
 
+	// Split on commas rather than substring-matching: `noindex` has to be a whole
+	// directive, and `none` is its shorthand.
+	const robotsDirectives = metas
+		.filter((m) => ['robots', 'googlebot'].includes(m.attribs.name?.trim().toLowerCase() ?? ''))
+		.flatMap((m) => (m.attribs.content ?? '').toLowerCase().split(','))
+		.map((directive) => directive.trim());
+
 	return {
 		pathname,
 		section: sectionOf(pathname),
 		isRedirect: metas.some((m) => m.attribs['http-equiv']?.toLowerCase() === 'refresh'),
+		noIndex: robotsDirectives.includes('noindex') || robotsDirectives.includes('none'),
 		title: titleEl ? DomUtils.innerText(titleEl).trim() : '',
 		description: metas.find((m) => m.attribs.name?.toLowerCase() === 'description')?.attribs.content?.trim() ?? '',
 		h1Count: tags('h1').length,

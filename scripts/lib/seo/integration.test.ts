@@ -29,12 +29,16 @@ test('exactly one page is missing an h1', options, () => {
 	);
 });
 
-// Re-measured against dist/ on 2026-09-14. `/community/` is a TRUE orphan: the only
+// Measured against dist/ on 2026-09-14. `/community/` is a TRUE orphan: the only
 // `https://tbmq.io/community/` href in the entire build sits on /community/ itself,
 // so it has zero inbound links from any other page. This one assertion exercises
 // both the absolute-href normalisation from Task 1 (without it the href is invisible
 // and the count is trivially zero for the wrong reason) and the self-link guard from
 // Task 3 (without it that href counts and downgrades this to near-orphan).
+//
+// Noindex pages are absent by design, not by accident: /contact-us-thanks/,
+// /docs/search/, /docs/pe/search/ and /blog/author/dmytro-shvaika/ all have 0 or 1
+// inbound links and all carry `noindex, follow`, so the checks skip them.
 test('the orphan and near-orphan sets match the measured baseline', options, () => {
 	const findings = buildReport(DIST).findings;
 	const paths = (check: string) =>
@@ -42,18 +46,8 @@ test('the orphan and near-orphan sets match the measured baseline', options, () 
 			.filter((f) => f.check === check)
 			.map((f) => f.pathname)
 			.sort();
-	assert.deepEqual(paths('orphan-page'), [
-		'/community/',
-		'/contact-us-thanks/',
-		'/docs/newsletter-thanks/',
-		'/product/terms-of-use/',
-	]);
-	assert.deepEqual(paths('near-orphan-page'), [
-		'/blog/author/dmytro-shvaika/',
-		'/docs/pe/search/',
-		'/docs/search/',
-		'/product/privacy-policy/',
-	]);
+	assert.deepEqual(paths('orphan-page'), ['/community/', '/docs/newsletter-thanks/', '/product/terms-of-use/']);
+	assert.deepEqual(paths('near-orphan-page'), ['/product/privacy-policy/']);
 });
 
 // Re-measured against dist/ on 2026-09-14 after the crosslink checks were moved

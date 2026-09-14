@@ -14,6 +14,7 @@ function page(overrides: Partial<PageFacts> = {}): PageFacts {
 		pathname: '/mqtt/qos/',
 		section: 'mqtt',
 		isRedirect: false,
+		noIndex: false,
 		title: 'MQTT QoS 0, 1 and 2 Explained in Depth',
 		description:
 			'How each MQTT quality-of-service level behaves in practice, and which one to choose for a given IoT workload.',
@@ -125,6 +126,31 @@ test('outbound links to pages outside the build do not create inbound counts', (
 		findings.filter((f) => f.check === 'orphan-page').map((f) => f.pathname),
 		['/a/']
 	);
+});
+
+// An orphan finding says "this page can rank but nothing points at it". A noindex
+// page cannot rank, so the finding is meaningless there — /blog/author/*,
+// /docs/search/ and /contact-us-thanks/ are all noindex deliberately.
+test('noindex pages are never reported as orphans or near-orphans', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', noIndex: true, outboundPathnames: [] }),
+		page({ pathname: '/b/', noIndex: true, outboundPathnames: ['/a/'] }),
+	]);
+	assert.deepEqual(
+		findings.filter((f) => f.check === 'orphan-page' || f.check === 'near-orphan-page'),
+		[]
+	);
+});
+
+// The directive the site emits is `noindex, follow`: the page is still crawled and
+// its links still carry. Dropping it from the graph entirely would invent orphans.
+test('links from a noindex page still count as inbound links', () => {
+	const findings = checkLinkGraph([
+		page({ pathname: '/a/', noIndex: true, outboundPathnames: ['/b/'] }),
+		page({ pathname: '/b/', outboundPathnames: [] }),
+	]);
+	assert.equal(findings.filter((f) => f.check === 'orphan-page' && f.pathname === '/b/').length, 0);
+	assert.equal(findings.filter((f) => f.check === 'near-orphan-page' && f.pathname === '/b/').length, 1);
 });
 
 test('redirect stubs are excluded from the link graph', () => {

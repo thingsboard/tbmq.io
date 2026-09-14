@@ -16,6 +16,15 @@ export interface PageFacts {
 	section: Section;
 	/** True when the page is a meta-refresh redirect stub; every check skips those. */
 	isRedirect: boolean;
+	/**
+	 * True when `<meta name="robots">` (or `googlebot`) carries `noindex`/`none`.
+	 * The orphan checks skip these: "nothing links to this page" is a statement
+	 * about lost ranking, and a page that cannot be indexed has none to lose.
+	 * /blog/author/*, /docs/search/ and /contact-us-thanks/ are all noindex by
+	 * design. It stays in the graph as a link *source* — the site emits
+	 * `noindex, follow`, so those links are still crawled.
+	 */
+	noIndex: boolean;
 	/** Empty string when absent, never null, so length checks need no guard. */
 	title: string;
 	/** Empty string when absent. */

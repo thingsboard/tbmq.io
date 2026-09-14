@@ -111,7 +111,12 @@ export function checkLinkGraph(pages: PageFacts[]): Finding[] {
 		}
 	}
 
+	// Reported on indexable pages only. A noindex page is unreachable from search
+	// whatever its inbound count, so flagging it is noise; it still counts as a
+	// link source above, because the site emits `noindex, follow`.
+	const noIndexed = new Set(live.filter((page) => page.noIndex).map((page) => page.pathname));
 	for (const [pathname, count] of inbound) {
+		if (noIndexed.has(pathname)) continue;
 		if (count === 0) {
 			findings.push(finding('orphan-page', 'high', pathname, 'no inbound internal links'));
 		} else if (count === 1) {
