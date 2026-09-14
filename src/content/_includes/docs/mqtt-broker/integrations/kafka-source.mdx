@@ -131,8 +131,10 @@ What validation cannot check is the record. These are decided per record, at run
 
 - The template reads `${key}` but the record has **no key**.
 - The template reads `${header.x}` but the record carries no header `x`.
-- The resolved topic has more levels than the broker's `MQTT_TOPIC_MAX_SEGMENTS_COUNT` allows — a limit the executor
-  cannot see, so it is the broker that refuses the message.
+- The resolved topic has more levels than the broker's
+  <DocLink product={props.product} path="user-guide/topics/#configuring-maximum-topic-segments">`MQTT_TOPIC_MAX_SEGMENTS_COUNT`</DocLink>
+  allows — a limit the executor cannot see, so it is the broker that refuses the message. It is **off by default**
+  (`0`, unlimited), so this applies only where one has been set.
 
 The first two make the record [unmappable](#unmappable-records); the third is a [broker-side refusal](#what-the-broker-enforces).
 
@@ -281,7 +283,7 @@ are not — the MQTT path treats a malformed publish from a client the same way,
 
 | Check | Result when it fails | Also counted as |
 |---|---|---|
-| Topic validity | The publish is rejected. This is the check that applies `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, the one topic rule the executor cannot pre-check. | Protocol error |
+| Topic validity | The publish is rejected. This is also where `MQTT_TOPIC_MAX_SEGMENTS_COUNT` applies — the one topic rule the executor cannot pre-check, and off by default (`0`, unlimited). | Protocol error |
 | Retain flag off | A retained sourced publish is rejected. The executor never sets the flag, so this guards the path, not the configuration. | Protocol error |
 | QoS in `0`–`2` | The publish is rejected. | Protocol error |
 | Throughput quota | The publish is dropped, exactly like a client publish over the licensed quota. | Dropped message — **Rate limits** |
