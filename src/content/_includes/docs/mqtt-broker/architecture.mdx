@@ -2,6 +2,15 @@ import { Aside, CardGrid } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import AttributeCard from '~/components/AttributeCard.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import { Products } from '~/models/site.models';
+
+{/* Alt text for the Kafka topics gallery below. The `-tbmq-pe` filename suffix gives each edition its own
+    SVG but not its own alt, so the PE variant is spelled out here and picked per edition at the call site. */}
+export const kafkaTopicsAlt =
+	'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).';
+export const kafkaTopicsAltPe = `${kafkaTopicsAlt} The Integration Executor group also lists tbmq.ie.source, the global topic carrying sourced publishes to the broker, and the per-type downlink topics for http, kafka, kafka.source, mqtt and postgresql.`;
 
 TBMQ is designed with four core attributes:
 
@@ -347,13 +356,13 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/architecture/tbmq-kafka-topics.svg',
-    alt: 'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).',
+    alt: props.product === Products.TBMQ_PE ? kafkaTopicsAltPe : kafkaTopicsAlt,
     caption: 'Kafka topics grouped by function and scope',
   },
 ]} />
 
 <details>
-  <summary>Full topic reference — all 21 topics, with scope and defaults</summary>
+  <summary>Full topic reference — every topic, with scope and defaults</summary>
 
 | Topic | Scope | Description |
 |---|---|---|
@@ -378,6 +387,15 @@ topics are shared by every node (consumer groups rebalance across them), **per-n
 | `tbmq.ie.uplink` | global | Integration lifecycle, statistics, and error events, executor → broker |
 | `tbmq.ie.uplink.notifications.$SERVICE_ID` | per-node | Validation responses routed back to the node that asked |
 | `tbmq.ie.event.$INTEGRATION_ID` | per-integration | MQTT **client** lifecycle events (connected, disconnected, subscribed, unsubscribed, authentication/authorization failed, connection failed) for the integrations configured to receive them, broker → executor. One single-partition topic per integration, created by the executor |
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+One more topic exists in TBMQ PE only, for the inbound direction:
+
+| Topic | Scope | Description |
+|---|---|---|
+| `tbmq.ie.source` | global | Publishes sourced by an inbound integration, executor → broker. 6 partitions by default, keyed `$INTEGRATION_ID:$SOURCE_PARTITION`. Shared by every source integration rather than one topic per integration, and deliberately separate from `tbmq.ie.uplink` so a busy source cannot delay control traffic |
+
+</ShowFor>
 
 </details>
 
@@ -575,9 +593,19 @@ See <DocLink product={props.product} path="concepts/clustering">Clustering</DocL
 
 ## Integration Executor
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
 broker to external systems without adding load to the message path. It consumes messages from Kafka and pushes them to
 the configured targets, supporting **HTTP**, **MQTT**, and **Kafka** integration types.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
+broker to external systems without adding load to the message path. Most of its work is outbound: it consumes messages
+from Kafka and pushes them to the configured targets, supporting **HTTP**, **MQTT**, **Kafka**, and **PostgreSQL**
+integration types. The **Kafka source** type runs the other way — it consumes an external Kafka topic and feeds the
+broker instead; see [Source integrations](#source-integrations) below.
+</ShowFor>
 
 Because it is deployed and scaled independently of the broker, a slow or failing external endpoint never back-pressures
 MQTT traffic, and integration throughput can be scaled by running more executor instances. The unit of distribution is
@@ -610,9 +638,33 @@ so they never hold up a client's connection.
   },
 ]} />
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="source-integrations" showFor="mqtt-broker-pe">Source integrations</ConditionalHeading>
+
+A **source** integration inverts the exchange: nothing inside the broker triggers it, so the arrows above run the other
+way and neither `tbmq.msg.ie.$INTEGRATION_ID` nor `tbmq.ie.event.$INTEGRATION_ID` is ever created for it. It reaches
+the broker on one shared data topic instead, `tbmq.ie.source` — deliberately separate from `tbmq.ie.uplink`, which
+carries lifecycle, statistics and error events that a busy source must not be able to delay. A consumer on each broker
+node reads it and injects each record into the publish pipeline, where it becomes an ordinary message on
+`tbmq.msg.all`.
+
+<DocLink product={props.product} path="integrations/#source-integrations">Source integrations</DocLink> covers the
+mechanism. The <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> —
+the only type of this kind today — covers the configuration.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 Integrations are available in both editions. See <DocLink product={props.product} path="integrations">Integrations</DocLink>
 for the supported types and <DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink>
 for deployment and tuning.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Integrations are available in both editions, though the PostgreSQL and Kafka source types are Professional Edition only.
+See <DocLink product={props.product} path="integrations">Integrations</DocLink> for the supported types and
+<DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink> for
+deployment and tuning.
+</ShowFor>
 
 ## Programming languages
 

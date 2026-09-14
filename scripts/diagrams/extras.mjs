@@ -354,16 +354,75 @@ export function subscriptionTrie(k) {
 // =============================================================================
 // N4 — Kafka topics map
 // =============================================================================
-export function kafkaTopicsMap(k) {
+/** Vertical pitch of a topic row inside a group box; the render loop below advances `ry` by it. */
+const ROW_PITCH = 44;
+
+/**
+ * Height every group box is drawn at, and how many rows fit in one. Rows start at `g.y + 34` and
+ * step by `ROW_PITCH`, so five rows end at 248 and a sixth would spill past the bottom edge. The
+ * four groups in the 2×2 grid share the height regardless of their row counts (they hold 5, 4, 4
+ * and 3) — it is the grid's height, not a function of any one group's contents. Only the IE band
+ * below the grid is free to grow, which is what `GROUP_ROW_CAPACITY` is for.
+ */
+const GROUP_HEIGHT = 250;
+const GROUP_ROW_CAPACITY = 5;
+
+/**
+ * The one Integration Executor row that differs between the editions, named so the PE variant
+ * can swap it by position rather than by matching its text — a rename would otherwise silently
+ * drop `tbmq.ie.source` from the PE diagram and still render a clean layout. PE reuses the CE
+ * row's scope and note verbatim, so the two can only differ where they are meant to.
+ */
+const IE_DOWNLINK_ROW_CE = ['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'];
+const IE_DOWNLINK_ROW_PE = [
+	'tbmq.ie.downlink.{http,kafka,kafka.source,mqtt,postgresql}',
+	...IE_DOWNLINK_ROW_CE.slice(1),
+];
+const IE_SOURCE_ROW = ['tbmq.ie.source', 'global', 'sourced publishes → broker'];
+
+/** The CE Integration Executor rows. */
+const IE_ROWS_CE = [
+	['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
+	IE_DOWNLINK_ROW_CE,
+	['tbmq.ie.uplink', 'global', 'events → broker'],
+	['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
+	['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
+];
+
+/**
+ * PE keeps every CE row and differs in two ways: two more per-type downlink topics in the brace
+ * list, and the `tbmq.ie.source` data topic right after it. Spliced at the downlink row's own
+ * index so a rename of any shared row stays a one-line edit, and so a row added before it cannot
+ * put `tbmq.ie.source` in the wrong place.
+ */
+const IE_DOWNLINK_INDEX = IE_ROWS_CE.indexOf(IE_DOWNLINK_ROW_CE);
+if (IE_DOWNLINK_INDEX < 0) {
+	// Without this, toSpliced(-1, …) would splice one row from the end and still render cleanly.
+	throw new Error('IE_DOWNLINK_ROW_CE is no longer in IE_ROWS_CE — the PE topic map cannot be derived');
+}
+const IE_ROWS_PE = IE_ROWS_CE.toSpliced(IE_DOWNLINK_INDEX, 1, IE_DOWNLINK_ROW_PE, IE_SOURCE_ROW);
+
+/**
+ * @param {object} [spec]
+ * @param {boolean} [spec.source] Include the PE-only `tbmq.ie.source` data topic and list the PE
+ *   set of downlink topics. The IE group grows by one row, so its box, the two captions and the
+ *   canvas height all follow the row count rather than being hand-tuned per variant.
+ */
+export function kafkaTopicsMap(k, spec = {}) {
+	const ieRows = spec.source ? IE_ROWS_PE : IE_ROWS_CE;
+	// Measured against the box's capacity rather than against the CE row count, so adding a row to
+	// IE_ROWS_CE grows the box too instead of spilling rows out of the bottom of a 250-tall band.
+	const grow = Math.max(0, ieRows.length - GROUP_ROW_CAPACITY) * ROW_PITCH;
+	const ieHeight = GROUP_HEIGHT + grow;
 	const W = 1280,
-		H = 970;
+		H = 970 + grow;
 	const P = [];
 	const groups = [
 		{
 			x: 40,
 			y: 56,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'kafka',
 			label: 'Message flow',
 			rows: [
@@ -378,7 +437,7 @@ export function kafkaTopicsMap(k) {
 			x: 650,
 			y: 56,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'pg',
 			label: 'Session & subscription state',
 			rows: [
@@ -392,7 +451,7 @@ export function kafkaTopicsMap(k) {
 			x: 40,
 			y: 340,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'core',
 			label: 'Cross-node routing (per-node)',
 			rows: [
@@ -406,7 +465,7 @@ export function kafkaTopicsMap(k) {
 			x: 650,
 			y: 340,
 			w: 590,
-			h: 250,
+			h: GROUP_HEIGHT,
 			kind: 'transport',
 			label: 'System & housekeeping',
 			rows: [
@@ -419,16 +478,10 @@ export function kafkaTopicsMap(k) {
 			x: 40,
 			y: 624,
 			w: 1200,
-			h: 250,
+			h: ieHeight,
 			kind: 'ie',
 			label: 'Integration Executor',
-			rows: [
-				['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
-				['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'],
-				['tbmq.ie.uplink', 'global', 'events → broker'],
-				['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
-				['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
-			],
+			rows: ieRows,
 		},
 	];
 
@@ -451,7 +504,7 @@ export function kafkaTopicsMap(k) {
 			P.push(k.text(tagX + tagW / 2, ry + 19, scope, { anchor: 'middle', size: 10.5, weight: 600, fill: k.T.inkSub }));
 			if (note)
 				P.push(k.text(tagX - 10, ry + 19, note, { anchor: 'end', size: 10.5, weight: 500, fill: k.T.inkMuted }));
-			ry += 44;
+			ry += ROW_PITCH;
 		}
 	}
 
@@ -459,7 +512,7 @@ export function kafkaTopicsMap(k) {
 		cap(
 			k,
 			W,
-			906,
+			906 + grow,
 			// Names every scope tag used above rather than only three of them, and stays
 			// short enough to keep the caption clear of the canvas edges.
 			'Global topics are shared by all nodes (consumer groups rebalance across them); per-node, per-client, per-filter and per-integration topics each name their single owner in the suffix.'
@@ -469,7 +522,7 @@ export function kafkaTopicsMap(k) {
 		cap(
 			k,
 			W,
-			936,
+			936 + grow,
 			'All topic names carry an optional queue.kafka.kafka-prefix (empty by default). Client IDs / topic filters in suffixes are sanitised or SHA-256 hashed.',
 			{ size: 12 }
 		)
