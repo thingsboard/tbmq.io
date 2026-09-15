@@ -1,9 +1,18 @@
 import { Aside, Steps } from '@astrojs/starlight/components';
+import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 
 TBMQ TimescaleDB Integration writes MQTT messages and client lifecycle events into a **TimescaleDB** hypertable of your own, using SQL statements that you write. TimescaleDB is PostgreSQL plus an extension — same driver, wire protocol, URL scheme, SSL modes and connection properties — so this integration reuses the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink>'s connection setup, SQL template rules, placeholders and write path unchanged. What differs is the check-connection probe and the default SQL template, both covered below. The integration is tested against TimescaleDB **2.17** on PostgreSQL 16; any release with the `timescaledb` extension installed works, since the broker only checks for the extension.
 
 Only what's different from the PostgreSQL integration is documented on this page. For the connection fields, TLS modes, advanced timeouts, SQL template rules and placeholders, topic filters, client lifecycle events, delivery semantics, connection pool sizing and integration events, see the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink> guide — every one of them applies to TimescaleDB as-is.
+
+<ImageGallery product={props.product} images={[
+  {
+    src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-timescaledb-integration.svg',
+    alt: 'TimescaleDB integration data flow: devices exchange MQTT(S) traffic with TBMQ; TBMQ passes matched messages over TCP(TLS) to the TimescaleDB integration running inside the TBMQ Integration Executor; the integration writes them over TCP(TLS) into hypertables in an external TimescaleDB database of your own.',
+    caption: 'Devices → TBMQ → Integration Executor → your TimescaleDB hypertables',
+  },
+]} />
 
 ## Prerequisites
 

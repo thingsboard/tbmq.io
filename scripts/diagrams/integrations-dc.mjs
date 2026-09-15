@@ -10,7 +10,8 @@
  *   25 HTTP integration                 ┐
  *   26 MQTT integration                 ├ one layout, four targets
  *   27 Kafka integration                │
- *   29 PostgreSQL integration           ┘
+ *   29 PostgreSQL integration           │
+ *   29 TimescaleDB integration          ┘
  *   28 Integration payload encoding     → how the outgoing HTTP body is built
  *   29 MQTT topic QoS retain            → how topic/QoS/retain are resolved
  *   30 Kafka source integration         → the one inbound flow: Kafka → broker → subscribers
@@ -886,6 +887,21 @@ export const postgreSqlIntegration = (kit) =>
 		caption:
 			'Matched messages and client lifecycle events are written by the executor into a PostgreSQL database ' +
 			'of your own, through the SQL templates configured on the integration.',
+	});
+
+export const timescaleDbIntegration = (kit) =>
+	integrationType(kit, {
+		title: 'TimescaleDB integration',
+		integration: 'TimescaleDB',
+		targetIco: 'db',
+		target: 'TimescaleDB hypertable',
+		targetX: 1036,
+		targetW: 246,
+		protocol: 'TCP(TLS)',
+		legendTarget: 'External TimescaleDB database',
+		caption:
+			'Matched messages and client lifecycle events are written by the executor into TimescaleDB hypertables ' +
+			'of your own, through the same SQL templates as the PostgreSQL integration.',
 	});
 
 // =============================================================================

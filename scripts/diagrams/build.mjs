@@ -82,6 +82,11 @@ const DIAGRAMS = {
 		dir: 'integrations',
 		build: integrations.postgreSqlIntegration,
 	},
+	'timescaledb-integration': {
+		file: 'tbmq-timescaledb-integration',
+		dir: 'integrations',
+		build: integrations.timescaleDbIntegration,
+	},
 	'kafka-source-integration': {
 		file: 'tbmq-kafka-source-integration',
 		dir: 'integrations',
