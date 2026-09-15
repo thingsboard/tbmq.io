@@ -1,7 +1,7 @@
 import { Aside, Steps } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 
-TBMQ TimescaleDB Integration writes MQTT messages and client lifecycle events into a **TimescaleDB** hypertable of your own, using SQL statements that you write. TimescaleDB is PostgreSQL plus an extension — same driver, wire protocol, URL scheme, SSL modes and connection properties — so this integration reuses the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink>'s connection setup, SQL template rules, placeholders and write path unchanged. What differs is the check-connection probe and the default SQL template, both covered below. TimescaleDB **2.11 or newer** is supported.
+TBMQ TimescaleDB Integration writes MQTT messages and client lifecycle events into a **TimescaleDB** hypertable of your own, using SQL statements that you write. TimescaleDB is PostgreSQL plus an extension — same driver, wire protocol, URL scheme, SSL modes and connection properties — so this integration reuses the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink>'s connection setup, SQL template rules, placeholders and write path unchanged. What differs is the check-connection probe and the default SQL template, both covered below. The integration is tested against TimescaleDB **2.17** on PostgreSQL 16; any release with the `timescaledb` extension installed works, since the broker only checks for the extension.
 
 Only what's different from the PostgreSQL integration is documented on this page. For the connection fields, TLS modes, advanced timeouts, SQL template rules and placeholders, topic filters, client lifecycle events, delivery semantics, connection pool sizing and integration events, see the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink> guide — every one of them applies to TimescaleDB as-is.
 
@@ -43,7 +43,7 @@ SELECT create_hypertable('mqtt_client_events', 'time');
 ```
 
 <Aside>
-  On TimescaleDB 2.23 and newer, `CREATE TABLE ... WITH (tsdb.hypertable = true)` creates the hypertable in the same statement as the table, as an alternative to the separate `create_hypertable()` call above.
+  On TimescaleDB 2.20 and newer, `CREATE TABLE ... WITH (tsdb.hypertable = true)` creates the hypertable in the same statement as the table, as an alternative to the separate `create_hypertable()` call above.
 </Aside>
 
 ## Time column
@@ -56,7 +56,7 @@ The default templates fill `time` from the broker's own receive timestamp:
 to_timestamp(${ts}::double precision / 1000)
 ```
 
-`${ts}` is milliseconds; TimescaleDB's `to_timestamp()` expects seconds, hence the `/ 1000`.
+`${ts}` is milliseconds; PostgreSQL's `to_timestamp()` expects seconds, hence the `/ 1000`.
 
 If you'd rather use a time carried in the payload, cast it out with the JSON operators instead:
 
@@ -96,7 +96,7 @@ Tiger Cloud (Timescale's managed TimescaleDB service) exposes a service you conn
 | **Username** | `tsdbadmin` |
 | **SSL mode** | `Require` — `Verify CA` and `Verify full` need the CA chain from your service page uploaded as **CA certificate file** |
 
-A transaction-mode connection pooler (e.g. PgBouncer, or Tiger Cloud's own pooled connection string) works with this integration: every write opens its own connection and prepares its statement fresh on it rather than relying on a named prepared statement kept across executions, so there is no session state for the pooler to lose between statements.
+A transaction-mode connection pooler works with this integration only if it tracks prepared statements. The integration uses the PostgreSQL JDBC driver with its default `prepareThreshold` of `5`: once the same template has run five times on a pooled connection, the driver switches to a server-side named prepared statement and reuses it on that connection. A pooler that routes each transaction to a different backend without re-preparing then fails with `prepared statement "S_1" does not exist`. Tiger Cloud's pooled connection string is backed by a PgBouncer that tracks prepared statements, so it works as-is. For a self-hosted PgBouncer, use version 1.21 or newer with `max_prepared_statements` set to a non-zero value (the default is `0` before 1.24 and `200` from 1.24), or connect directly to the database instead.
 
 ## Check connection
 
@@ -153,6 +153,6 @@ A few TimescaleDB-specific things to plan for once messages are flowing:
 
 ## Limitations
 
-- **One row per message.** Each message is written as its own prepared statement on its own connection — there is no batching of several messages into one statement.
+- **One row per message.** Each message is written as its own prepared statement on a connection borrowed from the integration's pool — there is no batching of several messages into one statement.
 - **A failed statement is dropped by default.** As with PostgreSQL, a failed statement is never acknowledged as a success, and under the default `SKIP_ALL` <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> the message is simply dropped rather than retried.
 - **Credentials and PEM material are stored unencrypted.** The username/password and any client certificate, private key and CA certificate you provide are kept as plain text in the integration's stored configuration, the same as every other JDBC integration.
