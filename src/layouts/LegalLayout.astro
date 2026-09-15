@@ -47,6 +47,15 @@ const structuredData =
 		</div>
 		<CookieBanner />
 		<UtmTracker />
+		<script is:inline>
+			// The demo broker (demo.tbmq.io) embeds these pages in an <iframe> inside its
+			// sign-up dialog; the website-scope notice and the cookie banner are noise there.
+			// The banner is removed (not hidden) so its own script, which runs later, finds nothing to show.
+			if (window.self !== window.top) {
+				document.querySelectorAll('.scope').forEach((el) => (el.hidden = true));
+				document.getElementById('cookie-banner')?.remove();
+			}
+		</script>
 	</body>
 </html>
 
