@@ -1,5 +1,6 @@
 ---
 import SocialNetworks from '@components/Landing/SocialNetworks.astro';
+import LegalLinks from '@components/Landing/LegalLinks.astro';
 const currentYear = new Date().getFullYear();
 ---
 
@@ -19,6 +20,7 @@ const currentYear = new Date().getFullYear();
 
 		<div class="deepmost">
 			<div class="copyright">&copy; {currentYear} The ThingsBoard Authors</div>
+			<LegalLinks />
 			<SocialNetworks />
 		</div>
 	</div>
@@ -129,12 +131,19 @@ const currentYear = new Date().getFullYear();
 		.deepmost {
 			display: flex;
 			justify-content: space-between;
+			--legal-color: #8e8292;
+			--legal-hover-color: white;
 
 			@media screen and (max-width: 768px) {
 				display: block;
 
 				.copyright {
 					text-align: center;
+				}
+
+				:global(.legal) {
+					justify-content: center;
+					padding-top: 1rem;
 				}
 
 				:global(.social) {

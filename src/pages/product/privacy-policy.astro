@@ -1,11 +1,18 @@
 ---
 import LegalLayout from '@layouts/LegalLayout.astro';
+
+const title = 'Demo Broker Privacy Policy: How We Handle Your Data';
+const description =
+	'The privacy policy of the public TBMQ demo broker at demo.tbmq.io: which data it collects from connected clients and users, how it is used and protected, your rights, and how to contact us about it.';
 ---
 
-<LegalLayout title="TBMQ Privacy Policy" description="TBMQ Privacy Policy">
+<LegalLayout title={title} description={description} breadcrumb="Privacy Policy">
 	<h1>PRIVACY POLICY</h1>
-	<h2>Privacy Policy Statement on the Use of this Service (Website)</h2>
+	<h2>Privacy Policy Statement on the Use of this Service (demo.tbmq.io)</h2>
 	<p class="date">As of February 4, 2026</p>
+	<p class="scope">
+		This document applies to the public demo broker at <a href="https://demo.tbmq.io/" target="_blank" rel="noopener noreferrer">demo.tbmq.io</a> and the accounts and MQTT clients that use it. The tbmq.io website itself is covered by the <a href="/cookie-policy/" target="_blank" rel="noopener noreferrer">Cookie Policy</a>.
+	</p>
 
 	<br />
 

@@ -93,6 +93,7 @@ Props and usage live in each component file under `src/components/`. Commonly us
 - **ConditionalHeading** — TOC-aware heading for use inside JSX conditionals in `_includes`
 - **InstallationCardGrid** — installation option card grid
 - **DocLink** — product-aware internal links (always use instead of bare markdown links)
+- **LearnLink** — links from the docs into the `/mqtt/` learn hub; takes the topic `slug`, not a path, and fails the build on an unknown one (always use instead of bare `[…](/mqtt/…/)` links)
 - **Code blocks** — `maxLines`, `collapsible`, `wrap`, `download='file.ext'` meta options; `<Code>` component for dynamic code
 
 **Asset references fail silently, not loudly.** `ImageGallery` swaps in a CDN URL (`https://img.thingsboard.io/…`) when a local asset is missing, and `InstallationCardGrid` renders no icon at all (`svgModules[item.icon] ?? null`). A deleted or renamed image therefore passes both `astro check` and the build. To verify an asset change, grep the built site for `img.thingsboard.io` — the one legitimate hit is `support-ukraine-banner.webp`, which has lived on the CDN since it was removed upstream.

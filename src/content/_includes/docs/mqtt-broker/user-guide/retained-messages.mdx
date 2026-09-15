@@ -1,8 +1,9 @@
 import ImageGallery from '~/components/ImageGallery.astro';
 import Tabs from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
+import LearnLink from '@components/LearnLink.astro';
 
-Retained messages is an MQTT feature that allows storing the "last known good" message for a particular topic on the broker
+<LearnLink slug="retained-messages">Retained messages</LearnLink> is an MQTT feature that allows storing the "last known good" message for a particular topic on the broker
 and delivering the message to a client whenever the client subscribes to a matching topic.
 
 Key properties of retained messages:

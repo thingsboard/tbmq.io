@@ -1,6 +1,7 @@
 ---
 import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
 import SocialNetworks from '~/components/Landing/SocialNetworks.astro';
+import LegalLinks from '~/components/Landing/LegalLinks.astro';
 
 const currentYear = new Date().getFullYear();
 ---
@@ -16,6 +17,7 @@ const currentYear = new Date().getFullYear();
 	</nav>
 	<div class="deepmost">
 		<div class="copyright">&copy; {currentYear} The ThingsBoard Authors</div>
+		<LegalLinks />
 		<SocialNetworks />
 	</div>
 </div>
@@ -67,6 +69,8 @@ const currentYear = new Date().getFullYear();
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		--sn-color: var(--sl-color-gray-3);
+		--legal-color: var(--sl-color-gray-3);
+		--legal-hover-color: var(--sl-color-white);
 	}
 
 	.deepmost :global(.social) {

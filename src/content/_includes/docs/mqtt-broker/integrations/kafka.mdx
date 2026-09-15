@@ -3,12 +3,15 @@ import Tabs from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import LearnLink from '@components/LearnLink.astro';
 
 TBMQ Kafka Integration enables communication with **Apache Kafka**, allowing TBMQ to publish messages to external Kafka clusters. This is useful for the following scenarios:
 
 - **Streaming IoT Data** — forwarding device telemetry, logs, or events to Kafka for processing and storage.
 - **Event-Driven Architectures** — publishing messages to Kafka topics for real-time analytics and monitoring.
 - **Decoupled System Communication** — using Kafka as a buffer between TBMQ and downstream applications.
+
+The two technologies complement rather than replace each other — see <LearnLink slug="mqtt-vs-kafka">MQTT vs Kafka</LearnLink> for how they compare and why they are so often paired.
 
 ## Data flow
 
