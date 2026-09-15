@@ -150,9 +150,3 @@ A few TimescaleDB-specific things to plan for once messages are flowing:
   VALUES (to_timestamp(${ts}::double precision / 1000), ${clientId}, ${payload})
   ON CONFLICT (time, client_id) DO UPDATE SET payload = EXCLUDED.payload
   ```
-
-## Limitations
-
-- **One row per message.** Each message is written as its own prepared statement on a connection borrowed from the integration's pool — there is no batching of several messages into one statement.
-- **A failed statement is dropped by default.** As with PostgreSQL, a failed statement is never acknowledged as a success, and under the default `SKIP_ALL` <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> the message is simply dropped rather than retried.
-- **Credentials and PEM material are stored unencrypted.** The username/password and any client certificate, private key and CA certificate you provide are kept as plain text in the integration's stored configuration, the same as every other JDBC integration.
