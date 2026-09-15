@@ -9,16 +9,18 @@ export interface Props {
 }
 
 // `products` restricts an entry to the editions that ship it; leave it off for
-// one both editions have. Kafka source and PostgreSQL are PE-only — CE's
-// IntegrationType has no KAFKA_SOURCE or POSTGRESQL member, and there is no CE
-// page to link to. Kafka source reuses the `kafka` mark; the label carries the
-// distinction.
+// one both editions have. Kafka source, PostgreSQL and TimescaleDB are PE-only
+// — CE's IntegrationType has no KAFKA_SOURCE, POSTGRESQL or TIMESCALEDB member,
+// and there is no CE page to link to. Kafka source reuses the `kafka` mark;
+// TimescaleDB reuses the `postgresql` mark (no dedicated icon asset yet); the
+// label carries the distinction in both cases.
 const integrations: { name: string; icon: string; path: string; products?: Products[] }[] = [
 	{ name: 'HTTP', icon: 'http', path: 'integrations/http/' },
 	{ name: 'MQTT', icon: 'mqtt', path: 'integrations/mqtt/' },
 	{ name: 'Kafka', icon: 'kafka', path: 'integrations/kafka/' },
 	{ name: 'Kafka source', icon: 'kafka', path: 'integrations/kafka-source/', products: [Products.TBMQ_PE] },
 	{ name: 'PostgreSQL', icon: 'postgresql', path: 'integrations/postgresql/', products: [Products.TBMQ_PE] },
+	{ name: 'TimescaleDB', icon: 'postgresql', path: 'integrations/timescaledb/', products: [Products.TBMQ_PE] },
 ];
 
 const { product } = Astro.props;

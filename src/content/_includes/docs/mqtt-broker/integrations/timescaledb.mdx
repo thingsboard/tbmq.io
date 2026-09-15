@@ -1,0 +1,158 @@
+import { Aside, Steps } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+
+TBMQ TimescaleDB Integration writes MQTT messages and client lifecycle events into a **TimescaleDB** hypertable of your own, using SQL statements that you write. TimescaleDB is PostgreSQL plus an extension — same driver, wire protocol, URL scheme, SSL modes and connection properties — so this integration reuses the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink>'s connection setup, SQL template rules, placeholders and write path unchanged. What differs is the check-connection probe and the default SQL template, both covered below. TimescaleDB **2.11 or newer** is supported.
+
+Only what's different from the PostgreSQL integration is documented on this page. For the connection fields, TLS modes, advanced timeouts, SQL template rules and placeholders, topic filters, client lifecycle events, delivery semantics, connection pool sizing and integration events, see the <DocLink product={props.product} path="integrations/postgresql">PostgreSQL integration</DocLink> guide — every one of them applies to TimescaleDB as-is.
+
+## Prerequisites
+
+- Everything listed under <DocLink product={props.product} path="integrations/postgresql#prerequisites">PostgreSQL prerequisites</DocLink> applies here too.
+- **The destination tables must already exist as hypertables.** The integration never runs DDL — it only ever prepares and executes the SQL statement you configure — so create the tables and turn them into hypertables yourself before adding the integration. See [Tables](#tables) below.
+- Use a dedicated role with the `INSERT` grant (and `UPDATE` if your template updates rows) on the hypertables, not a superuser.
+
+## Tables
+
+The default message and lifecycle-events templates (see [Default templates](#default-templates)) expect these two hypertables:
+
+```sql
+CREATE TABLE mqtt_messages (
+    time      TIMESTAMPTZ NOT NULL,
+    client_id TEXT NOT NULL,
+    topic     TEXT NOT NULL,
+    qos       SMALLINT,
+    retain    BOOLEAN,
+    payload   JSONB
+);
+
+SELECT create_hypertable('mqtt_messages', 'time');
+```
+
+```sql
+CREATE TABLE mqtt_client_events (
+    time       TIMESTAMPTZ NOT NULL,
+    event_type TEXT NOT NULL,
+    client_id  TEXT NOT NULL,
+    session_id TEXT,
+    ip_address TEXT,
+    username   TEXT,
+    details    JSONB
+);
+
+SELECT create_hypertable('mqtt_client_events', 'time');
+```
+
+<Aside>
+  On TimescaleDB 2.23 and newer, `CREATE TABLE ... WITH (tsdb.hypertable = true)` creates the hypertable in the same statement as the table, as an alternative to the separate `create_hypertable()` call above.
+</Aside>
+
+## Time column
+
+Every hypertable needs a partitioning column, and both default tables use `time TIMESTAMPTZ NOT NULL` for it. `NOT NULL` is not a formality here: a placeholder whose field is absent from the arriving message binds `NULL` (see <DocLink product={props.product} path="integrations/postgresql#template-rules" bold={false}>template rules</DocLink>), and a `NOT NULL` time column then rejects that row outright with SQLState `23502` instead of silently storing a hypertable row with no time.
+
+The default templates fill `time` from the broker's own receive timestamp:
+
+```sql
+to_timestamp(${ts}::double precision / 1000)
+```
+
+`${ts}` is milliseconds; TimescaleDB's `to_timestamp()` expects seconds, hence the `/ 1000`.
+
+If you'd rather use a time carried in the payload, cast it out with the JSON operators instead:
+
+```sql
+(${payload}::jsonb ->> 'ts')::timestamptz
+```
+
+A payload that is missing the `ts` field yields `NULL` from `->>`, and one where `ts` is not a parseable timestamp fails the `::timestamptz` cast — either way `time` cannot be populated, so the insert fails and the row is not written.
+
+## Default templates
+
+The pre-filled SQL query template and lifecycle events SQL template, matching the tables above:
+
+```sql
+INSERT INTO mqtt_messages (time, client_id, topic, qos, retain, payload)
+VALUES (to_timestamp(${ts}::double precision / 1000), ${clientId}, ${topicName}, ${qos}, ${retain}, ${payload})
+```
+
+```sql
+INSERT INTO mqtt_client_events (time, event_type, client_id, session_id, ip_address, username, details)
+VALUES (to_timestamp(${ts}::double precision / 1000), ${eventType}, ${clientId}, ${sessionId}, ${ipAddress}, ${username}, ${subscriptions})
+```
+
+## Connection
+
+The connection fields, TLS modes and advanced timeouts are exactly the ones described for <DocLink product={props.product} path="integrations/postgresql#connection">PostgreSQL</DocLink>. The only difference is the default **SSL mode**, which is `Require` here instead of `Disable` — TimescaleDB deployments, especially managed ones, are reachable over TLS far more often than not.
+
+### Connecting to Tiger Cloud
+
+Tiger Cloud (Timescale's managed TimescaleDB service) exposes a service you connect to with:
+
+| Field | Value |
+|---|---|
+| **Host** | `<service>.<project>.tsdb.cloud.timescale.com`, from your service's connection info |
+| **Port** | The service's own direct-connection port (not the default `5432`) — copy it from the service page |
+| **Database** | `tsdb` |
+| **Username** | `tsdbadmin` |
+| **SSL mode** | `Require` — `Verify CA` and `Verify full` need the CA chain from your service page uploaded as **CA certificate file** |
+
+A transaction-mode connection pooler (e.g. PgBouncer, or Tiger Cloud's own pooled connection string) works with this integration: every write opens its own connection and prepares its statement fresh on it rather than relying on a named prepared statement kept across executions, so there is no session state for the pooler to lose between statements.
+
+## Check connection
+
+**Check connection** runs the same probe as PostgreSQL — a single connection, `SELECT 1`, then an `EXPLAIN` of each configured template inside a transaction that's always rolled back (see <DocLink product={props.product} path="integrations/postgresql#check-connection">PostgreSQL: Check connection</DocLink>) — plus one extra step run right after `SELECT 1`: it queries `pg_extension` for `timescaledb`, and fails with
+
+```plaintext
+TimescaleDB extension is not installed in the target database
+```
+
+if the extension isn't installed. This exists because `EXPLAIN` alone succeeds against a perfectly ordinary PostgreSQL table too, so without this check picking the TimescaleDB integration type and pointing it at a database without the extension would still show a green check.
+
+Whether the destination table is actually a hypertable is **not** checked — your template may be an `UPDATE` or a `WITH`, or write into a view or a staging table on purpose, so the probe only confirms the extension is present and the statement is plannable.
+
+## Operating the hypertable
+
+A few TimescaleDB-specific things to plan for once messages are flowing:
+
+- **Chunk interval.** Size chunks so the indexes of the currently-active chunks fit comfortably in memory — a common rule of thumb is keeping them within about 25% of `shared_buffers`. Adjust it with:
+
+  ```sql
+  SELECT set_chunk_time_interval('mqtt_messages', INTERVAL '1 day');
+  ```
+
+- **Compression**, once older chunks stop taking inserts:
+
+  ```sql
+  ALTER TABLE mqtt_messages SET (timescaledb.compress, timescaledb.compress_segmentby = 'client_id');
+  SELECT add_compression_policy('mqtt_messages', INTERVAL '7 days');
+  ```
+
+- **Retention**, to drop chunks past an age you no longer need:
+
+  ```sql
+  SELECT add_retention_policy('mqtt_messages', INTERVAL '90 days');
+  ```
+
+- **Upserts.** If your template relies on `ON CONFLICT` (see <DocLink product={props.product} path="integrations/postgresql#delivery-semantics" bold={false}>Delivery semantics</DocLink> for why you might), the `UNIQUE` or `PRIMARY KEY` constraint it targets must include the hypertable's time column — TimescaleDB does not support one that doesn't. For example:
+
+  ```sql
+  CREATE TABLE latest (
+      time      TIMESTAMPTZ NOT NULL,
+      client_id TEXT NOT NULL,
+      payload   TEXT,
+      UNIQUE (time, client_id)
+  );
+  SELECT create_hypertable('latest', 'time');
+  ```
+
+  ```sql
+  INSERT INTO latest (time, client_id, payload)
+  VALUES (to_timestamp(${ts}::double precision / 1000), ${clientId}, ${payload})
+  ON CONFLICT (time, client_id) DO UPDATE SET payload = EXCLUDED.payload
+  ```
+
+## Limitations
+
+- **One row per message.** Each message is written as its own prepared statement on its own connection — there is no batching of several messages into one statement.
+- **A failed statement is dropped by default.** As with PostgreSQL, a failed statement is never acknowledged as a success, and under the default `SKIP_ALL` <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> the message is simply dropped rather than retried.
+- **Credentials and PEM material are stored unencrypted.** The username/password and any client certificate, private key and CA certificate you provide are kept as plain text in the integration's stored configuration, the same as every other JDBC integration.
