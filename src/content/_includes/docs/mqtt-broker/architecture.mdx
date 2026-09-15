@@ -10,7 +10,7 @@ import { Products } from '~/models/site.models';
     SVG but not its own alt, so the PE variant is spelled out here and picked per edition at the call site. */}
 export const kafkaTopicsAlt =
 	'Kafka topics grouped by function — message flow, session & subscription state, cross-node routing (per-node), system/housekeeping, and Integration Executor — each tagged global, per-node, per-client, per-filter, per-type or per-integration, with default partition counts (tbmq.msg.all 16, tbmq.msg.persisted 12, tbmq.client.session.event.request 24).';
-export const kafkaTopicsAltPe = `${kafkaTopicsAlt} The Integration Executor group also lists tbmq.ie.source, the global topic carrying sourced publishes to the broker, and the per-type downlink topics for http, kafka, kafka.source, mqtt and postgresql.`;
+export const kafkaTopicsAltPe = `${kafkaTopicsAlt} The Integration Executor group also lists tbmq.ie.source, the global topic carrying sourced publishes to the broker, and the per-type downlink topic tbmq.ie.downlink.$INTEGRATION_TYPE.`;
 
 TBMQ is designed with four core attributes:
 
@@ -602,9 +602,8 @@ the configured targets, supporting **HTTP**, **MQTT**, and **Kafka** integration
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
 broker to external systems without adding load to the message path. Most of its work is outbound: it consumes messages
-from Kafka and pushes them to the configured targets, supporting **HTTP**, **MQTT**, **Kafka**, and **PostgreSQL**
-integration types. The **Kafka source** type runs the other way — it consumes an external Kafka topic and feeds the
-broker instead; see [Source integrations](#source-integrations) below.
+from Kafka and pushes them to the configured targets. The **Kafka source** type runs the other way — it consumes an
+external Kafka topic and feeds the broker instead; see [Source integrations](#source-integrations) below.
 </ShowFor>
 
 Because it is deployed and scaled independently of the broker, a slow or failing external endpoint never back-pressures
@@ -660,7 +659,7 @@ for deployment and tuning.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-Integrations are available in both editions, though the PostgreSQL and Kafka source types are Professional Edition only.
+Integrations are available in both editions, though several integration types are Professional Edition only.
 See <DocLink product={props.product} path="integrations">Integrations</DocLink> for the supported types and
 <DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink> for
 deployment and tuning.

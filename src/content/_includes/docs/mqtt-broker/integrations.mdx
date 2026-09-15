@@ -149,22 +149,7 @@ It is deliberately separate from `tbmq.ie.uplink`: control traffic — lifecycle
 
 ### Downlink topics
 
-TBMQ uses **Kafka compact topics** for downlink communication, one per integration type:
-
-<ShowFor product={props.product} show={[Products.TBMQ]}>
-- `tbmq.ie.downlink.http`
-- `tbmq.ie.downlink.mqtt`
-- `tbmq.ie.downlink.kafka`
-</ShowFor>
-
-<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-- `tbmq.ie.downlink.http`
-- `tbmq.ie.downlink.mqtt`
-- `tbmq.ie.downlink.kafka`
-- `tbmq.ie.downlink.kafka.source`
-- `tbmq.ie.downlink.postgresql`
-- `tbmq.ie.downlink.timescaledb`
-</ShowFor>
+TBMQ uses **Kafka compact topics** for downlink communication, one per integration type — `tbmq.ie.downlink.$INTEGRATION_TYPE`, e.g. `tbmq.ie.downlink.mqtt`.
 
 These topics deliver integration configuration events (create, update, delete) and trigger connection validation requests.
 

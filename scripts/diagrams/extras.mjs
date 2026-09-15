@@ -368,45 +368,40 @@ const GROUP_HEIGHT = 250;
 const GROUP_ROW_CAPACITY = 5;
 
 /**
- * The one Integration Executor row that differs between the editions, named so the PE variant
- * can swap it by position rather than by matching its text — a rename would otherwise silently
- * drop `tbmq.ie.source` from the PE diagram and still render a clean layout. PE reuses the CE
- * row's scope and note verbatim, so the two can only differ where they are meant to.
+ * Named `$INTEGRATION_TYPE` rather than spelling the types out, matching the topic table on the
+ * architecture page: the set grows with every new integration and both editions have a different
+ * one, so an enumeration here is a second list to keep in sync and a row that outgrows its box.
+ * The editions therefore share this row and differ only in `tbmq.ie.source`, which is PE-only.
  */
-const IE_DOWNLINK_ROW_CE = ['tbmq.ie.downlink.{http,kafka,mqtt}', 'per-type', 'downlink config · compacted'];
-const IE_DOWNLINK_ROW_PE = [
-	'tbmq.ie.downlink.{http,kafka,kafka.source,mqtt,postgresql}',
-	...IE_DOWNLINK_ROW_CE.slice(1),
-];
+const IE_DOWNLINK_ROW = ['tbmq.ie.downlink.$INTEGRATION_TYPE', 'per-type', 'downlink config · compacted'];
 const IE_SOURCE_ROW = ['tbmq.ie.source', 'global', 'sourced publishes → broker'];
 
 /** The CE Integration Executor rows. */
 const IE_ROWS_CE = [
 	['tbmq.msg.ie.$INTEGRATION_ID', 'per-integration', 'broker → executor'],
-	IE_DOWNLINK_ROW_CE,
+	IE_DOWNLINK_ROW,
 	['tbmq.ie.uplink', 'global', 'events → broker'],
 	['tbmq.ie.uplink.notifications.$SERVICE_ID', 'per-node', ''],
 	['tbmq.ie.event.$INTEGRATION_ID', 'per-integration', 'client lifecycle events'],
 ];
 
 /**
- * PE keeps every CE row and differs in two ways: two more per-type downlink topics in the brace
- * list, and the `tbmq.ie.source` data topic right after it. Spliced at the downlink row's own
- * index so a rename of any shared row stays a one-line edit, and so a row added before it cannot
- * put `tbmq.ie.source` in the wrong place.
+ * PE keeps every CE row and adds one: the `tbmq.ie.source` data topic, right after the downlink
+ * row. Spliced at that row's own index so a rename of any shared row stays a one-line edit, and
+ * so a row added before it cannot put `tbmq.ie.source` in the wrong place.
  */
-const IE_DOWNLINK_INDEX = IE_ROWS_CE.indexOf(IE_DOWNLINK_ROW_CE);
+const IE_DOWNLINK_INDEX = IE_ROWS_CE.indexOf(IE_DOWNLINK_ROW);
 if (IE_DOWNLINK_INDEX < 0) {
 	// Without this, toSpliced(-1, …) would splice one row from the end and still render cleanly.
-	throw new Error('IE_DOWNLINK_ROW_CE is no longer in IE_ROWS_CE — the PE topic map cannot be derived');
+	throw new Error('IE_DOWNLINK_ROW is no longer in IE_ROWS_CE — the PE topic map cannot be derived');
 }
-const IE_ROWS_PE = IE_ROWS_CE.toSpliced(IE_DOWNLINK_INDEX, 1, IE_DOWNLINK_ROW_PE, IE_SOURCE_ROW);
+const IE_ROWS_PE = IE_ROWS_CE.toSpliced(IE_DOWNLINK_INDEX + 1, 0, IE_SOURCE_ROW);
 
 /**
  * @param {object} [spec]
- * @param {boolean} [spec.source] Include the PE-only `tbmq.ie.source` data topic and list the PE
- *   set of downlink topics. The IE group grows by one row, so its box, the two captions and the
- *   canvas height all follow the row count rather than being hand-tuned per variant.
+ * @param {boolean} [spec.source] Include the PE-only `tbmq.ie.source` data topic. The IE group
+ *   grows by one row, so its box, the two captions and the canvas height all follow the row count
+ *   rather than being hand-tuned per variant.
  */
 export function kafkaTopicsMap(k, spec = {}) {
 	const ieRows = spec.source ? IE_ROWS_PE : IE_ROWS_CE;
