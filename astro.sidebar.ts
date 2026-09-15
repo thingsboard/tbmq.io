@@ -84,6 +84,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 					? [
 							{ label: 'Kafka source', slug: `${prefix}/integrations/kafka-source` },
 							{ label: 'PostgreSQL', slug: `${prefix}/integrations/postgresql` },
+							{ label: 'TimescaleDB', slug: `${prefix}/integrations/timescaledb` },
 						]
 					: []),
 			],
