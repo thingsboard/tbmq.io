@@ -8,6 +8,10 @@ TBMQ PostgreSQL Integration writes MQTT messages and client lifecycle events str
 - **Audit trails** — recording who connected, when, and from where, by delivering client lifecycle events into an events table.
 - **Feeding existing applications** — writing into tables an application already reads, without adding a message broker or a stream processor in between.
 
+<Aside>
+  Writing into **TimescaleDB**? Use the <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB integration</DocLink> instead — it is this integration plus a hypertable-aware default template and a check that the `timescaledb` extension is actually installed.
+</Aside>
+
 ## Data flow
 
 <Steps>
