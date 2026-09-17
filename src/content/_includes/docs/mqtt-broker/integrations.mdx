@@ -39,6 +39,7 @@ If you upgraded from an earlier version, confirm you added it: with no reachable
 - <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages and [client lifecycle events](#client-lifecycle-events) to REST APIs or webhooks via HTTP(S).
 - <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication, with [client lifecycle events](#client-lifecycle-events) on a topic of their own.
 - <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages and [client lifecycle events](#client-lifecycle-events) into Kafka topics for real-time processing.
+- <DocLink product={props.product} path="integrations/redis">Redis Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own Redis server, with the Redis command and the key you choose.
 - <DocLink product={props.product} path="integrations/postgresql">PostgreSQL Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own PostgreSQL database, through SQL templates you control.
 - <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own TimescaleDB hypertables, through SQL templates you control.
 - <DocLink product={props.product} path="integrations/kafka-source">Kafka Source Integration</DocLink> — the inbound direction: consume an external Kafka topic and inject every record into TBMQ as an MQTT publish.
@@ -419,6 +420,7 @@ Each integration type reuses the connection it already has, but the destination 
 | <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated topic on the external broker, always with QoS 1 and the retain flag off. | **Events topic name** |
 | <DocLink product={props.product} path="integrations/postgresql">PostgreSQL</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
 | <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
+| <DocLink product={props.product} path="integrations/redis">Redis</DocLink> | A key of their own, written with the same Redis command as messages — and always the event envelope, never a raw payload. | **Events key** (required) |
 
 A <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> integration is absent from this table on purpose: a [source integration](#source-integrations) receives no lifecycle events at all.
 </ShowFor>

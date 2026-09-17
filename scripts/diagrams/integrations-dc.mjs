@@ -874,6 +874,19 @@ export const kafkaIntegration = (kit) =>
 			'internally.',
 	});
 
+export const redisIntegration = (kit) =>
+	integrationType(kit, {
+		title: 'Redis integration',
+		integration: 'Redis',
+		targetIco: 'db',
+		target: 'Redis server',
+		protocol: 'TCP(TLS)',
+		legendTarget: 'External Redis server',
+		caption:
+			'Matched messages and client lifecycle events are written by the executor into a Redis server of your ' +
+			'own, with the Redis command and the key configured on the integration.',
+	});
+
 export const postgreSqlIntegration = (kit) =>
 	integrationType(kit, {
 		title: 'PostgreSQL integration',
