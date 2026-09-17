@@ -131,13 +131,14 @@ Every PEM is parsed when the integration is saved, so a malformed certificate or
 | **Send only message payload** | off | On, the value written is the raw MQTT payload; off, it is the full message envelope as JSON. See [Values](#values). |
 | **Stream field name** | `payload` | `XADD` with **Send only message payload** on: the name of the single stream field that carries the raw payload. |
 
-An option that does not apply to the selected command is hidden, and sending one anyway is rejected on save. [Commands](#commands) lists which options each command takes.
+An option that does not apply to the selected command is hidden, and sending one anyway is rejected on save.
 
 ### Advanced settings
 
 | Field | Default | Range | Description |
 |---|---|---|---|
 | **Command timeout, seconds** | `10` | `1`–`25` | Budget for establishing the connection and for each command sent on it. Doubles as the shutdown budget: a stopping integration waits this long for its connection to close. |
+| **Metadata** | `integrationName` | — | Custom key-value pairs, exposed as `metadata` in the envelope and available to both key templates as `${metadata.<key>}`. `integrationName` is added for you and holds the integration's name. |
 
 The timeout is capped at 25 seconds so that no single command can outlive the executor's message pack timeout (`TB_IE_MSG_PACK_PROCESSING_TIMEOUT`, 30 000 ms by default). If you lower that timeout below 25 000 ms, lower this value with it — the cap alone no longer holds the guarantee.
 
@@ -220,7 +221,7 @@ With **Send only message payload** off (the default), the value written is the m
   "ts": 1742554969254,
   "props": {},
   "metadata": {
-    "integrationName": "Redis cache"
+    "integrationName": "Redis integration"
   }
 }
 ```
@@ -259,7 +260,7 @@ Pick the event types on the **Filters and events** step while creating the integ
 4. Click **Apply changes**.
 </Steps>
 
-Events use the same **Command** and the same **Hash field** as messages, but their own **Events key**. The value is always the event envelope: **Send only message payload** is a message-only switch, and an event carries no MQTT payload to send on its own.
+Events use the same **Command** and the same **Hash field** as messages, but their own **Events key**. The value written is always the whole event envelope — its common fields plus the ones the event type adds, as <DocLink product={props.product} path="integrations/#event-payload" bold={false}>Event payload</DocLink> describes them. **Send only message payload** is a message-only switch: an event carries no MQTT payload to send on its own.
 
 ### Lifecycle event placeholders
 
@@ -284,10 +285,6 @@ An event is a different envelope, so the **Events key** — and, with `HSET`, th
 </Aside>
 
 With `HSET`, the **Hash field** has to resolve for messages *and* events when both are enabled, so it must use a placeholder both catalogues have: `${eventType}`, `${clientId}`, `${ts}`, `${tbmqNode}`, `${clientCertCn}` or `${metadata.<key>}`.
-
-### What an event looks like
-
-The value written is the **whole event envelope**, every time — its common fields, plus the ones the event type adds, exactly as <DocLink product={props.product} path="integrations/#event-payload" bold={false}>Event payload</DocLink> describes them. There is no per-integration shaping of it and no equivalent of **Send only message payload** for events.
 
 ## Check connection
 
@@ -358,7 +355,7 @@ redis-cli GET "mqtt:tbmq/redis-integration"
 ```
 
 ```plaintext
-{"payload":"{\"temperature\": 25}","topicName":"tbmq/redis-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{"integrationName":"Redis cache"}}
+{"payload":"{\"temperature\": 25}","topicName":"tbmq/redis-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{"integrationName":"Redis integration"}}
 ```
 
 Note that `payload` is stored as text here, not Base64: the payload is valid UTF-8, so it is stored as it was published. A binary payload — or one containing a NUL byte — would be Base64-encoded instead. Turning **Send only message payload** on would have stored `{"temperature": 25}` alone, with no envelope around it.
