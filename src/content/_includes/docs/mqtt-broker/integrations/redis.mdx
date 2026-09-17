@@ -92,7 +92,7 @@ tbmq/devices/gateway-01/status
 There is no database index in cluster mode — Redis Cluster always uses database `0`.
 
 <Aside>
-  Whether an integration may target a loopback or otherwise local address is a deployment-wide setting, `INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS` — see <DocLink product={props.product} path="integrations#integration-lifecycle" bold={false}>Integration lifecycle</DocLink>. With it turned off, `localhost` is rejected when the integration is saved.
+  Whether an integration may target a loopback or otherwise local address is a deployment-wide setting, `INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS` — see <DocLink product={props.product} path="integrations/#integration-lifecycle" bold={false}>Integration lifecycle</DocLink>. With it turned off, `localhost` is rejected when the integration is saved.
 </Aside>
 
 ### Credentials
@@ -131,7 +131,7 @@ Every PEM is parsed when the integration is saved, so a malformed certificate or
 | **Send only message payload** | off | On, the value written is the raw MQTT payload; off, it is the full message envelope as JSON. See [Values](#values). |
 | **Stream field name** | `payload` | `XADD` with **Send only message payload** on: the name of the single stream field that carries the raw payload. |
 
-An option that does not apply to the selected command is hidden, and sending one anyway is rejected on save — `Expiration applies only to SET`, `Max length applies only to LPUSH, RPUSH and XADD`, `Hash field applies only to HSET`.
+An option that does not apply to the selected command is hidden, and sending one anyway is rejected on save. [Commands](#commands) lists which options each command takes.
 
 ### Advanced settings
 
@@ -219,7 +219,9 @@ With **Send only message payload** off (the default), the value written is the m
   "tbmqNode": "tbmq-node-0",
   "ts": 1742554969254,
   "props": {},
-  "metadata": {}
+  "metadata": {
+    "integrationName": "Redis cache"
+  }
 }
 ```
 
@@ -278,40 +280,14 @@ An event is a different envelope, so the **Events key** — and, with `HSET`, th
 `${topicName}`, `${qos}`, `${retain}`, `${tbmqIeNode}` and `${props.<name>}` do **not** exist for events and are rejected in the **Events key**.
 
 <Aside type="caution">
-  Only `${eventType}`, `${ts}` and metadata keys you know you set are guaranteed. The other five are written to the envelope only when the source field has a value — no `username` when authentication is disabled, no `ipAddress` for an address-less session — and an events key that references a missing one **fails that event**. Keep the events key to literal text plus `${eventType}` and `${ts}` unless you are certain.
+  Only `${eventType}`, `${ts}` and metadata keys you know you set are guaranteed. The other six are written to the envelope only when the source field has a value — no `username` when authentication is disabled, no `ipAddress` for an address-less session — and an events key that references a missing one **fails that event**. Keep the events key to literal text plus `${eventType}` and `${ts}` unless you are certain.
 </Aside>
 
 With `HSET`, the **Hash field** has to resolve for messages *and* events when both are enabled, so it must use a placeholder both catalogues have: `${eventType}`, `${clientId}`, `${ts}`, `${tbmqNode}`, `${clientCertCn}` or `${metadata.<key>}`.
 
 ### What an event looks like
 
-The written value is the full event envelope. These fields are common to every type:
-
-```json
-{
-  "eventType": "CLIENT_CONNECTED",
-  "clientId": "tbmq_df52bNUQ",
-  "sessionId": "8c6b1e44-1f0e-4b16-9c6e-6f6a2b1c0f77",
-  "ipAddress": "10.0.0.14",
-  "ts": 1742554969254,
-  "tbmqNode": "tbmq-node-0",
-  "username": "device-user",
-  "metadata": {}
-}
-```
-
-Each type adds its own fields on top:
-
-| Field | Added for |
-|---|---|
-| `cleanStart`, `keepAlive`, `sessionExpiryInterval` | `CLIENT_CONNECTED` |
-| `protocolVersion` | `CLIENT_CONNECTED`, `CLIENT_AUTHENTICATION_FAILED` |
-| `disconnectReason` | `CLIENT_DISCONNECTED` |
-| `subscriptions` | `CLIENT_SUBSCRIBED`, `CLIENT_UNSUBSCRIBED` |
-| `reason` | `CLIENT_AUTHENTICATION_FAILED`, `CLIENT_CONNECTION_FAILED` |
-| `action`, `topic` | `CLIENT_AUTHORIZATION_FAILED` |
-
-`subscriptions` is a JSON array of the granted or removed subscriptions — see <DocLink product={props.product} path="integrations/postgresql#the-subscriptions-array" bold={false}>the subscriptions array</DocLink> for its shape.
+The value written is the **whole event envelope**, every time — its common fields, plus the ones the event type adds, exactly as <DocLink product={props.product} path="integrations/#event-payload" bold={false}>Event payload</DocLink> describes them. There is no per-integration shaping of it and no equivalent of **Send only message payload** for events.
 
 ## Check connection
 
@@ -350,7 +326,7 @@ Client lifecycle events are weaker still — they are best-effort hints, and can
 
 A Redis integration holds **one** connection, opened when it starts and closed when it stops — there is no pool to size. In cluster mode that connection is a facade the client maintains over one channel per node it needs.
 
-Processing never blocks: the command is issued on the integration's consumer thread and its reply is handled on a shared event loop, so a slow Redis costs latency, not threads. All Redis integrations on one executor share a single set of client resources, whose I/O and computation thread pools are sized by `INTEGRATIONS_NETTY_SHARED_GROUP_THREADS` — `0`, the default, leaves each pool at `max(availableProcessors, 2)`.
+Processing never blocks: the command is issued on the integration's consumer thread and its reply is handled on a shared event loop, so a slow Redis costs latency, not threads. All Redis integrations on one executor share a single set of client resources, whose I/O and computation thread pools are sized by `INTEGRATIONS_NETTY_SHARED_GROUP_THREADS` (see the <DocLink product={props.product} path="installation/ie-config">Integration Executor configuration</DocLink>) — `0`, the default, leaves each pool at `max(availableProcessors, 2)`.
 
 Which executor pays that cost depends on <DocLink product={props.product} path="integrations/#downlink-topics" bold={false}>partition ownership</DocLink> — each integration is owned by exactly one executor instance at a time.
 
@@ -382,7 +358,7 @@ redis-cli GET "mqtt:tbmq/redis-integration"
 ```
 
 ```plaintext
-{"payload":"{\"temperature\": 25}","topicName":"tbmq/redis-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{}}
+{"payload":"{\"temperature\": 25}","topicName":"tbmq/redis-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{"integrationName":"Redis cache"}}
 ```
 
 Note that `payload` is stored as text here, not Base64: the payload is valid UTF-8, so it is stored as it was published. A binary payload — or one containing a NUL byte — would be Base64-encoded instead. Turning **Send only message payload** on would have stored `{"temperature": 25}` alone, with no envelope around it.

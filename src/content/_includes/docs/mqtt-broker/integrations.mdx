@@ -418,9 +418,9 @@ Each integration type reuses the connection it already has, but the destination 
 | <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. | Shared with messages |
 | <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers. | Shared with messages |
 | <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated topic on the external broker, always with QoS 1 and the retain flag off. | **Events topic name** |
+| <DocLink product={props.product} path="integrations/redis">Redis</DocLink> | A key of their own, written with the same Redis command as messages — and always the event envelope, never a raw payload. | **Events key** (required) |
 | <DocLink product={props.product} path="integrations/postgresql">PostgreSQL</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
 | <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
-| <DocLink product={props.product} path="integrations/redis">Redis</DocLink> | A key of their own, written with the same Redis command as messages — and always the event envelope, never a raw payload. | **Events key** (required) |
 
 A <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> integration is absent from this table on purpose: a [source integration](#source-integrations) receives no lifecycle events at all.
 </ShowFor>
