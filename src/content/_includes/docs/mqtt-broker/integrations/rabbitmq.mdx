@@ -77,7 +77,7 @@ AMQP always authenticates, so every connection presents *something*. Which SASL 
 
 | Type | Mechanism | Description |
 |---|---|---|
-| **Anonymous** | `ANONYMOUS` | No credentials are sent, and the broker maps the connection to its own anonymous login user (RabbitMQ 4.0 and newer). A broker that does not offer the mechanism refuses the connection with *no matching SASL mechanism*. TBMQ deliberately does not fall back to the AMQP client's built-in `guest`/`guest` — that would log in as a named user nobody configured. |
+| **Anonymous** | `ANONYMOUS` | No credential is sent at all — the broker decides who the connection is, through its own `anonymous_login_user` setting (RabbitMQ 4.0 and newer). A broker that does not offer the mechanism refuses the connection with *no matching SASL mechanism*. TBMQ deliberately does not fall back to the AMQP client's built-in `guest`/`guest`, which would log in as a named user nobody configured. |
 | **Basic** | `PLAIN` | Username and password. Both are optional in the form, since a broker may be configured to accept one or neither. |
 | **PEM certificate** | `EXTERNAL` | Client-certificate authentication: the broker derives the user from the certificate the client presents, and no other credential is sent. |
 
@@ -86,7 +86,11 @@ AMQP always authenticates, so every connection presents *something*. Which SASL 
 - **Enable SSL** is forced on and its toggle is hidden — SASL EXTERNAL over a plaintext connection proves nothing.
 - Both a **Certificate file** and a **Private key file** are required. A CA certificate on its own is rejected, because it would connect as no one and the broker would answer with an opaque `ACCESS_REFUSED`.
 
-On the broker side this needs the `rabbitmq_auth_mechanism_ssl` plugin enabled, and a user matching the certificate — which certificate field becomes the username is the broker's own `ssl_cert_login_from` setting (`distinguished_name` by default; `common_name` is the common alternative).
+On the broker side this needs the `rabbitmq_auth_mechanism_ssl` plugin enabled, and a user whose name matches the certificate. Which field of the certificate becomes that name is the broker's own `ssl_cert_login_from` setting: `distinguished_name` by default, so the user to create is the full DN (`CN=tbmq-ie,O=Acme`), not the Common Name alone. Set it to `common_name` if you would rather name users after the CN.
+
+<Aside type="caution">
+  **Anonymous credentials rarely work against a remote broker.** `anonymous_login_user` defaults to `guest`, and a stock RabbitMQ lets `guest` connect over loopback only — which the Integration Executor never is. The official container image lifts that restriction (`loopback_users.guest = false`); a package install does not. Unless anonymous access was set up deliberately, use **Basic** credentials with a user of your own.
+</Aside>
 
 ### TLS
 
