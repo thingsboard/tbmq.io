@@ -9,15 +9,17 @@ export interface Props {
 }
 
 // `products` restricts an entry to the editions that ship it; leave it off for
-// one both editions have. Kafka source, Redis, PostgreSQL and TimescaleDB are
-// PE-only — CE's IntegrationType has no KAFKA_SOURCE, REDIS, POSTGRESQL or
-// TIMESCALEDB member, and there is no CE page to link to. Kafka source reuses
-// the `kafka` mark; the label carries the distinction.
+// one both editions have. Kafka source, RabbitMQ, Redis, PostgreSQL and
+// TimescaleDB are PE-only — CE's IntegrationType has no KAFKA_SOURCE,
+// RABBITMQ, REDIS, POSTGRESQL or TIMESCALEDB member, and there is no CE page
+// to link to. Kafka source reuses the `kafka` mark; the label carries the
+// distinction.
 const integrations: { name: string; icon: string; path: string; products?: Products[] }[] = [
 	{ name: 'HTTP', icon: 'http', path: 'integrations/http/' },
 	{ name: 'MQTT', icon: 'mqtt', path: 'integrations/mqtt/' },
 	{ name: 'Kafka', icon: 'kafka', path: 'integrations/kafka/' },
 	{ name: 'Kafka source', icon: 'kafka', path: 'integrations/kafka-source/', products: [Products.TBMQ_PE] },
+	{ name: 'RabbitMQ', icon: 'rabbitmq', path: 'integrations/rabbitmq/', products: [Products.TBMQ_PE] },
 	{ name: 'Redis', icon: 'redis', path: 'integrations/redis/', products: [Products.TBMQ_PE] },
 	{ name: 'PostgreSQL', icon: 'postgresql', path: 'integrations/postgresql/', products: [Products.TBMQ_PE] },
 	{ name: 'TimescaleDB', icon: 'timescaledb', path: 'integrations/timescaledb/', products: [Products.TBMQ_PE] },

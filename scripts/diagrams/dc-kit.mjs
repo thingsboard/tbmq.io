@@ -161,6 +161,7 @@ const ICONS = {
 	// stand-ins for the designs' CDN brand logos (see module header)
 	kafka: `<circle cx="6" cy="12" r="2.3"/><circle cx="17.5" cy="6" r="2.3"/><circle cx="17.5" cy="18" r="2.3"/><path d="M8 10.9 15.6 6.9M8 13.1l7.6 4"/>`,
 	redis: `<ellipse cx="12" cy="6" rx="7.5" ry="2.6"/><path d="M4.5 6v5c0 1.4 3.4 2.6 7.5 2.6s7.5-1.2 7.5-2.6V6M4.5 11v5c0 1.4 3.4 2.6 7.5 2.6s7.5-1.2 7.5-2.6v-5"/>`,
+	queue: `<rect x="2.5" y="7.5" width="5.5" height="9" rx="1.4"/><rect x="9.25" y="7.5" width="5.5" height="9" rx="1.4"/><rect x="16" y="7.5" width="5.5" height="9" rx="1.4"/>`,
 	plug: `<path d="M4 12h6M14 12h6"/><rect x="9.5" y="7.5" width="5" height="9" rx="1.6"/><path d="M4 9.5v5M20 9.5v5"/>`,
 	globe: `<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17M5 6.5c4 2.5 10 2.5 14 0M5 17.5c4-2.5 10-2.5 14 0"/>`,
 	chevron: `<path d="M9.5 5.5 16 12l-6.5 6.5"/>`,

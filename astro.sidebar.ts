@@ -83,6 +83,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				...(isPE
 					? [
 							{ label: 'Kafka source', slug: `${prefix}/integrations/kafka-source` },
+							{ label: 'RabbitMQ', slug: `${prefix}/integrations/rabbitmq` },
 							{ label: 'Redis', slug: `${prefix}/integrations/redis` },
 							{ label: 'PostgreSQL', slug: `${prefix}/integrations/postgresql` },
 							{ label: 'TimescaleDB', slug: `${prefix}/integrations/timescaledb` },
