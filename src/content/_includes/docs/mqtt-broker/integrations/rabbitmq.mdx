@@ -32,6 +32,7 @@ TBMQ RabbitMQ Integration publishes MQTT messages and client lifecycle events to
 - A RabbitMQ broker reachable from the Integration Executor, speaking AMQP 0-9-1.
 - **The exchange must already exist**, and queues must already be bound to it. The integration declares nothing — no exchange, no queue, no binding.
 - A client capable of publishing MQTT messages (e.g., <DocLink product={props.product} path="user-guide/ui/websocket-client">TBMQ WebSocket Client</DocLink>).
+- The broker's **management plugin** (`rabbitmq-plugins enable rabbitmq_management`) only if you want to follow [Send an uplink message](#send-an-uplink-message) — it serves the management UI on port `15672`, where that walkthrough declares the queue and reads the message back. The integration itself does not need it.
 
 ## Create TBMQ RabbitMQ integration
 
@@ -281,12 +282,13 @@ These are the **integration's own** events, recorded inside TBMQ for debugging a
 
 ## Send an uplink message
 
-The integration publishes to an exchange; a queue has to be bound to it before there is anything to look at. With the defaults — the `amq.topic` exchange and the MQTT topic as routing key — declare a queue and bind it with the binding key `tbmq.#`:
+The integration publishes to an exchange, and RabbitMQ silently drops a message no queue is bound for — so bind one first. With the defaults, the `amq.topic` exchange and the MQTT topic as the routing key, open the management UI at `http://<broker-host>:15672` and:
 
-```bash
-rabbitmqadmin declare queue name=tbmq-demo durable=true
-rabbitmqadmin declare binding source=amq.topic destination=tbmq-demo routing_key="tbmq.#"
-```
+<Steps>
+1. On the **Queues and Streams** tab, expand **Add a new queue**. Set **Type** to `Classic` and **Name** to `tbmq-demo`, leave **Durability** at `Durable`, and click **Add queue**.
+2. On the **Exchanges** tab, click `amq.topic`.
+3. Expand **Bindings**. Under **Add binding from this exchange** keep **To queue** selected, enter `tbmq-demo` as the destination and `tbmq.#` as the **Routing key**, and click **Bind**.
+</Steps>
 
 Then publish a message:
 
@@ -298,11 +300,7 @@ Then publish a message:
 5. Click the **Send** icon to publish the message.
 </Steps>
 
-The message should now be in the queue, published under the routing key `tbmq.rabbitmq-integration`:
-
-```bash
-rabbitmqadmin get queue=tbmq-demo ackmode=ack_requeue_true
-```
+The message should now be in the queue, published under the routing key `tbmq.rabbitmq-integration`. Back in the management UI, open **Queues and Streams**, click `tbmq-demo`, expand **Get messages** and click **Get Message(s)** — the default **Ack Mode**, `Nack message requeue true`, leaves the message in the queue:
 
 ```plaintext
 {"payload":"{\"temperature\": 25}","topicName":"tbmq/rabbitmq-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{"integrationName":"RabbitMQ integration"}}
