@@ -48,7 +48,7 @@ TBMQ RabbitMQ Integration publishes MQTT messages and client lifecycle events to
 
 Topic filters define **MQTT-based subscriptions** that trigger the integration. When TBMQ receives a message matching a configured topic filter, the integration resolves its routing key and publishes it to the exchange.
 
-Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two. The form enforces that from the other side too: the last topic filter cannot be removed until an event type is selected, so to make an integration events-only, pick the event type first and then delete `tbmq/#`. Without topic filters the **Exchange** and **Routing key** fields stay visible but stop being required, and neither is validated on save — lifecycle events never use them.
+Topic filters are optional if you select at least one <DocLink product={props.product} path="integrations/#client-lifecycle-events" bold={false}>lifecycle event type</DocLink> instead — an integration only has to have one of the two. The form enforces that from the other side too: the last topic filter cannot be removed until an event type is selected, so to make an integration events-only, pick the event type first and then delete `tbmq/#`. Without topic filters the **Use message topic as routing key** toggle and the **Routing key** field disappear — there is no message to route, and lifecycle events never use them. **Exchange** stays, because events are published to it too, but it is no longer required: left empty, events go through the [default exchange](#the-default-exchange) to the queue named by the **Events routing key**.
 
 For example, with the topic filter `tbmq/devices/+/status`, any of the following messages will trigger the integration:
 
@@ -104,9 +104,9 @@ Every PEM is parsed when the integration is saved, so a malformed certificate or
 
 | Field | Default | Description |
 |---|---|---|
-| **Exchange** | `amq.topic` | Exchange every message and event is published to. It must already exist. Required while **Use message topic as routing key** is on; leave it empty to publish through the [default exchange](#the-default-exchange). A whitespace-only name is always rejected. |
-| **Use message topic as routing key** | on | Derives each message's routing key from its own MQTT topic. See [Routing keys](#routing-keys). |
-| **Routing key** | — | The routing key used for **every** message. Required, and used, only while the toggle above is off. Max 255 bytes. |
+| **Exchange** | `amq.topic` | Exchange every message and event is published to. It must already exist. Required while **Use message topic as routing key** is on, optional for an events-only integration; leave it empty to publish through the [default exchange](#the-default-exchange). A whitespace-only name is always rejected. |
+| **Use message topic as routing key** | on | Derives each message's routing key from its own MQTT topic. Shown only while the integration has topic filters. See [Routing keys](#routing-keys). |
+| **Routing key** | — | The routing key used for **every** message. Shown with the toggle above, and required while it is off. Max 255 bytes. |
 | **Events routing key** | `tbmq.events` | Routing key for [client lifecycle events](#client-lifecycle-events), on the same exchange. Shown and required while at least one lifecycle event type is selected. Max 255 bytes. |
 
 `amq.topic` is a topic exchange that exists on every vhost by default, which makes it a working starting point — but an operator can delete it, and **Check connection** is what surfaces that.
