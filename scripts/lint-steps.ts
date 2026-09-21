@@ -32,8 +32,20 @@ function walkMdx(dir: string): string[] {
 }
 
 /**
+ * Blanks out inline code spans (`…`, ``…``), so a literal brace quoted as code
+ * is not counted as a JSX expression. Prose about templating routinely quotes
+ * an unbalanced one — "an unclosed `${` is rejected" — and a single such span
+ * would otherwise leave the depth stuck above zero for the rest of the file.
+ * An unterminated opening backtick is left alone: it is not a code span.
+ */
+function stripInlineCode(line: string): string {
+	return line.replace(/(`+)(?:(?!\1).)*\1/g, (m) => ' '.repeat(m.length));
+}
+
+/**
  * Counts the net brace depth ({…}) at a given character index in the content,
- * skipping code fences (``` and ~~~) to avoid counting literal braces in code.
+ * skipping code fences (``` and ~~~) and inline code spans to avoid counting
+ * literal braces in code.
  *
  * This is a best-effort heuristic: it correctly handles all well-formed MDX
  * (balanced braces in JSX expressions and attributes). It does NOT handle
@@ -59,7 +71,7 @@ function braceDepthAt(content: string, index: number): number {
 			continue;
 		}
 
-		for (const ch of line) {
+		for (const ch of stripInlineCode(line)) {
 			if (ch === '{') depth++;
 			else if (ch === '}') depth--;
 		}
