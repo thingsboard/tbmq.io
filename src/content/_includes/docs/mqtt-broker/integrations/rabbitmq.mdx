@@ -110,14 +110,14 @@ Every PEM is parsed when the integration is saved, so a malformed certificate or
 | **Routing key** | — | The routing key used for **every** message. Shown with the toggle above, and required while it is off. Max 255 bytes. |
 | **Events routing key** | `tbmq.events` | Routing key for [client lifecycle events](#client-lifecycle-events), on the same exchange. Shown and required while at least one lifecycle event type is selected. Max 255 bytes. |
 
-`amq.topic` is a topic exchange that exists on every vhost by default, which makes it a working starting point — but an operator can delete it, and **Check connection** is what surfaces that.
+`amq.topic` is a topic exchange that RabbitMQ predeclares on every vhost and refuses to delete, which makes it a working starting point. A custom exchange is the case to watch — it has to exist on the broker before the integration can publish to it, and **Check connection** is what surfaces a missing or misspelled one.
 
 ### Advanced settings
 
 | Field | Default | Range | Description |
 |---|---|---|---|
 | **Send only message payload** | off | — | On, the AMQP body is the raw MQTT payload; off, it is the full message envelope as JSON. See [Message body](#message-body). This toggle sits at the top of the form, not in the advanced panel. |
-| **Persistent delivery** | off | — | AMQP delivery mode `2` instead of `1`: the broker writes the message to disk. Only a **durable** queue keeps it across a broker restart. |
+| **Persistent delivery** | off | — | AMQP delivery mode `2` instead of `1`: the broker writes the message to disk. On a classic queue, only a **durable** one keeps it across a broker restart; quorum queues and streams persist every message whatever the delivery mode. |
 | **Automatic connection recovery** | on | — | Reconnect after a lost connection. Turned off, a lost connection fails every message until the integration is restarted. |
 | **Connection timeout (sec)** | `5` | `1`–`60` | Budget for the TCP connect, the AMQP handshake and every channel RPC. |
 | **Content type** | — | — | AMQP `content-type` property. Left empty it is derived from the body: `application/json` for the envelope and for events, unset when only the raw payload is sent. |
@@ -249,11 +249,11 @@ These are the failure modes, and each one fails only the messages it actually af
 | The **integration is stopping** | Queued publishes and in-flight confirms get up to **Confirm timeout** seconds to drain; whatever is left is failed. |
 
 <Aside type="caution">
-  **An unroutable message is counted as delivered.** RabbitMQ confirms a message it cannot route to any queue and then discards it — the integration does not publish with `mandatory`, so a missing or wrong binding is indistinguishable from a successful delivery. Nothing in TBMQ will report it. Check the queue bindings, and RabbitMQ's own unroutable-message metrics, when messages go missing without a single error event.
+  **An unroutable message is counted as delivered.** RabbitMQ confirms a message it cannot route to any queue and then discards it — the integration does not publish with `mandatory`, so a missing or wrong binding is indistinguishable from a successful delivery. Nothing in TBMQ will report it. Check the queue bindings, and RabbitMQ's own unroutable-message metrics, when messages go missing without a single error event. Setting an `alternate-exchange` on the exchange turns those silent drops into something you can inspect: RabbitMQ routes anything unroutable there instead of discarding it.
 </Aside>
 
 <Aside type="caution">
-  **A confirm is not durability.** With **Persistent delivery** off, a confirmed message lives only in the broker's memory. For data that must survive a broker restart, turn **Persistent delivery** on **and** make the destination queue durable — one without the other does not keep the message.
+  **A confirm is not durability.** On a classic queue, a confirmed message published with **Persistent delivery** off lives only in the broker's memory. For data that must survive a broker restart, turn **Persistent delivery** on **and** make the destination queue durable — one without the other does not keep the message. Quorum queues and streams are the exception: both are always durable and persist every message whatever the delivery mode.
 </Aside>
 
 Client lifecycle events are weaker still — they are best-effort hints, and can be dropped before they ever reach the integration. See <DocLink product={props.product} path="integrations/#delivery-guarantees" bold={false}>Delivery guarantees</DocLink>.
