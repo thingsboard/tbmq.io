@@ -162,7 +162,7 @@ With **Send only message payload** off (the default), the body is the message en
 
 ```json
 {
-  "payload": "{\"temperature\":25}",
+  "payload": "eyJ0ZW1wZXJhdHVyZSI6MjV9",
   "topicName": "tbmq/rabbitmq-integration",
   "clientId": "tbmq_df52bNUQ",
   "eventType": "PUBLISH_MSG",
@@ -178,7 +178,7 @@ With **Send only message payload** off (the default), the body is the message en
 }
 ```
 
-`payload` holds the MQTT payload as UTF-8 text when it is valid UTF-8 with no NUL byte, and Base64 otherwise. `clientCertCn` is present only for a client that authenticated with mTLS.
+`payload` holds the MQTT payload Base64-encoded — the envelope carries it as raw bytes, whatever it contains, so text and binary payloads are encoded alike. `eyJ0ZW1wZXJhdHVyZSI6MjV9` above decodes to `{"temperature":25}`. `clientCertCn` is present only for a client that authenticated with mTLS.
 
 With **Send only message payload** on, the body is the raw payload bytes, published byte for byte — binary safe, never re-encoded and never Base64. Nothing else about the message reaches RabbitMQ, so anything a consumer needs to tell messages apart has to come from the routing key or from a static header.
 
@@ -303,7 +303,7 @@ Then publish a message:
 The message should now be in the queue, published under the routing key `tbmq.rabbitmq-integration`. Back in the management UI, open **Queues and Streams**, click `tbmq-demo`, expand **Get messages** and click **Get Message(s)** — the default **Ack Mode**, `Nack message requeue true`, leaves the message in the queue:
 
 ```plaintext
-{"payload":"{\"temperature\": 25}","topicName":"tbmq/rabbitmq-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{"integrationName":"RabbitMQ integration"}}
+{"payload":"eyJ0ZW1wZXJhdHVyZSI6IDI1fQ==","topicName":"tbmq/rabbitmq-integration","clientId":"tbmq_df52bNUQ","eventType":"PUBLISH_MSG","qos":1,"retain":false,"tbmqIeNode":"tbmq-ie-0","tbmqNode":"tbmq-node-0","ts":1742554969254,"props":{},"metadata":{"integrationName":"RabbitMQ integration"}}
 ```
 
-Note that `payload` is text here, not Base64: the payload is valid UTF-8, so it travels as it was published. A binary payload — or one containing a NUL byte — would be Base64-encoded instead. Turning **Send only message payload** on would have published `{"temperature": 25}` alone, with no envelope around it.
+Note that `payload` is Base64-encoded: inside the envelope the MQTT payload always travels as bytes, so `eyJ0ZW1wZXJhdHVyZSI6IDI1fQ==` is the `{"temperature": 25}` that was published, and a consumer has to decode it. Turning **Send only message payload** on would have published `{"temperature": 25}` alone — byte for byte, with no envelope and no encoding.
