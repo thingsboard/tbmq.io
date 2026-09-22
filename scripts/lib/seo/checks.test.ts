@@ -247,13 +247,23 @@ test('a self-canonical page listed in the sitemap produces no sitemap findings',
 	assert.deepEqual(checkSitemap([page()]), []);
 });
 
+// The two share one check id, so the detail text is the only thing that says
+// which of them a finding is about — assert on it, not just on the id.
 test('a noindex page or a redirect stub listed in the sitemap is flagged at high severity', () => {
 	const noindex = checkSitemap([page({ isNoindex: true, inSitemap: true })]);
 	assert.deepEqual(checkIds(noindex), ['sitemap-noindex']);
 	assert.equal(noindex[0].severity, 'high');
-	assert.deepEqual(checkIds(checkSitemap([page({ isRedirect: true, isNoindex: true, inSitemap: true })])), [
-		'sitemap-noindex',
-	]);
+	assert.equal(noindex[0].detail, 'noindex page listed in the sitemap');
+
+	const redirect = checkSitemap([page({ isRedirect: true, isNoindex: false, inSitemap: true })]);
+	assert.deepEqual(checkIds(redirect), ['sitemap-noindex']);
+	assert.equal(redirect[0].severity, 'high');
+	assert.equal(redirect[0].detail, 'redirect stub listed in the sitemap');
+
+	// A redirect stub that also carries the meta is still named as the stub.
+	const both = checkSitemap([page({ isRedirect: true, isNoindex: true, inSitemap: true })]);
+	assert.deepEqual(checkIds(both), ['sitemap-noindex']);
+	assert.equal(both[0].detail, 'redirect stub listed in the sitemap');
 });
 
 // The CE docs tree canonicalises onto PE, so its pages are correctly absent from
