@@ -18,7 +18,7 @@ import { getCanonicalPathname } from '~/util/canonical';
 import { allPages } from '~/content';
 import { DOCS_SUFFIX, docsRootTitle, EDIT_BASE_URL, formatDocsTitle, OG_FALLBACK, TITLE_SEP } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
-import { docsJsonLd, type Crumb } from '~/util/structuredData';
+import { docsBreadcrumbs, docsJsonLd } from '~/util/structuredData';
 // No alias covers `config/`; relative import is the only option here.
 import {
 	getRepoRoot,
@@ -315,7 +315,7 @@ function updateHead(context: APIContext) {
 	if (isDocs) {
 		const canonicalPathname = applyDocsCanonical(context, entry, canonical, ogUrl);
 		if (docsHeadline && !hasNoindexMeta(head)) {
-			pushDocsJsonLd(head, entry, canonicalPathname, docsHeadline, context.site!);
+			pushDocsJsonLd(head, entry, canonicalPathname, docsHeadline);
 		}
 	}
 }
@@ -399,8 +399,7 @@ function pushDocsJsonLd(
 	head: StarlightRouteData['head'],
 	entry: StarlightRouteData['entry'],
 	canonicalPathname: string,
-	headline: string,
-	site: URL
+	headline: string
 ) {
 	const { description } = entry.data as { description?: string };
 	head.push({
@@ -408,33 +407,11 @@ function pushDocsJsonLd(
 		attrs: { type: 'application/ld+json' },
 		content: JSON.stringify(
 			docsJsonLd({
-				url: new URL(canonicalPathname, site).href,
+				path: canonicalPathname,
 				headline,
 				description,
-				crumbs: docsBreadcrumbs(canonicalPathname, site),
+				crumbs: docsBreadcrumbs(canonicalPathname, DOCS_TITLES),
 			})
 		),
 	});
-}
-
-/**
- * Home → `TBMQ Docs` / `TBMQ PE Docs` → each ancestor section that has an index
- * page of its own → the page, every crumb below the root named by its page's title.
- */
-function docsBreadcrumbs(canonicalPathname: string, site: URL): Crumb[] {
-	const product = getVersionFromURL(canonicalPathname);
-	const lang = getLanguageFromURL(canonicalPathname);
-	const docsRoot = `/${getLanguagePrefix(lang)}docs/${getVersionPrefix(product)}`;
-	const crumbs: Crumb[] = [
-		{ name: 'Home', item: new URL('/', site).href },
-		{ name: docsRootTitle(getProductTitleName(product)), item: new URL(docsRoot, site).href },
-	];
-
-	let current = docsRoot;
-	for (const segment of canonicalPathname.slice(docsRoot.length).split('/').filter(Boolean)) {
-		current += `${segment}/`;
-		const title = DOCS_TITLES.get(current);
-		if (title) crumbs.push({ name: title, item: new URL(current, site).href });
-	}
-	return crumbs;
 }

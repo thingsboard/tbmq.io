@@ -3,13 +3,44 @@
 // Every graph reuses the same Organization node (`#organization`) so the site
 // reads as one publisher. Ratings are deliberately absent everywhere: a rich
 // result that quotes them would need real review data behind it.
+//
+// `structuredData.test.ts` loads this module under `node --test`, which resolves
+// no tsconfig paths, so this file and every module it reaches — `consts`,
+// `data/versions`, `util/path-utils`, `models/site.models` — import through
+// relative `.ts` specifiers rather than the `~/` and `@` aliases. Vite resolves
+// either form; the test runner resolves only this one.
 
-import { GITHUB_REPO_URL, OG_FALLBACK, ORGANIZATION_NODE, organizationJsonLd, PROD_ORIGIN, SITE_NAME } from '~/consts';
-import { TBMQ_VER } from '~/data/versions';
+import {
+	docsRootTitle,
+	GITHUB_REPO_URL,
+	OG_FALLBACK,
+	ORGANIZATION_NODE,
+	organizationJsonLd,
+	PROD_ORIGIN,
+	SITE_NAME,
+} from '../consts.ts';
+import { TBMQ_VER } from '../data/versions.ts';
+import {
+	getLanguageFromURL,
+	getLanguagePrefix,
+	getProductTitleName,
+	getVersionFromURL,
+	getVersionPrefix,
+} from './path-utils.ts';
 
 const SITE = new URL(PROD_ORIGIN);
 
-/** Absolute production URL of a site path — every `url`, `@id` and `item` below goes through it. */
+/**
+ * Absolute production URL of a site path — every `url`, `@id` and `item` below
+ * goes through it.
+ *
+ * Deliberately anchored on `PROD_ORIGIN` rather than Astro's runtime `site`, for
+ * the same reason `canonical.ts` is: a preview build (`CF_PAGES_URL`) must emit
+ * the graph it will emit in production, or the one place the graph can be
+ * validated before it ships describes a different site. It also keeps every node
+ * in a graph on one origin — the `WebSite`/`Organization` nodes are shared
+ * across pages and have no build origin to follow.
+ */
 function absolute(path: string): string {
 	return new URL(path, SITE).href;
 }
@@ -178,8 +209,8 @@ export function pricingJsonLd({ name, description, planCount }: PricingJsonLdOpt
 }
 
 export interface DocsJsonLdOptions {
-	/** Canonical absolute URL of the page. */
-	url: string;
+	/** Canonical pathname of the page, with a trailing slash, e.g. `/docs/pe/installation/`. */
+	path: string;
 	headline: string;
 	description?: string;
 	/** Home → docs root → (existing section index pages) → this page. */
@@ -187,7 +218,8 @@ export interface DocsJsonLdOptions {
 }
 
 /** Documentation page: a TechArticle plus the breadcrumb trail Starlight's sidebar implies. */
-export function docsJsonLd({ url, headline, description, crumbs }: DocsJsonLdOptions): Record<string, unknown> {
+export function docsJsonLd({ path, headline, description, crumbs }: DocsJsonLdOptions): Record<string, unknown> {
+	const url = absolute(path);
 	return {
 		'@context': 'https://schema.org',
 		'@graph': [
@@ -208,4 +240,31 @@ export function docsJsonLd({ url, headline, description, crumbs }: DocsJsonLdOpt
 			organization(),
 		],
 	};
+}
+
+/**
+ * Home → `TBMQ Docs` / `TBMQ PE Docs` → each ancestor section that has an index
+ * page of its own → the page, every crumb below the root named by its page's title.
+ *
+ * `titles` maps a docs pathname (leading and trailing slash) to that page's
+ * frontmatter title; `routeData.ts` builds it from the content collection. A
+ * section missing from it is skipped rather than named — a crumb pointing at a
+ * 404 is worse than a shorter trail.
+ */
+export function docsBreadcrumbs(canonicalPathname: string, titles: ReadonlyMap<string, string>): Crumb[] {
+	const product = getVersionFromURL(canonicalPathname);
+	const lang = getLanguageFromURL(canonicalPathname);
+	const docsRoot = `/${getLanguagePrefix(lang)}docs/${getVersionPrefix(product)}`;
+	const crumbs: Crumb[] = [
+		{ name: 'Home', item: absolute('/') },
+		{ name: docsRootTitle(getProductTitleName(product)), item: absolute(docsRoot) },
+	];
+
+	let current = docsRoot;
+	for (const segment of canonicalPathname.slice(docsRoot.length).split('/').filter(Boolean)) {
+		current += `${segment}/`;
+		const title = titles.get(current);
+		if (title) crumbs.push({ name: title, item: absolute(current) });
+	}
+	return crumbs;
 }
