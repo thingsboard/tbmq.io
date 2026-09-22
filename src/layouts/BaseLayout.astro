@@ -11,6 +11,7 @@ import ThemeProvider from '../components/starlight/ThemeProvider.astro';
 import { Icon } from '@astrojs/starlight/components';
 import { formatMarketingTitle } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
+import { marketingJsonLd } from '~/util/structuredData';
 import '../styles/global.scss';
 import 'node_modules/@astrojs/starlight/style/props.css';
 
@@ -31,6 +32,12 @@ interface Props {
 	publishedTime?: string;
 	modifiedTime?: string;
 	noIndex?: boolean;
+	/**
+	 * Breadcrumb leaf label, e.g. 'Pricing'. Emits the default WebPage +
+	 * BreadcrumbList graph for this page's own URL, title and description.
+	 */
+	breadcrumb?: string;
+	/** A page-specific graph; takes precedence over the one `breadcrumb` builds. */
 	jsonLd?: Record<string, unknown>;
 	/**
 	 * Preload an above-the-fold LCP image with fetchpriority=high. Use ONLY for
@@ -60,6 +67,7 @@ const {
 	publishedTime,
 	modifiedTime,
 	noIndex = false,
+	breadcrumb,
 	jsonLd,
 	preloadLcpImage,
 	openContentLinksInNewTab = false,
@@ -68,6 +76,9 @@ const {
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const pageTitle = customTitle ? title : formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
+const structuredData =
+	jsonLd ??
+	(breadcrumb ? marketingJsonLd({ path: Astro.url.pathname, name: title, description, breadcrumb }) : undefined);
 
 // Bridge for the Starlight `ThemeProvider` override (rendered in <head> below):
 // `bsl` marks a BaseLayout page, `bslForceLight` locks the light theme and skips
@@ -103,7 +114,7 @@ locals.bslForceLight = forceLightTheme;
 			publishedTime={publishedTime}
 			modifiedTime={modifiedTime}
 			noIndex={noIndex}
-			jsonLd={jsonLd}
+			jsonLd={structuredData}
 		/>
 
 		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />

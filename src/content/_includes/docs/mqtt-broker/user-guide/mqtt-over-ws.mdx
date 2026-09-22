@@ -1,9 +1,10 @@
 import { Aside } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import LearnLink from '@components/LearnLink.astro';
 
 MQTT is a lightweight protocol designed for efficient message delivery — but web browsers cannot use MQTT natively over a raw TCP socket.
-**MQTT over WebSocket** bridges this gap, allowing MQTT messages to be sent and received directly through browsers and Node.js applications, combining the reliability of MQTT with the web compatibility of WebSocket.
+<LearnLink slug="websocket" bold>MQTT over WebSocket</LearnLink> bridges this gap, allowing MQTT messages to be sent and received directly through browsers and Node.js applications, combining the reliability of MQTT with the web compatibility of WebSocket.
 
 ## What is WebSocket?
 

@@ -93,7 +93,11 @@ export const SINGLE_REDIRECTS: SingleRedirect[] = [];
 // thingsboard.io's edge table keeps its own legal pages on thingsboard.io
 // (only /products/mqtt-broker/ itself points here, at the root), so nothing
 // upstream resolves to the old URLs either.
-export const NON_DOCS_REDIRECTS: Record<string, string> = {};
+export const NON_DOCS_REDIRECTS: Record<string, string> = {
+	// thingsboard.io's community page (events calendar, ThingsBoard GitHub and
+	// Stack Overflow links) carried nothing about TBMQ; deleted 2026-09.
+	'/community/': '/',
+};
 
 export const DYNAMIC_REDIRECTS: DynamicRedirectGroup[] = [];
 

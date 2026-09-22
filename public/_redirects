@@ -7,6 +7,8 @@
 # === Auto-generated redirects from src/data/redirects.ts ===
 
 
+# Non-docs redirects (from NON_DOCS_REDIRECTS)
+/community/ / 301
 
 # === End auto-generated redirects ===
 
