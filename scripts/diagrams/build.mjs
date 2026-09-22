@@ -77,6 +77,11 @@ const DIAGRAMS = {
 	'http-integration': { file: 'tbmq-http-integration', dir: 'integrations', build: integrations.httpIntegration },
 	'mqtt-integration': { file: 'tbmq-mqtt-integration', dir: 'integrations', build: integrations.mqttIntegration },
 	'kafka-integration': { file: 'tbmq-kafka-integration', dir: 'integrations', build: integrations.kafkaIntegration },
+	'rabbitmq-integration': {
+		file: 'tbmq-rabbitmq-integration',
+		dir: 'integrations',
+		build: integrations.rabbitMqIntegration,
+	},
 	'redis-integration': { file: 'tbmq-redis-integration', dir: 'integrations', build: integrations.redisIntegration },
 	'postgresql-integration': {
 		file: 'tbmq-postgresql-integration',

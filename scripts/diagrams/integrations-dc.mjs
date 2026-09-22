@@ -874,6 +874,19 @@ export const kafkaIntegration = (kit) =>
 			'internally.',
 	});
 
+export const rabbitMqIntegration = (kit) =>
+	integrationType(kit, {
+		title: 'RabbitMQ integration',
+		integration: 'RabbitMQ',
+		targetIco: 'queue',
+		target: 'RabbitMQ broker',
+		protocol: 'AMQP(S)',
+		legendTarget: 'External RabbitMQ broker',
+		caption:
+			'Matched messages and client lifecycle events are published by the executor to an exchange on a ' +
+			'RabbitMQ broker of your own, with the routing key configured on the integration.',
+	});
+
 export const redisIntegration = (kit) =>
 	integrationType(kit, {
 		title: 'Redis integration',
