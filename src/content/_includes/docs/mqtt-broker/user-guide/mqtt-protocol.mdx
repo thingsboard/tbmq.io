@@ -2,6 +2,7 @@ import DocLink from '@components/DocLink.astro';
 import { Aside } from '@astrojs/starlight/components';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
+import LearnLink from '@components/LearnLink.astro';
 
 MQTT is the wire protocol TBMQ speaks. This page covers **how TBMQ implements MQTT** — the versions it accepts, the endpoints clients connect to, the protocol limits it enforces, and the MQTT 5.0 features it supports. For a conceptual introduction to the protocol itself — the publish/subscribe model, brokers, topics, and where MQTT fits versus other protocols — see the [What is MQTT?](/mqtt/what-is-mqtt/) guide and the rest of the [MQTT guide](/mqtt/).
 
@@ -63,7 +64,7 @@ The full list of tunables lives in <DocLink product={props.product} path="instal
 
 ## MQTT 5.0 features in TBMQ
 
-TBMQ implements the MQTT 5.0 feature set, including:
+TBMQ implements the <LearnLink slug="mqtt-5">MQTT 5.0 feature set</LearnLink>, including:
 
 | Feature | Behavior in TBMQ |
 |---|---|

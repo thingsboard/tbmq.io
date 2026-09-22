@@ -1,7 +1,11 @@
-/** Thresholds shared by the checks and their tests, so both move together. */
+/**
+ * Thresholds shared by the checks and their tests, so both move together.
+ * Description bounds follow Ahrefs (110–160) so one local run predicts its report;
+ * TITLE_MAX stays at 60, stricter than Ahrefs' ~70, which is the right side to err on.
+ */
 export const TITLE_MIN = 30;
 export const TITLE_MAX = 60;
-export const DESC_MIN = 70;
+export const DESC_MIN = 110;
 export const DESC_MAX = 160;
 export const THIN_WORDS = 300;
 
@@ -14,8 +18,19 @@ export interface PageFacts {
 	/** Pathname with a trailing slash, e.g. `/mqtt/qos/`. */
 	pathname: string;
 	section: Section;
-	/** True when the page is a meta-refresh redirect stub; every check skips those. */
+	/**
+	 * True when the page is a meta-refresh redirect stub. It gets no findings of its
+	 * own and its links are not followed; only the sitemap check names it, when the
+	 * sitemap lists it.
+	 */
 	isRedirect: boolean;
+	/**
+	 * True when `<meta name="robots">` carries `noindex`. Such a page gets no findings
+	 * of its own, but its outbound links still count: crawlers follow them.
+	 */
+	isNoindex: boolean;
+	/** True when the page's URL is listed in the build's sitemap. */
+	inSitemap: boolean;
 	/** Empty string when absent, never null, so length checks need no guard. */
 	title: string;
 	/** Empty string when absent. */
@@ -41,6 +56,15 @@ export interface PageFacts {
 	mainOutboundPathnames: string[];
 }
 
+/**
+ * A page that gets findings of its own and belongs in the census: neither a
+ * redirect stub nor noindex. The checks, the report and the sitemap test all
+ * mean this one thing by "indexable".
+ */
+export function isIndexable(page: Pick<PageFacts, 'isRedirect' | 'isNoindex'>): boolean {
+	return !page.isRedirect && !page.isNoindex;
+}
+
 export interface Finding {
 	/** Stable kebab-case id, e.g. `title-too-long`. Groups the report. */
 	check: string;
@@ -53,7 +77,9 @@ export interface Finding {
 export interface AuditReport {
 	/** The `dist/` directory audited, echoed for traceability. */
 	generatedFor: string;
+	/** Indexable pages only — redirect stubs and noindex pages are counted in `skipped`. */
 	pageCount: number;
 	sectionCounts: Record<string, number>;
+	skipped: { noindex: number; redirect: number };
 	findings: Finding[];
 }
