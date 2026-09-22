@@ -1,6 +1,9 @@
 // Language system
-import { Products } from '@models/site.models.ts';
-import { SECTION_LABELS, SITE_NAME } from '@root/consts';
+// Relative specifiers, not the `@` aliases: `structuredData.ts` imports this
+// module, and `structuredData.test.ts` loads that chain under `node --test`,
+// which resolves no tsconfig paths. See the note at the top of that file.
+import { Products } from '../models/site.models.ts';
+import { SECTION_LABELS, SITE_NAME } from '../consts.ts';
 
 export type SupportedLanguage = 'en' | 'uk';
 
@@ -16,12 +19,12 @@ export const productVersions: Record<Products, { label: string; prefix: string; 
 	[Products.TBMQ]: {
 		label: 'TBMQ Broker',
 		prefix: '',
-		titleName: 'ThingsBoard TBMQ',
+		titleName: 'TBMQ',
 	},
 	[Products.TBMQ_PE]: {
 		label: 'TBMQ PE Broker',
 		prefix: 'pe/',
-		titleName: 'ThingsBoard TBMQ PE',
+		titleName: 'TBMQ PE',
 	},
 };
 

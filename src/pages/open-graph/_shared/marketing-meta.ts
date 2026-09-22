@@ -38,7 +38,6 @@ interface PrefixRule {
 /** Order matters — first match wins. */
 const PREFIX_RULES: PrefixRule[] = [
 	{ prefix: '/pricing/', section: { sectionName: 'Pricing' } },
-	{ prefix: '/community/', section: { sectionName: 'Community' } },
 	{ prefix: '/contact-us/', section: { sectionName: 'Contact' } },
 	{ prefix: '/cookie-policy/', section: { sectionName: 'Legal' } },
 	{ prefix: '/installations/', section: { sectionName: 'Installations' } },

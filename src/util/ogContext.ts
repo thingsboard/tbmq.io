@@ -80,7 +80,6 @@ export function truncate(text: string, max: number): string {
 export const MARKETING_ALLOWLIST: ReadonlyArray<string> = [
 	'/',
 	'/pricing/',
-	'/community/*',
 	'/contact-us/',
 	'/installations/*',
 	'/performance/',

@@ -93,6 +93,7 @@ Props and usage live in each component file under `src/components/`. Commonly us
 - **ConditionalHeading** — TOC-aware heading for use inside JSX conditionals in `_includes`
 - **InstallationCardGrid** — installation option card grid
 - **DocLink** — product-aware internal links (always use instead of bare markdown links)
+- **LearnLink** — links from the docs into the `/mqtt/` learn hub; takes the topic `slug`, not a path, and fails the build on an unknown one (always use instead of bare `[…](/mqtt/…/)` links)
 - **Code blocks** — `maxLines`, `collapsible`, `wrap`, `download='file.ext'` meta options; `<Code>` component for dynamic code
 
 **Asset references fail silently, not loudly.** `ImageGallery` swaps in a CDN URL (`https://img.thingsboard.io/…`) when a local asset is missing, and `InstallationCardGrid` renders no icon at all (`svgModules[item.icon] ?? null`). A deleted or renamed image therefore passes both `astro check` and the build. To verify an asset change, grep the built site for `img.thingsboard.io` — the one legitimate hit is `support-ukraine-banner.webp`, which has lived on the CDN since it was removed upstream.
@@ -178,7 +179,7 @@ Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-
 ### Pages vs Content
 
 - `src/content/docs/` — documentation pages rendered by Starlight (the TBMQ docs tree)
-- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing, `privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `community/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`
+- `src/pages/` — special routes and TBMQ marketing/landing pages: root `index.astro`, `product/` (product landing, `privacy-policy`, `terms-of-use`), `pricing/`, `installations/`, `company/`, `contact-us` (+ `contact-us-thanks`), `live-demo`, `performance/` (benchmark), `mqtt/` (the MQTT learn hub, ~35 pages), `cookie-policy/`, `blog/`, `open-graph/` (OG generation), `404.astro`, `llms.txt` / `llms-small.txt`
 
 ### Typography & Design System
 

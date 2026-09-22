@@ -1,6 +1,6 @@
 import { collectPages } from './collect.ts';
 import { runChecks } from './checks.ts';
-import type { AuditReport, Finding, Severity } from './types.ts';
+import { isIndexable, type AuditReport, type Finding, type PageFacts, type Severity } from './types.ts';
 
 const MAX_EXAMPLES = 10;
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
@@ -19,13 +19,25 @@ export function resolveDistDir(args: string[]): string {
 	return value === '' ? './dist' : value;
 }
 
+/**
+ * The page census: indexable pages by section, plus what was left out and why.
+ * A page that is both a redirect stub and noindex counts once, as a redirect.
+ */
+export function summarise(pages: PageFacts[]): Pick<AuditReport, 'pageCount' | 'sectionCounts' | 'skipped'> {
+	const sectionCounts: Record<string, number> = {};
+	const skipped = { noindex: 0, redirect: 0 };
+	for (const page of pages) {
+		if (isIndexable(page)) sectionCounts[page.section] = (sectionCounts[page.section] ?? 0) + 1;
+		else if (page.isRedirect) skipped.redirect += 1;
+		else skipped.noindex += 1;
+	}
+	const pageCount = Object.values(sectionCounts).reduce((total, count) => total + count, 0);
+	return { pageCount, sectionCounts, skipped };
+}
+
 export function buildReport(buildOutputDir: string): AuditReport {
 	const pages = collectPages(buildOutputDir);
-	const sectionCounts = pages.reduce<Record<string, number>>((counts, page) => {
-		counts[page.section] = (counts[page.section] ?? 0) + 1;
-		return counts;
-	}, {});
-	return { generatedFor: buildOutputDir, pageCount: pages.length, sectionCounts, findings: runChecks(pages) };
+	return { generatedFor: buildOutputDir, ...summarise(pages), findings: runChecks(pages) };
 }
 
 export function toJson(report: AuditReport): string {
@@ -37,7 +49,9 @@ export function formatText(report: AuditReport): string {
 		.sort(([a], [b]) => a.localeCompare(b))
 		.map(([section, count]) => `${section}=${count}`)
 		.join(' ');
-	const lines = [`SEO audit of ${report.generatedFor}`, `${report.pageCount} pages (${census})`, ''];
+	const { noindex, redirect } = report.skipped;
+	const skipped = noindex || redirect ? `, skipped ${noindex} noindex + ${redirect} redirect` : '';
+	const lines = [`SEO audit of ${report.generatedFor}`, `${report.pageCount} pages (${census})${skipped}`, ''];
 
 	if (report.findings.length === 0) {
 		lines.push('no issues found');

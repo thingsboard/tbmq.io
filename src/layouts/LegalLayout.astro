@@ -4,18 +4,25 @@ import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
 import { formatMarketingTitle } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
+import { marketingJsonLd } from '~/util/structuredData';
 
 interface Props {
 	title: string;
 	description?: string;
 	ogImage?: string;
 	noIndex?: boolean;
+	/** Breadcrumb leaf label; emits the default WebPage + BreadcrumbList graph, as on BaseLayout. */
+	breadcrumb?: string;
+	jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, ogImage: ogImageProp, noIndex = false } = Astro.props;
+const { title, description, ogImage: ogImageProp, noIndex = false, breadcrumb, jsonLd } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const pageTitle = formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
+const structuredData =
+	jsonLd ??
+	(breadcrumb ? marketingJsonLd({ path: Astro.url.pathname, name: title, description, breadcrumb }) : undefined);
 ---
 
 <!doctype html>
@@ -30,6 +37,7 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 			canonicalUrl={canonicalUrl}
 			ogImage={ogImage}
 			noIndex={noIndex}
+			jsonLd={structuredData}
 		/>
 		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
 	</head>
@@ -39,6 +47,15 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 		</div>
 		<CookieBanner />
 		<UtmTracker />
+		<script is:inline>
+			// The demo broker (demo.tbmq.io) embeds these pages in an <iframe> inside its
+			// sign-up dialog; the website-scope notice and the cookie banner are noise there.
+			// The banner is removed (not hidden) so its own script, which runs later, finds nothing to show.
+			if (window.self !== window.top) {
+				document.querySelectorAll('.scope').forEach((el) => (el.hidden = true));
+				document.getElementById('cookie-banner')?.remove();
+			}
+		</script>
 	</body>
 </html>
 
@@ -118,6 +135,14 @@ const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
 		.date {
 			font-size: 0.8em;
 			color: grey;
+		}
+
+		.scope {
+			margin: 16px 0 0;
+			padding: 12px 16px;
+			border-left: 3px solid var(--color-primary);
+			background: rgba(0, 0, 0, 0.03);
+			text-align: left;
 		}
 	}
 </style>
