@@ -44,7 +44,7 @@ jobs:
       - name: Run Check
         run: pnpm run lint:eslint
   test:
-    name: Run unit tests
+    name: Run tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -53,6 +53,12 @@ jobs:
 
       - name: Install Tools & Dependencies
         uses: ./.github/actions/install
+
+      # The SEO integration suite audits a built site, and skips itself without
+      # one. `build:linkcheck` is the cheapest build that still emits every page
+      # (no OG cards, no llms.txt, no image optimisation).
+      - name: Build
+        run: pnpm run build:linkcheck
 
       - name: Run Check
         run: pnpm run test

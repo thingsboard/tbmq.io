@@ -26,7 +26,15 @@ function skipReason(): string | false {
 	return false;
 }
 
-const options = { skip: skipReason() };
+const skip = skipReason();
+
+// Locally a missing or stale `dist/` is a convenience: the suite says why it sat
+// out and the unit tests still run. In CI the workflow builds before it tests, so
+// the same condition means the job is no longer running what its name claims —
+// fail loudly rather than report eleven silent skips under a green tick.
+if (skip && process.env.CI) throw new Error(`SEO integration tests cannot run: ${skip}`);
+
+const options = { skip };
 
 /**
  * Every page the site publishes with `noindex`. They are counted as skipped
