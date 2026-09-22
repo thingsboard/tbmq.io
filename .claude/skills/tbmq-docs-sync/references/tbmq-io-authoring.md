@@ -1,9 +1,12 @@
 # tbmq.io authoring cheat-sheet
 
 Concrete conventions for editing the TBMQ documentation site (this repo — Astro + Starlight,
-MDX). This is a distilled pointer — the repo's own `CLAUDE.md` and
-`CONTRIBUTING.md` are the living authority. If anything here disagrees with them, they win;
-read them at the start of a docs task.
+MDX). This is a distilled pointer — the repo's own `CLAUDE.md` is the living authority. If
+anything here disagrees with it, it wins; read it at the start of a docs task.
+
+`CONTRIBUTING.md` is a contributor-facing summary and is **stale on the stub paths** — it still
+documents `src/content/docs/docs/mqtt-broker/{path}` and `.../mqtt-broker/pe/{path}`, which no
+longer exist. Trust `CLAUDE.md` and the actual tree over it.
 
 ## Table of contents
 1. Content layout & the CE/PE include-stub pattern
@@ -80,6 +83,14 @@ Do **not** use `{props.product === … && (<>…</>)}` with hand-written `<p>`/`
 HTML — a JSX `{…}` expression disables Markdown parsing and forces ugly raw HTML. `<ShowFor>`
 keeps Markdown working.
 
+**A `<ShowFor>` block cannot *add* one item to a Markdown list or one row to a table.** The parser
+closes the `<ul>`/`<table>` at the JSX block and opens a new one after it, so an appended PE-only
+bullet renders as a second list with a visible gap. Duplicate the **whole** list/table in two blocks
+(one `show={[Products.TBMQ]}`, one `show={[Products.TBMQ_PE]}`) instead. If that would mean three or
+four near-identical copies, prefer restructuring: an edition-neutral wording, or a product-aware
+component that filters a data array whose entries carry `products?: Products[]` (the pattern in
+`src/components/TbmqIntegrations.astro`).
+
 **Conditional headings** are the one exception — a heading inside a conditional must use
 `<ConditionalHeading>` (not `##`) so the TOC plugin can add it conditionally:
 
@@ -146,7 +157,10 @@ the `pe/` slug in the PE copy. Add or trim the single entry; don't restructure t
 
 ## 6. Redirects (renames & removals)
 
-Single source of truth: `src/data/redirects.ts`. Pick the export by pattern shape:
+Single source of truth: `src/data/redirects.ts`. All four arrays are **empty at HEAD** — legacy
+`/docs/mqtt-broker/…` URLs are already mapped one-hop by thingsboard.io's edge redirects, so there
+are no in-repo examples to copy. A page you rename or remove *on tbmq.io* still needs an entry.
+Pick the export by pattern shape:
 
 | Export | Use for |
 |---|---|
@@ -199,6 +213,16 @@ what they document today). **Build policy: always ask before running any build**
 - `pnpm lint:redirects` — detects redirect chains.
 - `pnpm format` — Prettier, but **never repo-wide**: this repo is not Prettier-clean at HEAD, so
   format only the files you touched.
+
+**Generated pages — do not hand-edit.** `src/content/docs/docs/{,pe/}installation/config.mdx` and
+`.../installation/ie-config.mdx` are produced by `scripts/generate_config_pages.py <repo_type>
+<branch>` (`repo_type` is `tbmq` or `tbmq-pe`; it fetches the YAML from GitHub via the `gh` CLI, and
+both arguments are required). Edit the prose pages that explain a parameter instead, and flag a
+generator run separately.
+
+**Dev-server caveat.** Adding or renaming a heading in an `_includes` file does not refresh that
+page's TOC until the dev server restarts — the stub's compiled module is not invalidated. Restart
+before trusting any anchor/TOC check in `pnpm dev`.
 
 ---
 

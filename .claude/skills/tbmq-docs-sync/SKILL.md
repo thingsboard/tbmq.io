@@ -21,7 +21,7 @@ The failure mode this skill exists to prevent is documentation that drifts from 
 | Argument / flag | Required | Meaning |
 |---|---|---|
 | `work-ref` | no | What the docs should reflect: a Trello card URL/id (TBMQ board), a GitHub issue, a PR, a branch/diff to compare, or "this session" for work just done here. If omitted, ask what work to document (and offer to derive it from the current session or the branch diff). |
-| `--branch <base>` | no | Base branch in this docs repo to branch from. Default: the repo's integration branch (`develop`). Either way, create a new working branch off the base for the doc changes — never commit directly to the base. |
+| `--branch <base>` | no | Base branch in this docs repo to branch from. Default: `develop` — the branch doc work integrates on, and the one prepared for the **next** release. Either way, create a new working branch off the base for the doc changes — never commit directly to the base, and never edit the versioned `release/X.Y` branch (that is what deploys to production). |
 
 The edition (CE / PE) is **not** a flag — it's inferred from the code repo the work was done in (see Edition & slugs).
 
@@ -50,12 +50,23 @@ Docs are centralized and use the CE/PE stub pattern over a shared include, so **
 
 If the change is a CE feature that both editions get, it belongs in the shared include (both stubs already render it). If it's PE-exclusive, gate it. When in doubt which edition a change belongs to, ask rather than guessing — leaking a PE feature into CE docs is a real error.
 
+### Source-of-truth branches (in the code repos)
+
+Docs on `develop` describe the **upcoming** release, so verify against the release lines, not released tags:
+
+| Edition | Repo | Branch to read |
+|---|---|---|
+| CE | `tbmq` | `origin/main` |
+| PE | `tbmq-pe` | `origin/license` — **not** `main`, and not `release/license/X.Y.Z` |
+
+**"PE = CE plus extras" is false.** The PE `license` branch *substitutes* subsystems (it deletes CE classes and config blocks and replaces them with licensed equivalents), so PE behavior can never be inferred from CE code or from merge timing. A CE feature not yet merged into PE is normal — not a discrepancy to paper over in docs. Diff CE `main` against PE `license` to find the real PE-only deltas that deserve a `<ShowFor>` block.
+
 ## Workflow — run in order
 
 ### 1. Identify the work and gather context (READ-ONLY)
 Establish exactly *what changed* before touching any doc. Gather context in this priority order and keep the code as the source of truth:
 
-1. **The shipped code / diff** — the authority. Read the actual change (`git diff`, `git log`, the PR, the merged files). Every behavior you document must trace to a `file:symbol` here.
+1. **The shipped code / diff** — the authority. Read the actual change (`git diff`, `git log`, the PR, the merged files). Every behavior you document must trace to a `file:symbol` here. **Read the right branch** (see Source-of-truth branches above) — a checkout usually sits on a feature branch, so read with `git show <branch>:<path>` after a `git fetch` rather than trusting the working tree.
 2. **The Superpowers spec/plan** for the work, if one exists (`docs/superpowers/plans/…`) — captures intent and acceptance criteria.
 3. **The originating Trello card / GitHub issue** — the "why" and the definition of done. For a Trello card, set the active board to "TBMQ" first (`mcp__trello__set_active_board`), then `get_card` / `get_acceptance_criteria` / `get_card_comments`. For a GH issue, `gh issue view`.
 4. **The current session** — if the work was just done here, the conversation history is valid context.
@@ -66,8 +77,10 @@ For a non-trivial code surface, delegate the investigation to **`tbmq-code-audit
 From what changed, decide the action for each affected doc:
 - **Create** — a genuinely new capability with no existing page.
 - **Update** — changed behavior, new option/config, new UI on an existing page.
-- **Fix** — the docs are now wrong or incomplete (this is also the bug-fix case: does the fix change documented behavior?).
+- **Fix** — the docs are now wrong or incomplete (this is also the bug-fix case: does the fix change documented behavior?). **Change only the statements that are factually wrong.** Leave correct prose byte-identical — add a sentence rather than re-flowing a paragraph, replace the wrong token rather than rewriting the line. Re-wording a verified claim silently un-verifies it.
 - **Remove** — a feature was removed; its page and all references must go (see the removal checklist in the reference).
+
+**Config parameters are a special case.** `src/content/docs/docs/installation/config.mdx` and `.../installation/ie-config.mdx` (and their `pe/` twins) are **generated** by `scripts/generate_config_pages.py <tbmq|tbmq-pe> <branch>` from the broker / integration-executor YAML. Never hand-edit those four pages — a hand edit is overwritten by the next run. When a change adds or alters a config key, update the *prose* pages that explain it (e.g. `_includes/docs/mqtt-broker/architecture.mdx`, `.../integrations.mdx`) and **flag a generator run** as a separate step, noting it will also sweep in unrelated YAML drift since the last run.
 
 **"No user-facing docs needed" is a valid, expected outcome.** Internal refactors, private-API changes, and many bug fixes have no documentation surface. Say so plainly and stop — do not manufacture content to look busy.
 
@@ -77,7 +90,7 @@ Ask which documentation to touch — user guide, getting-started, reference/API,
 ### 4. Locate the docs
 Find everything the change touches:
 - The include + CE/PE stubs for each affected page.
-- **Navigation** — `astro.sidebar.ts` (via `tbmqGuideItems` / `tbmqInstallItems` / `tbmqReferenceItems`) for new/removed pages.
+- **Navigation** — `astro.sidebar.ts` for new/removed pages. The **Guides / Installation / Reference** groups come from the prefix-parameterized helpers `tbmqGuideItems` / `tbmqInstallItems` / `tbmqReferenceItems` (one edit covers both editions); the **Getting Started** and **Releases** groups are spelled out literally in `tbmqSidebar` *and* `tbmqPeSidebar`, so a page there needs the entry added twice. See the reference.
 - **Cross-links** — other pages that `<DocLink>` to the affected page.
 - **Redirects** — for renames/removals, `src/data/redirects.ts` (then `pnpm generate:redirects`). Details in the reference.
 
@@ -88,7 +101,7 @@ Write the diffs in the repo's real conventions (full details in `references/tbmq
 Present the proposed doc changes **as diffs** and an impact summary, then **stop for explicit approval before writing/committing anything**. Docs ship to the public site; nothing lands without a yes. See Guardrails.
 
 ### 7. Apply & verify
-After approval, make the changes and validate using the **repo's own instructions** (`CLAUDE.md` + `CONTRIBUTING.md` at the repo root) — do not duplicate or invent commands here; they can change. The reference lists the current check set. **Build policy: the repo requires asking before any build** — ask "Run `pnpm build:fast` to verify, or skip?" rather than building unprompted. Run link/slug checks when you added, renamed, or removed pages or links. Commit with **Conventional Commits** (`docs:` for pure docs). Do not push or open a PR without a separate go-ahead.
+After approval, make the changes and validate using the **repo's own instructions** — `CLAUDE.md` at the repo root is the authority. (`CONTRIBUTING.md` is a contributor-facing summary and is currently **stale on the stub paths**: it still shows `src/content/docs/docs/mqtt-broker/…`, which no longer exists. Where the two disagree, `CLAUDE.md` and the actual tree win.) Do not duplicate or invent commands here; they can change. The reference lists the current check set. **Build policy: the repo requires asking before any build** — ask "Run `pnpm build:fast` to verify, or skip?" rather than building unprompted. Run link/slug checks when you added, renamed, or removed pages or links. If you checked a TOC/anchor in `pnpm dev` after editing an `_includes` file, **restart the dev server first** — injected include headings stay stale until the stub recompiles, and the missing TOC entries look like a content bug. Commit with **Conventional Commits** (`docs:` for pure docs). Do not push or open a PR without a separate go-ahead.
 
 ## Guardrails (hard stops)
 
@@ -108,6 +121,8 @@ Every statement about product behavior must trace to a **`file:symbol`** in the 
 
 ## Do not duplicate other skills
 
+- **Authoring or auditing a `/docs/` page itself** → `tbmq-docs-page` (lives in this repo). This skill decides *what* the shipped work changes in the docs and drives the gate; `tbmq-docs-page` is the authority on writing and verifying an individual reference page. Hand off rather than re-deriving its rules.
+- **The `/mqtt` learn hub** → `mqtt-learn-topic` (lives in this repo). Marketing guides at `/mqtt/<slug>/` are never in scope here.
 - **Changelog / release notes** → `tbmq-release-notes`. This skill documents behavior on doc pages; it does not write the changelog.
 - **YAML config-parameter comments/descriptions** → `tbmq-yaml-comment-style` (auto-triggers). If the work adds a config key, that skill handles the YAML comment; this skill handles the config's user-facing *doc page*.
 
