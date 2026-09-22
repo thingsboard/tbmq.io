@@ -1,6 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectFacts, collectPages, normaliseHref, sectionOf } from './collect.ts';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {
+	collectFacts,
+	collectPages,
+	normaliseHref,
+	parseSitemapPathnames,
+	readSitemapPathnames,
+	sectionOf,
+} from './collect.ts';
 
 test('sectionOf classifies by path prefix', () => {
 	assert.equal(sectionOf('/docs/getting-started/'), 'docs');
@@ -120,6 +130,69 @@ test('collectFacts detects meta-refresh redirect stubs', () => {
 	assert.equal(collectFacts(html, '/old/').isRedirect, true);
 });
 
+test('collectFacts reads noindex from the robots meta', () => {
+	const withRobots = (content: string) =>
+		`<!doctype html><html><head><meta name="robots" content="${content}"></head><body></body></html>`;
+	assert.equal(collectFacts(withRobots('noindex, follow'), '/x/').isNoindex, true);
+	assert.equal(collectFacts(withRobots('NOINDEX'), '/x/').isNoindex, true);
+	assert.equal(collectFacts(withRobots('index, follow'), '/x/').isNoindex, false);
+	assert.equal(collectFacts(PAGE, '/mqtt/qos/').isNoindex, false);
+});
+
+test('collectFacts treats a robots meta without content as not noindex', () => {
+	const html = '<!doctype html><html><head><meta name="robots"></head><body></body></html>';
+	assert.equal(collectFacts(html, '/x/').isNoindex, false);
+});
+
+const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://tbmq.io/</loc><lastmod>2026-08-27T12:12:43.000Z</lastmod></url><url><loc>https://tbmq.io/docs/pe/qos/</loc></url><url><loc>
+	https://tbmq.io/mqtt/qos
+</loc></url></urlset>`;
+
+test('parseSitemapPathnames returns a normalised pathname for every loc, in file order', () => {
+	assert.deepEqual(parseSitemapPathnames(SITEMAP), ['/', '/docs/pe/qos/', '/mqtt/qos/']);
+});
+
+test('parseSitemapPathnames also resolves the sitemap files an index points at', () => {
+	const index = '<sitemapindex><sitemap><loc>https://tbmq.io/sitemap-0.xml</loc></sitemap></sitemapindex>';
+	assert.deepEqual(parseSitemapPathnames(index), ['/sitemap-0.xml']);
+});
+
+// A build made with PUBLIC_SITE_URL / CF_PAGES_URL set writes that origin into
+// every <loc>. Dropping those would empty the set and flag every page as
+// `sitemap-missing` — the sitemap lists pages of exactly one site, so only the
+// pathname carries information.
+test('parseSitemapPathnames reads the pathname whatever origin the build wrote', () => {
+	const xml = '<urlset><url><loc>https://preview.tbmq-io.pages.dev/docs/pe/qos/</loc></url></urlset>';
+	assert.deepEqual(parseSitemapPathnames(xml), ['/docs/pe/qos/']);
+});
+
+/** A three-page build with a two-file sitemap on a preview origin; see the files for what each page is. */
+const FIXTURE_SITE = './scripts/lib/seo/fixtures/site';
+
+test('readSitemapPathnames unions every sitemap file the index points at', () => {
+	assert.deepEqual([...readSitemapPathnames(FIXTURE_SITE)].sort(), ['/', '/docs/pe/qos/']);
+});
+
+// The orphan-page tasks all hinge on "in the sitemap, yet…", so a missing or
+// empty sitemap must fail loudly rather than mark every page `sitemap-missing`.
+test('readSitemapPathnames throws when the build has no sitemap index', () => {
+	assert.throws(() => readSitemapPathnames(emptyDir()), /no sitemap-index\.xml/);
+});
+
+test('readSitemapPathnames throws when the sitemap lists no pages', () => {
+	assert.throws(() => readSitemapPathnames('./scripts/lib/seo/fixtures/empty-sitemap'), /lists no pages/);
+});
+
+test('collectPages reads every page in the build and stamps whether the sitemap lists it', () => {
+	const pages = new Map(collectPages(FIXTURE_SITE).map((page) => [page.pathname, page]));
+	assert.deepEqual([...pages.keys()].sort(), ['/', '/docs/pe/qos/', '/docs/qos/']);
+	assert.equal(pages.get('/')!.inSitemap, true);
+	assert.equal(pages.get('/docs/pe/qos/')!.inSitemap, true);
+	assert.equal(pages.get('/docs/qos/')!.inSitemap, false, 'canonicalised onto PE, so correctly absent');
+	assert.equal(pages.get('/docs/pe/qos/')!.title, 'Quality of Service Levels in TBMQ | TBMQ PE Docs');
+	assert.deepEqual(pages.get('/')!.outboundPathnames, ['/docs/pe/qos/']);
+});
+
 // A missing build output must be a loud error, not a silent "0 pages, no
 // issues found" — that reads as good news to an unattended weekly diff.
 test('collectPages throws when the build output directory does not exist', () => {
@@ -135,9 +208,13 @@ test('collectPages throws when the build output directory does not exist', () =>
 // typo that still resolves to a real path) is a different mistake and gets
 // a distinct message naming the directory.
 test('collectPages throws when the build output directory has no pages', () => {
-	const dir = './scripts/lib/seo';
+	const dir = emptyDir();
 	assert.throws(
 		() => collectPages(dir),
 		(error: unknown) => error instanceof Error && /contains no pages/.test(error.message) && error.message.includes(dir)
 	);
 });
+
+function emptyDir(): string {
+	return fs.mkdtempSync(path.join(os.tmpdir(), 'seo-audit-empty-'));
+}

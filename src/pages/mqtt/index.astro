@@ -4,18 +4,11 @@ import ScrollReveal from '@components/ScrollReveal.astro';
 import TopicGrid from '@components/MqttLearn/TopicGrid.astro';
 import LearnCta from '@components/MqttLearn/LearnCta.astro';
 import { Products } from '@models/site.models';
-import { marketingJsonLd } from '~/util/structuredData';
 import { mqttTopics, mqttCategoryGroups } from '~/data/mqttLearn';
 
 const title = 'MQTT Guide — Learn the Protocol Behind Modern IoT';
 const description =
-	'Clear, practical guides to MQTT: what it is, QoS levels, MQTT 5.0, shared subscriptions, MQTT vs Kafka, and more — from the team behind the open-source TBMQ broker.';
-const jsonLd = marketingJsonLd({
-	path: '/mqtt/',
-	name: title,
-	description,
-	breadcrumb: 'Learn',
-});
+	'Practical guides to MQTT from the team behind the open-source TBMQ broker: what it is, QoS levels, MQTT 5.0, shared subscriptions and MQTT vs Kafka.';
 
 const guideCount = mqttTopics.length;
 const categoryCount = mqttCategoryGroups.length;
@@ -27,7 +20,7 @@ const categoryCount = mqttCategoryGroups.length;
 	description={description}
 	pageId="mqtt-learn"
 	gitHubPlatform={Products.TBMQ}
-	jsonLd={jsonLd}
+	breadcrumb="Learn"
 	ogImageAlt="MQTT Guide by TBMQ"
 >
 	<main class="mqtt-hub">
@@ -64,6 +57,29 @@ const categoryCount = mqttCategoryGroups.length;
 		</header>
 
 		<TopicGrid />
+
+		<section class="mqtt-hub__docs reveal" aria-labelledby="mqtt-hub-docs-title">
+			<div class="mqtt-hub__docs-inner">
+				<div>
+					<h2 id="mqtt-hub-docs-title" class="mqtt-hub__docs-title">From protocol to broker</h2>
+					<p class="mqtt-hub__docs-text">
+						The guides explain what MQTT does. The TBMQ documentation shows how the broker implements it, from the first
+						connection to a production cluster.
+					</p>
+				</div>
+				{
+					/* The CE tree, like every other hub-to-docs link: the CE pages canonicalise
+				    onto their PE twins, so both trees consolidate to the same URL either way,
+				    and a reader arriving from a protocol guide has not chosen an edition yet. */
+				}
+				<ul class="mqtt-hub__docs-links">
+					<li><a href="/docs/getting-started/">Getting started</a></li>
+					<li><a href="/docs/installation/">Installation options</a></li>
+					<li><a href="/docs/security/overview/">Security overview</a></li>
+					<li><a href="/docs/user-guide/">User guides</a></li>
+				</ul>
+			</div>
+		</section>
 
 		<div class="mqtt-hub__cta reveal">
 			<LearnCta />
@@ -190,6 +206,58 @@ const categoryCount = mqttCategoryGroups.length;
 			&:focus {
 				border-color: $color-pe;
 				box-shadow: 0 0 0 3px rgba(23, 187, 82, 0.15);
+			}
+		}
+	}
+
+	// ── Docs strip ─────────────────────────────────────────────────
+	// The hub index's one link into the documentation tree. The topic pages
+	// link from their "How TBMQ…" blocks; without this the index passes nothing on.
+	.mqtt-hub__docs {
+		position: relative;
+		z-index: 1;
+		max-width: 1120px;
+		margin: $spacing-16 auto 0;
+		padding: 0 $spacing-6;
+	}
+	.mqtt-hub__docs-inner {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: $spacing-6 $spacing-10;
+		padding: $spacing-8 $spacing-10;
+		background: $color-bg-white;
+		border: 1px solid $color-border-light;
+		border-radius: $radius-xl;
+	}
+	.mqtt-hub__docs-title {
+		@include card-title;
+		color: $color-text-primary;
+		margin: 0 0 $spacing-2;
+	}
+	.mqtt-hub__docs-text {
+		@include text-m;
+		color: $color-text-muted;
+		max-width: 520px;
+		margin: 0;
+	}
+	.mqtt-hub__docs-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: $spacing-3 $spacing-6;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+
+		a {
+			@include action-link;
+			color: $color-pe-link;
+			text-decoration: none;
+			white-space: nowrap;
+
+			&:hover {
+				text-decoration: underline;
 			}
 		}
 	}

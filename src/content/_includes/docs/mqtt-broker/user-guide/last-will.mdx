@@ -1,12 +1,13 @@
 import { Aside, Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import LearnLink from '@components/LearnLink.astro';
 
 The **Last Will** feature in MQTT allows clients to notify others when they disconnect unexpectedly,
 giving a way to trigger actions like switching to backup systems or alerting users.
 
 Like a will in the real world — a legal document that specifies a person's wishes after they pass away —
-the Last Will message speaks on behalf of a device when it can no longer speak for itself.
+the <LearnLink slug="last-will">Last Will message</LearnLink> speaks on behalf of a device when it can no longer speak for itself.
 
 In a **smart home** setup, if a security camera goes offline unexpectedly, a Last Will message could trigger an alert to the homeowner
 or activate a backup system, such as turning on lights or alarms.
