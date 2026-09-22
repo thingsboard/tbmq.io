@@ -1,12 +1,10 @@
 # tbmq.io authoring cheat-sheet
 
 Concrete conventions for editing the TBMQ documentation site (this repo — Astro + Starlight,
-MDX). This is a distilled pointer — the repo's own `CLAUDE.md` is the living authority. If
-anything here disagrees with it, it wins; read it at the start of a docs task.
-
-`CONTRIBUTING.md` is a contributor-facing summary and is **stale on the stub paths** — it still
-documents `src/content/docs/docs/mqtt-broker/{path}` and `.../mqtt-broker/pe/{path}`, which no
-longer exist. Trust `CLAUDE.md` and the actual tree over it.
+MDX). This is a distilled pointer — the repo's own `CLAUDE.md` is the living authority, with
+`CONTRIBUTING.md` as the contributor-facing summary. If anything here disagrees with them, they
+win; read them at the start of a docs task. Where either disagrees with the actual tree, the tree
+wins.
 
 ## Table of contents
 1. Content layout & the CE/PE include-stub pattern
