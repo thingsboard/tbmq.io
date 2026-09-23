@@ -21,7 +21,7 @@
 </search-button>
 
 <script>
-	import { GOOGLE_CSE_CX } from '~/consts';
+	import { GOOGLE_CSE_CX, GOOGLE_CSE_ELEMENT_ATTRS } from '~/consts';
 
 	// Guard: component renders twice (mobile + desktop header), script deduplicates — runs once.
 	// Use window flag to avoid re-init across navigations.
@@ -67,6 +67,10 @@
 		let modal: HTMLElement | null = null;
 		let loaderBar: HTMLElement | null = null;
 
+		const cseElementAttrs = Object.entries(GOOGLE_CSE_ELEMENT_ATTRS)
+			.map(([name, value]) => `${name}="${value}"`)
+			.join(' ');
+
 		const close = () => {
 			if (!modal) return;
 			modal.classList.remove('open');
@@ -82,7 +86,7 @@
 				<div class="tb-search-overlay"></div>
 				<div class="tb-search-box">
 					<div class="tb-loader-bar"></div>
-					<div class="gcse-search"></div>
+					<div class="gcse-search" ${cseElementAttrs}></div>
 				</div>
 			`;
 			document.body.appendChild(modal);
