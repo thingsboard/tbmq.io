@@ -59,6 +59,20 @@ export function organizationJsonLd(site: URL) {
  */
 export const GOOGLE_CSE_CX = 'a0cca37fad72c4a8e';
 
+/**
+ * Element-level PSE options applied to every `.gcse-search` mount. The TBMQ
+ * engine is configured in the control panel with the "Overlay" layout plus
+ * image search and result sorting, so Google renders results in its own white
+ * popup (Web/Image tabs, Sort-by menu) on top of our container. These force
+ * the inline layout the header modal and the /docs/search/ pages are styled
+ * for, independent of the control-panel settings.
+ */
+export const GOOGLE_CSE_ELEMENT_ATTRS = {
+	'data-overlayResults': 'false',
+	'data-enableImageSearch': 'false',
+	'data-enableOrderBy': 'false',
+} as const;
+
 export const SECTION_LABELS: Record<string, string> = {
 	'/blog/': 'Blog',
 };
