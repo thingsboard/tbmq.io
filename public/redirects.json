@@ -1,1 +1,6 @@
-{}
+{
+  "/docs/security/": "/docs/security/overview/",
+  "/docs/pe/security/": "/docs/pe/security/overview/",
+  "/docs/installation/installation-options/": "/docs/installation/",
+  "/docs/pe/installation/installation-options/": "/docs/pe/installation/"
+}

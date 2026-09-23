@@ -7,6 +7,12 @@
 # === Auto-generated redirects from src/data/redirects.ts ===
 
 
+# Single page redirects
+/docs/security/ /docs/security/overview/ 301
+/docs/pe/security/ /docs/pe/security/overview/ 301
+/docs/installation/installation-options/ /docs/installation/ 301
+/docs/pe/installation/installation-options/ /docs/pe/installation/ 301
+
 # Non-docs redirects (from NON_DOCS_REDIRECTS)
 /community/ / 301
 
