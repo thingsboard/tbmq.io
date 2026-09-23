@@ -69,25 +69,8 @@ properties</DocLink> on the REST publish API page.
 Every publish produces a result: a new row in [Published messages](#published-messages) on this page, or a panel under
 the form when publishing from the [Publish message dialog](#publish-from-other-pages). It shows a title, the HTTP status
 of the call, the PUBACK reason code when the broker returned one, and details — for a rejected request, the broker's
-own message.
-
-| HTTP status | Result |
-|---|---|
-| `200` | **Message published** — at least one subscription matched the topic. |
-| `202` | **Accepted, but no subscription matched** — reason code `16`; nobody receives the message. |
-| `400`, `411` | **Invalid publish request** |
-| `401`, `403` | **Not allowed to publish** — the session token has expired, or the account is a **Viewer**. |
-| `413` | **Payload is too large** |
-| `415` | **Unsupported content type** |
-| `429` | **Total throughput quota exceeded** |
-| `503` | **Publish queue failed or timed out** — the message may still have been published. |
-| any other | **Failed to publish the message** — for example a network failure, shown as status `0`. |
-
-What each status means on the broker side is described under
-<DocLink product={props.product} path="mqtt-message-publishing#response-codes">Response codes</DocLink> on the REST
-publish API page. A `200` or `202` means the broker queue accepted the message — not that any client received it. To
-confirm delivery, subscribe to the topic with the
-<DocLink product={props.product} path="user-guide/ui/websocket-client">WebSocket client</DocLink> first.
+own message. The statuses are those of the REST publish API; what each one means is described under
+<DocLink product={props.product} path="mqtt-message-publishing#response-codes">Response codes</DocLink> on its page.
 
 ## Published messages
 
@@ -133,13 +116,16 @@ tested here into a script.
 Administrators can also open a **Publish message** dialog — the same form, with the result shown under it and no
 properties pre-set — from the pages where a topic is already at hand:
 
-- **Subscriptions** page — the **Publish to this topic** row action pre-fills the topic and QoS of the subscription.
-- **Sessions** page — in the session details, every row of the **Subscriptions** tab has a **Publish to this topic**
-  icon that does the same for that session's subscription.
-- **Retained messages** page — the **Publish message** button in the top right corner opens the dialog with **Retain**
-  already on. The **Publish to this topic** row action additionally pre-fills the topic and QoS of an existing retained
-  message, so you can replace it — or clear it, with an empty **Text** or **Base64** payload. The table refreshes when
-  you close the dialog after a publish the broker accepted.
+- <DocLink product={props.product} path="user-guide/ui/subscriptions#subscriptions-table">Subscriptions</DocLink> page
+  — the **Publish to this topic** row action pre-fills the topic and QoS of the subscription.
+- <DocLink product={props.product} path="user-guide/ui/sessions#subscriptions">Sessions</DocLink> page — in the session
+  details, every row of the **Subscriptions** tab has a **Publish to this topic** icon that does the same for that
+  session's subscription.
+- <DocLink product={props.product} path="user-guide/retained-messages#publish-retained-message">Retained messages</DocLink>
+  page — the **Publish message** button in the top right corner opens the dialog with **Retain** already on. The
+  **Publish to this topic** row action additionally pre-fills the topic and QoS of an existing retained message, so you
+  can replace it — or clear it, with an empty **Text** or **Base64** payload. The table refreshes when you close the
+  dialog after a publish the broker accepted.
 
 A subscription filter is not a topic name, so only the part of a wildcard filter before the first `+` or `#` is carried
 over, and the `$share/<group>/` prefix of a shared subscription is dropped: `sensors/+/temperature` pre-fills `sensors`,
