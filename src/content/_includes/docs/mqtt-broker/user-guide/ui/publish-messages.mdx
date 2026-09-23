@@ -22,9 +22,8 @@ beside it, and the publish form below them.
 The form opens pre-filled with a sample topic, `sensors/temperature`, and a sample JSON payload.
 
 <Steps>
-1. Enter the **Topic** — a topic **name**, not a filter: wildcards (`+`, `#`) and a leading `$` are rejected. Topics
-   used before anywhere in the console, including subscription filters, are offered as autocomplete suggestions, so a
-   suggestion may still need its wildcard replaced.
+1. Enter the **Topic** — a topic **name**, not a filter: wildcards (`+`, `#`) and a leading `$` are rejected. A warning
+   icon in the field names the problem while the topic is missing or invalid.
 2. Pick the **QoS**: **0 - At most once**, **1 - At least once** (the default), or **2 - Exactly once**.
 3. Pick the **Encoding**, which decides how the payload you type is turned into message bytes:
    - **JSON** (default) — the editor must hold valid JSON; the broker publishes its compact text.
@@ -48,7 +47,8 @@ The **Properties** dialog sets the MQTT 5 PUBLISH properties sent with the messa
 - **Payload Format Indicator** — when on, marks the payload as UTF-8 character data; when off, the property is not sent.
 - **Content Type** — MIME type of the payload.
 - **Message Expiry Interval** — how long the message stays valid, entered in seconds, minutes, or hours and sent to the
-  broker in seconds.
+  broker in seconds. The MQTT maximum is `4294967295` seconds; a value above the limit for the selected unit is flagged
+  with a warning icon and blocks **Save**.
 - **Response Topic** — topic for a response in the request/response pattern; it has to be a valid topic name.
 - **Correlation Data** — binary correlation data, entered as a Base64 string.
 - **User Properties** — key-value pairs. A pair with an empty key or value is dropped.
@@ -56,9 +56,9 @@ The **Properties** dialog sets the MQTT 5 PUBLISH properties sent with the messa
 Click **Save** to apply the properties to the next publish, **Reset** to clear them all, or **Cancel** to keep the
 previous values.
 
-Two properties are pre-set, so every publish carries a properties block until you change it: **Content Type**
-`application/json` and **Message Expiry Interval** `60` minutes. To publish without any properties, click **Reset** and
-then **Save**.
+On this page, two properties are pre-set, so every publish carries a properties block until you change it: **Content
+Type** `application/json` and **Message Expiry Interval** `60` minutes. To publish without any properties, click
+**Reset** and then **Save**. The [Publish message dialog](#publish-from-other-pages) starts with no properties.
 
 How each property reaches subscribers — including the fact that MQTT 3.1.1 clients receive the payload without them —
 is described under <DocLink product={props.product} path="mqtt-message-publishing#mqtt-5-properties">MQTT 5
@@ -91,17 +91,20 @@ confirm delivery, subscribe to the topic with the
 
 ## Published messages
 
-The table at the top of the page lists the messages published from the console during the current browser session —
-from this page and from the **Publish message** dialog on other pages — newest first. It is kept in memory only: the
-list is emptied when the page is reloaded or when you click **Clear messages**.
+The table at the top of the page lists the messages published from this page during the current browser session,
+newest first. It is kept in memory only: the list is emptied when the page is reloaded or when you click
+**Clear messages**. Messages published from the [Publish message dialog](#publish-from-other-pages) on other pages, or
+through the REST API directly, are not listed.
 
-Each row shows the **Time**, **Topic**, **QoS**, **Retain** flag, **Encoding**, **Payload**, and **Status**. The status
-is the HTTP status of the call, colored by outcome; hover over it to read the result title, reason code, and details. A
-**Payload** row action opens the full payload, and a **Properties** row action, shown only for messages that were sent
-with properties, opens them. The table is paged.
+Each row shows the **Time**, **Topic**, **QoS**, **Retain** flag, **Encoding**, **Payload**, **Status**, and **HTTP
+status**. The status is a label colored by outcome — **Published**, **No subscribers**, or **Failed**; hover over it to
+read the result title, HTTP status, reason code, and details. The **HTTP status** column holds the numeric status of the
+call. The table is paged.
 
-Click a row to load that message back into the form — its topic, QoS, Retain flag, encoding, and payload — to publish it
-again or edit it first. The properties currently set in the form are kept.
+Three row actions are available. **Load into composer** puts the message back into the form — its topic, QoS, Retain
+flag, encoding, payload, and the MQTT 5 properties it was sent with, replacing the properties currently set — so you can
+publish it again or edit it first. **Payload** opens the full payload, and **Properties**, shown only for messages that
+were sent with properties, opens them.
 
 Messages published this way are stamped with the client ID `tbmq_rest_api` — see
 <DocLink product={props.product} path="mqtt-message-publishing#publisher-client-id">Publisher client ID</DocLink>. To
@@ -113,6 +116,7 @@ REST publishes</DocLink>.
 
 The **Request preview** panel shows the JSON body the form will send, updated as you edit the form or its properties —
 the same body the <DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink> documents.
+The copy icon in the panel copies that body alone.
 
 **Copy as cURL** copies a ready-to-run shell snippet: an `export TBMQ_JWT='…'` line holding your current session token,
 followed by the `curl -X POST` call to `/api/mqtt/publish` with that body. It is a quick way to move a message you have
@@ -126,8 +130,8 @@ tested here into a script.
 
 ## Publish from other pages
 
-Administrators can also open a **Publish message** dialog — the same form, with the result shown under it — from the
-pages where a topic is already at hand:
+Administrators can also open a **Publish message** dialog — the same form, with the result shown under it and no
+properties pre-set — from the pages where a topic is already at hand:
 
 - **Subscriptions** page — the **Publish to this topic** row action pre-fills the topic and QoS of the subscription.
 - **Sessions** page — in the session details, every row of the **Subscriptions** tab has a **Publish to this topic**
@@ -138,6 +142,6 @@ pages where a topic is already at hand:
   you close the dialog after a publish the broker accepted.
 
 A subscription filter is not a topic name, so only the part of a wildcard filter before the first `+` or `#` is carried
-over: `sensors/+/temperature` pre-fills `sensors`, and `#` pre-fills nothing. Complete the topic before publishing.
-
-Messages published from the dialog are listed in [Published messages](#published-messages) as well.
+over, and the `$share/<group>/` prefix of a shared subscription is dropped: `sensors/+/temperature` pre-fills `sensors`,
+`$share/g1/sensors/#` pre-fills `sensors`, and `#` pre-fills nothing. An info icon in the **Topic** field reminds you of
+the cut until you edit the topic. Complete it before publishing.

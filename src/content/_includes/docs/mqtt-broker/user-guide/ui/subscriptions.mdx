@@ -39,7 +39,7 @@ The **Publish to this topic** row action publishes a message to a subscription's
 opens the
 <DocLink product={props.product} path="user-guide/ui/publish-messages#publish-from-other-pages">Publish message</DocLink>
 dialog with the topic and QoS pre-filled; for a wildcard filter, only the part before the first `+` or `#` is carried
-over.
+over, and a shared subscription's `$share/<group>/` prefix is dropped.
 </ShowFor>
 
 ## Manage subscriptions
