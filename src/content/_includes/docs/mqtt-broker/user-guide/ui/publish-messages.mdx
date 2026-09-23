@@ -1,0 +1,143 @@
+import { Aside, Steps } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+
+The **Publish messages** page publishes an MQTT message from the management console, on behalf of the broker itself: no
+MQTT connection or client credentials are involved. It is a form over the
+<DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink>, and the broker handles the
+message exactly as that page describes.
+
+Open it from **Publish messages** in the left-hand menu. The page has three parts: the
+[Published messages](#published-messages) table at the top, the [Request preview](#request-preview-and-curl) panel
+beside it, and the publish form below them.
+
+<Aside type="caution">
+  Publishing is available only to users with administrator rights — Viewers get a read-only view of the page: the form
+  is disabled, while the published messages and the request preview stay visible. The REST API enforces the same rule
+  and answers a Viewer with `403`. See
+  <DocLink product={props.product} path="security/rbac">Roles and permissions</DocLink>.
+</Aside>
+
+## Publish a message
+
+The form opens pre-filled with a sample topic, `sensors/temperature`, and a sample JSON payload.
+
+<Steps>
+1. Enter the **Topic** — a topic **name**, not a filter: wildcards (`+`, `#`) and a leading `$` are rejected. Topics
+   used before anywhere in the console, including subscription filters, are offered as autocomplete suggestions, so a
+   suggestion may still need its wildcard replaced.
+2. Pick the **QoS**: **0 - At most once**, **1 - At least once** (the default), or **2 - Exactly once**.
+3. Pick the **Encoding**, which decides how the payload you type is turned into message bytes:
+   - **JSON** (default) — the editor must hold valid JSON; the broker publishes its compact text.
+   - **Text** — the payload is published as UTF-8 text.
+   - **Base64** — the payload holds raw bytes encoded as a Base64 string (`A-Z`, `a-z`, `0-9`, `+`, `/`, optional `=`
+     padding, no line breaks). Use it for binary payloads.
+4. Switch **Retain** on to store the message as the retained message for the topic. With **Text** or **Base64**
+   encoding, an empty payload with **Retain** on clears the retained message instead — a **JSON** payload can never be
+   empty.
+5. Optionally click **Properties** to set the [MQTT 5 properties](#mqtt-5-properties). The badge on the button shows how
+   many properties are set.
+6. Type the payload in the editor and click **Publish** (the send icon). The button stays disabled while a publish is in
+   flight, when the topic is missing or invalid, or when the payload is not valid JSON or Base64 for the selected
+   encoding.
+</Steps>
+
+### MQTT 5 properties
+
+The **Properties** dialog sets the MQTT 5 PUBLISH properties sent with the message:
+
+- **Payload Format Indicator** — when on, marks the payload as UTF-8 character data; when off, the property is not sent.
+- **Content Type** — MIME type of the payload.
+- **Message Expiry Interval** — how long the message stays valid, entered in seconds, minutes, or hours and sent to the
+  broker in seconds.
+- **Response Topic** — topic for a response in the request/response pattern; it has to be a valid topic name.
+- **Correlation Data** — binary correlation data, entered as a Base64 string.
+- **User Properties** — key-value pairs. A pair with an empty key or value is dropped.
+
+Click **Save** to apply the properties to the next publish, **Reset** to clear them all, or **Cancel** to keep the
+previous values.
+
+Two properties are pre-set, so every publish carries a properties block until you change it: **Content Type**
+`application/json` and **Message Expiry Interval** `60` minutes. To publish without any properties, click **Reset** and
+then **Save**.
+
+How each property reaches subscribers — including the fact that MQTT 3.1.1 clients receive the payload without them —
+is described under <DocLink product={props.product} path="mqtt-message-publishing#mqtt-5-properties">MQTT 5
+properties</DocLink> on the REST publish API page.
+
+## Results
+
+Every publish produces a result: a new row in [Published messages](#published-messages) on this page, or a panel under
+the form when publishing from the [Publish message dialog](#publish-from-other-pages). It shows a title, the HTTP status
+of the call, the PUBACK reason code when the broker returned one, and details — for a rejected request, the broker's
+own message.
+
+| HTTP status | Result |
+|---|---|
+| `200` | **Message published** — at least one subscription matched the topic. |
+| `202` | **Accepted, but no subscription matched** — reason code `16`; nobody receives the message. |
+| `400`, `411` | **Invalid publish request** |
+| `401`, `403` | **Not allowed to publish** — the session token has expired, or the account is a **Viewer**. |
+| `413` | **Payload is too large** |
+| `415` | **Unsupported content type** |
+| `429` | **Total throughput quota exceeded** |
+| `503` | **Publish queue failed or timed out** — the message may still have been published. |
+| any other | **Failed to publish the message** — for example a network failure, shown as status `0`. |
+
+What each status means on the broker side is described under
+<DocLink product={props.product} path="mqtt-message-publishing#response-codes">Response codes</DocLink> on the REST
+publish API page. A `200` or `202` means the broker queue accepted the message — not that any client received it. To
+confirm delivery, subscribe to the topic with the
+<DocLink product={props.product} path="user-guide/ui/websocket-client">WebSocket client</DocLink> first.
+
+## Published messages
+
+The table at the top of the page lists the messages published from the console during the current browser session —
+from this page and from the **Publish message** dialog on other pages — newest first. It is kept in memory only: the
+list is emptied when the page is reloaded or when you click **Clear messages**.
+
+Each row shows the **Time**, **Topic**, **QoS**, **Retain** flag, **Encoding**, **Payload**, and **Status**. The status
+is the HTTP status of the call, colored by outcome; hover over it to read the result title, reason code, and details. A
+**Payload** row action opens the full payload, and a **Properties** row action, shown only for messages that were sent
+with properties, opens them. The table is paged.
+
+Click a row to load that message back into the form — its topic, QoS, Retain flag, encoding, and payload — to publish it
+again or edit it first. The properties currently set in the form are kept.
+
+Messages published this way are stamped with the client ID `tbmq_rest_api` — see
+<DocLink product={props.product} path="mqtt-message-publishing#publisher-client-id">Publisher client ID</DocLink>. To
+trace every publish made through the REST API beyond the current session, including calls made outside the console,
+enable the <DocLink product={props.product} path="mqtt-message-publishing#audit-logs-for-rest-publishes">audit log for
+REST publishes</DocLink>.
+
+## Request preview and cURL
+
+The **Request preview** panel shows the JSON body the form will send, updated as you edit the form or its properties —
+the same body the <DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink> documents.
+
+**Copy as cURL** copies a ready-to-run shell snippet: an `export TBMQ_JWT='…'` line holding your current session token,
+followed by the `curl -X POST` call to `/api/mqtt/publish` with that body. It is a quick way to move a message you have
+tested here into a script.
+
+<Aside type="caution">
+  The copied token is the access token of your console session. It expires with the session, and it grants your
+  permissions to whoever holds it — do not share the snippet as is. For a long-lived script, log in through the
+  <DocLink product={props.product} path="rest-api#jwt-tokens">REST API</DocLink> instead.
+</Aside>
+
+## Publish from other pages
+
+Administrators can also open a **Publish message** dialog — the same form, with the result shown under it — from the
+pages where a topic is already at hand:
+
+- **Subscriptions** page — the **Publish to this topic** row action pre-fills the topic and QoS of the subscription.
+- **Sessions** page — in the session details, every row of the **Subscriptions** tab has a **Publish to this topic**
+  icon that does the same for that session's subscription.
+- **Retained messages** page — the **Publish message** button in the top right corner opens the dialog with **Retain**
+  already on. The **Publish to this topic** row action additionally pre-fills the topic and QoS of an existing retained
+  message, so you can replace it — or clear it, with an empty **Text** or **Base64** payload. The table refreshes when
+  you close the dialog after a publish the broker accepted.
+
+A subscription filter is not a topic name, so only the part of a wildcard filter before the first `+` or `#` is carried
+over: `sensors/+/temperature` pre-fills `sensors`, and `#` pre-fills nothing. Complete the topic before publishing.
+
+Messages published from the dialog are listed in [Published messages](#published-messages) as well.

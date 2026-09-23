@@ -104,7 +104,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				},
 				{ label: 'Unauthorized clients', slug: `${prefix}/user-guide/ui/unauthorized-clients` },
 				{ label: 'WebSocket client', slug: `${prefix}/user-guide/ui/websocket-client` },
-				...(isPE ? [{ label: 'Publish messages', slug: `${prefix}/user-guide/ui/publish-message` }] : []),
+				...(isPE ? [{ label: 'Publish messages', slug: `${prefix}/user-guide/ui/publish-messages` }] : []),
 				{
 					label: 'Application shared subscriptions',
 					slug: `${prefix}/user-guide/ui/shared-subscriptions`,
