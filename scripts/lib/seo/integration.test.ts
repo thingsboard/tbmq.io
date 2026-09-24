@@ -158,6 +158,25 @@ test('the sitemap lists exactly the indexable, self-canonical pages', options, (
 	}
 });
 
+// `<lastmod>` is the newest git commit date across a page's sources. Both ways it
+// can break are silent: a shallow checkout dates every file to HEAD (one value on
+// every entry), and a failed git read drops it entirely. CI checks out at depth 1,
+// the same way the deploy host does, so this pins the unshallow step in
+// `config/sitemap/git-date.ts`.
+test('every sitemap entry has a git-derived <lastmod>, and they differ', options, () => {
+	const xml = fg
+		.sync('sitemap-*.xml', { cwd: DIST })
+		.filter((file) => file !== 'sitemap-index.xml')
+		.map((file) => fs.readFileSync(`${DIST}/${file}`, 'utf8'))
+		.join('');
+	const entries = xml.match(/<url>.*?<\/url>/gs) ?? [];
+	assert.ok(entries.length > 0, 'the sitemap lists no URLs');
+	const undated = entries.filter((entry) => !entry.includes('<lastmod>'));
+	assert.deepEqual(undated, [], 'sitemap entries without <lastmod>');
+	const dates = new Set(entries.map((entry) => entry.match(/<lastmod>(.*?)<\/lastmod>/)?.[1]));
+	assert.ok(dates.size > 1, `every sitemap entry shares one <lastmod>: ${[...dates][0]}`);
+});
+
 test('the audit is deterministic across runs', options, () => {
 	assert.equal(toJson(buildReport(DIST)), toJson(buildReport(DIST)));
 });
