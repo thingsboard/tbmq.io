@@ -50,7 +50,8 @@ The **Properties** dialog sets the MQTT 5 PUBLISH properties sent with the messa
   broker in seconds. The MQTT maximum is `4294967295` seconds; a value above the limit for the selected unit is flagged
   with a warning icon and blocks **Save**.
 - **Response Topic** — topic for a response in the request/response pattern; it has to be a valid topic name.
-- **Correlation Data** — binary correlation data, entered as a Base64 string.
+- **Correlation Data** — binary correlation data, entered as a Base64 string. A value that is not valid Base64 is
+  flagged with a warning icon and blocks **Save**.
 - **User Properties** — key-value pairs. A pair with an empty key or value is dropped.
 
 Click **Save** to apply the properties to the next publish, **Reset** to clear them all, or **Cancel** to keep the
@@ -127,7 +128,9 @@ properties pre-set — from the pages where a topic is already at hand:
   can replace it — or clear it, with an empty **Text** or **Base64** payload. The table refreshes when you close the
   dialog after a publish the broker accepted.
 
-A subscription filter is not a topic name, so only the part of a wildcard filter before the first `+` or `#` is carried
-over, and the `$share/<group>/` prefix of a shared subscription is dropped: `sensors/+/temperature` pre-fills `sensors`,
-`$share/g1/sensors/#` pre-fills `sensors`, and `#` pre-fills nothing. An info icon in the **Topic** field reminds you of
-the cut until you edit the topic. Complete it before publishing.
+A subscription filter is not a topic name, so the pre-filled topic is derived from it: every `+` segment is replaced
+with a random alphanumeric segment, a trailing `#` is dropped, and so is the `$share/<group>/` prefix of a shared
+subscription. `sensors/+/temperature` pre-fills `sensors/<random>/temperature`, `$share/g1/sensors/#` pre-fills
+`sensors`, and `#` pre-fills nothing. The pre-filled topic matches the filter, so it can be published as is; edit the
+random segments to target a specific topic. An info icon in the **Topic** field reminds you of the replacement until
+you edit the topic.
