@@ -8,13 +8,17 @@ const GIT_LOG_MAX_BUFFER = 256 * 1024 * 1024;
 /** Ceiling for the unshallow fetch — a blobless fetch of this repo takes seconds. */
 const UNSHALLOW_TIMEOUT_MS = 180_000;
 
-function git(args: string[], opts: { timeout?: number; maxBuffer?: number } = {}): string {
+function git(
+	args: string[],
+	opts: { timeout?: number; maxBuffer?: number; stderr?: 'ignore' | 'inherit' } = {}
+): string {
+	const { stderr = 'ignore', ...rest } = opts;
 	return execFileSync('git', args, {
 		encoding: 'utf8',
 		cwd: getRepoRoot(),
 		env: gitEnvTrustingRepo(), // trust other-user checkouts (CI)
-		stdio: ['ignore', 'pipe', 'ignore'],
-		...opts,
+		stdio: ['ignore', 'pipe', stderr],
+		...rest,
 	});
 }
 
@@ -23,16 +27,22 @@ function git(args: string[], opts: { timeout?: number; maxBuffer?: number } = {}
  * commit has no parent, so `git log --name-only` lists every file under it and
  * every page gets HEAD's date. Fetch the missing history first — commits and
  * trees only (`--filter=blob:none`), which is all `--name-only` needs. Failure
- * (no network, no remote) is non-fatal: `getShallowBoundaries` covers it.
+ * (no network, no remote) is non-fatal: `getShallowBoundaries` covers it, and
+ * git's own error stays visible in the build log.
  */
 function unshallow(): void {
 	try {
 		if (git(['rev-parse', '--is-shallow-repository']).trim() !== 'true') return;
+	} catch {
+		return; // not a git checkout — the `git log` below reports it
+	}
+	try {
 		git(['fetch', '--quiet', '--no-tags', '--unshallow', '--filter=blob:none', 'origin'], {
 			timeout: UNSHALLOW_TIMEOUT_MS,
+			stderr: 'inherit',
 		});
-	} catch {
-		// leave the repo shallow; boundary commits are ignored below
+	} catch (err) {
+		console.warn(`[sitemap] unshallow fetch failed: ${(err as Error).message.split('\n')[0]}`);
 	}
 }
 
@@ -70,18 +80,28 @@ export function getGitDateMap(): Map<string, number> {
 			['-c', 'core.quotePath=false', 'log', '--no-renames', '--format=\x1f%H %cI', '--name-only', '--', 'src/'],
 			{ maxBuffer: GIT_LOG_MAX_BUFFER }
 		);
+		// A path's first appearance decides: one first seen at a boundary commit
+		// stays undated rather than taking an older commit's date from a side branch.
+		const seen = new Set<string>();
+		let undated = 0;
 		let current = 0;
 		for (const line of out.split('\n')) {
 			if (line.startsWith('\x1f')) {
 				const [sha, date] = line.slice(1).split(' ');
 				current = boundaries.has(sha) ? 0 : Date.parse(date);
-			} else if (line && current > 0 && !dates.has(line)) {
-				dates.set(line, current);
+			} else if (line && !seen.has(line)) {
+				seen.add(line);
+				if (current > 0) dates.set(line, current);
+				else undated++;
 			}
 		}
-	} catch {
+		if (boundaries.size > 0) {
+			console.warn(`[sitemap] checkout is still shallow: ${undated} of ${seen.size} files under src/ left undated`);
+		}
+	} catch (err) {
 		// git unavailable — leave empty; every entry then renders without
 		// <lastmod> rather than failing the build.
+		console.warn(`[sitemap] git log failed, no <lastmod> emitted: ${(err as Error).message.split('\n')[0]}`);
 	}
 	gitDateMap = dates;
 	return gitDateMap;
