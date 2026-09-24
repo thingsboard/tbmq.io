@@ -166,9 +166,8 @@ and multi-level `#` wildcards are supported, and `#` must be the last character 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 Each row also has a publish icon. It opens the
 <DocLink product={props.product} path="user-guide/ui/publish-messages#publish-from-other-pages">Publish message</DocLink>
-dialog with the row's topic filter and QoS pre-filled — with each `+` of a wildcard filter replaced by a random segment,
-a trailing `#` dropped, and without a shared subscription's `$share/<group>/` prefix — so you can publish a message to a
-topic this session listens on without an MQTT client.
+dialog with the topic and QoS of the row's subscription pre-filled, so you can publish a message to a topic this
+session listens on without an MQTT client.
 </ShowFor>
 
 <Aside type="caution">

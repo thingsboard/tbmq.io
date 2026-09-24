@@ -70,15 +70,16 @@ properties</DocLink> on the REST publish API page.
 Every publish produces a result: a new row in [Published messages](#published-messages) on this page, or a panel under
 the form when publishing from the [Publish message dialog](#publish-from-other-pages). It shows a title, the HTTP status
 of the call, the PUBACK reason code when the broker returned one, and details — for a rejected request, the broker's
-own message. The statuses are those of the REST publish API; what each one means is described under
+own message. A `503` is the exception: its details are the console's own warning that the message may still have been
+published, not the broker's answer. The statuses are those of the REST publish API; what each one means is described under
 <DocLink product={props.product} path="mqtt-message-publishing#response-codes">Response codes</DocLink> on its page.
 
 ## Published messages
 
-The table at the top of the page lists the messages published from this page during the current browser session,
-newest first. It is kept in memory only: the list is emptied when the page is reloaded or when you click
-**Clear messages**. Messages published from the [Publish message dialog](#publish-from-other-pages) on other pages, or
-through the REST API directly, are not listed.
+The table at the top of the page lists the messages published from the console during the current browser session,
+newest first — from this page and from the [Publish message dialog](#publish-from-other-pages) on other pages alike.
+Messages published through the REST API directly are not listed. The list is kept in memory only and holds the newest
+1000 messages; older ones drop off. It is emptied when the page is reloaded or when you click **Clear messages**.
 
 Each row shows the **Time**, **Topic**, **QoS**, **Retain** flag, **Encoding**, **Payload**, **Status**, and **HTTP
 status**. The status is a label colored by outcome — **Published**, **No subscribers**, or **Failed**; hover over it to
