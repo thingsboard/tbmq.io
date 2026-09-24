@@ -1,6 +1,10 @@
 {
-  "/docs/security/": "/docs/security/overview/",
   "/docs/pe/security/": "/docs/pe/security/overview/",
   "/docs/installation/installation-options/": "/docs/installation/",
-  "/docs/pe/installation/installation-options/": "/docs/pe/installation/"
+  "/docs/pe/installation/installation-options/": "/docs/pe/installation/",
+  "/docs/ce/security/oauth-2-support/": "/docs/pe/security/oauth-2-support/",
+  "/docs/overview/": "/docs/pe/",
+  "/docs/installation/kubernetes/": "/docs/pe/installation/",
+  "/docs/getting-started-guides/helloworld/": "/docs/getting-started/",
+  "/docs/user/guide/ui/mqtt-client-credentials/": "/docs/user-guide/ui/mqtt-client-credentials/"
 }

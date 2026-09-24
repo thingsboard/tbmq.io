@@ -8,10 +8,14 @@
 
 
 # Single page redirects
-/docs/security/ /docs/security/overview/ 301
 /docs/pe/security/ /docs/pe/security/overview/ 301
 /docs/installation/installation-options/ /docs/installation/ 301
 /docs/pe/installation/installation-options/ /docs/pe/installation/ 301
+/docs/ce/security/oauth-2-support/ /docs/pe/security/oauth-2-support/ 301
+/docs/overview/ /docs/pe/ 301
+/docs/installation/kubernetes/ /docs/pe/installation/ 301
+/docs/getting-started-guides/helloworld/ /docs/getting-started/ 301
+/docs/user/guide/ui/mqtt-client-credentials/ /docs/user-guide/ui/mqtt-client-credentials/ 301
 
 # Non-docs redirects (from NON_DOCS_REDIRECTS)
 /community/ / 301

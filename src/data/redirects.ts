@@ -85,16 +85,26 @@ export interface DynamicRedirectGroup {
 export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [];
 
 // tbmq.io-shaped URLs that Google Search Console reports as 404s (2026-09).
-// None of them was ever a page here or on thingsboard.io: the two `security/`
-// entries are section-index guesses (thingsboard.io needed the same rule for its
-// CE variant after its 2026-05 audit), and `installation-options` is the legacy
-// install-index slug re-attached to the new prefix. These are not legacy shapes,
-// so thingsboard.io cannot serve them and a rule here adds no chain.
+// None of them was ever a page here or on thingsboard.io, so these are not legacy
+// shapes: thingsboard.io cannot serve them and a rule here adds no chain.
+// `pe/security` is a section-index guess (thingsboard.io needed the same rule for
+// its CE variant after its 2026-05 audit) and `installation-options` is the
+// legacy install-index slug re-attached to the new prefix. The rest are typos
+// and cross-product guesses whose source was never found; they are covered anyway
+// because whatever emits them may still be out there. Two of them arrive without
+// a trailing slash: Cloudflare 308s such requests onto the slashed path first,
+// then the rule fires (verified on a branch preview).
 export const SINGLE_REDIRECTS: SingleRedirect[] = [
-	{ oldPath: 'security', target: '/docs/security/overview/' },
 	{ oldPath: 'pe/security', target: '/docs/pe/security/overview/' },
 	{ oldPath: 'installation/installation-options', target: '/docs/installation/' },
 	{ oldPath: 'pe/installation/installation-options', target: '/docs/pe/installation/' },
+	// OAuth 2 is PE-only, so the CE-shaped URL lands on the PE page.
+	{ oldPath: 'ce/security/oauth-2-support', target: '/docs/pe/security/oauth-2-support/' },
+	{ oldPath: 'overview', target: '/docs/pe/' },
+	{ oldPath: 'installation/kubernetes', target: '/docs/pe/installation/' },
+	// ThingsBoard's own hello-world guide, glued under the TBMQ prefix by the legacy global nav.
+	{ oldPath: 'getting-started-guides/helloworld', target: '/docs/getting-started/' },
+	{ oldPath: 'user/guide/ui/mqtt-client-credentials', target: '/docs/user-guide/ui/mqtt-client-credentials/' },
 ];
 
 // The legal pages moved /products/mqtt-broker/{privacy-policy,terms-of-use}/ →
