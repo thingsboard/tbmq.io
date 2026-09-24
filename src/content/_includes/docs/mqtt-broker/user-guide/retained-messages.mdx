@@ -2,6 +2,9 @@ import ImageGallery from '~/components/ImageGallery.astro';
 import Tabs from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
 import LearnLink from '@components/LearnLink.astro';
+import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
 
 <LearnLink slug="retained-messages">Retained messages</LearnLink> are an MQTT feature that allows storing the "last known good" message for a particular topic on the broker
 and delivering the message to a client whenever the client subscribes to a matching topic.
@@ -60,6 +63,14 @@ mosquitto_pub -d -h localhost -p 1883 -t demo/topic -m "Hello world" -q 1 -V mqt
 
 The `-D PUBLISH user-property hello world` flag attaches a user property to the message,
 which you can inspect on the **Retained Messages** page as described in the next section.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+You can also publish a retained message from the **Retained Messages** page itself, without an MQTT client. The
+**Publish message** button in the top right corner opens the
+<DocLink product={props.product} path="user-guide/ui/publish-messages#publish-from-other-pages">Publish message</DocLink>
+dialog with **Retain** already switched on, and the **Publish to this topic** row action pre-fills the topic and QoS of
+an existing retained message, so you can replace it — or clear it, with an empty **Text** or **Base64** payload.
+</ShowFor>
 
 ## Payload and user properties
 

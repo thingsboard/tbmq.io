@@ -19,6 +19,12 @@ do for a normal publisher.
   successful response means the broker queue accepted the message — not that any client received it.
 </Aside>
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The management console wraps this call in a form: the
+<DocLink product={props.product} path="user-guide/ui/publish-messages">Publish messages</DocLink> page composes the
+request, shows the broker's answer, and copies the call as a ready-to-run `curl` command.
+</ShowFor>
+
 All examples below use `curl`. Replace `localhost:8083` with your server address if TBMQ is running remotely.
 
 ## Authentication
