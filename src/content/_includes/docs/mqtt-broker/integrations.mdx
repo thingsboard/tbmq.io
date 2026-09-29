@@ -288,7 +288,7 @@ Delivery is opt-in per event type, so an integration ends up in one of three mod
 | `CLIENT_UNSUBSCRIBED` | Subscriptions are actually removed. | `subscriptions` |
 | `CLIENT_AUTHENTICATION_FAILED` | Authentication fails. | `protocolVersion`, `reason` |
 | `CLIENT_AUTHORIZATION_FAILED` | A publish or subscribe is denied by an authorization rule. | `action`, `topic` |
-| `CLIENT_CONNECTION_FAILED` | The broker refuses the connection for a reason other than authentication, for example an exceeded quota or an unavailable server. | `reason` |
+| `CLIENT_CONNECTION_FAILED` | The broker refuses the connection for a reason other than authentication, for example an exceeded quota or an unavailable server. A node that is draining also refuses connections this way. | `reason` |
 
 ### Event payload
 
