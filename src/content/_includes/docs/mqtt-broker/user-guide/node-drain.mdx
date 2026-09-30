@@ -45,7 +45,38 @@ The reference deployments do not do this: the Kubernetes manifests use a `tcpSoc
 and the Docker Compose HAProxy uses plain TCP checks on the MQTT ports. The MQTT listeners stay open during a drain, so
 with those checks the node is **not** taken out of the load balancer. New connections keep reaching it and are refused
 with the reason codes below, `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` has no effect, and disconnected clients can be routed
-straight back to the same node. Switch the readiness check first, or use another way to stop routing traffic to the node.
+straight back to the same node. Switch the health check first, or use another way to stop routing traffic to the node.
+
+**The grace period must cover detection time.** The first batch starts `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` after the drain
+starts (20 seconds by default), whether or not the load balancer has noticed the node is unhealthy by then. Either
+tighten the health check or raise the wait so that it is at least the time the check needs to fail:
+
+- **Kubernetes:** roughly `periodSeconds × failureThreshold`, plus up to one more period before the first failing probe.
+  The readiness example on the Health API page (`periodSeconds: 30`, `failureThreshold: 3`) needs up to 90 seconds, so
+  with it set `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` to `90000` or more, or shorten the probe interval.
+- **Docker Compose HAProxy:** `inter` × `fall`. With `inter 5s` and HAProxy's default `fall 3` that is 15 seconds, which
+  fits the default wait.
+
+### Docker Compose
+
+In the reference `haproxy.cfg`, each of the four MQTT `listen` blocks (`mqtt-in`, `mqtts-in`, `mqtt-ws-in`,
+`mqtt-wss-in`) checks its backends with a plain TCP `check`. Add an HTTP check against the broker's HTTP port `8083` to
+each block, and point the `server` lines at it with `check port 8083`:
+
+```text
+listen mqtt-in
+ bind *:${MQTT_PORT}
+ mode tcp
+ option httpchk GET /actuator/health
+ server tbMqtt1 tbmq1:1883 check port 8083 inter 5s resolvers docker_resolver resolve-prefer ipv4
+ server tbMqtt2 tbmq2:1883 check port 8083 inter 5s resolvers docker_resolver resolve-prefer ipv4
+```
+
+HAProxy treats an HTTP `503` as a failed check, so a draining node is marked down and receives no new connections, while
+connections already open are not cut. Apply the same two changes to the other three blocks, changing only the port in
+each `server` line's address (`8883`, `8084`, `8085`). Edit the file as described in
+<DocLink product={props.product} path="installation/cluster/docker-compose-setup">Docker Compose cluster setup</DocLink>,
+then reload HAProxy.
 
 ## Drain a node
 
