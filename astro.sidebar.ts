@@ -69,6 +69,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'Msg delivery strategies', slug: `${prefix}/other/msg-delivery-strategy` },
 				{ label: 'PROXY protocol', slug: `${prefix}/other/proxy-protocol` },
 				{ label: 'Health API', slug: `${prefix}/other/health` },
+				{ label: 'Node drain', slug: `${prefix}/other/node-drain` },
 				{ label: 'Bulk provisioning', slug: `${prefix}/other/bulk-provisioning` },
 			],
 		},
