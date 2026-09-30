@@ -80,7 +80,7 @@ listen mqtt-in
 
 HAProxy treats an HTTP `503` as a failed check, so a draining node is marked down and receives no new connections, while
 connections already open are not cut. Apply the same two changes to the other three blocks: add the `option httpchk` line
-and append `check port 8083` to each `server` line, keeping each line's existing backend address. Edit the file as described in
+and add `port 8083` after `check` on each `server` line, keeping each line's existing backend address. Edit the file as described in
 <DocLink product={props.product} path="installation/cluster/docker-compose-setup">Docker Compose cluster setup</DocLink>,
 then reload HAProxy.
 
