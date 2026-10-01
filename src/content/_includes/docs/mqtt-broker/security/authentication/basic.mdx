@@ -131,7 +131,7 @@ Rule patterns can include the `${clientId}` placeholder, which TBMQ replaces wit
 }
 ```
 
-A client that connects with client ID `sensor-01` can then publish and subscribe only to topics that start with `devices/sensor-01/`. The client ID is inserted as literal text, so regex characters in it match only themselves. If a rule uses `${clientId}` and the client ID contains `+`, `#` or `/`, the connection is refused. Rules without the placeholder do not restrict the client ID.
+A client that connects with client ID `sensor-01` can then publish and subscribe only to topics that start with `devices/sensor-01/`. The client ID is inserted as literal text, so regex characters in it match only themselves. If a rule uses `${clientId}` and the client ID contains `+`, `#` or `/`, Basic authentication fails for that client (TBMQ then tries the next provider in the <DocLink product={props.product} path="security/overview/#providers-execution-order">execution order</DocLink>). Rules without the placeholder do not restrict the client ID.
 
 ## MQTT example: Client ID, Username and Password
 

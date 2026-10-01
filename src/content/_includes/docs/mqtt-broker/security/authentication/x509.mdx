@@ -77,9 +77,9 @@ The X.509 Certificate Chain credentials have a **"Use certificate CN regex"** op
 
 ### Client ID constraint
 
-A credential can also restrict which MQTT client IDs may use it. Set **Client ID** to the exact client ID, or turn on **Use client ID regex** and set **Client ID regex** to a regular expression. Unlike the CN regex, which only has to occur somewhere in the CN, the client ID regex must match the **whole** client ID: `sensor-.*` accepts `sensor-01` but not `my-sensor-01`. Leave the field empty to accept any client ID.
+A credential can also restrict which MQTT client IDs may use it. Set **Client ID** to the exact client ID, or enter a regular expression and turn on **Use client ID regex** (the field is then labelled **Client ID regex**). Unlike the CN regex, which only has to occur somewhere in the CN, the client ID regex must match the **whole** client ID: `sensor-.*` accepts `sensor-01` but not `my-sensor-01`. Leave the field empty to accept any client ID.
 
-The client ID is checked after the CN. If a credential matches the certificate's CN but not the client ID, TBMQ tries the other credentials for the same certificate — those with **Use certificate CN regex** enabled first, then the exact-CN one. If none of them allows the client ID, the connection is refused. TBMQ does **not** fall back to the credentials of a parent certificate in the chain, so a client cannot pick up the issuing CA's credentials by sending a different client ID.
+The client ID is checked after the CN. If a credential matches the certificate's CN but not the client ID, TBMQ tries the other credentials for the same certificate — those with **Use certificate CN regex** enabled first, then the exact-CN one. If none of them allows the client ID, X.509 authentication fails and TBMQ moves on to the next provider in the <DocLink product={props.product} path="security/overview/#providers-execution-order">execution order</DocLink>. TBMQ does **not** fall back to the credentials of a parent certificate in the chain, so a client cannot pick up the issuing CA's credentials by sending a different client ID.
 
 Each credential is still identified by its CN pattern (see [Credentials ID](#credentials-id)), so two credentials cannot share a CN and differ only in their client ID. To give each client on a shared certificate its own topics, use the `${clientId}` placeholder in the [authorization](#authorization) rules instead.
 
@@ -157,7 +157,7 @@ subscribe to topics that start with `example_sub_topic/`. Clients with a certifi
 
 The `pubAuthRulePatterns` and `subAuthRulePatterns` may also include the `${cn}` placeholder, which TBMQ substitutes at connection time with the client certificate's Common Name — enabling per-device rules such as `${cn}/data/.*`.
 
-Patterns may also include the `${clientId}` placeholder, which TBMQ replaces with the MQTT client ID of the connection — for example, `devices/${clientId}/telemetry`. Both placeholders are inserted as literal text, so regex characters in the CN or client ID, such as `.`, match only themselves. If a rule uses `${clientId}` and the client ID contains `+`, `#` or `/`, the connection is refused, so a client cannot widen its own rules with a crafted ID. Rules without `${clientId}` do not restrict the client ID.
+Patterns may also include the `${clientId}` placeholder, which TBMQ replaces with the MQTT client ID of the connection — for example, `devices/${clientId}/telemetry`. Both placeholders are inserted as literal text, so regex characters in the CN or client ID, such as `.`, match only themselves. If a rule uses `${clientId}` and the client ID contains `+`, `#` or `/`, X.509 authentication fails for that client (TBMQ then tries the next provider in the execution order), so a client cannot widen its own rules with a crafted ID. Rules without `${clientId}` do not restrict the client ID.
 
 <Aside type="note">
   If either **pubAuthRulePatterns** or **subAuthRulePatterns** is set to `null` or an empty list (`[]`), the client will not be able to publish to or subscribe to any topics.
