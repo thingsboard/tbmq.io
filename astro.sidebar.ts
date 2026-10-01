@@ -88,6 +88,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 							{ label: 'Redis', slug: `${prefix}/integrations/redis` },
 							{ label: 'PostgreSQL', slug: `${prefix}/integrations/postgresql` },
 							{ label: 'TimescaleDB', slug: `${prefix}/integrations/timescaledb` },
+							{ label: 'MongoDB', slug: `${prefix}/integrations/mongodb` },
 						]
 					: []),
 			],
