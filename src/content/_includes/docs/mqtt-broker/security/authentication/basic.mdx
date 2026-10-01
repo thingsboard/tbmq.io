@@ -122,6 +122,17 @@ The following configuration allows clients to publish messages to topics that st
   },
 ]} />
 
+Rule patterns can include the `${clientId}` placeholder, which TBMQ replaces with the client's MQTT client ID when it connects. This gives every client that shares a credential its own topics:
+
+```json
+{
+  "pubAuthRulePatterns": ["devices/${clientId}/.*"],
+  "subAuthRulePatterns": ["devices/${clientId}/.*"]
+}
+```
+
+A client that connects with client ID `sensor-01` can then publish and subscribe only to topics that start with `devices/sensor-01/`. The client ID is inserted as literal text, so regex characters in it match only themselves. If a rule uses `${clientId}` and the client ID contains `+`, `#` or `/`, the connection is refused. Rules without the placeholder do not restrict the client ID.
+
 ## MQTT example: Client ID, Username and Password
 
 For this option, populate Client ID, Username, and Password in the MQTT client credential.
