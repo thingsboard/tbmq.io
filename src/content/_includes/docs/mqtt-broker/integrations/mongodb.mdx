@@ -90,7 +90,7 @@ tbmq/devices/gateway-01/status
 
 The URI must start with `mongodb://` or `mongodb+srv://`, and must not carry credentials. The following are rejected when the integration is saved:
 
-- A user name or password in the URI (`mongodb://user:pass@host/`), and any authentication option such as `authMechanism`. Credentials come only from the [Credentials](#credentials) section.
+- A user name or password in the URI (`mongodb://user:pass@host/`), and the `authMechanism` option. Credentials come only from the [Credentials](#credentials) section. Other authentication options, such as `authSource`, are accepted but have no effect: the authentication database comes from the form too.
 - The proxy options `proxyHost`, `proxyPort`, `proxyUsername` and `proxyPassword`.
 - `timeoutMS`. Use the timeout fields under [Advanced settings](#advanced-settings) instead.
 
