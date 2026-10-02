@@ -253,7 +253,7 @@ How literally to take "default to these blocks": across 35 shipped pages there i
 
 ## Diagrams
 
-`MqttDiagram` is the standard — every shipped page uses it, exactly once. You pass an inline `<svg>` in its default slot; the component wraps it in a framed, centered canvas and wires up click-to-enlarge (a single shared `<dialog>`), so you only author the SVG. `AsciiDiagram` still exists but no shipped page uses it — treat it as legacy, not as an easier option.
+`MqttDiagram` is the standard — every shipped page uses it: exactly once on a guide, twice on a broker comparison (see [Broker comparison pages](#broker-comparison-pages)). You pass an inline `<svg>` in its default slot; the component wraps it in a framed, centered canvas and wires up click-to-enlarge (a single shared `<dialog>`), so you only author the SVG. `AsciiDiagram` still exists but no shipped page uses it — treat it as legacy, not as an easier option.
 
 **Author the SVG (`/mqtt` pages are `forceLightTheme`, so colours are light-locked):**
 
@@ -275,7 +275,7 @@ How literally to take "default to these blocks": across 35 shipped pages there i
 - **Astro/JSX SVG rules — these bite:**
   - Every element needs an **explicit closing tag** (`</rect>`, `</line>`, `</text>`, `</path>`). No self-closing `/>` on SVG children in the slot.
   - Inside `<text>`, escape `&` as `&amp;` and `'` as `&apos;`. Use **literal unicode glyphs** (`→ × · ✓ ✗ —`), not HTML entities like `&rarr;`.
-- One diagram per page, near "How it works". Keep collision-free: give arrows/labels room so a connector never crosses its own text. **Curved and fanned paths bite specifically** — a label that clears the straight connectors can still be clipped by a curve rising/falling through it near a fan-out point, and `.d-*` label text has **no background/halo** to mask an overlap, so position each label clear of *every* nearby path (straight and curved), not just the obvious one. (Real regression: on `what-is-mqtt` the `copy` label sat at `x=452`, exactly where the upper delivery curve rose through `y≈134`; moving it to `x=464` into the open wedge between arrows fixed it.)
+- One diagram per guide, near "How it works" (a broker comparison carries two — see [Broker comparison pages](#broker-comparison-pages)). Keep collision-free: give arrows/labels room so a connector never crosses its own text. **Curved and fanned paths bite specifically** — a label that clears the straight connectors can still be clipped by a curve rising/falling through it near a fan-out point, and `.d-*` label text has **no background/halo** to mask an overlap, so position each label clear of *every* nearby path (straight and curved), not just the obvious one. (Real regression: on `what-is-mqtt` the `copy` label sat at `x=452`, exactly where the upper delivery curve rose through `y≈134`; moving it to `x=464` into the open wedge between arrows fixed it.)
 - **Verify it visually the right way:** the inline canvas and the enlarge-modal are *separate* DOM. Screenshot the **inline page** (not just the opened modal) with headless Chrome — a past regression slipped because QA only shot the modal.
 
 ## Content accuracy (mandatory)
