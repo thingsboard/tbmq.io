@@ -352,7 +352,8 @@ The driver reports an unreachable server as a timeout and an authentication fail
 | Message | What to check |
 |---|---|
 | `No MongoDB server was available within 7 s. mongo1:27017: connection refused` | The host, the port, and that the server is running. `unknown host`, `not reachable (…)` and `cannot connect (…)` point at DNS and the network. |
-| `No MongoDB server was available within 7 s. Failed looking up SRV record for '_mongodb._tcp.…'.` | The host name of the `mongodb+srv://` URI, and that DNS is reachable from the executor. |
+| `No MongoDB server was available within 7 s. Failed looking up SRV record for '_mongodb._tcp.…'.` | The host name of the `mongodb+srv://` URI: that it exists and has an SRV record, and that the record's targets share its domain. The cause follows the message. |
+| `Failed looking up TXT record for host …` | That DNS is reachable from the executor. The lookup runs while the `mongodb+srv://` URI is parsed, before any connection is attempted, so this error has no `No MongoDB server was available` prefix and can take about 15 seconds — see [Connection string mode](#connection-string-mode). |
 | `… mongo1:27017: Usage of local network host for server is not allowed! …` | A discovered replica set member or SRV target resolves to a local address while `INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS` is off — see the note under [Connection](#connection). |
 | `No MongoDB server was available within 7 s. No server responded as a writable MongoDB server` | No host reported an error, but none can take writes — for example, several standalone servers are listed. List only members of one replica set, or only `mongos` routers. |
 | `… the server's TLS certificate is not trusted: set the CA certificate that signed it` | Set **CA certificate file**, or add the CA to the executor's truststore. |
@@ -374,6 +375,7 @@ Delivery is **not exactly-once**:
 
 - An insert that fails is logged, counted, saved as an error event, and reported as a failure. It is **never** acknowledged as a success. What happens next is decided by the executor's <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> — `SKIP_ALL` (the default) drops the message, so a document can simply be missing; `RETRY_ALL` redelivers it up to the configured retry limit.
 - An insert that failed with `TRANSIENT (network error)` — a socket read timeout included — or `TRANSIENT (write concern not satisfied)` may still have been written. The retry then inserts the same message a second time, under a new generated `_id`. `TRANSIENT (timeout)` is not such a case: it is a wait for a server or a pooled connection that expired before anything was sent.
+- Under `RETRY_ALL`, an insert that succeeds after its pack timed out — for example, one a worker picked up just before its queue deadline — is written, and so is the copy the executor resubmitted when it stopped waiting.
 - On a replica set or a sharded cluster, the driver retries a failed write once on its own, within the same insert. That retry reuses the document's `_id` and cannot store a second copy.
 
 Each failure is classified as `PERMANENT` — the same message can never be written, or a configuration problem retrying will not fix — or `TRANSIENT`, caused by the server or the network. The classification is informational: it appears in the error event and the log, but `RETRY_ALL` retries both kinds alike.
@@ -389,7 +391,7 @@ Client lifecycle events are weaker still — they are best-effort hints, and can
 
 ### Queued messages and outages
 
-Inserts run on the integration's own worker threads; a message waits in the integration's queue until a worker is free. During an outage every insert takes up to its whole timeout budget, so messages queue up. A message that has waited longer than its stream's pack timeout — `TB_IE_MSG_PACK_PROCESSING_TIMEOUT` for messages, `TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT` for lifecycle events — is failed with `TRANSIENT (queued too long)` without being sent: by then the executor has stopped waiting for it. Under `SKIP_ALL` it has committed the pack; under `RETRY_ALL` it has resubmitted the message, so a fresh copy is already queued behind the expired one. Until that point the message is still attempted as soon as a worker is free, and is written if the server is back.
+Inserts run on the integration's own worker threads; a message waits in the integration's queue until a worker is free. During an outage every insert takes up to its whole timeout budget, so messages queue up. A message that has waited longer than its stream's pack timeout — `TB_IE_MSG_PACK_PROCESSING_TIMEOUT` for messages, `TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT` for lifecycle events — is failed with `TRANSIENT (queued too long)` without being sent: by then the executor has stopped waiting for it. Under `SKIP_ALL` it has committed the pack; under `RETRY_ALL` it resubmits the message, unless the pack has used up its retries, in which case it commits the pack as `SKIP_ALL` does. Until that point the message is still attempted as soon as a worker is free, and is written if the server is back.
 
 ### Stopping and updating
 
