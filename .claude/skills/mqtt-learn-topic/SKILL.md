@@ -1,6 +1,6 @@
 ---
 name: mqtt-learn-topic
-description: Add or edit a topic on the /mqtt learn hub — the marketing MQTT guides at /mqtt/<slug>/. Covers the content registry entry, the hub-grid category, the curated Learn nav, a comprehensive spec-based guide page, a designed inline-SVG diagram, TBMQ practical notes with /docs links, and the verification gates. Use this whenever someone wants to add an MQTT concept/glossary/learn page, a "what is X" or "X vs Y" MQTT guide, deepen an existing scaffold, or extend the MQTT learn hub — even if they don't name the hub explicitly.
+description: Add or edit a topic on the /mqtt learn hub — the marketing MQTT guides at /mqtt/<slug>/. Covers the content registry entry, the hub-grid category, the curated Learn nav, a comprehensive spec-based guide page, a designed inline-SVG diagram, TBMQ practical notes with /docs links, and the verification gates. Use this whenever someone wants to add an MQTT concept/glossary/learn page, a "what is X" or "X vs Y" MQTT guide, a broker comparison ("<broker> alternative") page, deepen an existing scaffold, or extend the MQTT learn hub — even if they don't name the hub explicitly.
 ---
 
 # MQTT Learn Topic
@@ -14,7 +14,7 @@ The `/mqtt` learn hub is TBMQ's top-of-funnel SEO engine: educational MQTT guide
 ## Principles (why the hub is shaped this way)
 
 - **Marketing-framed, not reference.** Guides are benefit-first and conversational ("what it is, why it matters"), so they target *informational* search intent and do **not** cannibalize `/docs/` (which targets *how-to/reference* intent). Depth is delegated: link into `/docs/` rather than duplicating it.
-- **Every guide links its companion doc.** The `<Topic> in TBMQ` body section must carry an in-body link to the guide's single most-relevant `/docs/` page — a **specific** page where one exists, or the generic `/docs/` root *only* as a placeholder when no dedicated doc exists yet (upgrade it when the doc lands). All 34 shipped pages currently satisfy this, and only two (`mqtt-vs-amqp`, `mqtt-vs-coap`) fall back to the bare root — comparison pages legitimately do, since "MQTT vs AMQP" has no companion doc to write. Target namespaces in use today: `user-guide/*`, `user-guide/ui/*`, `security/*`, `security/authentication/*`, `integrations/*`, `concepts/*`, plus `architecture/` and `getting-started/`; deep anchors are fine (`/docs/security/overview/#authorization`). Always link the **CE** path, never `/docs/pe/…` — the learn hub is vendor-neutral and both editions render the same content. `HowTbmqBlock`'s auto-rendered docs link is the generic `/docs/` by design, so the specific link lives in your body. Watch for the near-miss where the section links only `architecture`/`getting-started` (adjacent docs) but *not* the topic's own companion page — that still counts as a gap. MQTT-5-feature topics with no dedicated doc legitimately share `/docs/user-guide/mqtt-protocol/` (the single most-linked target, 11 uses).
+- **Every guide links its companion doc.** The `<Topic> in TBMQ` body section must carry an in-body link to the guide's single most-relevant `/docs/` page — a **specific** page where one exists, or the generic `/docs/` root *only* as a placeholder when no dedicated doc exists yet (upgrade it when the doc lands). All 34 guide pages currently satisfy this (the one broker comparison, `mosquitto-alternative`, has no `in TBMQ` section and links its docs inline instead), and only two (`mqtt-vs-amqp`, `mqtt-vs-coap`) fall back to the bare root — comparison pages legitimately do, since "MQTT vs AMQP" has no companion doc to write. Target namespaces in use today: `user-guide/*`, `user-guide/ui/*`, `security/*`, `security/authentication/*`, `integrations/*`, `concepts/*`, plus `architecture/` and `getting-started/`; deep anchors are fine (`/docs/security/overview/#authorization`). Always link the **CE** path, never `/docs/pe/…` — the learn hub is vendor-neutral and both editions render the same content. `HowTbmqBlock`'s auto-rendered docs link is the generic `/docs/` by design, so the specific link lives in your body. Watch for the near-miss where the section links only `architecture`/`getting-started` (adjacent docs) but *not* the topic's own companion page — that still counts as a gap. MQTT-5-feature topics with no dedicated doc legitimately share `/docs/user-guide/mqtt-protocol/` (the single most-linked target, 11 uses).
 - **One registry drives everything.** The hub grid, the Learn nav dropdown, the in-category series rail, related-topics, breadcrumbs, and per-page SEO all read from `src/data/mqttLearn.ts`. Adding a topic is mostly a registry entry + a thin page. Two fields carry the summary load and are **not** interchangeable: `quickAnswer` fills the boxed definition at the top of the page, and `cardSummary` is the one-line hub-grid card blurb. `cardSummary` also feeds the hub's client-side search index (the haystack is `navLabel` + `cardSummary` + the category tag), so any term a reader would type to find the guide has to appear in one of those three.
 - **Accuracy is the product.** These are public technical pages under TBMQ's name. A wrong protocol detail or an overstated product claim erodes the trust the whole funnel depends on. See [Content accuracy](#content-accuracy-mandatory) — it's the part most likely to bite you.
 
@@ -42,10 +42,10 @@ src/components/MqttLearn/
   LearnTypeCards.astro                 ← 2-col type/variant cards, optional "you're here — TBMQ" highlight + badge; props {icon,title,text,highlight?,badge?}[]
 src/pages/mqtt/
   index.astro                          ← the hub (hero + search input + <TopicGrid /> + CTA)
-  <slug>.astro                         ← one thin page per topic (34 today)
+  <slug>.astro                         ← one thin page per topic (35 today: 34 guides + 1 broker comparison)
 ```
 
-Existing pages are the best reference — all 34 shipped topics are `status: 'full'` and every one carries exactly one `MqttDiagram`. Good models by shape: `mqtt-broker.astro` (widest component use), `qos.astro` (icon-rows + table), `what-is-mqtt.astro` (umbrella hub page), `mqtt-vs-kafka.astro` (comparison), `mqtt-reason-codes.astro` (page-local `<details>` reference blocks).
+Existing pages are the best reference — all 35 shipped topics are `status: 'full'`, and every guide carries exactly one `MqttDiagram` (the broker comparison carries two — see [Broker comparison pages](#broker-comparison-pages)). Good models by shape: `mqtt-broker.astro` (widest component use), `qos.astro` (icon-rows + table), `what-is-mqtt.astro` (umbrella hub page), `mqtt-vs-kafka.astro` (comparison), `mqtt-reason-codes.astro` (page-local `<details>` reference blocks), `mosquitto-alternative.astro` (broker comparison).
 
 ## Adding a topic — the two steps
 
@@ -64,7 +64,7 @@ Add one `MqttTopic` object to the `mqttTopics` array. Tabs for indentation (it's
 	cardSummary:                           // REQUIRED. ONE sentence, ~90–120 chars — the hub-grid card blurb (clamped to 2 lines)
 		'The heartbeat that keeps a connection alive and detects dead peers.',   // also part of the hub search index
 	// icon: '/src/assets/images/landings/nav/learn-<slug>.svg', // ONLY if the topic is in learnNavSlugs (nav dropdown); see below
-	eyebrow: 'MQTT GUIDE',                 // hero eyebrow; use 'MQTT COMPARISON' for "X vs Y" pages — those are the only two values in use
+	eyebrow: 'MQTT GUIDE',                 // hero eyebrow; use 'MQTT COMPARISON' for "X vs Y" pages and 'BROKER COMPARISON' for broker-comparison pages — those are the only three values in use
 	quickAnswer:                           // 2–3 sentences — featured-snippet target, rendered in the QuickAnswer box. PLAIN TEXT ONLY (no <code>/<strong>).
 		'A concise, self-contained answer to "what is <topic>". The first sentence must stand alone as a definition.',
 	tbmqTieIn:                             // ONE sentence: how TBMQ relates. Renders in the How-TBMQ rail.
@@ -81,8 +81,8 @@ Rules that keep the build green:
 
 - **`slug` === page filename.** `/mqtt/keep-alive/` ⇒ `src/pages/mqtt/keep-alive.astro`.
 - **`cardSummary` and `readingMinutes` are required** by the `MqttTopic` interface — omit either and `pnpm check` fails. They are the two fields most easily forgotten, because the page body never references them.
-- **Categorize it — same file.** Add the slug to exactly one category in the `mqttCategories` array (order within a category = its card order on the hub). The five categories are `fundamentals` (MQTT fundamentals) · `connections` (Connections & sessions) · `mqtt-5` (MQTT 5.0 features) · `security` (Security) · `comparisons` (Transports & comparisons). This array drives the hub-grid grouping, the filter pills, and the sidebar series rail. A build-time guard in `mqttLearn.ts` throws if any topic is missing from `mqttCategories` (or a slug is duplicated/misspelled), so a forgotten topic fails the build instead of silently vanishing from the grid.
-- **Adding a whole new *category* is a three-file change.** Beyond the `mqttCategories` entry (`id`, `label`, `tag`, `accent` from the `MqttAccent` union), the per-category glyph lives in a `categoryIcon: Record<string, string>` keyed by `category.id` in **both** `TopicGrid.astro` **and** `TopicSeriesNav.astro`, and the accent needs a `.c-<accent>` custom-property block in each. A missing glyph or accent is **silent** — an empty `<svg>` and unstyled rail, not a build error. Prefer fitting a new topic into one of the five existing categories.
+- **Categorize it — same file.** Add the slug to exactly one category in the `mqttCategories` array (order within a category = its card order on the hub). The six categories are `fundamentals` (MQTT fundamentals) · `connections` (Connections & sessions) · `mqtt-5` (MQTT 5.0 features) · `security` (Security) · `comparisons` (Transports & protocols — transports and the "X vs Y" protocol comparisons) · `broker-comparisons` (Broker comparisons — tag `Brokers`, accent `rose`; pages that compare TBMQ with another broker). This array drives the hub-grid grouping, the filter pills, and the sidebar series rail. A build-time guard in `mqttLearn.ts` throws if any topic is missing from `mqttCategories` (or a slug is duplicated/misspelled), so a forgotten topic fails the build instead of silently vanishing from the grid.
+- **Adding a whole new *category* is a three-file change.** Beyond the `mqttCategories` entry (`id`, `label`, `tag`, `accent` from the `MqttAccent` union), the per-category glyph lives in a `categoryIcon: Record<string, string>` keyed by `category.id` in **both** `TopicGrid.astro` **and** `TopicSeriesNav.astro`, and the accent needs a `.c-<accent>` custom-property block in each. A missing glyph or accent is **silent** — an empty `<svg>` and unstyled rail, not a build error. Prefer fitting a new topic into one of the six existing categories.
 - **Every `related[]` slug must resolve.** `getTopic` throws at build on an unknown slug, so a typo fails loudly (good) — but check it. Keep arrays at 3–4 entries so the related grid stays tidy.
 - **The nav dropdown is curated + ordered.** To feature a topic, add its slug to `learnNavSlugs` (position = display order, independent of the hub grid) and add an `icon` — a duotone `currentColor` SVG in `src/assets/images/landings/nav/` matching the Company-menu icons (24×24, primary fill + a `fill-opacity="0.3"` accent, inlined and theme-tinted by `NavIcon`). After adding or editing an icon, run `pnpm generate:nav-sprite` — without a manifest entry `NavIcon` renders nothing (it only warns in the log). Keep the dropdown short: a handful of headline topics plus "Browse all guides".
 - **Wire the hub-and-spoke both ways.** Add the new slug into the `related[]` of the closest existing topics, and where natural add an in-body link from a high-traffic page (e.g. `what-is-mqtt.astro`). Isolated pages don't rank.
@@ -95,9 +95,9 @@ Rules that keep the build green:
 pnpm build:fast && pnpm generate:reading-time
 ```
 
-It reads `dist/`, so it needs a build first — ask the user before running one (repo build policy). Put any placeholder in the field while drafting, then regenerate and **commit the registry diff it produces**; never leave a hand-invented number in the final commit. Because it rewrites all 34 topics at once, expect the diff to touch other pages if their content drifted since the last run — that's the script correcting them, not a mistake.
+It reads `dist/`, so it needs a build first — ask the user before running one (repo build policy). Put any placeholder in the field while drafting, then regenerate and **commit the registry diff it produces**; never leave a hand-invented number in the final commit. Because it rewrites all 35 topics at once, expect the diff to touch other pages if their content drifted since the last run — that's the script correcting them, not a mistake.
 
-Shipped values sit at **2–4 minutes**, with `mqtt-reason-codes` at 8 (its collapsed `<details>` reason-code tables count toward the total).
+Shipped values sit at **2–4 minutes**, with `mqtt-reason-codes` at 8 (its collapsed `<details>` reason-code tables count toward the total) and the long-form broker comparison `mosquitto-alternative` at 17.
 
 ### Step 2 — Guide page (`src/pages/mqtt/<slug>.astro`)
 
@@ -176,11 +176,11 @@ Two consequences for how you write the body: **your `<h2>` text is the TOC label
 
 ## Comprehensive-guide content model
 
-A `status: 'full'` guide should be genuinely self-explaining. Body skeleton (all inside the `<slot/>`; the layout styles `h2/h3/p/ul/ol/li/a/code/table/th/td/.overflow-x` via scoped `:global`). Shipped guides land at **3–4 `<h2>`s** (28 of 34; the range is 2–5) — treat that as the target, not a coincidence:
+A `status: 'full'` guide should be genuinely self-explaining. Body skeleton (all inside the `<slot/>`; the layout styles `h2/h3/p/ul/ol/li/a/code/table/th/td/.overflow-x` via scoped `:global`). Shipped guides land at **3–4 `<h2>`s** (28 of the 34 guides; the range is 2–5) — treat that as the target, not a coincidence. Broker-comparison pages do not follow this skeleton; see [Broker comparison pages](#broker-comparison-pages).
 
 1. **Intro** — one short paragraph of context, *before* the first `<h2>`. Lead with the reader's problem, not a definition (the `QuickAnswer` box directly above already defines the term). Skip it only on an umbrella page whose first section is itself the overview (`what-is-mqtt`, `shared-subscriptions` both open on an `<h2>`).
 2. **How it works** — the spec-accurate mechanism. This is the core; get it right.
-3. **Diagram** — a `<MqttDiagram>` where a picture beats prose (fan-out, a connection/ping sequence, request/response-vs-pub/sub, an auth gate). Every shipped page has exactly one, placed right after the mechanism section.
+3. **Diagram** — a `<MqttDiagram>` where a picture beats prose (fan-out, a connection/ping sequence, request/response-vs-pub/sub, an auth gate). Every guide has exactly one, placed right after the mechanism section.
 4. **One or two middle sections.** Pick from the archetypes the hub already uses, rather than inventing a shape:
    - **At-a-glance** — a table or tight list. **Required for "X vs Y" comparison pages** (see below), and the natural fit whenever there are 3+ parallel variants to line up (`qos`, `persistent-session`, `websocket`, `mqtt-packets`).
    - **Version difference** — how 3.1.1 and 5.0 diverge, when that's the interesting part: `Server keep-alive (MQTT 5.0)`, `Will delay (MQTT 5.0)`, `MQTT 5.0 vs 3.1.1`, `Before MQTT 5.0`.
@@ -205,6 +205,23 @@ The four shipped comparisons (`mqtt-vs-http`, `mqtt-vs-kafka`, `mqtt-vs-amqp`, `
 
 Set `eyebrow: 'MQTT COMPARISON'` in the registry, and cross-link the sibling comparisons in the body — every one of the four points at at least one other.
 
+## Broker comparison pages
+
+A broker comparison sets TBMQ against another broker for a team deciding whether to move. It is a decision page, not a concept guide, so it is deliberately long-form and does **not** follow the guide skeleton above or the "X vs Y" skeleton. One ships today, `mosquitto-alternative`; follow its shape for the next one, and don't "fix" it back to the guide skeleton in a review pass.
+
+- **Registry:** category `broker-comparisons` (label "Broker comparisons", tag `Brokers`, accent `rose`) and `eyebrow: 'BROKER COMPARISON'`. Never file one under `comparisons` with the 'MQTT COMPARISON' eyebrow — that category is for protocol comparisons.
+- **Shape of `mosquitto-alternative`** (8 `<h2>`s, sub-points as `<h3>`s, which stay out of the TOC):
+  1. `What <Broker> is built for` — its genuine strengths, plus a scoping note: the comparison is open source vs open source, and a commercial edition appears only in scoping notes.
+  2. `The three walls` — one `<h3>` per limit that pushes teams off it.
+  3. `How TBMQ answers each one` — one `<h3>` per wall, with the first `MqttDiagram` (TBMQ's delivery paths).
+  4. `What else you get` — differences that are not answers to a wall, and the CE / Professional Edition note.
+  5. `What the architecture is built to do` — the published benchmark figures in a `LearnIconRows` block, with the tested versions and a methodology note.
+  6. `At a glance` — the comparison table (first header `&nbsp;`, wrapped in `<div class="overflow-x">`).
+  7. `Where <Broker> still fits` — the cases where moving isn't worth it. Keep this section; it is what makes the page fair.
+  8. `Moving over without a flag day` — the second `MqttDiagram` (the migration path), one `<h3>` per step, then a `LearnIconRows` checklist of easy-to-forget items.
+- **Differences from a guide:** two diagrams, eight FAQs, no `<Topic> in TBMQ` section (its `/docs/` links sit inline in the sections), and the last `<h2>` is the migration section.
+- **Accuracy bar is higher than for a guide.** Every claim about the other broker must hold for its open-source edition at its latest release tag (cite tag + commit, and read the source, not just its docs). Every TBMQ claim must hold for the CE release tag. FAQ answers ship standalone in the FAQPage JSON-LD, so scope them on their own ("open-source Mosquitto"), not through a note elsewhere on the page.
+
 ## Content block components (prefer these over plain bullet lists)
 
 Body lists read better as designed blocks than as raw `<ul>`s. **Default to these shared components for bold-lead lists** — don't ship a plain `<strong>Label:</strong> …` bullet list when one of these fits. They all use our tokens (green tints via `rgba($color-pe, …)`, tabler icons via `astro-icon`, `--shadow-sm` + a reduced-motion-gated lift on hover), so they stay on-brand with no new hex:
@@ -224,7 +241,7 @@ Body lists read better as designed blocks than as raw `<ul>`s. **Default to thes
 - items are links to other guides → **`LearnCardGrid`**
 - label-less simple bullets → keep a plain `<ul>`; many-column comparison data → a `<table>` (see the content model).
 
-How literally to take "default to these blocks": across 34 shipped pages there is **one** plain `<ul>` (the `+`/`#` wildcard pair in `topics.astro`) and **zero** `<ol>`s. `LearnIconRows` is the workhorse (17 pages); the other three are deliberately rarer (`LearnCardGrid` 2, `LearnTypeCards` 2, `LearnFeatureGrid` 1). If you've written a bold-lead bullet list, you almost certainly wanted a block.
+How literally to take "default to these blocks": across 35 shipped pages there is **one** plain `<ul>` (the `+`/`#` wildcard pair in `topics.astro`) and **zero** `<ol>`s. `LearnIconRows` is the workhorse (18 pages); the other three are deliberately rarer (`LearnCardGrid` 2, `LearnTypeCards` 2, `LearnFeatureGrid` 1). If you've written a bold-lead bullet list, you almost certainly wanted a block.
 
 **Where to put the props.** Short lists read fine inline (`cards={[…]}` in the markup, as in `mqtt-broker`/`mqtt-tls`); pull anything longer into a `const` in the frontmatter and pass it by name (`features={whyFeatures}`, `cards={conceptCards}`, as in `what-is-mqtt`). Either is idiomatic — just don't inline a 14-item array into the body.
 
@@ -306,7 +323,7 @@ For anything user-facing, do a quick headless-Chrome visual pass on the new page
 - **Trailing-slash links:** `/mqtt/<slug>/`, `/docs/…/` — the site uses `trailingSlash: 'always'`.
 - **`HowTbmqBlock` links are fixed** to `/product/` and `/docs/`; put topic-specific doc links in your body instead. (It takes an optional `detail` prop for a second sentence, but the layout doesn't pass one — extra context belongs in your `<Topic> in TBMQ` section, not there.)
 - **A page-local `<style lang="scss">` block is allowed** when a topic genuinely needs a bespoke block the shared components don't cover — `mqtt-reason-codes` uses one for its per-packet `<details>` accordions. Open it with `@use '../../styles/variables' as *;` and use repo tokens (`$color-border`, `$color-pe-dark`, `$font-family-mono`), never raw hex. Reach for this last: if the shape recurs, promote it to a component in `MqttLearn/` instead.
-- **Wrap every `<table>` in `<div class="overflow-x">`.** All 20 shipped tables do; the layout only sets `overflow-x: auto` on that class, so an unwrapped table breaks the page's horizontal scroll on mobile.
+- **Wrap every `<table>` in `<div class="overflow-x">`.** All 21 shipped tables do; the layout only sets `overflow-x: auto` on that class, so an unwrapped table breaks the page's horizontal scroll on mobile.
 - **Adding a slug to `learnNavSlugs`** grows the nav dropdown, needs a matching `icon`, and needs `pnpm generate:nav-sprite` after the icon lands — confirm the topic is headline-worthy first; the dropdown is deliberately short.
 - **`/mqtt/<slug>/` must not collide** with a docs path; the learn hub lives under `/mqtt/`, docs under `/docs/`, so `/mqtt/mqtt-broker/` (learn) and `/docs/user-guide/mqtt-broker/` (doc) coexist fine.
 - **SVG in a `MqttDiagram` slot** needs explicit closing tags and `&amp;`/`&apos;` inside `<text>` (see Diagrams). A self-closing `<rect/>` or a raw `&` breaks the Astro parse — the build error points at the diagram.
