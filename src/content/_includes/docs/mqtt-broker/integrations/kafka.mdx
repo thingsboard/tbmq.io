@@ -193,8 +193,8 @@ There is no way to escape `${`, so a key or header value cannot contain it as li
 <Aside type="caution" title="Upgrading from TBMQ 2.4.0 or earlier">
   Placeholders did not exist before, so a key or header value containing `${` used to be sent as plain text. After the upgrade:
 
-  - a valid placeholder, such as `${clientId}`, is filled in from each record;
-  - any other `${…}`, such as `${deviceId}`, is still sent as plain text, with a warning in the Integration Executor log each time the integration starts — but the integration cannot be saved, enabled, or disabled until you change that value.
+  - a value whose placeholders are all valid, such as `${clientId}`, is filled in from each record;
+  - a value with any other `${…}`, such as `${deviceId}`, or an unclosed `${` is still sent unchanged as plain text, valid placeholders in it included — `${clientId}-${deviceId}` goes out exactly as stored. The Integration Executor logs a warning each time the integration starts, and the integration cannot be saved, enabled, or disabled until you change that value.
 
   A key stored as an empty string is now sent as no key, so its records spread across partitions instead of all landing on one. During a rolling upgrade, an Integration Executor still on the old version sends placeholders as plain text and ignores **Forward user properties as headers**, and messages from a broker node still on the old version have no `username`.
 </Aside>

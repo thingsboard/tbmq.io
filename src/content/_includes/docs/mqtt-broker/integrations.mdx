@@ -307,7 +307,7 @@ Every event is delivered as a JSON object. These fields are common to all event 
 | `clientCertCn` | Common Name of the client's X.509 certificate. |
 | `metadata` | Additional metadata from the integration configuration (e.g., integration name). |
 
-Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when authentication is disabled, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
+Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when the client sent none, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
 
 The type-specific fields are added on top:
 
