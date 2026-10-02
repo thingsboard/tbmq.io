@@ -65,7 +65,7 @@ export const mqttTopics: MqttTopic[] = [
 			'MQTT is a lightweight pub/sub protocol for connecting devices over unreliable networks; Apache Kafka is a distributed event-streaming log for high-throughput backend data pipelines. They solve different problems and are frequently used together — MQTT at the edge, Kafka in the data center.',
 		tbmqTieIn:
 			'TBMQ uses Kafka as its internal backbone for message durability, and can bridge MQTT traffic straight into your own Kafka topics.',
-		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session'],
+		related: ['what-is-mqtt', 'mqtt-vs-http', 'persistent-session', 'mosquitto-alternative'],
 		status: 'full',
 		seoDescription:
 			'MQTT vs Kafka compared: pub/sub protocol vs event-streaming log, delivery guarantees, scale, and when to use each — or both together.',
@@ -590,6 +590,23 @@ export const mqttTopics: MqttTopic[] = [
 		seoDescription:
 			'MQTT vs CoAP compared — broker-based pub/sub over TCP vs RESTful request/response over UDP, and when to choose each for constrained IoT devices.',
 	},
+	{
+		slug: 'mosquitto-alternative',
+		readingMinutes: 17,
+		title: 'Mosquitto Alternative: Moving to a Clustered Broker',
+		navLabel: 'Mosquitto alternative',
+		cardSummary:
+			'When one broker is no longer enough: what changes when you move from Mosquitto to a clustered MQTT broker.',
+		eyebrow: 'BROKER COMPARISON',
+		quickAnswer:
+			'Mosquitto is a single-node MQTT broker. When a deployment needs more connections than one broker can hold, message durability that survives losing a host, or isolation between device traffic and backend consumers, the alternative is a clustered broker. TBMQ is an open-source MQTT broker that clusters symmetrically, stores every acknowledged message in Kafka, and runs device and application traffic on separate paths.',
+		tbmqTieIn:
+			'TBMQ clusters symmetrically with no coordinator, and stores every acknowledged message in Kafka before delivering it.',
+		related: ['mqtt-broker', 'shared-subscriptions', 'persistent-session', 'mqtt-vs-kafka'],
+		status: 'full',
+		seoDescription:
+			'Looking for a Mosquitto alternative? Where single-node MQTT brokers hit their limits — and how TBMQ clusters, persists to Kafka, and migrates with no flag day.',
+	},
 ];
 
 const bySlug = new Map(mqttTopics.map((t) => [t.slug, t]));
@@ -620,7 +637,7 @@ export const learnNavTopics: MqttTopic[] = learnNavSlugs.map((slug) => getTopic(
 // fails the build if it ever drifts from the topic registry.
 // Per-category accent color for the hub grid (filter pill dot, section chip +
 // rule, and card tag). Resolved to concrete CSS custom properties in TopicGrid.
-export type MqttAccent = 'green' | 'blue' | 'purple' | 'amber' | 'teal';
+export type MqttAccent = 'green' | 'blue' | 'purple' | 'amber' | 'teal' | 'rose';
 
 export interface MqttCategory {
 	id: string;
@@ -690,10 +707,17 @@ export const mqttCategories: MqttCategory[] = [
 	},
 	{
 		id: 'comparisons',
-		label: 'Transports & comparisons',
+		label: 'Transports & protocols',
 		tag: 'Transports',
 		accent: 'teal',
 		slugs: ['websocket', 'mqtt-vs-http', 'mqtt-vs-kafka', 'mqtt-vs-amqp', 'mqtt-vs-coap'],
+	},
+	{
+		id: 'broker-comparisons',
+		label: 'Broker comparisons',
+		tag: 'Brokers',
+		accent: 'rose',
+		slugs: ['mosquitto-alternative'],
 	},
 ];
 
