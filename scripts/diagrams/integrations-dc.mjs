@@ -930,6 +930,21 @@ export const timescaleDbIntegration = (kit) =>
 			'of your own, through the same SQL templates as the PostgreSQL integration.',
 	});
 
+export const mongoDbIntegration = (kit) =>
+	integrationType(kit, {
+		title: 'MongoDB integration',
+		integration: 'MongoDB',
+		targetIco: 'db',
+		target: 'MongoDB collection',
+		targetX: 1036,
+		targetW: 246,
+		protocol: 'TCP(TLS)',
+		legendTarget: 'External MongoDB deployment',
+		caption:
+			'Matched messages and client lifecycle events are inserted by the executor as documents into a MongoDB ' +
+			'collection of your own, one insert per message.',
+	});
+
 // =============================================================================
 // 28 — Two settings decide the outgoing body: content type, then envelope
 // =============================================================================

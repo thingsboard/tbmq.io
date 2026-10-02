@@ -93,6 +93,11 @@ const DIAGRAMS = {
 		dir: 'integrations',
 		build: integrations.timescaleDbIntegration,
 	},
+	'mongodb-integration': {
+		file: 'tbmq-mongodb-integration',
+		dir: 'integrations',
+		build: integrations.mongoDbIntegration,
+	},
 	'kafka-source-integration': {
 		file: 'tbmq-kafka-source-integration',
 		dir: 'integrations',
