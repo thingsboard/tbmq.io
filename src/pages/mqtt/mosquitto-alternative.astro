@@ -8,7 +8,7 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'Is TBMQ a drop-in replacement for Mosquitto?',
-		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no code changes. Some may need new settings: TBMQ refuses anonymous clients and payloads over 64 KB by default, and has no <code>$SYS/broker</code> tree. Operationally, no: TBMQ runs with Kafka, Valkey and PostgreSQL alongside it, which is a different deployment shape than a single binary.',
+		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no code changes. Some may need new settings: TBMQ refuses anonymous clients and closes the connection of any client that sends a packet over 64 KB by default, and has no <code>$SYS/broker</code> tree. It also installs a password-less <code>tbmq_websockets_username</code> credential for its built-in WebSocket client — set a password on it before going live. Operationally, no: TBMQ runs with Kafka, Valkey and PostgreSQL alongside it, which is a different deployment shape than a single binary.',
 	},
 	{
 		q: 'Can I run TBMQ on a Raspberry Pi like Mosquitto?',
@@ -16,7 +16,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Does Mosquitto support clustering?',
-		a: 'No. Bridging forwards messages between brokers, but it shares no session or subscription state — so a bridged pair behaves as two brokers, not one cluster, and a session cannot resume on the other node.',
+		a: 'Open-source Mosquitto does not. Bridging forwards messages between brokers, but it shares no session or subscription state — so a bridged pair behaves as two brokers, not one cluster, and a session cannot resume on the other node.',
 	},
 	{
 		q: 'How do I migrate from Mosquitto without downtime?',
@@ -29,15 +29,15 @@ const faq: FaqItem[] = [
 	{
 		q: 'How many concurrent connections can Mosquitto handle?',
 		// 8,192: Mosquitto's own README-windows.txt, the only capacity figure the project documents.
-		a: 'There is no published benchmark — the 2.0 announcement said figures were planned and none followed, and the only capacity number the project documents is a Windows platform ceiling of roughly 8,192 connections. The real ceiling depends on file descriptors, memory and the fact that message handling runs on a single thread. <strong>The useful answer is that the limit is one CPU core on one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
+		a: 'The project publishes no benchmark of its own — the 2.0 announcement said figures were planned and none followed, and the only capacity number the project documents is a Windows platform ceiling of roughly 8,192 connections. The real ceiling depends on file descriptors, memory and the fact that message handling runs on a single thread. <strong>The useful answer is that throughput is limited to one CPU core on one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
 	},
 	{
 		q: 'Does Mosquitto have a web UI?',
-		a: "Since 2.1 it does — a dashboard over the <code>$SYS</code> counters, served by an <code>http_api</code> listener that the manual calls “a very simple webserver … that can also serve some HTTP API requests” — three read-only endpoints, for the version, the listeners and the <code>$SYS</code> counters. It reports totals and rates: how many clients are connected, how much traffic moved, how many messages are retained, how long the broker has been up. It is <strong>read-only</strong>, and it has no view of <em>which</em> — no client list, no subscription list, no topic browser. Runtime change is limited to authentication and authorization over <code>$CONTROL</code> topics. TBMQ's UI and REST API create and edit credentials, authorization rules, integrations and shared subscriptions on a running cluster.",
+		a: "Since 2.1 it does — a dashboard over the <code>$SYS</code> counters, served by an <code>http_api</code> listener that the manual calls “a very simple webserver … that can also serve some HTTP API requests” — three read-only endpoints, for the version, the listeners and the <code>$SYS</code> counters. It reports totals and rates: how many clients are connected, how much traffic moved, how many messages are retained, how long the broker has been up. It is <strong>read-only</strong>, and it has no view of <em>which</em> — no client list, no subscription list, no topic browser. Through an API, runtime change is limited to authentication and authorization over <code>$CONTROL</code> topics; anything else is a config edit plus a reload signal or a restart. TBMQ's UI and REST API create and edit credentials, authorization rules, integrations and shared subscriptions on a running cluster.",
 	},
 	{
 		q: 'Can I run TBMQ on a single node?',
-		a: 'Yes, and it is how most people start. The standard Docker install runs one TBMQ node with Kafka, Valkey and PostgreSQL beside it, plus the Integration Executor that runs integrations, in at least 2 GB of RAM. That gives you the durability guarantee and the separate device and application paths without a cluster; you add nodes when you need the headroom or the availability. What a single node does not give you is a single binary — that is the trade this page is about.',
+		a: 'Yes, and it is how most people start. The standard Docker install runs one TBMQ node with Kafka, Valkey and PostgreSQL beside it, plus the Integration Executor that runs integrations, in at least 2 GB of RAM. That gives you the durability guarantee and the separate device and application paths without a cluster; you add nodes when you need the headroom or the availability. With a single Kafka broker, though, an acknowledged message survives a process crash, not the loss of the host. What a single node does not give you is a single binary — that is the trade this page is about.',
 	},
 ];
 ---
@@ -69,9 +69,11 @@ const faq: FaqItem[] = [
 	<p>
 		Mosquitto runs as a single broker. It can bridge to another broker, and a bridge does forward messages — but it
 		shares no session state and no subscription state. Two bridged brokers are two brokers, not one logical broker: a
-		client's session lives on the node it connected to, and if that node is gone, the session is gone with it. Vertical
-		scaling is the only headroom you have, and less of it than it looks: all message handling runs on a single thread,
-		so a bigger machine buys memory for more connections, not cores for more throughput.
+		client's session lives on the node it connected to, and if that node is gone, the session is gone with it. Within
+		one broker, vertical scaling is the only headroom you have, and less of it than it looks: all message handling runs
+		on a single thread, so a bigger machine buys memory for more connections, not cores for more throughput. Splitting
+		clients across independent brokers adds capacity when traffic partitions cleanly — but that is several brokers, not
+		one.
 	</p>
 
 	<h3>The durability wall</h3>
@@ -136,14 +138,16 @@ const faq: FaqItem[] = [
 
 	<h3>Device and application traffic are delivered separately</h3>
 	<p>
-		TBMQ classifies persistent clients by how they actually behave. <strong>DEVICE</strong> clients publish often and subscribe
-		to little; while one is offline its messages wait in a per-client queue in Valkey or Redis — up to 10,000 messages for
-		seven days by default, oldest dropped first — which absorbs high write rates and hands the queue back quickly on reconnect.
+		TBMQ splits persistent clients into two types, which you assign to match how each one behaves. <strong
+			>DEVICE</strong
+		> clients publish often and subscribe to little; while one is offline its messages wait in a per-client queue in Valkey
+		or Redis — up to 10,000 messages for seven days by default, oldest dropped first — which absorbs high write rates and
+		hands the queue back quickly on reconnect.
 		<strong>APPLICATION</strong> clients subscribe to high-volume topics, and each one gets a dedicated Kafka topic and its
 		own consumer, so a backlog accumulates safely in Kafka and is replayed in order from that client's committed offset, kept
-		for seven days by default. A slow application subscriber's backlog stays in its own topic, so it cannot hold up delivery
-		to devices. Every publish still enters through one shared Kafka topic, though, so a large enough device burst delays everything
-		behind it, on TBMQ as on any broker.
+		for up to seven days or about 1 GB, whichever comes first, by default. A slow application subscriber's backlog stays in
+		its own topic, so it cannot hold up delivery to devices. Every publish still enters through one shared Kafka topic, though,
+		so a large enough device burst delays everything behind it, on TBMQ as on any broker.
 	</p>
 
 	<MqttDiagram
@@ -265,7 +269,10 @@ const faq: FaqItem[] = [
 	</p>
 
 	<h2>What the architecture is built to do</h2>
-	<p>Each figure comes from a published test, with its hardware and load profile documented.</p>
+	<p>
+		Each figure comes from a published test on TBMQ 1.0–2.0.1 (2023–2024), with its hardware and load profile
+		documented.
+	</p>
 
 	<LearnIconRows>
 		<LearnIconRow icon="tabler:arrows-split-2" title="3M msg/sec delivered">
@@ -283,7 +290,7 @@ const faq: FaqItem[] = [
 	</LearnIconRows>
 
 	<p>
-		On methodology: these are TBMQ tests on TBMQ hardware, not a same-hardware comparison.
+		On methodology: these are TBMQ tests on AWS, not a same-hardware comparison.
 		<strong>Mosquitto publishes no benchmark results</strong> — the 2.0 announcement said some were planned and none followed
 		— so there is no authoritative head-to-head number to quote, from us or anyone else.
 	</p>
@@ -314,7 +321,7 @@ const faq: FaqItem[] = [
 						>Per-session cap of 1,000, QoS 0 not queued; the excess is dropped while the publisher still gets its PUBACK</td
 					><td
 						>Per-client Valkey/Redis queue (10,000 messages, oldest dropped), or dedicated Kafka topic with offset
-						replay (7 days)</td
+						replay (7 days or ~1 GB)</td
 					></tr
 				>
 				<tr
@@ -458,10 +465,12 @@ const faq: FaqItem[] = [
 			that setting no longer matters.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:settings" title="Check TBMQ's defaults against your clients">
-			TBMQ refuses anonymous clients and payloads over 64 KB, starts with its TLS listener off, and publishes no
+			TBMQ refuses anonymous clients, closes the connection of any client that sends a packet over 64 KB, starts with
+			its TLS listener off, and publishes no
 			<code>$SYS/broker/</code> tree — monitoring that reads it moves to TBMQ&apos;s UI or
 			<a href="/docs/prometheus-metrics/">Prometheus</a> metrics. Each is a setting to change or a client to adjust before
-			its batch.
+			its batch. One more: the password-less <code>tbmq_websockets_username</code> credential TBMQ installs for its built-in
+			WebSocket client admits any client that sends that username — set a password on it first.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:pin" title="Check retained messages after the bridge comes up">
 			When the bridge connects, each broker&apos;s retained messages on the bridged topics reach the other, and a
