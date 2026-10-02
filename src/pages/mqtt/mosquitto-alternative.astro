@@ -12,7 +12,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Can I run TBMQ on a Raspberry Pi like Mosquitto?',
-		a: 'No — TBMQ targets server-class nodes in a cluster, not a constrained device. The usual pattern is a lightweight broker on the device or gateway bridging into a central TBMQ cluster — one Mosquitto bridge in MQTT 5 mode carries that traffic in both directions.',
+		a: "It isn't what TBMQ is built for: the broker plus Kafka, Valkey and PostgreSQL need at least 2 GB of RAM, so a small Pi or a gateway is the wrong home for it. The usual pattern is a lightweight broker on the device or gateway bridging into a central TBMQ cluster — one Mosquitto bridge in MQTT 5 mode carries that traffic in both directions.",
 	},
 	{
 		q: 'Does Mosquitto support clustering?',
