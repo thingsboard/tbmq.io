@@ -2,7 +2,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 
-TBMQ MongoDB Integration inserts MQTT messages and client lifecycle events as documents into a **MongoDB** deployment of your own — a standalone server, a replica set, a sharded cluster behind `mongos`, or a `mongodb+srv://` service such as Atlas. Each message becomes exactly one document, written with one `insertOne`. This is useful for the following scenarios:
+TBMQ MongoDB Integration inserts MQTT messages and client lifecycle events as documents into a **MongoDB** deployment of your own — a standalone server, a replica set, a sharded cluster behind `mongos`, or a `mongodb+srv://` service such as Atlas. Each message is written as one document, with one `insertOne`. This is useful for the following scenarios:
 
 - **Telemetry storage** — keeping device readings as queryable documents, with the JSON payload stored as an embedded document rather than a string.
 - **Time-series collections** — landing readings in a MongoDB time-series collection, which the integration feeds with a real BSON date.
@@ -168,7 +168,7 @@ The three timeouts are not independent. A failing insert can wait for a server, 
 Server selection timeout + Connect timeout + 2 × Socket timeout ≤ 25 seconds
 ```
 
-The defaults use 24 of those 25 seconds: 7 + 3 + 2 × 7. The budget keeps every insert, however it fails, within the executor's message pack timeout (`TB_IE_MSG_PACK_PROCESSING_TIMEOUT`, 30 000 ms by default). If you lower that timeout below 25 000 ms, lower the integration's timeouts with it — the budget alone no longer holds the guarantee.
+The defaults use 24 of those 25 seconds: 7 + 3 + 2 × 7. The budget is what keeps a running insert within the executor's message pack timeout (`TB_IE_MSG_PACK_PROCESSING_TIMEOUT`, 30 000 ms by default), but it is not a hard bound: the driver's retry selects a server again, which the formula counts only once. Time a message spends queued before a worker picks it up is not part of the budget at all — see [Queued messages and outages](#queued-messages-and-outages). If you lower that timeout below 25 000 ms, lower the integration's timeouts with it — the budget no longer fits inside it.
 
 To give one step more time, take it from another: during long elections a larger **Server selection timeout** helps, paid for with a smaller **Socket timeout**.
 
@@ -217,7 +217,7 @@ The field names match the JSON envelope the other integrations send; only the ty
 db.mqtt_messages.find({ props: { $elemMatch: { k: 'contentType', v: 'application/json' } } })
 ```
 
-Metadata keys become field names, so a key may not start with `$` or contain a NUL character; that is checked when the integration is saved.
+Metadata keys become field names, so a key may not start with `$` or contain a NUL character, and neither a key nor a value may contain an unpaired surrogate; that is checked when the integration is saved.
 
 ### The payload field
 
@@ -248,7 +248,7 @@ With **Send only message payload** on, the payload itself is the document, and n
 
 This mode is strict. The payload must be **one JSON object** in UTF-8; anything else — text, a number, an array, binary data, a key starting with `$`, an unpaired surrogate escape, an array `_id` — fails the message, and nothing is stored. The failure is reported as an [error event](#integration-events) and classified `PERMANENT`.
 
-A payload may carry its own `_id`; it is used instead of a generated one. That makes a redelivered copy of the same message fail as a duplicate key instead of being stored twice — see [Delivery semantics](#delivery-semantics).
+A payload may carry its own `_id`; it is used instead of a generated one. On a regular collection, that makes a redelivered copy of the same message fail as a duplicate key instead of being stored twice — see [Delivery semantics](#delivery-semantics). A time-series collection does not enforce a unique `_id`, so there a redelivered copy is stored again.
 
 ## Time-series collections
 
@@ -261,9 +261,9 @@ db.createCollection('mqtt_messages', {
 ```
 
 - **Envelope documents** already carry `ts` as a BSON date, so `timeField: 'ts'` works with no extra setting. Lifecycle events carry `ts` as a date too, so they can share the collection.
-- **Payload-only documents** have no `ts` of their own. Set **Timestamp field** to the collection's `timeField`, and every document gets that field, set to the time TBMQ received the message — overwriting any value of the same name in the payload, since a time field has to be a date. Lifecycle events get it as well, set to the event time, so messages and events can still share one collection; an event field that already has that name is kept.
+- **Payload-only documents** have no `ts` of their own. Set **Timestamp field** to the collection's `timeField`, and every document gets that field, set to the time TBMQ received the message — overwriting any value of the same name in the payload, since a time field has to be a date. Lifecycle events get it as well, set to the event time, so messages and events can still share one collection; an event field that already has that name is kept, so choose a name no event field uses, or `ts`, which events already carry as a date.
 
-**Timestamp field** must not be blank, start with `$`, contain `.`, exceed 64 characters, or be `_id` — a date in `_id` would replace the generated ObjectId, and every two messages in the same millisecond would collide.
+**Timestamp field** must not be blank, start with `$`, contain `.`, a NUL character or an unpaired surrogate, exceed 64 characters, or be `_id` — a date in `_id` would replace the generated ObjectId, and every two messages in the same millisecond would collide.
 
 The same date field drives a TTL index on an ordinary collection:
 
@@ -306,7 +306,7 @@ Each event is stored as the <DocLink product={props.product} path="integrations/
 
 The full event document is stored in both document modes — **Send only message payload** and **Payload type** apply to messages only. In payload-only mode an event also gets the **Timestamp field**, as described in [Time-series collections](#time-series-collections).
 
-`eventType` tells messages and events apart when they share a collection: it is `PUBLISH_MSG` for every message, and one of the `CLIENT_*` values for an event.
+With **Send only message payload** off, `eventType` tells messages and events apart when they share a collection: it is `PUBLISH_MSG` for every message, and one of the `CLIENT_*` values for an event. In payload-only mode a message carries no `eventType` of its own, or one the publisher chose, so set an **Events collection** to keep the two apart.
 
 ## Required privileges
 
@@ -351,7 +351,10 @@ The driver reports an unreachable server as a timeout and an authentication fail
 
 | Message | What to check |
 |---|---|
-| `No MongoDB server was available within 7 s. mongo1:27017: connection refused` | The host, the port, and that the server is running. `unknown host` and `not reachable` point at DNS and the network. |
+| `No MongoDB server was available within 7 s. mongo1:27017: connection refused` | The host, the port, and that the server is running. `unknown host`, `not reachable (…)` and `cannot connect (…)` point at DNS and the network. |
+| `No MongoDB server was available within 7 s. Failed looking up SRV record for '_mongodb._tcp.…'.` | The host name of the `mongodb+srv://` URI, and that DNS is reachable from the executor. |
+| `… mongo1:27017: Usage of local network host for server is not allowed! …` | A discovered replica set member or SRV target resolves to a local address while `INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS` is off — see the note under [Connection](#connection). |
+| `No MongoDB server was available within 7 s. No server responded as a writable MongoDB server` | No host reported an error, but none can take writes — for example, several standalone servers are listed. List only members of one replica set, or only `mongos` routers. |
 | `… the server's TLS certificate is not trusted: set the CA certificate that signed it` | Set **CA certificate file**, or add the CA to the executor's truststore. |
 | `… the server's TLS certificate does not match the host name` | Connect with the name the certificate was issued for. Hostname verification cannot be turned off. |
 | `… the TLS handshake was cut off: the server may not use TLS …, or it may require a client certificate` | TLS is on but the server does not speak it — often a `mongodb+srv://` URI against a server without TLS — or the server wants a client certificate, which only **PEM** credentials send. |
@@ -370,7 +373,7 @@ The driver reports an unreachable server as a timeout and an authentication fail
 Delivery is **not exactly-once**:
 
 - An insert that fails is logged, counted, saved as an error event, and reported as a failure. It is **never** acknowledged as a success. What happens next is decided by the executor's <DocLink product={props.product} path="integrations/#error-handling-and-retry" bold={false}>acknowledgment strategy</DocLink> — `SKIP_ALL` (the default) drops the message, so a document can simply be missing; `RETRY_ALL` redelivers it up to the configured retry limit.
-- An insert that timed out may still have been written. The retry then inserts the same message a second time, under a new generated `_id`.
+- An insert that failed with `TRANSIENT (network error)` — a socket read timeout included — or `TRANSIENT (write concern not satisfied)` may still have been written. The retry then inserts the same message a second time, under a new generated `_id`. `TRANSIENT (timeout)` is not such a case: it is a wait for a server or a pooled connection that expired before anything was sent.
 - On a replica set or a sharded cluster, the driver retries a failed write once on its own, within the same insert. That retry reuses the document's `_id` and cannot store a second copy.
 
 Each failure is classified as `PERMANENT` — the same message can never be written, or a configuration problem retrying will not fix — or `TRANSIENT`, caused by the server or the network. The classification is informational: it appears in the error event and the log, but `RETRY_ALL` retries both kinds alike.
@@ -380,13 +383,13 @@ Each failure is classified as `PERMANENT` — the same message can never be writ
 | `PERMANENT` | `invalid document`, `document too large` (over MongoDB's 16 MiB document limit), `document cannot be encoded`, `duplicate key`, `document validation failed` (a collection validator rejected it), `not authorized`, `authentication failed`, `document too deeply nested`, `invalid _id`, `invalid document value`, `invalid namespace` |
 | `TRANSIENT` | `timeout`, `network error`, `not primary`, `write concern not satisfied`, `queued too long`, or the exception's class name for anything else |
 
-Where duplicates matter, use payload-only documents with a publisher-supplied `_id`: a second copy of the same message then fails with `PERMANENT (duplicate key)` instead of being stored. The failure is still reported, and under `RETRY_ALL` still retried up to the limit, but the collection keeps a single document.
+Where duplicates matter, use payload-only documents with a publisher-supplied `_id`: on a regular collection, a second copy of the same message then fails with `PERMANENT (duplicate key)` instead of being stored. The failure is still reported, and under `RETRY_ALL` still retried up to the limit, but the collection keeps a single document. A time-series collection does not enforce a unique `_id`, so there a redelivered copy is stored again.
 
 Client lifecycle events are weaker still — they are best-effort hints, and can be dropped before they ever reach the integration. See <DocLink product={props.product} path="integrations/#delivery-guarantees" bold={false}>Delivery guarantees</DocLink>.
 
 ### Queued messages and outages
 
-Inserts run on the integration's own worker threads; a message waits in the integration's queue until a worker is free. During an outage every insert takes its whole timeout budget, so messages queue up. A message that has waited longer than its stream's pack timeout — `TB_IE_MSG_PACK_PROCESSING_TIMEOUT` for messages, `TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT` for lifecycle events — is failed with `TRANSIENT (queued too long)` without being sent: by then the executor has already given up on its pack. Until that point the message is still attempted as soon as a worker is free, and is written if the server is back.
+Inserts run on the integration's own worker threads; a message waits in the integration's queue until a worker is free. During an outage every insert takes up to its whole timeout budget, so messages queue up. A message that has waited longer than its stream's pack timeout — `TB_IE_MSG_PACK_PROCESSING_TIMEOUT` for messages, `TB_IE_EVENT_MSG_PACK_PROCESSING_TIMEOUT` for lifecycle events — is failed with `TRANSIENT (queued too long)` without being sent: by then the executor has stopped waiting for it. Under `SKIP_ALL` it has committed the pack; under `RETRY_ALL` it has resubmitted the message, so a fresh copy is already queued behind the expired one. Until that point the message is still attempted as soon as a worker is free, and is written if the server is back.
 
 ### Stopping and updating
 
@@ -396,9 +399,9 @@ The executor leaves a pack that a stop cut short uncommitted, so its messages ar
 
 ## Throughput and ordering
 
-Each MongoDB integration has its own pool of **Pool size** worker threads, so one slow MongoDB cannot starve the other integrations on the same executor. The driver's connection pool to the server that takes the writes has the same size, plus the driver's own monitoring connections to each known member.
+Each MongoDB integration has its own pool of **Pool size** worker threads, so one slow MongoDB cannot starve the other integrations on the same executor. Lifecycle events use the same workers as messages, so a burst of events delays messages, and the other way round. The driver's connection pool to the server that takes the writes has the same size, plus the driver's own monitoring connections to each known member.
 
-- **Ordering.** With **Pool size** above `1`, messages are inserted in parallel and are not ordered across workers. Set it to `1` when insertion order must follow publish order.
+- **Ordering.** With **Pool size** above `1`, messages are inserted in parallel and are not ordered across workers. Set it to `1` when insertion order must follow publish order. Even then, under `RETRY_ALL` a failed insert is retried after the rest of its pack has been written.
 - **Footprint.** **Pool size** is per integration, not per node. Each integration is owned by one executor at a time, so the worst case on a node is the sum of **Pool size** over the integrations that executor owns — see <DocLink product={props.product} path="integrations/#downlink-topics" bold={false}>partition ownership</DocLink>.
 - **Pack size.** The executor reads messages in packs, at most `max.poll.records` per pack — 50 by default — and polls the next pack only after the whole pack is done or its pack timeout expires. A larger **Pool size** helps only up to that limit. For higher throughput on one integration, raise both:
 
@@ -406,7 +409,7 @@ Each MongoDB integration has its own pool of **Pool size** worker threads, so on
   TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG=max.poll.records:500
   ```
 
-  together with a larger **Pool size**, e.g. `20`. That variable sets the Kafka consumer for the messages of **every** integration on that executor, so a slow target of another type then receives larger packs too.
+  together with a larger **Pool size**, e.g. `20`. That variable sets the Kafka consumer for the messages of **every** integration on that executor, so a slow target of another type then receives larger packs too. Its value replaces the default `max.poll.records:50` as a whole, so keep `max.poll.records` in it whenever you set it: without it, packs grow to the general consumer default `TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_RECORDS`, 2000 records.
 
 ## Integration events
 
