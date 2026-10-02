@@ -172,6 +172,7 @@ You should see an event with status **OK** and a payload similar to:
     "tbmqIeNode": "tbmq_ie_node",
     "tbmqNode": "tbmq_node",
     "ts": 1742553324248,
+    "username": "tbmq_websockets_username",
     "props": {},
     "metadata": {
         "integrationName": "HTTP integration"
@@ -197,6 +198,7 @@ You should see an event with status **OK** and a payload similar to:
 | `tbmqIeNode` | Node ID of the Integration Executor that handled the message. |
 | `tbmqNode` | Node ID of the TBMQ broker that received the message. |
 | `ts` | Timestamp (milliseconds) when the message was received. |
+| `username` | Username the publishing client connected with. Omitted when the client sent none. |
 | `props` | MQTT 5.0 user properties or other MQTT properties. |
 | `metadata` | Additional metadata from integration configuration (e.g., integration name). |
 

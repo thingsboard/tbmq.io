@@ -119,7 +119,7 @@ tbmq/devices/gateway-01/status
 | **Send only message payload** | off | If enabled, only the raw message payload is forwarded. If disabled, TBMQ wraps the payload in a JSON object with additional metadata. |
 | **Bootstrap servers** | `localhost:9092` | Kafka broker addresses (comma-separated list of hostnames/IPs and ports). Required. |
 | **Topic** | `tbmq.messages` | The Kafka topic where messages will be published. Required. |
-| **Key** | — | Optional record key. If set, Kafka hashes it so records with the same key land on the same partition. If left empty, Kafka's sticky partitioner picks a partition and switches only when the batch is full. The integration never sets a partition explicitly. |
+| **Key** | — | Optional record key. If set, Kafka hashes it so records with the same key land on the same partition. Accepts [placeholders](#placeholders), e.g. `${clientId}`. If left empty, or if a placeholder in it has no value, the record is sent without a key, and Kafka's sticky partitioner picks a partition and switches only when the batch is full. The integration never sets a partition explicitly. |
 | **Client ID prefix** | `tbmq-ie-kafka-producer` | Prefix for the Kafka client ID. The full ID is `prefix-integrationId-executorServiceId`, so each executor's producer is distinguishable in the Kafka cluster. |
 | **Automatically retry times if fails** | `0` | Producer-level retries for a record whose send fails with a transient error (`retries`). |
 | **Produces batch size in bytes** | `16384` | Maximum batch size before records are sent (`batch.size`). |
@@ -128,11 +128,76 @@ tbmq/devices/gateway-01/status
 | **Number of acknowledgments** | `-1` | `acks` — `0` (no acknowledgment), `1` (leader only), or `all` / `-1` (all in-sync replicas, the default and safest). |
 | **Compression** | `none` | Compression algorithm: `none`, `gzip`, `snappy`, `lz4`, `zstd`. |
 | **Other properties** | — | Additional Kafka producer configuration as key-value pairs — this is where SASL/SSL settings go. |
-| **Kafka headers** | — | Custom headers added to every record. |
-| **Charset encoding** | `UTF-8` | Charset used to encode the **Kafka headers** values: `US-ASCII`, `ISO-8859-1`, `UTF-8`, `UTF-16BE`, `UTF-16LE`, or `UTF-16`. |
+| **Kafka headers** | — | Custom headers added to every record. Values accept [placeholders](#placeholders); a header whose placeholder has no value is left out of that record. |
+| **Charset encoding** | `UTF-8` | Charset used to encode the **Kafka headers** values and forwarded user properties: `US-ASCII`, `ISO-8859-1`, `UTF-8`, `UTF-16BE`, `UTF-16LE`, or `UTF-16`. |
+| **Forward user properties as headers** | off | Adds each MQTT 5 user property of a message as a header with the same name. See [Forwarding user properties](#forwarding-user-properties). |
 | **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
 
 With **Send only message payload** enabled, the record value is the payload alone — as UTF-8 text if it is valid UTF-8, Base64-encoded otherwise.
+
+## Record key and headers
+
+The **Key** and the **Kafka headers** values can contain `${…}` placeholders, filled in for each record from the message, or from the <DocLink product={props.product} path="integrations/#event-payload" bold={false}>event payload</DocLink> for a client lifecycle event. They work with **Send only message payload** on, too: the record value stays the raw payload, and the key and headers still carry the message's metadata.
+
+For example, with **Key** `${clientId}`, the headers `mqtt-topic` = `${topicName}` and `username` = `${username}`, and **Send only message payload** on, each record carries:
+
+- the raw payload as its value;
+- the publishing client's ID as its key, so one client's records stay on one partition and in order;
+- `mqtt-topic` and `username` headers.
+
+A key or header value without placeholders is sent as is, the same for every record.
+
+### Placeholders
+
+| Placeholder | Value | Available for |
+|---|---|---|
+| `${clientId}` | ID of the MQTT client. | Messages and events |
+| `${username}` | Username the client connected with. | Messages and events |
+| `${clientCertCn}` | Common Name of the client's X.509 certificate. Present only for a client that authenticated with mTLS. | Messages and events |
+| `${eventType}` | `PUBLISH_MSG` for a message, the event type for an event. | Messages and events |
+| `${ts}` | Timestamp in milliseconds. | Messages and events |
+| `${tbmqNode}` | Node ID of the TBMQ broker. | Messages and events |
+| `${tbmqIeNode}` | Node ID of the Integration Executor. | Messages and events |
+| `${metadata.<key>}` | Value of the **Metadata** entry `<key>`. | Messages and events |
+| `${topicName}` | MQTT topic the message was published to. | Messages |
+| `${qos}` | QoS level of the message: `0`, `1`, or `2`. | Messages |
+| `${retain}` | Retain flag of the message: `true` or `false`. | Messages |
+| `${props.<name>}` | Value of the MQTT 5 user property `<name>`. If the message repeats the property, the last value. | Messages |
+| `${sessionId}` | ID of the client session. | Events |
+| `${ipAddress}` | IP address the client connected from. | Events |
+
+Everything after the first dot is the key, so `${props.app.version}` reads the user property `app.version`. Placeholder names are case-sensitive.
+
+If **any** placeholder in a value has no value for a record, the whole value counts as empty: the record is sent without a key, or that header is left out. For example, a key `dev-${username}` from a client that sent no username gives no key at all, not `dev-`. Expect this for `${username}` and `${clientCertCn}` when the client did not provide them, for `${props.<name>}` when the message lacks that property, and for any placeholder used where it is not available — such as `${topicName}` on a lifecycle event.
+
+### Forwarding user properties
+
+With **Forward user properties as headers** on, every MQTT 5 user property of a message is added as a Kafka header with the same name and value:
+
+- The properties keep the order the client sent them in, and a name the client repeated becomes several headers with that name.
+- They come after the configured **Kafka headers**.
+- A name used by a configured header is reserved. A user property with that name is not forwarded, even when the configured header has no value for that record and is left out. Otherwise a client could forge a configured header such as `username`, because consumers usually read the last header of a given name.
+
+Lifecycle events carry no user properties, so the option affects messages only.
+
+### Validation
+
+The key and header values are checked when the integration is saved. An unknown, empty (`${}`), or unclosed placeholder, or `${props}` / `${metadata}` without a key, rejects the save with an error that names the field:
+
+```plaintext
+Key: unknown placeholder '${topic}'. Allowed: ${clientCertCn}, ${clientId}, ${eventType}, ${ipAddress}, ${qos}, ${retain}, ${sessionId}, ${tbmqIeNode}, ${tbmqNode}, ${topicName}, ${ts}, ${username}, ${props.KEY}, ${metadata.KEY}
+```
+
+There is no way to escape `${`, so a key or header value cannot contain it as literal text. Enabling or disabling an integration from the **Integrations** table saves it, too, so the same check applies there.
+
+<Aside type="caution" title="Upgrading from TBMQ 2.4.0 or earlier">
+  Placeholders did not exist before, so a key or header value containing `${` used to be sent as plain text. After the upgrade:
+
+  - a value whose placeholders are all valid, such as `${clientId}`, is filled in from each record;
+  - a value with any other `${…}`, such as `${deviceId}`, or an unclosed `${` is still sent unchanged as plain text, valid placeholders in it included — `${clientId}-${deviceId}` goes out exactly as stored. The Integration Executor logs a warning each time the integration starts, and the integration cannot be saved, enabled, or disabled until you change that value.
+
+  A key stored as an empty string is now sent as no key, so its records spread across partitions instead of all landing on one. During a rolling upgrade, an Integration Executor still on the old version sends placeholders as plain text and ignores **Forward user properties as headers**, and messages from a broker node still on the old version have no `username`.
+</Aside>
 
 ## Client lifecycle events
 
@@ -147,6 +212,8 @@ Pick the event types on the **Filters and events** step while creating the integ
 </Steps>
 
 Events are published to the same **Topic** as messages, using the configured **Key**, **Kafka headers**, and producer settings. **Send only message payload** applies to message payloads only — an event is always published as its full JSON body.
+
+Placeholders in the key and headers are filled in from the event payload, so a message-only placeholder such as `${topicName}` leaves an event without a key, or drops that header — see [Placeholders](#placeholders). **Forward user properties as headers** does not apply to events.
 
 ## Integration events
 
@@ -192,6 +259,7 @@ If successful, the message should be available in your Kafka service under the t
     "tbmqIeNode": "tbmq_ie_node",
     "tbmqNode": "tbmq_node",
     "ts": 1742554969254,
+    "username": "tbmq_websockets_username",
     "props": {},
     "metadata": {
         "integrationName": "Kafka integration"
@@ -212,6 +280,7 @@ If successful, the message should be available in your Kafka service under the t
 | `tbmqIeNode` | Node ID of the Integration Executor that handled the message. |
 | `tbmqNode` | Node ID of the TBMQ broker that received the message. |
 | `ts` | Timestamp (milliseconds) when the message was received. |
+| `username` | Username the publishing client connected with. Omitted when the client sent none. |
 | `props` | MQTT 5.0 user properties or other MQTT properties. |
 | `metadata` | Additional metadata from integration configuration (e.g., integration name). |
 

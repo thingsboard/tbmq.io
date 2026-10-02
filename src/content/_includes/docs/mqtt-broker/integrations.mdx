@@ -302,11 +302,12 @@ Every event is delivered as a JSON object. These fields are common to all event 
 | `ipAddress` | IP address the client connected from. |
 | `ts` | Timestamp (milliseconds) when the event was created. |
 | `tbmqNode` | Node ID of the TBMQ broker that produced the event. |
+| `tbmqIeNode` | Node ID of the Integration Executor that delivered the event. |
 | `username` | Username the client authenticated with. |
 | `clientCertCn` | Common Name of the client's X.509 certificate. |
 | `metadata` | Additional metadata from the integration configuration (e.g., integration name). |
 
-Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when authentication is disabled, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
+Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when the client sent none, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
 
 The type-specific fields are added on top:
 
@@ -332,6 +333,7 @@ A client connecting with MQTT 5.0:
   "ipAddress": "10.7.0.42",
   "ts": 1767225600000,
   "tbmqNode": "tbmq-node-1",
+  "tbmqIeNode": "tbmq-ie-1",
   "username": "sensor-01",
   "cleanStart": true,
   "keepAlive": 60,
@@ -353,6 +355,7 @@ A client subscribing to two topic filters, the second one shared:
   "ipAddress": "10.7.0.51",
   "ts": 1767225601500,
   "tbmqNode": "tbmq-node-2",
+  "tbmqIeNode": "tbmq-ie-1",
   "username": "backend",
   "subscriptions": [
     {
@@ -392,6 +395,7 @@ A publish denied by an authorization rule:
   "ipAddress": "10.7.0.42",
   "ts": 1767225603000,
   "tbmqNode": "tbmq-node-1",
+  "tbmqIeNode": "tbmq-ie-1",
   "username": "sensor-01",
   "action": "publish",
   "topic": "admin/commands",
