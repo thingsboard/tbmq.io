@@ -281,7 +281,7 @@ An event is a different envelope, so the **Events key** — and, with `HSET`, th
 `${topicName}`, `${qos}`, `${retain}`, `${tbmqIeNode}` and `${props.<name>}` do **not** exist for events and are rejected in the **Events key**.
 
 <Aside type="caution">
-  Only `${eventType}`, `${ts}` and metadata keys you know you set are guaranteed. The other six are written to the envelope only when the source field has a value — no `username` when authentication is disabled, no `ipAddress` for an address-less session — and an events key that references a missing one **fails that event**. Keep the events key to literal text plus `${eventType}` and `${ts}` unless you are certain.
+  Only `${eventType}`, `${ts}` and metadata keys you know you set are guaranteed. The other six are written to the envelope only when the source field has a value — no `username` when the client sent none, no `ipAddress` for an address-less session — and an events key that references a missing one **fails that event**. Keep the events key to literal text plus `${eventType}` and `${ts}` unless you are certain.
 </Aside>
 
 With `HSET`, the **Hash field** has to resolve for messages *and* events when both are enabled, so it must use a placeholder both catalogues have: `${eventType}`, `${clientId}`, `${ts}`, `${tbmqNode}`, `${clientCertCn}` or `${metadata.<key>}`.
