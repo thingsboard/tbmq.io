@@ -225,7 +225,7 @@ const faq: FaqItem[] = [
 	<p>
 		Mosquitto implements MQTT 5.0 shared subscriptions and so does TBMQ, so this is not a support difference — it is a
 		difference in what adding a member does. Register an
-		<a href="/docs/application-shared-subscription/">application shared subscription</a> and the group gets its own Kafka
+		<a href="/docs/user-guide/ui/shared-subscriptions/">application shared subscription</a> and the group gets its own Kafka
 		topic; each subscribing APPLICATION client joins that topic's consumer group, so an extra instance picks up a share of
 		the partitions and the group rebalances when one dies. Messages keep accumulating in Kafka while every member is offline,
 		and delivery resumes from the committed offset.
@@ -254,7 +254,7 @@ const faq: FaqItem[] = [
 	<p>
 		In TBMQ those are entities, not file entries. <a href="/docs/user-guide/ui/mqtt-client-credentials/">Credentials</a> and
 		authorization rules, <a href="/docs/integrations/">integrations</a>,
-		<a href="/docs/application-shared-subscription/">shared subscriptions</a>, blocked clients and
+		<a href="/docs/user-guide/ui/shared-subscriptions/">shared subscriptions</a>, blocked clients and
 		<a href="/docs/user-guide/ui/users/">users</a> are created and edited while the cluster runs, from the
 		<a href="/docs/user-guide/ui/monitoring/">web UI</a> or the <a href="/docs/rest-api/">REST API</a>, with no restart
 		and no file to ship to every node. The same views answer the operational questions — which
