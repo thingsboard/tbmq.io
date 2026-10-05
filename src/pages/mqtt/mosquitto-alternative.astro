@@ -29,7 +29,7 @@ const faq: FaqItem[] = [
 	{
 		q: 'How many concurrent connections can Mosquitto handle?',
 		// 8,192: Mosquitto's own README-windows.txt, the only capacity figure the project documents.
-		a: 'The project publishes no benchmark of its own — the 2.0 announcement said figures were planned and none followed, and the only capacity number the project documents is a Windows platform ceiling of roughly 8,192 connections. The real ceiling depends on file descriptors, memory and the fact that message handling runs on a single thread. <strong>The useful answer is that throughput is limited to one CPU core on one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
+		a: 'The project publishes no benchmark of its own, and the only capacity number the project documents is a Windows platform ceiling of roughly 8,192 connections. The real ceiling depends on file descriptors, memory and the fact that message handling runs on a single thread. <strong>The useful answer is that throughput is limited to one CPU core on one machine</strong> — which is why the decision to move is usually about clustering and durability rather than a specific number.',
 	},
 	{
 		q: 'Does Mosquitto have a web UI?',
@@ -296,8 +296,7 @@ const faq: FaqItem[] = [
 
 	<p>
 		On methodology: these are TBMQ tests on AWS, not a same-hardware comparison.
-		<strong>Mosquitto publishes no benchmark results</strong> — the 2.0 announcement said some were planned and none followed
-		— so there is no authoritative head-to-head number to quote, from us or anyone else.
+		<strong>Mosquitto publishes no benchmark results</strong>, so there is no official head-to-head number to quote.
 	</p>
 	<p><a href="/performance/">Full benchmark methodology and results →</a></p>
 
