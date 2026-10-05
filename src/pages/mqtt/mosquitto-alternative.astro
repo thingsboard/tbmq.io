@@ -24,7 +24,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Is TBMQ free?',
-		a: 'TBMQ Community Edition is open source under the Apache License 2.0, including commercial use. Professional Edition adds single sign-on, role-based access control, audit logs and white labeling.',
+		a: 'TBMQ Community Edition is open source under the Apache License 2.0, including commercial use. Professional Edition adds single sign-on, role-based access control, audit logs and white labeling, among other features.',
 	},
 	{
 		q: 'How many concurrent connections can Mosquitto handle?',
@@ -33,7 +33,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Does Mosquitto have a web UI?',
-		a: "Since 2.1 it does — a dashboard over the <code>$SYS</code> counters, served by an <code>http_api</code> listener that the manual calls “a very simple webserver … that can also serve some HTTP API requests” — three read-only endpoints, for the version, the listeners and the <code>$SYS</code> counters. It reports totals and rates: how many clients are connected, how much traffic moved, how many messages are retained, how long the broker has been up. It is <strong>read-only</strong>, and it has no view of <em>which</em> — no client list, no subscription list, no topic browser. Through an API, runtime change is limited to authentication and authorization over <code>$CONTROL</code> topics; anything else is a config edit plus a reload signal or a restart. TBMQ's UI and REST API create and edit credentials, authorization rules, integrations and shared subscriptions on a running cluster.",
+		a: "Since 2.1 it does: a <strong>read-only</strong> dashboard over the <code>$SYS</code> counters, served by an <code>http_api</code> listener that the manual calls “a very simple webserver … that can also serve some HTTP API requests” — three read-only endpoints, for the version, the listeners and the <code>$SYS</code> counters. It reports totals and rates — how many clients are connected, how much traffic moved, how many messages are retained, how long the broker has been up — but has no view of <em>which</em>: no client list, no subscription list, no topic browser. TBMQ's UI and REST API create and edit credentials, authorization rules, integrations and shared subscriptions on a running cluster.",
 	},
 	{
 		q: 'Can I run TBMQ on a single node?',
@@ -46,8 +46,8 @@ const faq: FaqItem[] = [
 	<h2>What Mosquitto is built for</h2>
 	<p>
 		Mosquitto is a single lightweight binary that runs on a router, a single-board computer or a spare VM, and it
-		implements MQTT 5.0, shared subscriptions included. That combination is what makes it the usual choice for a first
-		deployment — and it is a design that commits, deliberately, to one process on one host.
+		implements MQTT 5.0. That combination is what makes it the usual choice for a first deployment — and it is a design
+		that commits, deliberately, to one process on one host.
 	</p>
 	<p>
 		That commitment is the whole story of this page. What Mosquitto does well follows from staying small, and what it
@@ -69,11 +69,13 @@ const faq: FaqItem[] = [
 	<p>
 		Mosquitto runs as a single broker. It can bridge to another broker, and a bridge does forward messages — but it
 		shares no session state and no subscription state. Two bridged brokers are two brokers, not one logical broker: a
-		client's session lives on the node it connected to, and if that node is gone, the session is gone with it. Within
-		one broker, vertical scaling is the only headroom you have, and less of it than it looks: all message handling runs
-		on a single thread, so a bigger machine buys memory for more connections, not cores for more throughput. Splitting
-		clients across independent brokers adds capacity when traffic partitions cleanly — but that is several brokers, not
-		one.
+		client's session lives on the node it connected to, and if that node is gone, the session is gone with it.
+	</p>
+	<p>
+		Within one broker, vertical scaling is the only headroom you have, and less of it than it looks: all message
+		handling runs on a single thread, so a bigger machine buys memory for more connections, not cores for more
+		throughput. Splitting clients across independent brokers adds capacity when traffic partitions cleanly — but that
+		is several brokers, not one.
 	</p>
 
 	<h3>The durability wall</h3>
@@ -84,14 +86,16 @@ const faq: FaqItem[] = [
 	}
 	<p>
 		When Mosquitto returns a PUBACK, the message is in that process's memory — and at the defaults that is the only
-		place it ever is: persistence is off, so even a clean restart comes back empty. Enable persistence and queued and
-		retained messages reach disk after the acknowledgement — with the built-in <code>persistence true</code>, at the
-		next autosave, thirty minutes by default; with 2.1's SQLite persistence plugin (used instead of
-		<code>persistence true</code>), at the next commit, within five seconds, though at its default
-		<code>sync normal</code> a power cut can still roll back the latest commits. Both also write on a clean shutdown, so
-		a crash or a power cut takes whatever changed since the last durable write: queued messages, retained messages and
-		session state. The acknowledgement your publisher already holds is therefore a promise about one process on one
-		machine.
+		place it ever is: persistence is off, so even a clean restart comes back empty.
+	</p>
+	<p>
+		Enable persistence and queued and retained messages do reach disk, but only after the acknowledgement. With the
+		built-in <code>persistence true</code>, that happens at the next autosave, thirty minutes by default. With 2.1's
+		SQLite persistence plugin, which is used instead of <code>persistence true</code>, it happens at the next commit,
+		within five seconds — though at the plugin's default <code>sync normal</code>, a power cut can still roll back the
+		latest commits. Both also write on a clean shutdown, so a crash or a power cut takes whatever changed since the last
+		durable write: queued messages, retained messages and session state. The acknowledgement your publisher already
+		holds is therefore a promise about one process on one machine.
 	</p>
 
 	<h3>The mixed-traffic wall</h3>
@@ -99,11 +103,14 @@ const faq: FaqItem[] = [
 		This one is the least obvious of the three, and it is usually what actually hurts. IoT traffic is not one kind of
 		traffic. Thousands of devices publish telemetry continuously. A handful of backend applications subscribe to
 		high-volume streams and must not miss anything. Commands target one specific client and have to arrive even when
-		that client is briefly offline. Mosquitto gives all three the same treatment: one queue policy for every session,
-		held in memory. A command for a device that is briefly offline waits in that same memory and,
-		at the defaults, does not survive a restart. A backend consumer that falls behind does not slow the devices down —
-		once 1,000 messages are queued for it, the broker drops the rest, while each publisher still gets its PUBACK. The
-		client that must not miss anything is the one that loses messages.
+		that client is briefly offline.
+	</p>
+	<p>
+		Mosquitto gives all three the same treatment: one queue policy for every session, held in memory. A command for a
+		device that is briefly offline waits in that same memory and, at the defaults, does not survive a restart. A backend
+		consumer that falls behind does not slow the devices down — once 1,000 messages are queued for it, the broker drops
+		the rest, while each publisher still gets its PUBACK. The client that must not miss anything is the one that loses
+		messages.
 	</p>
 
 	<h2>How TBMQ answers each one</h2>
@@ -142,16 +149,17 @@ const faq: FaqItem[] = [
 
 	<h3>Device and application traffic are delivered separately</h3>
 	<p>
-		TBMQ splits persistent clients into two types, which you assign to match how each one behaves. <strong
-			>DEVICE</strong
-		> clients publish often and subscribe to little; while one is offline its messages wait in a per-client queue in
-		Valkey/Redis — up to 10,000 messages for seven days by default, oldest dropped first — which absorbs high write rates and
-		hands the queue back quickly on reconnect.
-		<strong>APPLICATION</strong> clients subscribe to high-volume topics, and each one gets a dedicated Kafka topic and its
-		own consumer, so a backlog accumulates safely in Kafka and is replayed in order from that client's committed offset, kept
-		for up to seven days or about 1 GB, whichever comes first, by default. A slow application subscriber's backlog stays in
-		its own topic, so it cannot hold up delivery to devices. Every publish still enters through one shared Kafka topic, though,
-		so a large enough device burst delays everything behind it, on TBMQ as on any broker.
+		TBMQ splits persistent clients into two types, which you assign to match how each one behaves.
+		<strong>DEVICE</strong> clients publish often and subscribe to little; while one is offline its messages wait in a
+		per-client queue in Valkey/Redis — up to 10,000 messages for seven days by default, oldest dropped first — which
+		absorbs high write rates and hands the queue back quickly on reconnect.
+	</p>
+	<p>
+		<strong>APPLICATION</strong> clients subscribe to high-volume topics, and each one gets a dedicated Kafka topic and
+		its own consumer, so a backlog accumulates safely in Kafka and is replayed in order from that client's committed
+		offset, kept for up to seven days or about 1 GB, whichever comes first, by default. A slow application subscriber's
+		backlog stays in its own topic, so it cannot hold up delivery to devices. Every publish still enters through one
+		shared Kafka topic, though, so a large enough device burst delays everything behind it, on TBMQ as on any broker.
 	</p>
 
 	<MqttDiagram
@@ -241,15 +249,18 @@ const faq: FaqItem[] = [
 		changes nothing, because it is read-only.
 	</p>
 	<p>
-		Configuration is a file, and a reload signal does re-read much of it, bridges included — but it cannot add or remove
-		a listener, and it cannot load a plugin or change a plugin's options. A plugin that is already loaded does re-read
-		its own password or ACL file. In 2.1 the plugin limit reaches further than it sounds, because plugins are now the
-		recommended route for authentication, authorization and persistence. Adding the password-file plugin to a running
-		broker is a restart, not a reload: ask for it with a reload and <code>allow_anonymous false</code> takes effect while
-		the plugin holding the passwords does not, which locks out everyone until the restart. (The deprecated
-		<code>password_file</code> option still reloads.) Runtime change is limited to authentication and authorization, driven
-		over <code>$CONTROL</code> topics with <code>mosquitto_ctrl</code> and the dynamic-security plugin; 2.1's broker control
-		API is off by default and only lists plugins and listeners.
+		Configuration is a file. A reload signal does re-read much of it, bridges included, but it cannot add or remove a
+		listener, and it cannot load a plugin or change a plugin's options — although a plugin that is already loaded does
+		re-read its own password or ACL file. In 2.1 that plugin limit reaches further than it sounds, because plugins are
+		now the recommended route for authentication, authorization and persistence.
+	</p>
+	<p>
+		Adding the password-file plugin to a running broker, for example, is a restart, not a reload. Ask for it with a
+		reload and <code>allow_anonymous false</code> takes effect while the plugin holding the passwords does not, which
+		locks out everyone until the restart. (The deprecated <code>password_file</code> option still reloads.) Runtime
+		change is limited to authentication and authorization, driven over <code>$CONTROL</code> topics with
+		<code>mosquitto_ctrl</code> and the dynamic-security plugin; 2.1's broker control API is off by default and only
+		lists plugins and listeners.
 	</p>
 	<p>
 		In TBMQ those are entities, not file entries. <a href="/docs/user-guide/ui/mqtt-client-credentials/">Credentials</a> and
@@ -259,13 +270,14 @@ const faq: FaqItem[] = [
 		<a href="/docs/user-guide/ui/monitoring/">web UI</a> or the <a href="/docs/rest-api/">REST API</a>, with no restart
 		and no file to ship to every node. <a href="/docs/security/overview/#providers-management">Authentication providers</a>
 		are switched on or off, configured and reordered the same way — in Mosquitto, where authentication is a plugin, that
-		change takes a restart. The same views answer the operational questions — which
-		<a href="/docs/user-guide/ui/sessions/">sessions</a> are connected and what each is subscribed to, which connection attempts
-		were rejected and why — plus a built-in
+		change takes a restart. The rest of the broker-level tuning, such as listeners and size and rate limits, is a config
+		file in both: Mosquitto reloads part of it on a signal, and TBMQ applies it on a restart.
+	</p>
+	<p>
+		The same views answer the operational questions — which <a href="/docs/user-guide/ui/sessions/">sessions</a> are
+		connected and what each is subscribed to, which connection attempts were rejected and why — plus a built-in
 		<a href="/docs/user-guide/ui/websocket-client/">WebSocket client</a> for publishing a test message without leaving the
-		browser, and metrics export to <a href="/docs/prometheus-metrics/">Prometheus</a>. The rest of the broker-level
-		tuning, such as listeners and size and rate limits, is a config file in both: Mosquitto reloads part of it on a
-		signal, and TBMQ applies it on a restart.
+		browser, and metrics export to <a href="/docs/prometheus-metrics/">Prometheus</a>.
 	</p>
 
 	<h3>Open source, and what Professional Edition adds</h3>
@@ -364,12 +376,14 @@ const faq: FaqItem[] = [
 
 	<h2 id="stay">Where Mosquitto still fits</h2>
 	<p>
-		Three cases where the move is not worth making yet. If your deployment is a few thousand clients on one host with no
-		availability requirement beyond restarting a service, TBMQ's Kafka, Valkey/Redis and PostgreSQL dependencies cost you
+		Three cases where the move is not worth making yet — provided you accept what each one implies. If your deployment
+		is a few thousand clients on one host, and you can live with every broker restart being an outage for all of them
+		and a crash losing whatever had not reached disk, TBMQ's Kafka, Valkey/Redis and PostgreSQL dependencies cost you
 		operational surface and buy you nothing. If the hardware is a gateway or an edge box with a few hundred megabytes of
-		RAM, TBMQ is not built for that envelope — though a small broker there can still bridge into a central TBMQ cluster,
-		which is the usual shape once there is more than one site. And if you want the protocol and nothing else — no
-		cluster, no admin API, no integrations — the extra moving parts are a cost rather than a feature.
+		RAM, TBMQ is not built for that envelope — keep a small broker there and bridge it into a central TBMQ cluster, which
+		is the usual shape once there is more than one site. And if you want the protocol and nothing else — no cluster, no
+		admin API, no integrations — and are content to run the broker from config files, reload signals and restarts, the
+		extra moving parts are a cost rather than a feature.
 	</p>
 
 	<h2>Moving over without a flag day</h2>
