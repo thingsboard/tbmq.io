@@ -8,11 +8,11 @@ import type { FaqItem } from '@components/MqttLearn/FaqAccordion.astro';
 const faq: FaqItem[] = [
 	{
 		q: 'Is TBMQ a drop-in replacement for Mosquitto?',
-		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no code changes. Some may need new settings: TBMQ refuses anonymous clients and closes the connection of any client that sends a packet over 64 KB by default, and has no <code>$SYS/broker</code> tree. It also installs a password-less <code>tbmq_websockets_username</code> credential for its built-in WebSocket client — set a password on it before going live. Operationally, no: TBMQ runs with Kafka, Valkey and PostgreSQL alongside it, which is a different deployment shape than a single binary.',
+		a: 'At the protocol level, yes — TBMQ speaks MQTT 3.1, 3.1.1 and 5.0, so your clients need no code changes. Some may need new settings: TBMQ refuses anonymous clients and closes the connection of any client that sends a packet over 64 KB by default, and has no <code>$SYS/broker</code> tree. It also installs a password-less <code>tbmq_websockets_username</code> credential for its built-in WebSocket client — set a password on it before going live. Operationally, no: TBMQ runs with Kafka, Valkey/Redis and PostgreSQL alongside it, which is a different deployment shape than a single binary.',
 	},
 	{
 		q: 'Can I run TBMQ on a Raspberry Pi like Mosquitto?',
-		a: "It isn't what TBMQ is built for: the broker plus Kafka, Valkey and PostgreSQL need at least 2 GB of RAM, so a small Pi or a gateway is the wrong home for it. The usual pattern is a lightweight broker on the device or gateway bridging into a central TBMQ cluster — one Mosquitto bridge in MQTT 5 mode carries that traffic in both directions.",
+		a: "It isn't what TBMQ is built for: the broker plus Kafka, Valkey/Redis and PostgreSQL need at least 2 GB of RAM, so a small Pi or a gateway is the wrong home for it. The usual pattern is a lightweight broker on the device or gateway bridging into a central TBMQ cluster — one Mosquitto bridge in MQTT 5.0 mode carries that traffic in both directions.",
 	},
 	{
 		q: 'Does Mosquitto support clustering?',
@@ -20,11 +20,11 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'How do I migrate from Mosquitto without downtime?',
-		a: 'Bridge the two brokers with one Mosquitto bridge in MQTT 5 mode that carries your topics in both directions, then repoint clients in batches and remove the bridge. No flag day and no maintenance window.',
+		a: 'Bridge the two brokers with one Mosquitto bridge in MQTT 5.0 mode that carries your topics in both directions, then repoint clients in batches and remove the bridge. No flag day and no maintenance window.',
 	},
 	{
 		q: 'Is TBMQ free?',
-		a: 'TBMQ Community Edition is open source under the Apache 2.0 license, including commercial use. Professional Edition adds single sign-on, role-based access control, audit logs and white labeling.',
+		a: 'TBMQ Community Edition is open source under the Apache License 2.0, including commercial use. Professional Edition adds single sign-on, role-based access control, audit logs and white labeling.',
 	},
 	{
 		q: 'How many concurrent connections can Mosquitto handle?',
@@ -37,7 +37,7 @@ const faq: FaqItem[] = [
 	},
 	{
 		q: 'Can I run TBMQ on a single node?',
-		a: 'Yes, and it is how most people start. The standard Docker install runs one TBMQ node with Kafka, Valkey and PostgreSQL beside it, plus the Integration Executor that runs integrations, in at least 2 GB of RAM. That gives you the durability guarantee and the separate device and application paths without a cluster; you add nodes when you need the headroom or the availability. With a single Kafka broker, though, an acknowledged message survives a process crash, not the loss of the host. What a single node does not give you is a single binary — that is the trade this page is about.',
+		a: 'Yes, and it is how most people start. The standard Docker install runs one TBMQ node with Kafka, Valkey/Redis and PostgreSQL beside it, plus the Integration Executor that runs integrations, in at least 2 GB of RAM. That gives you the durability guarantee and the separate device and application paths without a cluster; you add nodes when you need the headroom or the availability. With a single Kafka broker, though, an acknowledged message survives a TBMQ or Kafka process crash, not a power cut or the loss of the host. What a single node does not give you is a single binary — that is the trade this page is about.',
 	},
 ];
 ---
@@ -56,7 +56,7 @@ const faq: FaqItem[] = [
 	</p>
 	<p>
 		One scoping note: <strong>Mosquitto here means the open-source Eclipse project</strong>. Cedalo's commercial Pro
-		Edition is a separate product with its own feature set and licence, and is not what the sections below compare.
+		Edition is a separate product with its own feature set and license, and is not what the sections below compare.
 	</p>
 
 	<h2>The three walls</h2>
@@ -96,11 +96,11 @@ const faq: FaqItem[] = [
 
 	<h3>The mixed-traffic wall</h3>
 	<p>
-		This is the one nobody markets against, and it is usually what actually hurts. IoT traffic is not one kind of
+		This one is the least obvious of the three, and it is usually what actually hurts. IoT traffic is not one kind of
 		traffic. Thousands of devices publish telemetry continuously. A handful of backend applications subscribe to
 		high-volume streams and must not miss anything. Commands target one specific client and have to arrive even when
 		that client is briefly offline. Mosquitto gives all three the same treatment: one queue policy for every session,
-		held in memory. A command for a device that is briefly offline waits in that same memory (not at all at QoS 0) and,
+		held in memory. A command for a device that is briefly offline waits in that same memory and,
 		at the defaults, does not survive a restart. A backend consumer that falls behind does not slow the devices down —
 		once 1,000 messages are queued for it, the broker drops the rest, while each publisher still gets its PUBACK. The
 		client that must not miss anything is the one that loses messages.
@@ -113,21 +113,10 @@ const faq: FaqItem[] = [
 		three sections below answers one wall.
 	</p>
 
-	<h3>Acknowledged means stored</h3>
-	<p>
-		TBMQ does not send a PUBACK or PUBREC until Kafka has confirmed the write; if Kafka cannot take it, the publisher
-		never gets a success — an MQTT 5 client receives an error reason code, and an MQTT 3.1.1 client is disconnected.
-		Once the publisher holds that acknowledgement, the message no longer depends on the node that received it: if that
-		node dies, another picks up from Kafka and continues delivery. Being precise about the limit — the shipped defaults
-		keep a single copy (<code>acks=1</code>, replication factor <code>1</code>), so surviving the loss of a Kafka broker
-		means running a replicated Kafka with matching producer acknowledgements. The guarantee is real; how far it extends
-		is something you configure.
-	</p>
-
 	<h3>One cluster, no coordinator</h3>
 	<p>
 		Every TBMQ node is identical. There is no master and no leader election, so no broker node becomes a bottleneck or a
-		single point of failure — Kafka, Valkey and PostgreSQL need their own replication for that to hold end to end.
+		single point of failure — Kafka, Valkey/Redis and PostgreSQL need their own replication for that to hold end to end.
 		Persistent-session and subscription state is shared through Kafka, so when a persistent client reconnects after a
 		node failure, any node in the cluster can resume its session. Adding a node needs no resharding and no downtime:
 		consumer groups rebalance and load spreads across the larger cluster. At the defaults the shared message topic has
@@ -140,12 +129,23 @@ const faq: FaqItem[] = [
 		a Kubernetes rollout rather than a broker-specific procedure. No node has to go last.
 	</p>
 
+	<h3>Acknowledged means stored</h3>
+	<p>
+		TBMQ does not send a PUBACK or PUBREC until Kafka has confirmed the write; if Kafka cannot take it, the publisher
+		never gets a success — an MQTT 5.0 client receives an error reason code, and an MQTT 3.1.1 client is disconnected.
+		Once the publisher holds that acknowledgement, the message no longer depends on the node that received it: if that
+		node dies, another picks up from Kafka and continues delivery. Being precise about the limit — the shipped defaults
+		keep a single copy (<code>acks=1</code>, replication factor <code>1</code>), so surviving the loss of a Kafka broker
+		means running a replicated Kafka with matching producer acknowledgements. The guarantee is real; how far it extends
+		is something you configure.
+	</p>
+
 	<h3>Device and application traffic are delivered separately</h3>
 	<p>
 		TBMQ splits persistent clients into two types, which you assign to match how each one behaves. <strong
 			>DEVICE</strong
-		> clients publish often and subscribe to little; while one is offline its messages wait in a per-client queue in Valkey
-		or Redis — up to 10,000 messages for seven days by default, oldest dropped first — which absorbs high write rates and
+		> clients publish often and subscribe to little; while one is offline its messages wait in a per-client queue in
+		Valkey/Redis — up to 10,000 messages for seven days by default, oldest dropped first — which absorbs high write rates and
 		hands the queue back quickly on reconnect.
 		<strong>APPLICATION</strong> clients subscribe to high-volume topics, and each one gets a dedicated Kafka topic and its
 		own consumer, so a backlog accumulates safely in Kafka and is replayed in order from that client's committed offset, kept
@@ -160,7 +160,7 @@ const faq: FaqItem[] = [
 		<svg
 			viewBox="0 0 720 262"
 			role="img"
-			aria-label="Publishers send MQTT PUBLISH packets to a TBMQ node, which stores each message in the shared Kafka topic tbmq.msg.all before acknowledging it. Every publish enters there. TBMQ then routes each message by subscriber type: for a persistent APPLICATION client into that client's own Kafka topic, replayed from its committed offset; for a persistent DEVICE client through tbmq.msg.persisted into a per-client Valkey or Redis queue that holds it until the device acknowledges it. A client without a persistent session gets the message directly, and nothing is queued for it while it is offline."
+			aria-label="Publishers send MQTT PUBLISH packets to a TBMQ node, which stores each message in the shared Kafka topic tbmq.msg.all before acknowledging it. Every publish enters there. TBMQ then routes each message by subscriber type: for a persistent APPLICATION client into that client's own Kafka topic, replayed from its committed offset; for a persistent DEVICE client through tbmq.msg.persisted into a per-client Valkey/Redis queue that holds it until the device acknowledges it. A client without a persistent session gets the message directly, and nothing is queued for it while it is offline."
 		>
 			<rect class="d-actor" x="8" y="106" width="80" height="48" rx="10"></rect>
 			<text class="d-alabel d-mid" x="48" y="135" style="font-size:12px">Publishers</text>
@@ -207,7 +207,7 @@ const faq: FaqItem[] = [
 			<text class="d-tiny" x="500" y="178">DEVICE PATH</text>
 			<path class="d-line" d="M436 144 C 464 144 462 208 484 208 L 496 208" marker-end="url(#arGray)"></path>
 			<rect class="d-actor" x="500" y="184" width="122" height="48" rx="10"></rect>
-			<text class="d-alabel d-mid" x="561" y="203" style="font-size:12px">Valkey / Redis</text>
+			<text class="d-alabel d-mid" x="561" y="203" style="font-size:12px">Valkey/Redis</text>
 			<text class="d-tiny d-mid" x="561" y="220">per-client queue</text>
 			<text class="d-tiny d-mid" x="561" y="250">via tbmq.msg.persisted · kept until acked</text>
 
@@ -257,17 +257,20 @@ const faq: FaqItem[] = [
 		<a href="/docs/user-guide/ui/shared-subscriptions/">shared subscriptions</a>, blocked clients and
 		<a href="/docs/user-guide/ui/users/">users</a> are created and edited while the cluster runs, from the
 		<a href="/docs/user-guide/ui/monitoring/">web UI</a> or the <a href="/docs/rest-api/">REST API</a>, with no restart
-		and no file to ship to every node. The same views answer the operational questions — which
+		and no file to ship to every node. <a href="/docs/security/overview/#providers-management">Authentication providers</a>
+		are switched on or off, configured and reordered the same way — in Mosquitto, where authentication is a plugin, that
+		change takes a restart. The same views answer the operational questions — which
 		<a href="/docs/user-guide/ui/sessions/">sessions</a> are connected and what each is subscribed to, which connection attempts
 		were rejected and why — plus a built-in
 		<a href="/docs/user-guide/ui/websocket-client/">WebSocket client</a> for publishing a test message without leaving the
-		browser, and metrics export to <a href="/docs/prometheus-metrics/">Prometheus</a>. Broker-level tuning is a config
-		file in both: Mosquitto reloads part of it on a signal, and TBMQ applies it on a restart.
+		browser, and metrics export to <a href="/docs/prometheus-metrics/">Prometheus</a>. The rest of the broker-level
+		tuning, such as listeners and size and rate limits, is a config file in both: Mosquitto reloads part of it on a
+		signal, and TBMQ applies it on a restart.
 	</p>
 
 	<h3>Open source, and what Professional Edition adds</h3>
 	<p>
-		Everything above is Community Edition, <a href="https://github.com/thingsboard/tbmq">Apache 2.0</a>, commercial use
+		Everything above is Community Edition, <a href="https://github.com/thingsboard/tbmq">Apache License 2.0</a>, commercial use
 		included. <a href="/pricing/">Professional Edition</a> adds OAuth 2.0 single sign-on, role-based access control, audit
 		logs, white labeling and a <a href="/docs/pe/user-guide/dropped-messages/">dropped messages</a> view that records
 		every message the broker permanently lost, with the reason, client and topic — on the same broker, not a different
@@ -322,7 +325,7 @@ const faq: FaqItem[] = [
 				>
 				<tr
 					><td>Offline queues</td><td
-						>Per-session cap of 1,000, QoS 0 not queued; the excess is dropped while the publisher still gets its PUBACK</td
+						>Per-session cap of 1,000; the excess is dropped while the publisher still gets its PUBACK</td
 					><td
 						>Per-client Valkey/Redis queue (10,000 messages, oldest dropped), or dedicated Kafka topic with offset
 						replay (7 days or ~1 GB)</td
@@ -351,10 +354,10 @@ const faq: FaqItem[] = [
 				>
 				<tr
 					><td>Footprint</td><td>Single lightweight native binary</td><td
-						>JVM + Kafka + Valkey + PostgreSQL, 2 GB RAM minimum</td
+						>JVM + Kafka + Valkey/Redis + PostgreSQL, 2 GB RAM minimum</td
 					></tr
 				>
-				<tr><td>License</td><td>EPL-2.0 / EDL-1.0</td><td>Apache-2.0, commercial use included</td></tr>
+				<tr><td>License</td><td>Eclipse Public License 2.0 or Eclipse Distribution License 1.0</td><td>Apache License 2.0, commercial use included</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -362,7 +365,7 @@ const faq: FaqItem[] = [
 	<h2 id="stay">Where Mosquitto still fits</h2>
 	<p>
 		Three cases where the move is not worth making yet. If your deployment is a few thousand clients on one host with no
-		availability requirement beyond restarting a service, TBMQ's Kafka, Valkey and PostgreSQL dependencies cost you
+		availability requirement beyond restarting a service, TBMQ's Kafka, Valkey/Redis and PostgreSQL dependencies cost you
 		operational surface and buy you nothing. If the hardware is a gateway or an edge box with a few hundred megabytes of
 		RAM, TBMQ is not built for that envelope — though a small broker there can still bridge into a central TBMQ cluster,
 		which is the usual shape once there is more than one site. And if you want the protocol and nothing else — no
@@ -371,7 +374,7 @@ const faq: FaqItem[] = [
 
 	<h2>Moving over without a flag day</h2>
 	<p>
-		You do not have to cut over at once. One Mosquitto bridge in MQTT 5 mode carries the bridged topics in both
+		You do not have to cut over at once. One Mosquitto bridge in MQTT 5.0 mode carries the bridged topics in both
 		directions, so clients on either broker see each other's messages while you move them across in batches.
 	</p>
 
@@ -379,7 +382,7 @@ const faq: FaqItem[] = [
 		<svg
 			viewBox="0 0 680 212"
 			role="img"
-			aria-label="During a migration, a bridge configured inside Mosquitto opens one MQTT 5 connection to TBMQ and carries the bridged topics in both directions over it. No Local keeps the bridge from receiving its own messages back, so clients can be repointed in batches."
+			aria-label="During a migration, a bridge configured inside Mosquitto opens one MQTT 5.0 connection to TBMQ and carries the bridged topics in both directions over it. No Local keeps the bridge from receiving its own messages back, so clients can be repointed in batches."
 		>
 			<text class="d-ctext d-mid" x="360" y="44">sensors/# → TBMQ</text>
 			<line class="d-line" x1="252" y1="56" x2="466" y2="56" marker-end="url(#arGray)"></line>
@@ -402,8 +405,8 @@ const faq: FaqItem[] = [
 				marker-end="url(#arGreen)"></line>
 			<rect class="d-chip d-chip--green" x="164" y="89" width="70" height="26" rx="13"></rect>
 			<text class="d-ctext d-ctext--green d-mid" x="199" y="106">bridge</text>
-			<rect class="d-chip" x="282" y="91" width="156" height="22" rx="11"></rect>
-			<text class="d-note d-mid" x="360" y="106">one MQTT 5 connection</text>
+			<rect class="d-chip" x="275" y="91" width="170" height="22" rx="11"></rect>
+			<text class="d-note d-mid" x="360" y="106">one MQTT 5.0 connection</text>
 
 			<line class="d-line" x1="466" y1="148" x2="252" y2="148" marker-end="url(#arGray)"></line>
 			<text class="d-ctext d-mid" x="360" y="170">sensors/# → Mosquitto</text>
@@ -413,7 +416,7 @@ const faq: FaqItem[] = [
 			<text class="d-tiny d-mid" x="575" y="152">client mosq-bridge</text>
 
 			<text class="d-feat d-mid" x="340" y="200"
-				>MQTT 5 mode: the bridge subscribes with No Local, so it never gets its own messages back</text
+				>MQTT 5.0 mode: the bridge subscribes with No Local, so it never gets its own messages back</text
 			>
 		</svg>
 	</MqttDiagram>
@@ -428,7 +431,7 @@ const faq: FaqItem[] = [
 	<h3>Let the same bridge carry traffic back</h3>
 	<p>
 		Messages published on TBMQ return over the same connection, so consumers that still read from Mosquitto keep working
-		with no coordinated change. In MQTT 5 mode the bridge sets the No Local flag on its own subscription to TBMQ, so it
+		with no coordinated change. In MQTT 5.0 mode the bridge sets the No Local flag on its own subscription to TBMQ, so it
 		never receives its own messages back — an MQTT 3.1.1 bridge in both directions delivers each message twice, and
 		adding TBMQ's MQTT Integration as a second leg in the opposite direction loops it endlessly.
 	</p>
@@ -460,7 +463,7 @@ const faq: FaqItem[] = [
 			under
 			<code>$SYS/broker/connection/</code>, and TBMQ refuses any client whose Will topic starts with <code>$</code>, so
 			set
-			<code>notifications false</code>. An MQTT 3.1.1 bridge also needs <code>try_private false</code>; in MQTT 5 mode
+			<code>notifications false</code>. An MQTT 3.1.1 bridge also needs <code>try_private false</code>; in MQTT 5.0 mode
 			that setting no longer matters.
 		</LearnIconRow>
 		<LearnIconRow icon="tabler:settings" title="Check TBMQ's defaults against your clients">
