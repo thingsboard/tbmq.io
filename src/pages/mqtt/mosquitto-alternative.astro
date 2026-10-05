@@ -78,16 +78,20 @@ const faq: FaqItem[] = [
 
 	<h3>The durability wall</h3>
 	{
-		/* 5s = persist-sqlite plugin_opt_flush_period default; 30min = autosave_interval default. Both Mosquitto 2.1.2 defaults. */
+		/* 5s = persist-sqlite plugin_opt_flush_period default; 30min = autosave_interval default. Both Mosquitto 2.1.2 defaults.
+		   The plugin runs WAL with plugin_opt_sync normal by default, so a commit can roll back on power loss; since 2.1.2
+		   the broker refuses `persistence true` together with a persistence plugin. */
 	}
 	<p>
 		When Mosquitto returns a PUBACK, the message is in that process's memory — and at the defaults that is the only
-		place it ever is: persistence is off, so even a clean restart comes back empty. Turn persistence on and the message
-		reaches disk after the acknowledgement — with 2.1's SQLite persistence plugin, at the next commit within five
-		seconds; with the built-in persistence, at the next autosave, thirty minutes by default. Both also write on a clean
-		shutdown, so what a crash or a power cut takes is everything that changed since the last write: queued messages,
-		retained messages and session state. The acknowledgement your publisher already holds is therefore a promise about
-		one process on one machine.
+		place it ever is: persistence is off, so even a clean restart comes back empty. Enable persistence and queued and
+		retained messages reach disk after the acknowledgement — with the built-in <code>persistence true</code>, at the
+		next autosave, thirty minutes by default; with 2.1's SQLite persistence plugin (used instead of
+		<code>persistence true</code>), at the next commit, within five seconds, though at its default
+		<code>sync normal</code> a power cut can still roll back the latest commits. Both also write on a clean shutdown, so
+		a crash or a power cut takes whatever changed since the last durable write: queued messages, retained messages and
+		session state. The acknowledgement your publisher already holds is therefore a promise about one process on one
+		machine.
 	</p>
 
 	<h3>The mixed-traffic wall</h3>
