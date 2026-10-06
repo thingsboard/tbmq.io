@@ -14,17 +14,19 @@
  *   29 TimescaleDB integration          ┘
  *   28 Integration payload encoding     → how the outgoing HTTP body is built
  *   29 MQTT topic QoS retain            → how topic/QoS/retain are resolved
- *   30 Kafka source integration         → the one inbound flow: Kafka → broker → subscribers
+ *   30 Kafka source integration         ┐ one inbound layout, two sources:
+ *   30 MQTT source integration          ┘ external Kafka / MQTT broker → broker → subscribers
  *
  * (29 is used twice: the PostgreSQL spec took it when that page was added. Left as-is
- * so the other numbers keep matching the design components they were ported from.)
+ * so the other numbers keep matching the design components they were ported from. 30
+ * is listed twice because both source diagrams are specs of that one component.)
  *
  * Geometry mirrors the components 1:1 — the canvas sizes, the `left`/`top` of
- * every box and the `d` of every connector are the designs' own numbers. Two
- * families collapse into a builder + specs (validation, integration type),
+ * every box and the `d` of every connector are the designs' own numbers. Three
+ * families collapse into a builder + specs (validation, integration type, source),
  * because their members differ only in labels, colours and which steps are
  * crossed out. `typeDiagramTitle` / `typeDiagramTail` carry the title, legend and caption
- * that the integration-type and Kafka-source canvases share. Palette and
+ * that the integration-type and source-integration canvases share. Palette and
  * primitives come from ./dc-kit.mjs.
  *
  * Regenerate with `pnpm diagrams:arch`.
@@ -42,7 +44,7 @@ const BORDER_DASH = '4 3';
 
 /**
  * Title and closing legend/caption of the 1320×480 integration canvases, shared by
- * `integrationType` and `kafkaSourceIntegration`. Every number here is one of the designs'
+ * `integrationType` and `sourceIntegration`. Every number here is one of the designs'
  * own; keeping them in one place is what stops the two builders' chrome drifting apart.
  * They stay two calls rather than one wrapper so each block keeps its position in the path
  * list — SVG element order is z-order, and the committed files must regenerate unchanged.

@@ -264,9 +264,16 @@ Unsubscribing needs a live connection. Filters stay in the broker's kept session
 and when the integration was deleted in either state. Nothing unsubscribes those; when the broker is unreachable, the
 filters left behind are logged at `WARN` level.
 
-If the integration later connects to that session again, the leftover filters' messages still arrive. They match none
-of the configured filters, so they are acknowledged, counted as errors and logged — at most once every 10 seconds — but
-never forwarded. To clear them, turn **Clean session** on, save, and turn it off again.
+If the integration later connects to that session again, the leftover filters' messages still arrive, and each one is
+handled by its topic, not by the subscription it was sent for:
+
+- A message whose topic matches none of the configured filters is acknowledged, counted as an error and logged — at
+  most once every 10 seconds — but never forwarded.
+- A message whose topic also matches a configured filter is forwarded like any other. On a broker that sends one copy
+  per matching subscription, it is forwarded once per copy: a leftover `sensors/temp` next to a configured `sensors/#`
+  forwards every message on `sensors/temp` twice.
+
+To clear leftover filters, turn **Clean session** on, save, and turn it off again.
 
 ## Max packet size
 
@@ -339,8 +346,9 @@ again, and **Active** once it has.
 A source integration consumes *into* the executor, so its throughput is counted in the **downlink** direction.
 
 - In the executor's <DocLink product={props.product} path="integrations/#current-integration-activity" bold={false}>current integration activity</DocLink>
-  statistics and in the `integration_stats_counter_total` Prometheus series, the metric name is **`msgDownlink`**, with
-  `type=MQTT_SOURCE`. Outbound types report `msgUplink`.
+  statistics, the counter is **`MSGS_DOWNLINK`**, with `integrationType=MQTT_SOURCE`; outbound types report `MSGS_UPLINK`.
+  In the `integration_stats_counter_total` Prometheus series, the same counter is `name="msgDownlink"`, with
+  `type="MQTT_SOURCE"`; outbound types report `msgUplink`.
 - The producer that writes to the internal `tbmq.ie.source` topic reports its own
   <DocLink product={props.product} path="integrations/#integration-uplink-queue-stats" bold={false}>queue statistics</DocLink>
   under `ie.source.published`, shared with every other source integration.

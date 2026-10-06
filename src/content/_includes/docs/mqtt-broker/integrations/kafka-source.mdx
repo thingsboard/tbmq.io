@@ -322,8 +322,9 @@ cluster is back.
 A source integration consumes *into* the executor, so its throughput is counted in the **downlink** direction.
 
 - In the executor's <DocLink product={props.product} path="integrations/#current-integration-activity" bold={false}>current integration activity</DocLink>
-  statistics and in the `integration_stats_counter_total` Prometheus series, the metric name is **`msgDownlink`**, with
-  `type=KAFKA_SOURCE`. Outbound types report `msgUplink`.
+  statistics, the counter is **`MSGS_DOWNLINK`**, with `integrationType=KAFKA_SOURCE`; outbound types report `MSGS_UPLINK`.
+  In the `integration_stats_counter_total` Prometheus series, the same counter is `name="msgDownlink"`, with
+  `type="KAFKA_SOURCE"`; outbound types report `msgUplink`.
 - The producer that writes to the internal `tbmq.ie.source` topic reports its own
   <DocLink product={props.product} path="integrations/#integration-uplink-queue-stats" bold={false}>queue statistics</DocLink>
   under `ie.source.published`.
