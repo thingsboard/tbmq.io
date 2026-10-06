@@ -13,9 +13,10 @@ subscribed to the resolved topic receive it like any other message. This is usef
 - **Decoupling producers from the broker** — Kafka absorbs the producer's bursts, and the integration feeds the broker
   at its own pace.
 
-Every other integration type is outbound. This one is the only direction reversal, and it changes what the integration
-entity carries: a source integration has **no topic filters and no client lifecycle events**, because nothing inside
-TBMQ triggers it.
+Every other integration type is outbound, except the
+<DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink>. The two are the
+only direction reversals, and it changes what the integration entity carries: a source integration has **no topic
+filters and no client lifecycle events**, because nothing inside TBMQ triggers it.
 
 ## Data flow
 

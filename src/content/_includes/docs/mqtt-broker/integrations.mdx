@@ -14,7 +14,7 @@ Integrations are **outbound only**: TBMQ pushes data to the external system. An 
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-Most integrations are **outbound**: TBMQ pushes data to the external system, and the integration never pulls data in. One type reverses that — the <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> consumes an external Kafka topic and injects every record into the broker as an MQTT publish. Outbound and inbound (source) types share the executor, the lifecycle and the operational behavior described here, but differ in what triggers them: see [Source integrations](#source-integrations).
+Most integrations are **outbound**: TBMQ pushes data to the external system, and the integration never pulls data in. Two types reverse that — the <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> consumes an external Kafka topic and injects every record into the broker as an MQTT publish, and the <DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink> does the same with every message its subscriptions on an external MQTT broker receive. Outbound and inbound (source) types share the executor, the lifecycle and the operational behavior described here, but differ in what triggers them: see [Source integrations](#source-integrations).
 </ShowFor>
 
 Integrations require **TBMQ 2.1 or later** and a running [TBMQ Integration Executor](#tbmq-integration-executor), a separate service included in the standard deployments.
@@ -45,6 +45,7 @@ If you upgraded from an earlier version, confirm you added it: with no reachable
 - <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own TimescaleDB hypertables, through SQL templates you control.
 - <DocLink product={props.product} path="integrations/mongodb">MongoDB Integration</DocLink> — insert messages and [client lifecycle events](#client-lifecycle-events) as documents into collections of your own MongoDB deployment.
 - <DocLink product={props.product} path="integrations/kafka-source">Kafka Source Integration</DocLink> — the inbound direction: consume an external Kafka topic and inject every record into TBMQ as an MQTT publish.
+- <DocLink product={props.product} path="integrations/mqtt-source">MQTT Source Integration</DocLink> — the inbound direction: subscribe to topic filters on an external MQTT broker and republish every message into TBMQ under its original topic.
 </ShowFor>
 
 Each guide walks through creating an integration of that type end to end. The rest of this page describes the architecture and the operational behavior they all share — read it when you need to tune, scale, or troubleshoot them.
@@ -62,7 +63,7 @@ At a high level, the integration flow in TBMQ works as follows:
    - A **Kafka broker** using the Kafka binary protocol over TCP or TLS.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-A [source integration](#source-integrations) is not in that flow at all: nothing inside TBMQ triggers it. It polls its external system on its own and travels the opposite way — from the executor into the broker, and on to the matching subscribers.
+A [source integration](#source-integrations) is not in that flow at all: nothing inside TBMQ triggers it. It reads its external system on its own and travels the opposite way — from the executor into the broker, and on to the matching subscribers.
 </ShowFor>
 
 <ImageGallery product={props.product} images={[
@@ -113,7 +114,7 @@ Integration entities are stored in TBMQ's PostgreSQL database and are used for m
 Topic filters and lifecycle event types are independent, and each one is optional — but an integration must have at least one of the two, otherwise it would have nothing to deliver.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-A [source integration](#source-integrations) carries **neither**: it is fed by its external system, not by broker traffic, so it has nothing to subscribe to. Its form has no **Filters and events** step, and the rule above does not apply to it.
+A [source integration](#source-integrations) carries **neither**: it is fed by its external system, not by broker traffic, so it has nothing to subscribe to. Its form has no **Filters and events** step, and the rule above does not apply to it. The <DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink>'s topic filters are part of its configuration and subscribe on the external broker, not on TBMQ.
 </ShowFor>
 
 Multiple integrations with different types, topic filters, and targets can be configured and managed independently.
@@ -254,14 +255,14 @@ Kafka topic retention settings can be customized to fine-tune storage limits and
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={3} id="source-integrations" showFor="mqtt-broker-pe">Source integrations</ConditionalHeading>
 
-A **source** integration is the inbound direction: it consumes an external system and injects what it reads into the broker as MQTT publishes. The <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> is the only type of this kind today.
+A **source** integration is the inbound direction: it consumes an external system and injects what it reads into the broker as MQTT publishes. There are two types of this kind: the <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> and the <DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integration.
 
 Everything above about the control plane holds for it unchanged — it is the same entity, validated the same way, delivered to the executors over its own compact downlink topic, and owned by exactly one executor at a time. What differs is the data plane:
 
 - It has **no topic filters and no lifecycle event types**, so no `tbmq.msg.ie.$integrationId` and no `tbmq.ie.event.$integrationId` topic is ever created for it. [Message processing](#message-processing) and the acknowledgment strategies in [Error handling and retry](#error-handling-and-retry) describe those two consumers, so neither applies to a source integration.
-- It polls its external system on a thread of its own inside the executor, and produces every record it reads to the shared `tbmq.ie.source` topic, keyed by integration and source partition.
+- It reads its external system on a thread of its own inside the executor, and produces every record it reads to the shared `tbmq.ie.source` topic, keyed by integration and — for Kafka source — source partition.
 - The broker consumes `tbmq.ie.source`, revalidates each record, charges the licensed incoming throughput quota, and publishes it under the client ID `ie-source-<integrationId>` — there is no MQTT session behind it.
-- Delivery is **at-least-once**, ordered per source partition, with its own batch-and-commit model rather than the acknowledgment strategies described in [Error handling and retry](#error-handling-and-retry).
+- Delivery is **at-least-once** for Kafka source, ordered per source partition, with its own batch-and-commit model, and **at-most-once** for a message the MQTT source fails to hand to the broker, ordered per integration — rather than the acknowledgment strategies described in [Error handling and retry](#error-handling-and-retry).
 
 The per-type page carries the details: the delivery model, how records are mapped to topics, what the broker refuses, and the tuning knobs on `tbmq.ie.source`.
 </ShowFor>
@@ -430,7 +431,7 @@ Each integration type reuses the connection it already has, but the destination 
 | <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
 | <DocLink product={props.product} path="integrations/mongodb">MongoDB</DocLink> | A collection of their own, or the messages collection when none is set — and always the full event document, even with **Send only message payload** on. | **Events collection** (optional) |
 
-A <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> integration is absent from this table on purpose: a [source integration](#source-integrations) receives no lifecycle events at all.
+<DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> and <DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integrations are absent from this table on purpose: a [source integration](#source-integrations) receives no lifecycle events at all.
 </ShowFor>
 
 ### Delivery guarantees

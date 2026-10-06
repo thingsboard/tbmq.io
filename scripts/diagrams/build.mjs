@@ -103,6 +103,11 @@ const DIAGRAMS = {
 		dir: 'integrations',
 		build: integrations.kafkaSourceIntegration,
 	},
+	'mqtt-source-integration': {
+		file: 'tbmq-mqtt-source-integration',
+		dir: 'integrations',
+		build: integrations.mqttSourceIntegration,
+	},
 	'http-payload-encoding': {
 		file: 'tbmq-http-payload-encoding',
 		dir: 'integrations',
