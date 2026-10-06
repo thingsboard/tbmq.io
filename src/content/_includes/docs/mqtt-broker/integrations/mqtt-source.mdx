@@ -269,9 +269,10 @@ handled by its topic, not by the subscription it was sent for:
 
 - A message whose topic matches none of the configured filters is acknowledged, counted as an error and logged — at
   most once every 10 seconds — but never forwarded.
-- A message whose topic also matches a configured filter is forwarded like any other. On a broker that sends one copy
-  per matching subscription, it is forwarded once per copy: a leftover `sensors/temp` next to a configured `sensors/#`
-  forwards every message on `sensors/temp` twice.
+- A message whose topic also matches a configured filter is forwarded like any other. On a broker that sends a separate
+  copy for each matching subscription, such as Eclipse Mosquitto, the leftover subscription adds a copy, and both are
+  forwarded. For example, with a leftover `sensors/temp` and a configured `sensors/#`, every message published to
+  `sensors/temp` reaches TBMQ twice.
 
 To clear leftover filters, turn **Clean session** on, save, and turn it off again.
 
