@@ -250,7 +250,7 @@ Observed `name` values on `integration_stats_counter_total` are `start`, `stop` 
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-Observed `name` values on `integration_stats_counter_total` are `start`, `stop`, `msgUplink` and `msgDownlink`. Direction is from the Integration Executor's point of view: an outbound integration counts every delivery to its external system as `msgUplink`, and a <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> integration counts every record it consumes as `msgDownlink` — so `type="KAFKA_SOURCE"` appears only under `msgDownlink`, and the other types only under `msgUplink`.
+Observed `name` values on `integration_stats_counter_total` are `start`, `stop`, `msgUplink` and `msgDownlink`. Direction is from the Integration Executor's point of view: an outbound integration counts every delivery to its external system as `msgUplink`, and a <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> or <DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integration counts every record it consumes as `msgDownlink` — so `type="KAFKA_SOURCE"` and `type="MQTT_SOURCE"` appear only under `msgDownlink`, and the other types only under `msgUplink`.
 
 One more series belongs to the same family:
 

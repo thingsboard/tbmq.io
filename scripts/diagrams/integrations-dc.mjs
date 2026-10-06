@@ -14,17 +14,19 @@
  *   29 TimescaleDB integration          ┘
  *   28 Integration payload encoding     → how the outgoing HTTP body is built
  *   29 MQTT topic QoS retain            → how topic/QoS/retain are resolved
- *   30 Kafka source integration         → the one inbound flow: Kafka → broker → subscribers
+ *   30 Kafka source integration         ┐ one inbound layout, two sources:
+ *   30 MQTT source integration          ┘ external Kafka / MQTT broker → broker → subscribers
  *
  * (29 is used twice: the PostgreSQL spec took it when that page was added. Left as-is
- * so the other numbers keep matching the design components they were ported from.)
+ * so the other numbers keep matching the design components they were ported from. 30
+ * is listed twice because both source diagrams are specs of that one component.)
  *
  * Geometry mirrors the components 1:1 — the canvas sizes, the `left`/`top` of
- * every box and the `d` of every connector are the designs' own numbers. Two
- * families collapse into a builder + specs (validation, integration type),
+ * every box and the `d` of every connector are the designs' own numbers. Three
+ * families collapse into a builder + specs (validation, integration type, source),
  * because their members differ only in labels, colours and which steps are
  * crossed out. `typeDiagramTitle` / `typeDiagramTail` carry the title, legend and caption
- * that the integration-type and Kafka-source canvases share. Palette and
+ * that the integration-type and source-integration canvases share. Palette and
  * primitives come from ./dc-kit.mjs.
  *
  * Regenerate with `pnpm diagrams:arch`.
@@ -42,7 +44,7 @@ const BORDER_DASH = '4 3';
 
 /**
  * Title and closing legend/caption of the 1320×480 integration canvases, shared by
- * `integrationType` and `kafkaSourceIntegration`. Every number here is one of the designs'
+ * `integrationType` and `sourceIntegration`. Every number here is one of the designs'
  * own; keeping them in one place is what stops the two builders' chrome drifting apart.
  * They stay two calls rather than one wrapper so each block keeps its position in the path
  * list — SVG element order is z-order, and the committed files must regenerate unchanged.
@@ -1177,15 +1179,17 @@ export function mqttPublishResolution(kit) {
 }
 
 // =============================================================================
-// 30 — The inbound direction: an external Kafka topic feeding MQTT subscribers
+// 30 — The inbound direction: an external Kafka topic or MQTT broker feeding
+//      MQTT subscribers
 // =============================================================================
 /**
- * The one diagram whose flow runs the other way. `integrationType` draws
+ * The diagrams whose flow runs the other way. `integrationType` draws
  * devices → broker → executor → target; a source integration reverses every
  * arrow, so the cards are laid out as their own row rather than squeezed into
- * that spec.
+ * that spec. Only the external system's card, its protocol chip, the legend
+ * entry and the caption vary between the source types.
  */
-export function kafkaSourceIntegration(kit) {
+function sourceIntegration(kit, spec) {
 	const T = themeOf(kit);
 	const k = makeDcKit(T);
 	const { rr, arrow, groupLabel, chipLabel, frame } = k;
@@ -1198,7 +1202,7 @@ export function kafkaSourceIntegration(kit) {
 	P.push(arrow('M649,240 H746', T.tealLine));
 	P.push(arrow('M934,240 H1016', T.blueLine));
 
-	typeDiagramTitle(k, P, { W, title: 'Kafka source integration' });
+	typeDiagramTitle(k, P, { W, title: spec.title });
 	P.push(groupLabel(373, 182, 'TBMQ Integration Executor'));
 
 	P.push(
@@ -1209,10 +1213,10 @@ export function kafkaSourceIntegration(kit) {
 			h: 80,
 			border: T.slate,
 			tileBg: T.slateTile,
-			ico: 'kafka',
+			ico: spec.sourceIco,
 			icoColor: T.slateIco,
 			icoSize: 20,
-			label: 'Kafka cluster',
+			label: spec.source,
 			size: 16,
 		})
 	);
@@ -1227,7 +1231,7 @@ export function kafkaSourceIntegration(kit) {
 			ico: 'login',
 			icoColor: T.tealIco,
 			icoSize: 20,
-			label: 'Kafka source integration',
+			label: spec.title,
 			size: 15,
 		})
 	);
@@ -1262,22 +1266,44 @@ export function kafkaSourceIntegration(kit) {
 		})
 	);
 
-	P.push(chipLabel(312, cyOf(206, 12.5), 'TCP(TLS)'));
+	P.push(chipLabel(312, cyOf(206, 12.5), spec.protocol));
 	P.push(chipLabel(697, cyOf(206, 12.5), 'tbmq.ie.source'));
 	P.push(chipLabel(975, cyOf(206, 12.5), 'MQTT(S)'));
 
 	typeDiagramTail(k, P, {
 		W,
 		legendItems: [
-			[T.slateLine, 'External Kafka cluster'],
+			[T.slateLine, spec.legendSource],
 			[T.teal, 'Integration Executor'],
 			[T.blue, 'Broker'],
 			[T.violet, 'Subscribers'],
 		],
+		caption: spec.caption,
+	});
+
+	return frame(W, H, P);
+}
+
+export const kafkaSourceIntegration = (kit) =>
+	sourceIntegration(kit, {
+		title: 'Kafka source integration',
+		sourceIco: 'kafka',
+		source: 'Kafka cluster',
+		protocol: 'TCP(TLS)',
+		legendSource: 'External Kafka cluster',
 		caption:
 			'The executor consumes an external Kafka topic and injects every record into the broker as an MQTT ' +
 			'publish, which TBMQ then delivers to the clients subscribed to the resolved topic.',
 	});
 
-	return frame(W, H, P);
-}
+export const mqttSourceIntegration = (kit) =>
+	sourceIntegration(kit, {
+		title: 'MQTT source integration',
+		sourceIco: 'lan',
+		source: 'MQTT broker',
+		protocol: 'MQTT(S)',
+		legendSource: 'External MQTT broker',
+		caption:
+			'The executor subscribes to topic filters on an external MQTT broker and republishes every message it ' +
+			'receives into TBMQ under its original topic, which TBMQ then delivers to the matching subscribers.',
+	});

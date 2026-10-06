@@ -1,11 +1,17 @@
 import { Aside, Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
 
 TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, allowing real-time data delivery to third-party platforms. This is useful in scenarios such as:
 
 - Data from TBMQ needs to be **forwarded** to an external MQTT broker or IoT platform.
 - TBMQ is used as an **intermediary to route data** between internal sources and external MQTT-based systems.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+For the opposite direction — bringing messages from an external MQTT broker into TBMQ — use the <DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink>.
+</ShowFor>
 
 ## Data flow
 

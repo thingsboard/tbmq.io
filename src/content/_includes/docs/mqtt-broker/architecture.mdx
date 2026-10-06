@@ -393,7 +393,7 @@ One more topic exists in TBMQ PE only, for the inbound direction:
 
 | Topic | Scope | Description |
 |---|---|---|
-| `tbmq.ie.source` | global | Publishes sourced by an inbound integration, executor → broker. 6 partitions by default, keyed `$INTEGRATION_ID:$SOURCE_PARTITION`. Shared by every source integration rather than one topic per integration, and deliberately separate from `tbmq.ie.uplink` so a busy source cannot delay control traffic |
+| `tbmq.ie.source` | global | Publishes sourced by an inbound integration, executor → broker. 6 partitions by default, keyed `$INTEGRATION_ID:$SOURCE_PARTITION` (`$INTEGRATION_ID:$INTEGRATION_ID` for an MQTT source). Shared by every source integration rather than one topic per integration, and deliberately separate from `tbmq.ie.uplink` so a busy source cannot delay control traffic |
 
 </ShowFor>
 
@@ -602,8 +602,9 @@ the configured targets, supporting **HTTP**, **MQTT**, and **Kafka** integration
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 TBMQ integrations run in the **Integration Executor** — a standalone microservice (its own JVM) that connects the
 broker to external systems without adding load to the message path. Most of its work is outbound: it consumes messages
-from Kafka and pushes them to the configured targets. The **Kafka source** type runs the other way — it consumes an
-external Kafka topic and feeds the broker instead; see [Source integrations](#source-integrations) below.
+from Kafka and pushes them to the configured targets. The **Kafka source** and **MQTT source** types run the other
+way — they consume an external Kafka topic or MQTT broker and feed the broker instead; see
+[Source integrations](#source-integrations) below.
 </ShowFor>
 
 Because it is deployed and scaled independently of the broker, a slow or failing external endpoint never back-pressures
@@ -648,8 +649,9 @@ node reads it and injects each record into the publish pipeline, where it become
 `tbmq.msg.all`.
 
 <DocLink product={props.product} path="integrations/#source-integrations">Source integrations</DocLink> covers the
-mechanism. The <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> —
-the only type of this kind today — covers the configuration.
+mechanism. The <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> and
+<DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integration pages cover the
+configuration.
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
