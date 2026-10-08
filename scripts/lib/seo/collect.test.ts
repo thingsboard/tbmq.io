@@ -122,6 +122,7 @@ test('collectFacts reports absent metadata as empty rather than throwing', () =>
 	assert.equal(facts.wordCount, 0);
 	assert.deepEqual(facts.outboundPathnames, []);
 	assert.deepEqual(facts.mainOutboundPathnames, []);
+	assert.equal(facts.isNoindex, false);
 });
 
 test('collectFacts detects meta-refresh redirect stubs', () => {
@@ -141,6 +142,14 @@ test('collectFacts reads noindex from the robots meta', () => {
 
 test('collectFacts treats a robots meta without content as not noindex', () => {
 	const html = '<!doctype html><html><head><meta name="robots"></head><body></body></html>';
+	assert.equal(collectFacts(html, '/x/').isNoindex, false);
+});
+
+// `noindex` must be a whole directive, not a substring: `index` is its opposite
+// and appears inside no legitimate token that means the same thing.
+test('collectFacts does not read noindex out of a neighbouring directive', () => {
+	const html =
+		'<!doctype html><html><head><meta name="robots" content="max-snippet:-1, index"></head><body></body></html>';
 	assert.equal(collectFacts(html, '/x/').isNoindex, false);
 });
 

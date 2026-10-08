@@ -6,6 +6,7 @@ import { Products } from '~/models/site.models';
 import DocLink from '~/components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
+import { TBMQ_PREV_VER, TBMQ_VER } from '~/data/versions';
 
 <Tabs defaultTab="on-premises" urlParam="installationType">
   <TabItem label="On-premises" id="on-premises" icon="tabler:server-2">
@@ -49,11 +50,20 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 | Target version | Upgrade from    | Notes                                                                                                                                                    |
 | -------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.4.1PE**    | 2.4.0PE         | See [what the 2.4.1PE upgrade does](#upgrading-to-241-pe) below                                                                                          |
+| **2.4.1PE**    | TBMQ 2.4.1 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
 | **2.4.0PE**    | 2.3.0PE         | See [what the 2.4.0PE upgrade does](#upgrading-to-240-pe) below                                                                                          |
 | **2.4.0PE**    | TBMQ 2.4.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
 | **2.3.0PE**    | 2.2.0PE         |                                                                                                                                                          |
 | **2.3.0PE**    | TBMQ 2.3.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
 | **2.2.0PE**    | TBMQ 2.2.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) — [third-party changes apply](#third-party-component-updates-in-tbmq-pe-v220) |
+
+<ConditionalHeading level={2} id="upgrading-to-241-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.1PE</ConditionalHeading>
+
+The 2.4.1PE upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
+
+Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading.
+`MQTT_TOPIC_MAX_SEGMENTS_COUNT` now counts topic segments instead of `/` delimiters. If you set it, raise it by 1 to keep the previous limit. The default `0` (no limit) is unaffected.
 
 <ConditionalHeading level={2} id="upgrading-to-240-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.0PE</ConditionalHeading>
 
@@ -68,12 +78,12 @@ Nothing else changes: no existing table is altered and no data is migrated.
 <ConditionalHeading level={2} id="upgrade-from-tbmq-to-tbmq-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
 
 You can migrate from TBMQ to TBMQ PE of the **same version**.
-For example, TBMQ 2.4.0 can be upgraded to TBMQ PE 2.4.0.
-Cross-version migration (e.g. TBMQ 2.3.0 to TBMQ PE 2.4.0) is **not supported** — upgrade TBMQ to the target version first, then migrate to TBMQ PE.
+For example, TBMQ {TBMQ_VER} can be upgraded to TBMQ PE {TBMQ_VER}.
+Cross-version migration (e.g. TBMQ {TBMQ_PREV_VER} to TBMQ PE {TBMQ_VER}) is **not supported** — upgrade TBMQ to the target version first, then migrate to TBMQ PE.
 
 <Aside type="note">
-  To upgrade to TBMQ PE 2.4.0, you must be running TBMQ 2.4.0 first. If you are still on an earlier version,
-  <DocLink product={Products.TBMQ} path="installation/upgrade-instructions/">upgrade TBMQ</DocLink> to 2.4.0 before migrating to TBMQ PE.
+  To upgrade to TBMQ PE {TBMQ_VER}, you must be running TBMQ {TBMQ_VER} first. If you are still on an earlier version,
+  <DocLink product={Products.TBMQ} path="installation/upgrade-instructions/">upgrade TBMQ</DocLink> to {TBMQ_VER} before migrating to TBMQ PE.
 </Aside>
 
 <Aside type="tip">
@@ -128,6 +138,7 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 | Target version | Upgrade from   | Notes                                                                                       |
 | -------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| **2.4.1**      | 2.4.0          | See [what the 2.4.1 upgrade does](#upgrading-to-241) below                                   |
 | **2.4.0**      | 2.3.0          | See [what the 2.4.0 upgrade does](#upgrading-to-240) below                                   |
 | **2.3.0**      | 2.2.0          | See [third-party component updates](#third-party-component-updates-in-v230) below           |
 | **2.2.0**      | 2.1.0          | See [Bitnami images notice](#notice-about-bitnami-images) below                             |
@@ -139,6 +150,13 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 | **1.2.1**      | 1.2.0          | `fromVersion`: `1.2.0`                                                                      |
 | **1.2.0**      | 1.1.0          | `fromVersion`: `1.1.0`                                                                      |
 | **1.1.0**      | 1.0.0 or 1.0.1 | `fromVersion`: `1.0.0` or `1.0.1`                                                           |
+
+<ConditionalHeading level={2} id="upgrading-to-241" exclude="mqtt-broker-pe">Upgrading to 2.4.1</ConditionalHeading>
+
+The 2.4.1 upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
+
+Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading.
+`MQTT_TOPIC_MAX_SEGMENTS_COUNT` now counts topic segments instead of `/` delimiters. If you set it, raise it by 1 to keep the previous limit. The default `0` (no limit) is unaffected.
 
 <ConditionalHeading level={2} id="upgrading-to-240" exclude="mqtt-broker-pe">Upgrading to 2.4.0</ConditionalHeading>
 

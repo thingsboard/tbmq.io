@@ -83,7 +83,7 @@
 <text x="1158.5" y="677" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#585b62" text-anchor="middle" opacity="1" dominant-baseline="middle">per-integration</text>
 <text x="1091" y="677" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#797c82" text-anchor="end" opacity="1" dominant-baseline="middle">broker → executor</text>
 <rect x="60" y="702" width="1160" height="38" rx="9" fill="#f0e9fb" stroke="#8a56d6" stroke-width="1.3"/>
-<text x="74" y="721" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="12.5" font-weight="600" fill="#6a3fb0" text-anchor="start" opacity="1" dominant-baseline="middle">tbmq.ie.downlink.{http,kafka,mqtt}</text>
+<text x="74" y="721" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="12.5" font-weight="600" fill="#6a3fb0" text-anchor="start" opacity="1" dominant-baseline="middle">tbmq.ie.downlink.$INTEGRATION_TYPE</text>
 <rect x="1147.2" y="710" width="68.8" height="22" rx="7" fill="#ffffff" stroke="#8a56d6" stroke-width="1.1"/>
 <text x="1181.6000000000001" y="721" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#585b62" text-anchor="middle" opacity="1" dominant-baseline="middle">per-type</text>
 <text x="1137.2" y="721" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#797c82" text-anchor="end" opacity="1" dominant-baseline="middle">downlink config · compacted</text>

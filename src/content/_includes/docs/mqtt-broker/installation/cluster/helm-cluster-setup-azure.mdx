@@ -394,6 +394,11 @@ For the version history of TBMQ itself and the supported upgrade paths between i
 <DocLink product={props.product} path="installation/upgrade-instructions">upgrade instructions</DocLink> page.
 
 <Aside type="note">
+  Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading to v2.4.1.
+  If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1 to keep the previous limit — the limit now counts topic segments instead of `/` delimiters.
+</Aside>
+
+<Aside type="note">
   If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading to v2.4.0.
   Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
 </Aside>

@@ -1,4 +1,5 @@
 import { Aside } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
 
 TBMQ exposes health checks through the Spring Boot Actuator framework.
 Health checks let monitoring systems assess the state of TBMQ and its dependencies, and alerting can be configured based on the reported status.
@@ -18,6 +19,7 @@ serves the web UI and REST API), and it can be configured to include detailed st
 |---|---|
 | `200 OK` | All components are healthy. |
 | `503 Service Unavailable` | One or more components have failed. |
+| `503 Service Unavailable` | The node is draining: the `nodeDrain` component reports `OUT_OF_SERVICE`. See <DocLink product={props.product} path="other/node-drain" bold={false}>Node drain</DocLink>. |
 
 ## Configuration
 
@@ -135,6 +137,7 @@ If any component reports `DOWN`, the overall status becomes `DOWN` and the HTTP 
 | `redis` | Redis responds to the connectivity check; reports the server `version` | Fails on command timeout — see [Timeout configuration](#timeout-configuration). |
 | `db` | PostgreSQL connection validated via `isValid()` | Standard Spring Boot datasource indicator. |
 | `ping` | Always `UP` | Spring Boot's trivial liveness indicator; carries no TBMQ-specific meaning. |
+| `nodeDrain` | `UP` while the node is `ACTIVE`; `OUT_OF_SERVICE` once a drain has started | TBMQ's own indicator. Reports `state` and, while draining, `remainingSessions`. Turns the aggregate status, and the HTTP code, to `503` until the drain is cancelled or the node restarts. |
 | `diskSpace` | Free space above the threshold | Present only when `HEALTH_DISKSPACE_ENABLED=true`. |
 
 <Aside>

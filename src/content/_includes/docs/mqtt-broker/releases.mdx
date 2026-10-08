@@ -4,6 +4,21 @@ import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="v241PE" showFor="mqtt-broker-pe">v2.4.1 (October 8, 2026)</ConditionalHeading>
+
+This release includes all features, improvements, and bug fixes from [TBMQ v2.4.1](#v241-october-8-2026), along with the following Professional Edition exclusive updates:
+
+**Main features**
+
+- **Inbound integrations:** TBMQ can now take data in from external systems, not only send it out. The Kafka source integration consumes an external Kafka topic and publishes each record into the broker as an MQTT message, at least once and in order per partition. The MQTT source integration subscribes to topic filters on an external MQTT 3.1, 3.1.1, or 5 broker and republishes every message it receives into TBMQ.
+- **Database integrations:** New outbound integrations write MQTT messages and client lifecycle events to PostgreSQL, TimescaleDB, and MongoDB. PostgreSQL and TimescaleDB run SQL statement templates filled from message fields, and MongoDB stores each message as a BSON document, with support for time-series collections.
+- **Redis integration:** Writes MQTT messages and client lifecycle events to Redis in standalone, Sentinel, or Cluster mode, using `SET`, `HSET`, `LPUSH`, `RPUSH`, `PUBLISH`, or `XADD` with templated keys. TTLs, list trimming, and stream length caps keep the stored data bounded.
+- **RabbitMQ integration:** Publishes MQTT messages and client lifecycle events to a RabbitMQ exchange over AMQP 0-9-1. Publisher confirms are always on, so a message counts as delivered only once RabbitMQ accepts it.
+
+**Improvements**
+
+- **Publish messages page:** A new page publishes MQTT messages through the REST API, without opening an MQTT connection, with a choice of JSON, text, or Base64 payload and MQTT 5 properties. The same composer opens as a dialog from the retained messages and subscriptions pages.
+
 <ConditionalHeading level={2} id="v240PE" showFor="mqtt-broker-pe">v2.4.0 (August 27, 2026)</ConditionalHeading>
 
 This release includes all features, improvements, and bug fixes from [TBMQ v2.4.0](#v240-august-27-2026), along with the following Professional Edition exclusive updates:
@@ -61,6 +76,61 @@ This release includes all features, improvements, and bug fixes from [TBMQ v2.2.
 
 The following release notes cover all Community Edition versions included in TBMQ.
 </ShowFor>
+
+## v2.4.1 (October 8, 2026)
+
+Patch release with the following features, improvements, and bug fixes.
+
+**Behavior changes:**
+
+- `MQTT_TOPIC_MAX_SEGMENTS_COUNT` now counts topic segments instead of `/` delimiters ([#368](https://github.com/thingsboard/tbmq/pull/368)). With the limit set to N, a topic with exactly N slashes was accepted before and is rejected now. If you set this variable, raise it by 1 to keep the previous limit. The default `0` (no limit) is unaffected.
+- A Session Expiry Interval sent on an MQTT 5 DISCONNECT is now capped at `MQTT_CLIENT_SESSION_EXPIRY_MAX_EXPIRY_INTERVAL` (one week by default), the same limit CONNECT applies ([#392](https://github.com/thingsboard/tbmq/pull/392)). Before, a DISCONNECT could keep a session far longer than the configured maximum.
+- The YAML-only `queue.kafka.consumer-properties-per-topic` setting was removed ([#369](https://github.com/thingsboard/tbmq/pull/369)). Use the per-stream `TB_KAFKA_*_ADDITIONAL_CONSUMER_CONFIG` environment variables instead.
+- The MQTT integration now reconnects with exponential backoff, starting at the configured reconnect delay and capped at 60 seconds, instead of retrying at a flat interval ([#380](https://github.com/thingsboard/tbmq/pull/380)).
+
+**Main features:**
+
+- [#366](https://github.com/thingsboard/tbmq/pull/366), [#367](https://github.com/thingsboard/tbmq/pull/367) **Core**: REST API for publishing MQTT messages by @roger-wang-2026 and @dmytro-landiak;
+- [#390](https://github.com/thingsboard/tbmq/pull/390) **Core & UI**: Client ID-aware authorization rules by @roger-wang-2026 and @dmytro-landiak;
+- [#388](https://github.com/thingsboard/tbmq/pull/388) **Core**: Graceful node drain by @roger-wang-2026 and @dmytro-landiak;
+- [#393](https://github.com/thingsboard/tbmq/pull/393) **Core & UI**: Templated record key and headers for the Kafka integration by @dmytro-landiak.
+
+**Improvements:**
+
+- Core:
+  - [#380](https://github.com/thingsboard/tbmq/pull/380) Upgrade the netty-mqtt client to 4.3.1 by @dmytro-landiak;
+  - [#381](https://github.com/thingsboard/tbmq/pull/381) Bring the netty-mqtt client into the repository as a module by @dmytro-landiak;
+  - [#369](https://github.com/thingsboard/tbmq/pull/369) Remove the unused per-topic Kafka consumer properties map by @dmytro-landiak.
+
+**Bug fixes:**
+
+- Core:
+  - [#396](https://github.com/thingsboard/tbmq/pull/396) Release the error PUBACK/PUBREC of a failed persist in order by @dmytro-landiak;
+  - [#392](https://github.com/thingsboard/tbmq/pull/392) Read the MQTT 5 Session Expiry Interval as unsigned and cap it on DISCONNECT by @dmytro-landiak;
+  - [#373](https://github.com/thingsboard/tbmq/pull/373) Discard expired session state on reconnect by @dmytro-landiak;
+  - [#365](https://github.com/thingsboard/tbmq/pull/365) Keep the session cache live during the subscriptions init load at startup by @dmytro-landiak;
+  - [#368](https://github.com/thingsboard/tbmq/pull/368) Make the topic max-segments limit count segments instead of delimiters by @dmytro-landiak;
+  - [#376](https://github.com/thingsboard/tbmq/pull/376) Handle MQTT decoder failures that have no fixed header by @dmytro-landiak;
+  - [#377](https://github.com/thingsboard/tbmq/pull/377) Retry the startup marker write on fresh Kafka topics by @dmytro-landiak;
+  - [#378](https://github.com/thingsboard/tbmq/pull/378) Use TLS for PEM certificate credentials in the MQTT integration by @dmytro-landiak;
+  - [#387](https://github.com/thingsboard/tbmq/pull/387) Stop the integration consumer before the client and keep a pack cut short by a stop uncommitted by @dmytro-landiak;
+  - [#391](https://github.com/thingsboard/tbmq/pull/391) Return 400 instead of 500 when the integration executor rejects a configuration by @dmytro-landiak;
+  - [#384](https://github.com/thingsboard/tbmq/pull/384) netty-mqtt client: spec-correct topic routing, SUBACK correlation, complete futures, and retransmission defaults by @dmytro-landiak;
+  - [#386](https://github.com/thingsboard/tbmq/pull/386) netty-mqtt client: PUBREC for an unknown packet ID and message ID reuse by @dmytro-landiak;
+  - [#394](https://github.com/thingsboard/tbmq/pull/394) netty-mqtt client: subscription, delivery, and connection fixes by @dmytro-landiak.
+- UI:
+  - [#364](https://github.com/thingsboard/tbmq/pull/364) UI fixes for QA-reported issues by @deaflynx;
+  - [#379](https://github.com/thingsboard/tbmq/pull/379) Truncate entities table cells with a tooltip and show WebSocket client settings on small screens by @deaflynx.
+
+**Security:**
+
+- [#397](https://github.com/thingsboard/tbmq/pull/397) Bump Tomcat to 10.1.60 and Jackson to 2.21.7 to fix critical and high CVEs in the TBMQ images by @dmytro-landiak.
+
+**We welcome our new contributors:**
+
+- @roger-wang-2026 made their first contribution in [#366](https://github.com/thingsboard/tbmq/pull/366).
+
+**Full changelog**: [v2.4.0...v2.4.1](https://github.com/thingsboard/tbmq/compare/v2.4.0...v2.4.1)
 
 ## v2.4.0 (August 27, 2026)
 

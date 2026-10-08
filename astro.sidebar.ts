@@ -69,6 +69,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'Msg delivery strategies', slug: `${prefix}/other/msg-delivery-strategy` },
 				{ label: 'PROXY protocol', slug: `${prefix}/other/proxy-protocol` },
 				{ label: 'Health API', slug: `${prefix}/other/health` },
+				{ label: 'Node drain', slug: `${prefix}/other/node-drain` },
 				{ label: 'Bulk provisioning', slug: `${prefix}/other/bulk-provisioning` },
 			],
 		},
@@ -80,6 +81,17 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				{ label: 'HTTP', slug: `${prefix}/integrations/http` },
 				{ label: 'MQTT', slug: `${prefix}/integrations/mqtt` },
 				{ label: 'Kafka', slug: `${prefix}/integrations/kafka` },
+				...(isPE
+					? [
+							{ label: 'Kafka source', slug: `${prefix}/integrations/kafka-source` },
+							{ label: 'MQTT source', slug: `${prefix}/integrations/mqtt-source` },
+							{ label: 'RabbitMQ', slug: `${prefix}/integrations/rabbitmq` },
+							{ label: 'Redis', slug: `${prefix}/integrations/redis` },
+							{ label: 'PostgreSQL', slug: `${prefix}/integrations/postgresql` },
+							{ label: 'TimescaleDB', slug: `${prefix}/integrations/timescaledb` },
+							{ label: 'MongoDB', slug: `${prefix}/integrations/mongodb` },
+						]
+					: []),
 			],
 		},
 		{
@@ -95,6 +107,7 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 				},
 				{ label: 'Unauthorized clients', slug: `${prefix}/user-guide/ui/unauthorized-clients` },
 				{ label: 'WebSocket client', slug: `${prefix}/user-guide/ui/websocket-client` },
+				...(isPE ? [{ label: 'Publish messages', slug: `${prefix}/user-guide/ui/publish-messages` }] : []),
 				{
 					label: 'Application shared subscriptions',
 					slug: `${prefix}/user-guide/ui/shared-subscriptions`,
@@ -235,6 +248,7 @@ const tbmqReferenceItems = (prefix: string): SidebarConfig => [
 				label: 'Application shared subscriptions management',
 				slug: `${prefix}/application-shared-subscription`,
 			},
+			{ label: 'MQTT message publishing', slug: `${prefix}/mqtt-message-publishing` },
 		],
 	},
 ];

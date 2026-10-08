@@ -1,0 +1,14 @@
+{/* The SASL-over-TLS Other properties a Confluent Cloud cluster needs. Shared by the Kafka and
+    Kafka source integration guides: these are Kafka *client* settings, identical for the producer
+    the outbound type opens and the consumer the source type opens. Import it rather than copying
+    the table — the two copies had already drifted apart once. */}
+
+| Key | Value |
+|---|---|
+| `ssl.endpoint.identification.algorithm` | `https` |
+| `sasl.mechanism` | `PLAIN` |
+| `sasl.jaas.config` | `org.apache.kafka.common.security.plain.PlainLoginModule required username="CLUSTER_API_KEY" password="CLUSTER_API_SECRET";` |
+| `security.protocol` | `SASL_SSL` |
+
+Replace `CLUSTER_API_KEY` and `CLUSTER_API_SECRET` with your cluster's API key and secret. On Confluent Cloud, generate
+one under **Data Integration → API Keys → Create key**.

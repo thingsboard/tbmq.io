@@ -41,15 +41,18 @@ Link validation runs in a separate pipeline (it needs a full build) and must als
 Other commands worth knowing:
 
 - `pnpm build:fast` — production build (catches broken imports, missing assets, schema errors).
-- `pnpm format` — Prettier formatting.
+- `pnpm lint:toc` — checks that headings from `_includes` files reached the rendered table of contents. Needs a build first; no other check catches a TOC that silently vanished.
+- `pnpm lint:steps` — validates `<Steps>` usage in docs.
+- `pnpm lint:redirects` — detects redirect chains.
+- `pnpm format` — Prettier formatting. Format only the files you touched: the repo is not Prettier-clean at HEAD, so a repo-wide run produces an unreviewable diff.
 
 ## Content authoring basics
 
 A 30-second orientation. For the full architecture (product system, schemas, redirects, OG cards), see [`CLAUDE.md`](./CLAUDE.md).
 
-**Where pages live.** Documentation pages are MDX files under `src/content/docs/docs/mqtt-broker/`. The site is English-only, so there are no per-language content directories. Marketing and landing pages live under `src/pages/`.
+**Where pages live.** Documentation pages are MDX files under `src/content/docs/docs/` (Community Edition) and `src/content/docs/docs/pe/` (Professional Edition), served at `/docs/…` and `/docs/pe/…`. The site is English-only, so there are no per-language content directories. Marketing and landing pages live under `src/pages/`.
 
-**The CE / PE three-tier pattern.** Pages that exist for both Community Edition (CE) and Professional Edition (PE) do not duplicate content. The actual content lives in a shared MDX file under `src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx`. Two thin stub pages import it. The CE stub at `src/content/docs/docs/mqtt-broker/{path}/{page}.mdx` passes `Products.TBMQ`; the PE stub at `src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx` passes `Products.TBMQ_PE`:
+**The CE / PE three-tier pattern.** Pages that exist for both Community Edition (CE) and Professional Edition (PE) do not duplicate content. The actual content lives in a shared MDX file under `src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx`. Two thin stub pages import it. The CE stub at `src/content/docs/docs/{path}/{page}.mdx` passes `Products.TBMQ`; the PE stub at `src/content/docs/docs/pe/{path}/{page}.mdx` passes `Products.TBMQ_PE`:
 
 ```mdx
 ---
@@ -61,11 +64,13 @@ import { Products } from '~/models/site.models';
 <PageContent product={Products.TBMQ} />
 ```
 
+The `mqtt-broker` segment appears **only** in the include path. It is a filesystem-only location, kept so upstream cherry-picks stay clean, and is never part of a stub path or a URL.
+
 **Internal links.** Use the `<DocLink>` component, never bare Markdown links to other doc pages. Bare links break when product prefixes change.
 
 **Version strings.** Never hardcode TBMQ version numbers in Docker image tags, download URLs, or code samples. Import constants from `~/data/versions` (`TBMQ_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`).
 
-**Sidebar.** When you add a new page, register it in `astro.sidebar.ts`. The shared helpers `tbmqGuideItems(prefix)`, `tbmqInstallItems(prefix)`, and `tbmqReferenceItems(prefix)` cover both editions — add the entry once and both CE and PE pick it up.
+**Sidebar.** When you add a new page, register it in `astro.sidebar.ts`. The **Guides**, **Installation**, and **Reference** groups come from the prefix-parameterized helpers `tbmqGuideItems(prefix)`, `tbmqInstallItems(prefix)`, and `tbmqReferenceItems(prefix)` — add a prefix-relative slug once and both CE and PE pick it up. The **Getting Started** and **Releases** groups are spelled out literally in `tbmqSidebar` and `tbmqPeSidebar` instead, so a page in those needs its entry added twice, with the `pe/` slug in the PE copy.
 
 ## Common tasks
 
@@ -78,9 +83,9 @@ import { Products } from '~/models/site.models';
 ### Add a new documentation page
 
 1. Create the shared include at `src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx`.
-2. Create the CE stub at `src/content/docs/docs/mqtt-broker/{path}/{page}.mdx` that imports the include with `Products.TBMQ`.
-3. Create the PE stub at `src/content/docs/docs/mqtt-broker/pe/{path}/{page}.mdx` that imports the include with `Products.TBMQ_PE`.
-4. Register the page's slug in `astro.sidebar.ts` (typically inside the matching `tbmqGuideItems`, `tbmqInstallItems`, or `tbmqReferenceItems` helper).
+2. Create the CE stub at `src/content/docs/docs/{path}/{page}.mdx` that imports the include with `Products.TBMQ`.
+3. Create the PE stub at `src/content/docs/docs/pe/{path}/{page}.mdx` that imports the include with `Products.TBMQ_PE`.
+4. Register the page's slug in `astro.sidebar.ts` (typically inside the matching `tbmqGuideItems`, `tbmqInstallItems`, or `tbmqReferenceItems` helper — or in both `tbmqSidebar` and `tbmqPeSidebar` if it belongs to Getting Started or Releases).
 5. Run `pnpm dev` and verify the page renders for both editions.
 
 ### Add a redirect
@@ -109,12 +114,12 @@ python3 scripts/generate_config_pages.py <repo_type> <branch>
 python3 scripts/generate_config_pages.py tbmq main
 ```
 
-Commit the regenerated files — `src/content/docs/docs/mqtt-broker/installation/config.mdx` and `ie-config.mdx` for CE, the same paths under `mqtt-broker/pe/` for PE.
+Commit the regenerated files — `src/content/docs/docs/installation/config.mdx` and `ie-config.mdx` for CE, the same two files under `src/content/docs/docs/pe/installation/` for PE. These four pages are generator output: do not hand-edit them.
 
 ## Opening the PR
 
 - Branch naming is loose; descriptive is enough (`fix/mqtt-quickstart-typo`, `add/kubernetes-installation-page`).
-- Use imperative-mood commit messages. Keep the subject brief; add a body if the motivation isn't obvious from the diff.
+- Use [Conventional Commits](https://www.conventionalcommits.org/) for commit subjects, as the repo history does (`docs(integrations): …`, `fix(toc): …`, `feat(docs): …`). Keep the subject brief; add a body if the motivation isn't obvious from the diff.
 - The PR title should describe the change. The body should mention the affected pages and include screenshots if there's a visual change.
 - Verify your change in a rendered context before requesting review — `pnpm dev` while authoring, or `pnpm build:fast && pnpm preview` for the production output.
 - The CI checks must pass before merge.
