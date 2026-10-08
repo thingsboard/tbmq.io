@@ -9,17 +9,11 @@ The product roadmap covers only main features and does not include minor improve
 
 All features planned for the Community Edition are also included in the Professional Edition.
 
-- **Advanced Dropped Message Tracking**
+- **Message Filtering and Transformation**
 
-  Introduces detailed tracking and logging for all messages dropped by the broker (e.g., due to queue size
-  limits, session expiry, rate limiting, or malformed packets). This provides critical visibility into data
-  loss scenarios, essential for maintaining data integrity and troubleshooting high-volume deployments.
-
-- **Enhanced MQTT Client Disconnection Tracking**
-
-  Provides granular tracking of client disconnections, recording the reason (e.g., session expiration,
-  clean disconnect, protocol error, keep-alive timeout) and timing. This is vital for diagnosing
-  client-side issues, improving uptime, and monitoring device fleet health.
+  Filters MQTT messages by topic, payload content, or message properties and reshapes their payloads as they
+  flow through the broker. Downstream systems receive only the data they need, in the format they expect,
+  without an extra processing service in between.
 
 - **Expanded Third-Party Service Integrations**
 
@@ -34,8 +28,20 @@ All features planned for the Community Edition are also included in the Professi
 <ConditionalHeading level={2} id="upcoming-releases" exclude="mqtt-broker-pe">Upcoming releases</ConditionalHeading>
 </ShowFor>
 
-- **Real-Time Client Lifecycle Event Sourcing**
+- **Cluster Monitoring Page**
 
-  Enables the broker to push all critical client lifecycle events (e.g., Connect, Disconnect) directly to
-  external systems via built-in TBMQ Integrations (Kafka, HTTP, etc.). This ensures real-time operational
-  awareness, facilitating accurate logging, auditing, and usage/billing calculations.
+  Adds a Management Console page that shows the whole cluster in one view: every broker node with its status and
+  load. Operators can spot an unhealthy or overloaded node at a glance instead of checking each node separately.
+
+- **Connection Rate Limiting**
+
+  Limits how often clients can open new connections, per client ID or per source IP address. This protects the
+  cluster from reconnect storms and from clients that reconnect in a tight loop, alongside the existing publish
+  rate limits.
+
+- **Expanded Prometheus Metrics**
+
+  Adds new Prometheus metrics, for example authentication results per provider, connected sessions per transport
+  (TCP, SSL, WebSocket, secure WebSocket), incoming messages per QoS level, and the actor system's message backlog.
+  This makes it easier to tell a failing authentication provider from bad client credentials, plan capacity, and
+  detect overload before it affects clients.
