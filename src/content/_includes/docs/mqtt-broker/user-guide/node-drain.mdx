@@ -1,0 +1,202 @@
+import { Aside } from '@astrojs/starlight/components';
+import { Products } from '~/models/site.models';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import DocLink from '@components/DocLink.astro';
+
+Node drain takes one TBMQ node out of service gracefully. The node reports itself as out of service so the load balancer
+stops routing new connections to it, refuses new MQTT connections, and then disconnects its current sessions in batches.
+Once the node has no sessions left, you can stop or restart it without a sudden mass disconnect.
+
+Use it before maintenance on a single node of a <DocLink product={props.product} path="architecture">cluster</DocLink>:
+a rolling upgrade, a node replacement, or scaling the cluster down.
+
+## How a drain works
+
+Starting a drain on a node does the following:
+
+1. The node's `nodeDrain` health component switches to `OUT_OF_SERVICE`, which makes `/actuator/health` return `503`.
+   See <DocLink product={props.product} path="other/health">Health API</DocLink>.
+2. New MQTT CONNECT requests are refused right away. The MQTT listeners stay open, so a TCP probe on the MQTT port
+   still succeeds and the node is not restarted by a liveness check while it drains.
+3. After a grace period for the load balancer (`NODE_DRAIN_LOAD_BALANCER_WAIT_MS`, 20 seconds by default), the node starts
+   disconnecting its sessions. It requests up to `NODE_DRAIN_BATCH_SIZE` disconnects per batch, one batch every
+   `NODE_DRAIN_BATCH_INTERVAL_MS`.
+4. The drain finishes as `DRAINED` when no sessions remain on the node, or as `TIMED_OUT` if sessions are still connected
+   when `NODE_DRAIN_TIMEOUT_MS` has passed since the drain started. The timeout includes the load balancer grace period.
+
+Each batch re-reads the node's session registry once the previous pass has gone through every session, so a client whose
+CONNECT was already in progress when the drain started is not refused; it connects and is disconnected by a later batch.
+
+A drain applies to the node that receives the request only. It does not touch other nodes in the cluster.
+
+A drained session is not closed by a client-sent `DISCONNECT` with reason code `0x00`, so the client's
+<DocLink product={props.product} path="user-guide/last-will">Last Will</DocLink> is processed as for any other
+ungraceful disconnect.
+
+## Before you drain
+
+The drain takes a node out of the load balancer only if the load balancer checks `/actuator/health`. Make sure the
+readiness probe, or the load balancer's health check, targets `/actuator/health` on the HTTP port, and keep liveness on
+the MQTT port so the node is not restarted while it drains. See the readiness example in
+<DocLink product={props.product} path="other/health#kubernetes">Health API</DocLink>.
+
+The reference deployments do not do this: the Kubernetes manifests use a `tcpSocket` readiness probe on port `1883`,
+and the Docker Compose HAProxy uses plain TCP checks on the MQTT ports. The MQTT listeners stay open during a drain, so
+with those checks the node is **not** taken out of the load balancer. New connections keep reaching it and are refused
+with the reason codes below, `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` has no effect, and disconnected clients can be routed
+straight back to the same node. Switch the health check first, or use another way to stop routing traffic to the node.
+
+**The grace period must cover detection time.** The first batch starts `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` after the drain
+starts (20 seconds by default), whether or not the load balancer has noticed the node is unhealthy by then. Either
+tighten the health check or raise the wait so that it is at least the time the check needs to fail:
+
+- **Kubernetes:** roughly `periodSeconds × failureThreshold`, plus up to `timeoutSeconds` for a probe that hangs.
+  The readiness example on the Health API page (`periodSeconds: 30`, `failureThreshold: 3`) needs up to 90 seconds, so
+  with it set `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` to `90000` or more, or shorten the probe interval.
+- **Docker Compose HAProxy:** `inter` × `fall`. With `inter 5s` and HAProxy's default `fall 3` that is 15 seconds, which
+  fits the default wait.
+
+### Docker Compose
+
+In the reference `haproxy.cfg`, each of the four MQTT `listen` blocks (`mqtt-in`, `mqtts-in`, `mqtt-ws-in`,
+`mqtt-wss-in`) checks its backends with a plain TCP `check`. Add an HTTP check against the broker's HTTP port `8083` to
+each block, and point the `server` lines at it with `check port 8083`. The block below is the reference `mqtt-in` with
+only those two changes; every other line stays as shipped:
+
+```text
+listen mqtt-in
+ bind *:${MQTT_PORT}
+ mode tcp
+ option clitcpka # For TCP keep-alive
+ timeout client 3h
+ timeout server 3h
+ option tcplog
+ balance leastconn
+ option httpchk GET /actuator/health
+ server tbMqtt1 tbmq1:1883 check port 8083 inter 5s resolvers docker_resolver resolve-prefer ipv4
+ server tbMqtt2 tbmq2:1883 check port 8083 inter 5s resolvers docker_resolver resolve-prefer ipv4
+```
+
+HAProxy treats an HTTP `503` as a failed check, so a draining node is marked down and receives no new connections, while
+connections already open are not cut. Apply the same two changes to the other three blocks: add the `option httpchk` line
+and add `port 8083` after `check` on each `server` line, keeping each line's existing backend address. Edit the file as described in
+<DocLink product={props.product} path="installation/cluster/docker-compose-setup">Docker Compose cluster setup</DocLink>,
+then reload HAProxy.
+
+## Drain a node
+
+The drain API is part of the <DocLink product={props.product} path="rest-api">REST API</DocLink> and requires the
+**SYS_ADMIN** authority. Call the node you want to drain **directly** (its own address or pod address), not through the
+load balancer: the request is handled by whichever node receives it.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+In addition, starting or cancelling a drain requires the
+<DocLink product={props.product} path="security/rbac">Administrator</DocLink> role. A Viewer can read the status but
+gets `403` on `POST` and `DELETE`.
+</ShowFor>
+
+1. Read the node's service ID. Send a `GET` request to the node and take `serviceId` from the response:
+
+   ```bash
+   curl -X GET \
+     --header "X-Authorization: Bearer $ACCESS_TOKEN" \
+     'http://NODE_ADDRESS:8083/api/node/drain'
+   ```
+
+2. Start the drain. Pass the service ID as `expectedServiceId`:
+
+   ```bash
+   curl -X POST \
+     --header "X-Authorization: Bearer $ACCESS_TOKEN" \
+     'http://NODE_ADDRESS:8083/api/node/drain?expectedServiceId=tbmq1'
+   ```
+
+3. Poll `GET /api/node/drain` until `state` is `DRAINED`. If it becomes `TIMED_OUT`, sessions are still connected:
+   either cancel the drain, or continue and stop the node anyway, which disconnects the remaining sessions on shutdown.
+4. Stop the node.
+
+`expectedServiceId` guards against draining the wrong node, for example when a request is routed to a different
+node than intended. It must equal the node's service ID, which is `TB_SERVICE_ID` when set and generated at startup
+otherwise.
+
+## Drain API
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/node/drain?expectedServiceId=<id>` | Starts the drain and returns the status. Calling it again while the node is not `ACTIVE` changes nothing and returns the current status. |
+| `GET` | `/api/node/drain` | Returns the drain status of the node that receives the request. |
+| `DELETE` | `/api/node/drain?expectedServiceId=<id>` | Cancels the drain and returns the node to `ACTIVE`. Sessions already disconnected are not restored. |
+
+`POST` and `DELETE` return `400` with error code `31` (`BAD_REQUEST_PARAMS`) when `expectedServiceId` is missing or does
+not match the node that received the request.
+
+A finished drain (`DRAINED` or `TIMED_OUT`) stays in that state, and the node stays out of service, until you cancel
+it with `DELETE` or restart the node.
+
+### Status response
+
+```json
+{
+  "serviceId": "tbmq1",
+  "state": "DRAINING",
+  "initialSessions": 25000,
+  "remainingSessions": 12000,
+  "disconnectRequests": 13000,
+  "startedAt": 1790000000000,
+  "completedAt": 0
+}
+```
+
+| Field | Description |
+|---|---|
+| `serviceId` | Service ID of the node that answered. |
+| `state` | `ACTIVE`, `DRAINING`, `DRAINED`, or `TIMED_OUT`. |
+| `initialSessions` | Number of sessions on the node when the drain started. `0` while `ACTIVE`. |
+| `remainingSessions` | Number of sessions currently on the node. |
+| `disconnectRequests` | Number of disconnects requested since the drain started. |
+| `startedAt` | Time the drain started, in milliseconds since the Unix epoch. `0` while `ACTIVE`. |
+| `completedAt` | Time the drain finished, in milliseconds since the Unix epoch. `0` until the drain reaches `DRAINED` or `TIMED_OUT`. |
+
+## What clients see
+
+| Situation | MQTT 5.0 | MQTT 3.1.1 |
+|---|---|---|
+| New connection during a drain | CONNACK `0x9C` Use another server | CONNACK `0x03` Server unavailable |
+| Session disconnected by a drain batch | DISCONNECT `0x9C` Use another server | Connection closed, no DISCONNECT packet |
+
+MQTT 3.1.1 has no *Use another server* code, so those clients get the closest available one. Clients should reconnect
+through the load balancer, which routes them to another node once it treats the drained node as unhealthy — see
+[Before you drain](#before-you-drain).
+
+The disconnects are reported in the same places as other disconnects:
+
+- The `clientDisconnects_total` metric counts them, with no reason label. See
+  <DocLink product={props.product} path="prometheus-metrics">Prometheus metrics</DocLink>.
+- The `CLIENT_DISCONNECTED` integration event has `disconnectReason` `USE_ANOTHER_SERVER`.
+- A refused connection produces a `CLIENT_CONNECTION_FAILED` event, with `reason` `CONNECTION_REFUSED_USE_ANOTHER_SERVER`
+  for an MQTT 5.0 client and `CONNECTION_REFUSED_SERVER_UNAVAILABLE` for an MQTT 3.1.1 client.
+
+See <DocLink product={props.product} path="integrations">Integrations</DocLink> for the event format.
+
+## Configuration
+
+| Environment variable | Default | Description |
+|---|---|---|
+| `NODE_DRAIN_BATCH_SIZE` | `1000` | Maximum number of sessions asked to disconnect in one batch. |
+| `NODE_DRAIN_BATCH_INTERVAL_MS` | `1000` | Delay between batches, in milliseconds. |
+| `NODE_DRAIN_LOAD_BALANCER_WAIT_MS` | `20000` | Grace period, in milliseconds, between the node becoming unhealthy and the first batch. Set it to at least the time your load balancer needs to stop routing new connections to an unhealthy node. |
+| `NODE_DRAIN_TIMEOUT_MS` | `300000` | Maximum drain duration, in milliseconds, before the drain is marked `TIMED_OUT`. |
+
+The settings are read from the `service.node-drain` section of `thingsboard-mqtt-broker.yml`. Size the batch and
+interval so that the reconnecting clients do not overload the rest of the cluster: the defaults disconnect up to 1000
+clients per second, and all of them reconnect to the remaining nodes.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="audit-log" showFor="mqtt-broker-pe">Audit log</ConditionalHeading>
+
+Starting and cancelling a drain are recorded in the <DocLink product={props.product} path="security/audit-log">audit log</DocLink>
+as **Drain started** and **Drain cancelled** actions on the **Service info** entity. Attempts that fail because
+`expectedServiceId` is missing or wrong are recorded as failed actions; a request rejected for missing permissions is not
+recorded.
+</ShowFor>

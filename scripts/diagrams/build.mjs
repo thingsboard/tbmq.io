@@ -50,6 +50,12 @@ const DIAGRAMS = {
 	// than `extras.subscriptionTrie`.
 	'subscription-trie': { file: 'tbmq-subscription-trie', build: alt.subscriptionTrie },
 	'kafka-topics-map': { file: 'tbmq-kafka-topics', build: extras.kafkaTopicsMap },
+	// PE variant: adds the tbmq.ie.source data topic and the PE downlink set. ImageGallery resolves
+	// the `-tbmq-pe` suffix on the PE pages, so both editions read the same `src` in the MDX.
+	'kafka-topics-map-pe': {
+		file: 'tbmq-kafka-topics-tbmq-pe',
+		build: (k) => extras.kafkaTopicsMap(k, { source: true }),
+	},
 	// Alternative version adopted as the live diagram (the committed SVGs already
 	// match it) — build `alt.standaloneVsCluster`, not the `extras` one, or a
 	// plain `pnpm diagrams:arch` silently reverts it.
@@ -71,6 +77,37 @@ const DIAGRAMS = {
 	'http-integration': { file: 'tbmq-http-integration', dir: 'integrations', build: integrations.httpIntegration },
 	'mqtt-integration': { file: 'tbmq-mqtt-integration', dir: 'integrations', build: integrations.mqttIntegration },
 	'kafka-integration': { file: 'tbmq-kafka-integration', dir: 'integrations', build: integrations.kafkaIntegration },
+	'rabbitmq-integration': {
+		file: 'tbmq-rabbitmq-integration',
+		dir: 'integrations',
+		build: integrations.rabbitMqIntegration,
+	},
+	'redis-integration': { file: 'tbmq-redis-integration', dir: 'integrations', build: integrations.redisIntegration },
+	'postgresql-integration': {
+		file: 'tbmq-postgresql-integration',
+		dir: 'integrations',
+		build: integrations.postgreSqlIntegration,
+	},
+	'timescaledb-integration': {
+		file: 'tbmq-timescaledb-integration',
+		dir: 'integrations',
+		build: integrations.timescaleDbIntegration,
+	},
+	'mongodb-integration': {
+		file: 'tbmq-mongodb-integration',
+		dir: 'integrations',
+		build: integrations.mongoDbIntegration,
+	},
+	'kafka-source-integration': {
+		file: 'tbmq-kafka-source-integration',
+		dir: 'integrations',
+		build: integrations.kafkaSourceIntegration,
+	},
+	'mqtt-source-integration': {
+		file: 'tbmq-mqtt-source-integration',
+		dir: 'integrations',
+		build: integrations.mqttSourceIntegration,
+	},
 	'http-payload-encoding': {
 		file: 'tbmq-http-payload-encoding',
 		dir: 'integrations',

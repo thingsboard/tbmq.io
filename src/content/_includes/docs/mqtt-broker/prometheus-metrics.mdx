@@ -52,8 +52,22 @@ Every PUBLISH TBMQ accepts from a client is produced onto the `tbmq.msg.all` Kaf
 | `incomingPublishMsg_consumed_total` | counter | `consumerId`, `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs`, `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations`, `failedIterations` | One series set per consumer; count set by `queue.msg-all.consumers-count` (default 4) |
 | `incomingPublishMsg_consumed_processing_time_seconds` | timer | `consumerId` | Per-message dispatch latency |
 | `incomingPublishMsg_consumed_pack_processing_time_seconds` | timer | `consumerId` | Per-poll-batch latency |
+| `restPublishMsgs_total` | counter | `result` = `accepted`, `quotaExceeded`, `failed` | Not a per-PUBLISH series: REST publish calls that reached the publish path |
 
 `tmpFailed` and `tmpTimeout` count messages that failed on a given attempt but were **reprocessed** — they are retried, not lost. On the main ingest pipeline this only happens under the non-default `TB_MSG_ALL_ACK_STRATEGY_TYPE=RETRY_ALL`; the default `SKIP_ALL` strategy never retries, so both stay at zero here regardless of load. `failedMsgs` and `timeoutMsgs`, by contrast, count messages that were **discarded** once processing gave up on them. `failedIterations` counts whole poll batches ("packs") where at least one message inside did not succeed on that pass; a healthy consumer settles into `successfulIterations` climbing steadily while the other four counters stay flat. This same split reappears in `deviceProcessor_total`, `appProcessor_total`, and the integration processors further down this page — refer back here rather than re-deriving it each time.
+
+`restPublishMsgs_total` sits in front of that pipeline: it counts calls to the
+<DocLink product={props.product} path="mqtt-message-publishing">REST publish API</DocLink> rather than MQTT PUBLISH
+packets, and a call rejected before it reaches the publish path — on authorization or request validation — is not
+counted at all. `accepted` means the publish queue took the message, which then continues through
+`incomingPublishMsg_published_total` like any other publish. `quotaExceeded` is a refusal by the cluster-wide
+throughput quota, `failed` a queue rejection. The tag follows the queue's own answer, so a call that timed out with
+`503` still counts `accepted` if the queue acknowledged it afterwards.
+
+All three outcomes can move `droppedMsgs_total`, `accepted` included: a publish accepted with no matching
+subscription is counted there like any other no-subscriber PUBLISH. Publishing to topics nothing subscribes to is a
+normal use of the API and answers `202`, so on a deployment that does it routinely `droppedMsgs_total` climbs
+one-for-one without anything being lost.
 
 ## Persistent DEVICE clients
 
@@ -229,7 +243,23 @@ TBMQ batches writes to the relational database — events, timeseries, and the u
 | `integrationProcessor_total` | counter | `integrationId`, `statsName` = `totalMsgs`, `successfulMsgs`, `tmpTimeout`, `tmpFailed`, `timeoutMsgs`, `failedMsgs`, `successfulIterations`, `failedIterations` |
 | `integrationEventProcessor_total` | counter | `integrationId`, same eight `statsName` values |
 
-`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` reports integration lifecycle and uplink-message activity: `name` is *which* metric is being reported — `start`, `stop`, or `msgUplink` — not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`. `integration_stats_gauge` only ever carries `name="start"`: it reports the current count of integrations of each `type` that are running (`state="success"`) versus failed (`state="failed"`), not a per-event start/stop/uplink breakdown.
+`ie_uplink_published_total` is data an integration publishes upstream into TBMQ. `integrationProcessor_total` and `integrationEventProcessor_total` cover per-integration message and lifecycle-event processing respectively, using the same `tmp*` vs. plain split as [Ingest pipeline](#ingest-pipeline) above. `integration_stats_counter_total` reports integration lifecycle and message activity: `name` identifies the metric being reported, not the integration's own name; `type` is the `IntegrationType`; and `state` is `success` or `failed`. `integration_stats_gauge` only ever carries `name="start"`: it reports the current count of integrations of each `type` that are running (`state="success"`) versus failed (`state="failed"`), not a per-event breakdown.
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+Observed `name` values on `integration_stats_counter_total` are `start`, `stop` and `msgUplink`.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Observed `name` values on `integration_stats_counter_total` are `start`, `stop`, `msgUplink` and `msgDownlink`. Direction is from the Integration Executor's point of view: an outbound integration counts every delivery to its external system as `msgUplink`, and a <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> or <DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integration counts every record it consumes as `msgDownlink` — so `type="KAFKA_SOURCE"` and `type="MQTT_SOURCE"` appear only under `msgDownlink`, and the other types only under `msgUplink`.
+
+One more series belongs to the same family:
+
+| Series | Type | Labels |
+|---|---|---|
+| `ie_source_published_total` | counter | `statsName` = `totalMsgs`, `successfulMsgs`, `failedMsgs` |
+
+`ie_source_published_total` is the executor-side producer for `tbmq.ie.source`, the topic that carries sourced publishes into the broker — the inbound counterpart of `ie_uplink_published_total`. It is registered on the Integration Executor whether or not any source integration exists, so a flat zero is the normal reading on a deployment with none.
+</ShowFor>
 
 <Aside type="note">
   This family is gated by `stats.ie.enabled`, which defaults to `true` on the integration executor but is **not defined in the broker configuration**. On a broker node these series are absent unless `STATS_IE_ENABLED` is set explicitly. To scrape them, add the Integration Executor as its own Prometheus target — it serves the same `/actuator/prometheus` path on its own HTTP port (`HTTP_BIND_PORT`, default `8082`), separate from the broker nodes in the example above.
@@ -313,7 +343,6 @@ Upgrading from 2.3 renames a handful of series and reshapes a couple of label se
 | `sqlQueue_<QueueName>_total{queueIndex,statsName}` | `sqlQueue_total{queueName,queueIndex,statsName}` — the queue name moved from the metric name into a label |
 | `clientSubscriptions` gauge — number of clients with at least one subscription | `subscriptions` gauge — total subscription count. Renamed **and** redefined; the new value is greater whenever any client holds more than one subscription |
 | `clientSubscriptionsConsumer_total{statsName="totalSubscriptions"\|"acceptedSubscriptions"\|"ignoredSubscriptions"}` | `clientSubscriptionsConsumer_total{statsName="totalRecords"\|"acceptedRecords"\|"ignoredRecords"}` |
-| `integration_stats_counter_total{name="msgDownlink"}` | Removed — the series was never emitted |
 | `processedBytes` historical key | Removed — was never incremented |
 
 <Aside type="caution">

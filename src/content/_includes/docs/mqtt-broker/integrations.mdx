@@ -1,12 +1,21 @@
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import ConditionalHeading from '~/components/ConditionalHeading.astro';
+import { Products } from '~/models/site.models';
 
 **Integrations** in TBMQ forward MQTT messages from connected clients to external systems such as HTTP endpoints, Kafka brokers, or other MQTT brokers.
 They connect IoT devices with the broader data infrastructure, allowing the MQTT broker to act as a central integration point in your architecture.
 
 Besides messages, an integration can receive [client lifecycle events](#client-lifecycle-events) — clients connecting and disconnecting, subscription changes, and authentication or authorization failures.
 
-Integrations are **outbound only**: TBMQ pushes data to the external system. An integration never pulls data in or subscribes to the external system on your behalf — inbound (source) integrations are on the [roadmap](#roadmap).
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+Integrations are **outbound only**: TBMQ pushes data to the external system. An integration never pulls data in or subscribes to the external system on your behalf. There are three types — HTTP, MQTT and Kafka — and that is the full set.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Most integrations are **outbound**: TBMQ pushes data to the external system, and the integration never pulls data in. Two types reverse that — the <DocLink product={props.product} path="integrations/kafka-source">Kafka source integration</DocLink> consumes an external Kafka topic and injects every record into the broker as an MQTT publish, and the <DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink> does the same with every message its subscriptions on an external MQTT broker receive. Outbound and inbound (source) types share the executor, the lifecycle and the operational behavior described here, but differ in what triggers them: see [Source integrations](#source-integrations).
+</ShowFor>
 
 Integrations require **TBMQ 2.1 or later** and a running [TBMQ Integration Executor](#tbmq-integration-executor), a separate service included in the standard deployments.
 If you upgraded from an earlier version, confirm you added it: with no reachable executor, saving an integration fails with a [validation timeout](#integration-lifecycle).
@@ -20,11 +29,26 @@ If you upgraded from an earlier version, confirm you added it: with no reachable
 
 ## Supported integration types
 
-- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages to REST APIs or webhooks via HTTP(S).
-- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication.
-- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages into Kafka topics for real-time processing.
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages and [client lifecycle events](#client-lifecycle-events) to REST APIs or webhooks via HTTP(S).
+- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication, with [client lifecycle events](#client-lifecycle-events) on a topic of their own.
+- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages and [client lifecycle events](#client-lifecycle-events) into Kafka topics for real-time processing.
+</ShowFor>
 
-Each guide walks through creating an integration of that type end to end. The rest of this page describes the architecture and the operational behavior that all three share — read it when you need to tune, scale, or troubleshoot them.
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+- <DocLink product={props.product} path="integrations/http">HTTP Integration</DocLink> — forward MQTT messages and [client lifecycle events](#client-lifecycle-events) to REST APIs or webhooks via HTTP(S).
+- <DocLink product={props.product} path="integrations/mqtt">MQTT Integration</DocLink> — bridge messages to external MQTT brokers for cross-broker communication, with [client lifecycle events](#client-lifecycle-events) on a topic of their own.
+- <DocLink product={props.product} path="integrations/kafka">Kafka Integration</DocLink> — stream messages and [client lifecycle events](#client-lifecycle-events) into Kafka topics for real-time processing.
+- <DocLink product={props.product} path="integrations/rabbitmq">RabbitMQ Integration</DocLink> — publish messages and [client lifecycle events](#client-lifecycle-events) to an exchange on your own RabbitMQ broker over AMQP 0-9-1.
+- <DocLink product={props.product} path="integrations/redis">Redis Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own Redis server, with the Redis command and the key you choose.
+- <DocLink product={props.product} path="integrations/postgresql">PostgreSQL Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own PostgreSQL database, through SQL templates you control.
+- <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB Integration</DocLink> — write messages and [client lifecycle events](#client-lifecycle-events) into your own TimescaleDB hypertables, through SQL templates you control.
+- <DocLink product={props.product} path="integrations/mongodb">MongoDB Integration</DocLink> — insert messages and [client lifecycle events](#client-lifecycle-events) as documents into collections of your own MongoDB deployment.
+- <DocLink product={props.product} path="integrations/kafka-source">Kafka Source Integration</DocLink> — the inbound direction: consume an external Kafka topic and inject every record into TBMQ as an MQTT publish.
+- <DocLink product={props.product} path="integrations/mqtt-source">MQTT Source Integration</DocLink> — the inbound direction: subscribe to topic filters on an external MQTT broker and republish every message into TBMQ under its original topic.
+</ShowFor>
+
+Each guide walks through creating an integration of that type end to end. The rest of this page describes the architecture and the operational behavior they all share — read it when you need to tune, scale, or troubleshoot them.
 
 ## How a message flows
 
@@ -37,6 +61,10 @@ At a high level, the integration flow in TBMQ works as follows:
    - An **HTTP endpoint** over HTTP or HTTPS.
    - Another **MQTT broker** over MQTT or MQTTS.
    - A **Kafka broker** using the Kafka binary protocol over TCP or TLS.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+A [source integration](#source-integrations) is not in that flow at all: nothing inside TBMQ triggers it. It reads its external system on its own and travels the opposite way — from the executor into the broker, and on to the matching subscribers.
+</ShowFor>
 
 <ImageGallery product={props.product} images={[
   { src: '/src/assets/schemas/integrations-overview.svg', alt: 'TBMQ integrations high-level design: MQTT clients connect over MQTT(S) to TBMQ; matched messages are forwarded via Kafka to the TBMQ Integration Executor, which forwards them over HTTP(S), MQTT(S), or TCP(TLS) to external HTTP, MQTT, and Kafka systems.', caption: 'MQTT clients publish to TBMQ; the Integration Executor consumes matched messages from Kafka and forwards them to external HTTP, MQTT, or Kafka systems.' },
@@ -70,7 +98,7 @@ Integration logic is intentionally kept separate from the broker:
 
 Integration entities are stored in TBMQ's PostgreSQL database and are used for management via the Web UI and REST API. Each integration entity includes:
 
-- **Type** — HTTP, Kafka, or MQTT.
+- **Type** — the external system the integration delivers to; see [Supported integration types](#supported-integration-types).
 - **Name** — a human-readable name.
 - **Description** — optional free-form notes.
 - **Enabled** — whether the integration is active.
@@ -84,6 +112,10 @@ Integration entities are stored in TBMQ's PostgreSQL database and are used for m
 - **Lifecycle event types** — [client lifecycle events](#client-lifecycle-events) the integration receives.
 
 Topic filters and lifecycle event types are independent, and each one is optional — but an integration must have at least one of the two, otherwise it would have nothing to deliver.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+A [source integration](#source-integrations) carries **neither**: it is fed by its external system, not by broker traffic, so it has nothing to subscribe to. Its form has no **Filters and events** step, and the rule above does not apply to it. The <DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink>'s topic filters are part of its configuration and subscribe on the external broker, not on TBMQ.
+</ShowFor>
 
 Multiple integrations with different types, topic filters, and targets can be configured and managed independently.
 
@@ -101,6 +133,16 @@ TBMQ and its Integration Executor microservices communicate asynchronously over 
 
 The first three are the **control plane** — a fixed set of topics shared by all integrations. The last two are the **data plane** — one pair per integration.
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+One more data-plane topic runs the other way:
+
+| Topic | Purpose |
+|---|---|
+| `tbmq.ie.source` | Carries publishes sourced by [source integrations](#source-integrations) from IE to TBMQ. Shared by all of them, not one per integration. |
+
+It is deliberately separate from `tbmq.ie.uplink`: control traffic — lifecycle events, statistics, errors, heartbeats — stays on the uplink, so a busy source cannot delay it.
+</ShowFor>
+
 <ImageGallery product={props.product} images={[
   {
     src: '/src/assets/images/docs/mqtt-broker/integrations/tbmq-ie-communication.svg',
@@ -111,11 +153,7 @@ The first three are the **control plane** — a fixed set of topics shared by al
 
 ### Downlink topics
 
-TBMQ uses **Kafka compact topics** for downlink communication, one per integration type:
-
-- `tbmq.ie.downlink.http`
-- `tbmq.ie.downlink.mqtt`
-- `tbmq.ie.downlink.kafka`
+TBMQ uses **Kafka compact topics** for downlink communication, one per integration type — `tbmq.ie.downlink.$INTEGRATION_TYPE`, e.g. `tbmq.ie.downlink.mqtt`.
 
 These topics deliver integration configuration events (create, update, delete) and trigger connection validation requests.
 
@@ -214,6 +252,23 @@ The TTL is measured from the moment the integration was disabled, so re-enabling
 
 Kafka topic retention settings can be customized to fine-tune storage limits and control how long messages are retained per topic.
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="source-integrations" showFor="mqtt-broker-pe">Source integrations</ConditionalHeading>
+
+A **source** integration is the inbound direction: it consumes an external system and injects what it reads into the broker as MQTT publishes. There are two types of this kind: the <DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> and the <DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integration.
+
+Everything above about the control plane holds for it unchanged — it is the same entity, validated the same way, delivered to the executors over its own compact downlink topic, and owned by exactly one executor at a time. What differs is the data plane:
+
+- It has **no topic filters and no lifecycle event types**, so no `tbmq.msg.ie.$integrationId` and no `tbmq.ie.event.$integrationId` topic is ever created for it. [Message processing](#message-processing) and the acknowledgment strategies in [Error handling and retry](#error-handling-and-retry) describe those two consumers, so neither applies to a source integration.
+- It reads its external system on a thread of its own inside the executor, and produces every record it reads to the shared `tbmq.ie.source` topic, keyed by integration and — for Kafka source — source partition.
+- The broker consumes `tbmq.ie.source`, revalidates each record, charges the licensed incoming throughput quota, and publishes it under the client ID `ie-source-<integrationId>` — there is no MQTT session behind it.
+- Neither type uses the acknowledgment strategies described in [Error handling and retry](#error-handling-and-retry); each has its own delivery model:
+  - **Kafka source** — a batch's offsets are committed only after every record in it is accepted, and a failed batch is retried whole, so a transient failure can duplicate records but not lose them: **at-least-once**. Ordered per source partition.
+  - **MQTT source** — each QoS 1 or 2 message is acknowledged to the external broker once TBMQ has accepted it or failed to, and a failed message is not redelivered: **at-most-once** on that path. Ordered per integration.
+
+The per-type page carries the details: the delivery model, how records are mapped to topics, what the broker refuses, and the tuning knobs on `tbmq.ie.source`.
+</ShowFor>
+
 ## Client lifecycle events
 
 An integration can also be notified about what MQTT clients are doing: connecting, disconnecting, changing their subscriptions, or failing authentication or authorization.
@@ -237,7 +292,7 @@ Delivery is opt-in per event type, so an integration ends up in one of three mod
 | `CLIENT_UNSUBSCRIBED` | Subscriptions are actually removed. | `subscriptions` |
 | `CLIENT_AUTHENTICATION_FAILED` | Authentication fails. | `protocolVersion`, `reason` |
 | `CLIENT_AUTHORIZATION_FAILED` | A publish or subscribe is denied by an authorization rule. | `action`, `topic` |
-| `CLIENT_CONNECTION_FAILED` | The broker refuses the connection for a reason other than authentication, for example an exceeded quota or an unavailable server. | `reason` |
+| `CLIENT_CONNECTION_FAILED` | The broker refuses the connection for a reason other than authentication, for example an exceeded quota or an unavailable server. A node that is draining also refuses connections this way. | `reason` |
 
 ### Event payload
 
@@ -251,11 +306,12 @@ Every event is delivered as a JSON object. These fields are common to all event 
 | `ipAddress` | IP address the client connected from. |
 | `ts` | Timestamp (milliseconds) when the event was created. |
 | `tbmqNode` | Node ID of the TBMQ broker that produced the event. |
+| `tbmqIeNode` | Node ID of the Integration Executor that delivered the event. |
 | `username` | Username the client authenticated with. |
 | `clientCertCn` | Common Name of the client's X.509 certificate. |
 | `metadata` | Additional metadata from the integration configuration (e.g., integration name). |
 
-Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when authentication is disabled, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
+Text fields are omitted when they have no value, rather than sent as an empty string — expect no `username` when the client sent none, and no `clientCertCn` unless the client authenticated with an X.509 certificate.
 
 The type-specific fields are added on top:
 
@@ -281,6 +337,7 @@ A client connecting with MQTT 5.0:
   "ipAddress": "10.7.0.42",
   "ts": 1767225600000,
   "tbmqNode": "tbmq-node-1",
+  "tbmqIeNode": "tbmq-ie-1",
   "username": "sensor-01",
   "cleanStart": true,
   "keepAlive": 60,
@@ -302,6 +359,7 @@ A client subscribing to two topic filters, the second one shared:
   "ipAddress": "10.7.0.51",
   "ts": 1767225601500,
   "tbmqNode": "tbmq-node-2",
+  "tbmqIeNode": "tbmq-ie-1",
   "username": "backend",
   "subscriptions": [
     {
@@ -341,6 +399,7 @@ A publish denied by an authorization rule:
   "ipAddress": "10.7.0.42",
   "ts": 1767225603000,
   "tbmqNode": "tbmq-node-1",
+  "tbmqIeNode": "tbmq-ie-1",
   "username": "sensor-01",
   "action": "publish",
   "topic": "admin/commands",
@@ -354,11 +413,28 @@ A publish denied by an authorization rule:
 
 Each integration type reuses the connection it already has, but the destination differs:
 
-| Type | Where events go |
-|---|---|
-| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. |
-| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers — the same destination as messages. |
-| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated **Events topic name** on the external broker, always with QoS 1 and the retain flag off. |
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+| Type | Where events go | Setting that controls it |
+|---|---|---|
+| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. | Shared with messages |
+| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers. | Shared with messages |
+| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated topic on the external broker, always with QoS 1 and the retain flag off. | **Events topic name** |
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+| Type | Where events go | Setting that controls it |
+|---|---|---|
+| <DocLink product={props.product} path="integrations/http">HTTP</DocLink> | The configured endpoint, as a JSON request body. | Shared with messages |
+| <DocLink product={props.product} path="integrations/kafka">Kafka</DocLink> | The configured topic, with the configured key and headers. | Shared with messages |
+| <DocLink product={props.product} path="integrations/mqtt">MQTT</DocLink> | A dedicated topic on the external broker, always with QoS 1 and the retain flag off. | **Events topic name** |
+| <DocLink product={props.product} path="integrations/rabbitmq">RabbitMQ</DocLink> | The same exchange as messages, under a static routing key of their own — events carry no MQTT topic to derive one from. | **Events routing key** (required) |
+| <DocLink product={props.product} path="integrations/redis">Redis</DocLink> | A key of their own, written with the same Redis command as messages — and always the event envelope, never a raw payload. | **Events key** (required) |
+| <DocLink product={props.product} path="integrations/postgresql">PostgreSQL</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
+| <DocLink product={props.product} path="integrations/timescaledb">TimescaleDB</DocLink> | The table written by a SQL statement bound against the event envelope, not the message one. | **Lifecycle events SQL template** (required) |
+| <DocLink product={props.product} path="integrations/mongodb">MongoDB</DocLink> | A collection of their own, or the messages collection when none is set — and always the full event document, even with **Send only message payload** on. | **Events collection** (optional) |
+
+<DocLink product={props.product} path="integrations/kafka-source">Kafka source</DocLink> and <DocLink product={props.product} path="integrations/mqtt-source">MQTT source</DocLink> integrations are absent from this table on purpose: a [source integration](#source-integrations) receives no lifecycle events at all.
+</ShowFor>
 
 ### Delivery guarantees
 
@@ -560,11 +636,33 @@ Per-integration-type counters for the current reporting interval:
 IntegrationStatisticsKey(integrationStatisticsMetricName=START, success=true, integrationType=HTTP) = [0]
 ```
 
+{/* The two bullet lists below are duplicated per edition on purpose. <ShowFor> is a block element,
+    so gating the MSGS_DOWNLINK bullet in place ends the list: PE renders three <ul>s and CE two.
+    Only the closing sentence is shared — it is worded to be true on both editions, and the PE-only
+    half of it is in its own <ShowFor> below. */}
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 - `START` — number of times an integration startup was attempted.
 - `STOP` — number of times integration shutdown was triggered.
 - `MSGS_UPLINK` — number of messages forwarded from the executor to external systems.
 - `success=true | false` — whether the attempt succeeded or failed.
 - `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+- `START` — number of times an integration startup was attempted.
+- `STOP` — number of times integration shutdown was triggered.
+- `MSGS_UPLINK` — number of messages forwarded from the executor to external systems.
+- `MSGS_DOWNLINK` — number of messages a [source integration](#source-integrations) consumed from its external system.
+- `success=true | false` — whether the attempt succeeded or failed.
+- `integrationType` — the type of integration (e.g., HTTP, MQTT, Kafka).
+</ShowFor>
+
+Direction is from the executor's point of view, as with the `tbmq.ie.uplink` and `tbmq.ie.downlink` topics: `MSGS_UPLINK` is what leaves the executor for an external system.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+`MSGS_DOWNLINK` is the opposite direction. Only source types report it, and only outbound types report `MSGS_UPLINK`.
+</ShowFor>
 
 ### Integration state summary
 
@@ -594,6 +692,10 @@ failedMsgs = [0]
 - `totalMsgs` — total messages sent to the uplink topic.
 - `successfulMsgs` — messages published successfully.
 - `failedMsgs` — messages that failed to publish.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The producer that writes sourced publishes to `tbmq.ie.source` reports the same four counters separately, under `ie.source.published`. Reading the two apart tells you whether it is control traffic or sourced data that cannot reach the broker.
+</ShowFor>
 
 ### Message processing stats
 
@@ -644,11 +746,3 @@ Reading the two blocks side by side tells you which stream is in trouble: an unr
 - **Fault isolation** — issues in external systems affect only the Integration Executor; the TBMQ broker continues operating normally.
 - **Backpressure management** — Kafka buffers messages when executors are slow or overloaded.
 - **Resilience** — executor instances restart independently; integrations are restored from compacted configuration topics.
-
-## Roadmap
-
-Upcoming integration capabilities:
-
-- **New outbound integration types** — Redis, PostgreSQL, RabbitMQ, and more.
-- **Inbound (source) integrations** — receive messages from external systems (e.g., Kafka consumers, MQTT subscribers).
-- **Message transformation and filtering** — dynamic processing before forwarding to external targets.

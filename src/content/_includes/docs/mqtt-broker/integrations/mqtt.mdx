@@ -1,11 +1,17 @@
 import { Aside, Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
+import ShowFor from '~/components/ShowFor.astro';
+import { Products } from '~/models/site.models';
 
 TBMQ MQTT Integration enables forwarding messages to **external MQTT brokers**, allowing real-time data delivery to third-party platforms. This is useful in scenarios such as:
 
 - Data from TBMQ needs to be **forwarded** to an external MQTT broker or IoT platform.
 - TBMQ is used as an **intermediary to route data** between internal sources and external MQTT-based systems.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+For the opposite direction — bringing messages from an external MQTT broker into TBMQ — use the <DocLink product={props.product} path="integrations/mqtt-source">MQTT source integration</DocLink>.
+</ShowFor>
 
 ## Data flow
 
@@ -172,6 +178,7 @@ If successful, two new messages should appear in the **Messages** table:
    "tbmqIeNode": "tbmq_ie_node",
    "tbmqNode": "tbmq_node",
    "ts": 1742554969254,
+   "username": "tbmq_websockets_username",
    "props": {},
    "metadata": {
       "integrationName": "MQTT integration"
@@ -192,6 +199,7 @@ If successful, two new messages should appear in the **Messages** table:
 | `tbmqIeNode` | Node ID of the Integration Executor that handled the message. |
 | `tbmqNode` | Node ID of the TBMQ broker that received the message. |
 | `ts` | Timestamp (milliseconds) when the message was received. |
+| `username` | Username the publishing client connected with. Omitted when the client sent none. |
 | `props` | MQTT 5.0 user properties or other MQTT properties. |
 | `metadata` | Additional metadata from integration configuration (e.g., integration name). |
 

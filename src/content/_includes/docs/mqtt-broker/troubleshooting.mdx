@@ -76,6 +76,7 @@ The counter alone can't tell reasons apart, so the logged `DisconnectReasonType`
 - **`ON_CHANNEL_CLOSED`** — the client's TCP connection went away.
 - **`ON_ADMINISTRATIVE_ACTION`** — an operator or API call disconnected the client.
 - **`ON_SERVER_SHUTTING_DOWN`** — the node is shutting down and is closing every session on it.
+- **`ON_USE_ANOTHER_SERVER`** — an operator started a <DocLink product={props.product} path="other/node-drain" bold={false}>node drain</DocLink>; the node is disconnecting its sessions so clients reconnect elsewhere.
 
 The takeover case is worth calling out on its own: two clients sharing one client id will keep disconnecting each other, as long as both reconnect automatically, as each new CONNECT kicks off the previous session and each kicked-off client's own reconnect logic kicks the other one straight back off. The signature is a `clientDisconnects_total` rate that stays high while `connectedSessions` barely moves — sessions are churning, not draining. That reading holds cleanly for a same-node takeover (`ON_CONFLICTING_SESSIONS`), where the old and new session are on the same node. For the cross-node case (`ON_CLUSTER_CONFLICTING_SESSIONS`), each node's own `connectedSessions` does move — one node loses the old session while another gains the new one — so look at whether the cluster-wide sum stays flat rather than at any single node's gauge.
 

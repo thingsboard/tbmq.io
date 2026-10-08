@@ -163,6 +163,13 @@ TBMQ compares the submitted list with what the session already has and subscribe
 the list you save becomes the session's complete set of subscriptions. Topic filters are validated — single-level `+`
 and multi-level `#` wildcards are supported, and `#` must be the last character of the filter.
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Each row also has a publish icon. It opens the
+<DocLink product={props.product} path="user-guide/ui/publish-messages#publish-from-other-pages">Publish message</DocLink>
+dialog with the topic and QoS of the row's subscription pre-filled, so you can publish a message to a topic this
+session listens on without an MQTT client.
+</ShowFor>
+
 <Aside type="caution">
   Subscribing on the client's behalf is not the same as the client sending a `SUBSCRIBE` packet: no retained messages
   are delivered for a subscription added here, whatever its Retain Handling option says.

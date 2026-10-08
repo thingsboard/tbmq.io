@@ -8,6 +8,9 @@ const INCLUDES_ALIAS = '@includes/';
 const INCLUDES_DIR = path.resolve(process.cwd(), 'src/content/_includes');
 const DOCS_CONTENT_DIR = 'src/content/docs/docs/';
 
+/** A single-line inline code span, including its backtick fence. */
+const INLINE_CODE_RE = /(`+)[^\n]*?\1/g;
+
 /** Key the two passes share their per-document state under on `ctx.data`. */
 const STATE_KEY = '__mdxIncludeHeadings';
 
@@ -106,7 +109,11 @@ function extractHeadingsFromMdx(content: string, productId: string): HeadingInfo
 		// inside a JSX expression *before* this line's braces are counted.
 		const isInsideJsx = braceDepth > 0;
 
-		for (const char of line) {
+		// Braces inside an inline code span are prose, not JSX: a page documenting
+		// `${` would otherwise leave the depth stuck open and silently drop every
+		// heading below it from the TOC. Stripping whole spans keeps a template
+		// literal in a JSX attribute balanced too — its `${…}` goes with it.
+		for (const char of line.replace(INLINE_CODE_RE, '')) {
 			if (char === '{') braceDepth++;
 			else if (char === '}') braceDepth = Math.max(0, braceDepth - 1);
 		}
