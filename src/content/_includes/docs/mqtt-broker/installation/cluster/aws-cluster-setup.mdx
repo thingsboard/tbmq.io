@@ -524,9 +524,24 @@ Backing up your PostgreSQL database before upgrading is highly recommended but o
 For guidance, follow the <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_CommonTasks.BackupRestore.html" target="_blank" rel="noopener noreferrer">AWS RDS backup and restore instructions</a>.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-1-pe" showFor="mqtt-broker-pe">Upgrade to 2.4.1</ConditionalHeading>
+
+This is a standard upgrade from v2.4.0. No third-party component changes are required, and the upgrade only records the
+new schema version — no table is created or altered and no data is migrated.
+
+<Aside type="note">
+  Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading.
+  If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1 to keep the previous limit — the limit now counts topic segments instead of `/` delimiters.
+</Aside>
+
+Proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-4-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
 
-This is a standard upgrade from v2.3.0. No third-party component changes are required.
+<details>
+<summary>This is a standard upgrade from v2.3.0.</summary>
+
+No third-party component changes are required.
 The upgrade creates the `dropped_msg` table used by dropped message analytics; no existing table is altered and no data
 is migrated.
 
@@ -536,12 +551,17 @@ is migrated.
 </Aside>
 
 Proceed with the [upgrade](#run-upgrade).
+</details>
 
 <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
-This is a standard upgrade from v2.2.0. No third-party component changes are required — the official images are already in use since v2.2.0.
+<details>
+<summary>This is a standard upgrade from v2.2.0.</summary>
+
+No third-party component changes are required — the official images are already in use since v2.2.0.
 
 Proceed with the [upgrade](#run-upgrade).
+</details>
 
 <ConditionalHeading level={3} id="upgrade-from-ce-to-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
 
@@ -565,9 +585,24 @@ Run the following commands to stop TBMQ, migrate the database, and redeploy:
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={3} id="upgrade-to-2-4-1" exclude="mqtt-broker-pe">Upgrade to 2.4.1</ConditionalHeading>
+
+This is a standard upgrade from v2.4.0. No third-party component changes are required, and the upgrade only records the
+new schema version — no table is created or altered and no data is migrated.
+
+<Aside type="note">
+  Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading.
+  If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1 to keep the previous limit — the limit now counts topic segments instead of `/` delimiters.
+</Aside>
+
+Then proceed with the [upgrade](#run-upgrade).
+
 <ConditionalHeading level={3} id="upgrade-to-2-4-0" exclude="mqtt-broker-pe">Upgrade to 2.4.0</ConditionalHeading>
 
-This is a standard upgrade from v2.3.0. No third-party component changes are required, and the upgrade only records the
+<details>
+<summary>This is a standard upgrade from v2.3.0.</summary>
+
+No third-party component changes are required, and the upgrade only records the
 new schema version — no table is created or altered and no data is migrated.
 
 <Aside type="note">
@@ -576,13 +611,17 @@ new schema version — no table is created or altered and no data is migrated.
 </Aside>
 
 Then proceed with the [upgrade](#run-upgrade).
+</details>
 
 <ConditionalHeading level={3} id="upgrade-to-2-3-0" exclude="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
-This release migrates all third-party components from Bitnami images to official open-source alternatives.
+<details>
+<summary>This release migrates all third-party components from Bitnami images to official open-source alternatives.</summary>
+
 Review the <DocLink product={props.product} path="installation/upgrade-instructions/#third-party-component-updates-in-v230">third-party component updates</DocLink> for full details.
 
 Then proceed with the [upgrade](#run-upgrade).
+</details>
 
 <ConditionalHeading level={3} id="upgrade-to-2-2-0" exclude="mqtt-broker-pe">Upgrade to 2.2.0</ConditionalHeading>
 

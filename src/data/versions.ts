@@ -9,6 +9,9 @@
 /** TBMQ Broker */
 export const TBMQ_VER = '2.4.1';
 
+/** Previous TBMQ Broker release — the version an upgrade to TBMQ_VER starts from */
+export const TBMQ_PREV_VER = '2.4.0';
+
 /** TBMQ Broker Professional Edition */
 export const TBMQ_PE_VER = '2.4.1PE';
 
