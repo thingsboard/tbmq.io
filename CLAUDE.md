@@ -140,7 +140,7 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-The file holds exactly three constants: `TBMQ_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`. The other products' constants have been removed.
+The file holds exactly four constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`. The other products' constants have been removed.
 
 ### Custom Plugins
 
@@ -243,7 +243,7 @@ Per-page OG cards (1200×630 PNG) are generated at build time by Satori + Resvg.
 
 ## Releasing a New TBMQ Version
 
-- `src/data/versions.ts` — bump `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`; docs code blocks and install commands pick these up.
+- `src/data/versions.ts` — set `TBMQ_PREV_VER` to the outgoing `TBMQ_VER`, then bump `TBMQ_VER`, `TBMQ_PE_VER`, and `TBMQ_BRANCH`; docs code blocks, install commands and the CE→PE same-version examples in `upgrade-instructions.mdx` pick these up.
 - Release notes are hand-written prose: add the new version's section to `src/content/_includes/docs/mqtt-broker/releases.mdx` (separate CE and PE-conditional blocks; the changelog page links there).
 
 ## Code Style

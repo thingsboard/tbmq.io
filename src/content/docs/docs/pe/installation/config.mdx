@@ -34,6 +34,14 @@ sidebar:
     <p class="config-def-desc">Enables or disables logging of errors with stacktrace when the REST API throws an exception.</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">REST&#95;PUBLISH&#95;MAX&#95;PAYLOAD&#95;SIZE</code> · <span class="config-def-label">Default</span> <code>65536</code></p>
+    <p class="config-def-desc">Maximum size of the decoded MQTT payload accepted from the REST publish API (in bytes).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">REST&#95;PUBLISH&#95;TIMEOUT&#95;MS</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
+    <p class="config-def-desc">Time to wait for the publish queue to acknowledge a message before answering 503 Service Unavailable (in ms).</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">HTTP&#95;MAX&#95;PAYLOAD&#95;SIZE&#95;LIMIT&#95;CONFIGURATION</code> · <span class="config-def-label">Default</span> <code>/api/image&#42;/&#42;&#42;=52428800;/api/resource/&#42;&#42;=52428800;/api/&#42;&#42;=16777216</code></p>
     <p class="config-def-desc">Semicolon-separated list of urlPattern=maxPayloadSize pairs defining the maximum HTTP request size (in bytes) per URL  pattern. The first matching pattern is applied; all subsequent ones are skipped.</p>
   </div>
@@ -572,6 +580,14 @@ sidebar:
     <p class="config-def-desc">Poll interval for messages from `tbmq.ie.uplink.notifications` topics (in ms).</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;SOURCE&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
+    <p class="config-def-desc">Poll interval for messages from `tbmq.ie.source` topic (in ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;SOURCE&#95;PACK&#95;PROCESSING&#95;TIMEOUT</code> · <span class="config-def-label">Default</span> <code>20000</code></p>
+    <p class="config-def-desc">Timeout for processing a pack of messages from `tbmq.ie.source` topic (in ms).  Each sourced publish charges the licensed incoming throughput quota with a blocking call that can wait on a Redis  round trip (bounded by the Redis connect/read timeouts), so do not set this lower than `redis.*.connectTimeout`  if Redis stalls are expected.</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;NODE&#95;NOTIFICATION&#95;POLL&#95;INTERVAL</code> · <span class="config-def-label">Default</span> <code>100</code></p>
     <p class="config-def-desc">Poll interval for messages from `tbmq.sys.internode.notifications` topics (in ms).</p>
   </div>
@@ -952,6 +968,42 @@ sidebar:
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.kafka` topic.</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;RABBITMQ&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.rabbitmq` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;RABBITMQ&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.rabbitmq` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;RABBITMQ&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.rabbitmq` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;POSTGRESQL&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.postgresql` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;POSTGRESQL&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.postgresql` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;POSTGRESQL&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.postgresql` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;TIMESCALEDB&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.timescaledb` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;TIMESCALEDB&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.timescaledb` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;TIMESCALEDB&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.timescaledb` topic.</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MQTT&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
     <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.mqtt` topic.</p>
   </div>
@@ -962,6 +1014,54 @@ sidebar:
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MQTT&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.mqtt` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;REDIS&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.redis` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;REDIS&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.redis` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;REDIS&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.redis` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;KAFKA&#95;SOURCE&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.kafka.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;KAFKA&#95;SOURCE&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.kafka.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;KAFKA&#95;SOURCE&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.kafka.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MQTT&#95;SOURCE&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.mqtt.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MQTT&#95;SOURCE&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.mqtt.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MQTT&#95;SOURCE&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.mqtt.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MONGODB&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.downlink.mongodb` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MONGODB&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.downlink.mongodb` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;DOWNLINK&#95;MONGODB&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.downlink.mongodb` topic.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;UPLINK&#95;TOPIC</code> · <span class="config-def-label">Default</span> <code>tbmq.ie.uplink</code></p>
@@ -994,6 +1094,22 @@ sidebar:
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;UPLINK&#95;NOTIF&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
     <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.uplink.notifications` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;SOURCE&#95;TOPIC</code> · <span class="config-def-label">Default</span> <code>tbmq.ie.source</code></p>
+    <p class="config-def-desc">Topic for publishes sourced by inbound integrations (e.g. KAFKA&#95;SOURCE), sent from integration executors to TBMQ.  Data only: lifecycle events and heartbeats stay on `tbmq.ie.uplink`, so a busy source cannot delay them.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;SOURCE&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1</code></p>
+    <p class="config-def-desc">Kafka topic properties separated by semicolon for the `tbmq.ie.source` topic.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;SOURCE&#95;ADDITIONAL&#95;CONSUMER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka consumer configs separated by semicolon for the `tbmq.ie.source` topic.  Records of a pack are handed to the publish pipeline in poll order and awaited before the offsets commit, so max.poll.records (Kafka default 500) bounds the pack size.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;SOURCE&#95;ADDITIONAL&#95;PRODUCER&#95;CONFIG</code></p>
+    <p class="config-def-desc">Additional Kafka producer configs separated by semicolon for the `tbmq.ie.source` topic. `max.request.size` set  here is also the payload limit the integration executor enforces before sending a sourced record (configured in the executor's own yml).  Set it on this per-topic key: a value in the common producer config is not seen by that check.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;KAFKA&#95;IE&#95;MSG&#95;TOPIC&#95;PROPERTIES</code> · <span class="config-def-label">Default</span> <code>retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1</code></p>
@@ -1067,6 +1183,22 @@ sidebar:
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">TB&#95;SERVICE&#95;ID</code></p>
     <p class="config-def-desc">Unique ID for this service. Autogenerated if empty.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">NODE&#95;DRAIN&#95;BATCH&#95;SIZE</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
+    <p class="config-def-desc">Maximum number of MQTT sessions asked to disconnect in one drain batch.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">NODE&#95;DRAIN&#95;BATCH&#95;INTERVAL&#95;MS</code> · <span class="config-def-label">Default</span> <code>1000</code></p>
+    <p class="config-def-desc">Delay between drain batches (in ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">NODE&#95;DRAIN&#95;LOAD&#95;BALANCER&#95;WAIT&#95;MS</code> · <span class="config-def-label">Default</span> <code>20000</code></p>
+    <p class="config-def-desc">Grace period for load balancers to stop routing traffic after the node becomes unhealthy (in ms).</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">NODE&#95;DRAIN&#95;TIMEOUT&#95;MS</code> · <span class="config-def-label">Default</span> <code>300000</code></p>
+    <p class="config-def-desc">Maximum drain duration before the operation is marked as timed out (in ms).</p>
   </div>
 </div>
 
@@ -1460,6 +1592,10 @@ sidebar:
     <p class="config-def-desc">Logging level for events.  Accepted values: OFF (disabled), W (write operations only).</p>
   </div>
   <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">AUDIT&#95;LOG&#95;MASK&#95;MQTT&#95;MESSAGE</code> · <span class="config-def-label">Default</span> <code>OFF</code></p>
+    <p class="config-def-desc">Logging level for MQTT messages published through the REST API (POST /api/mqtt/publish). One record is written per request, so keep it OFF unless publishes through the REST API must be traceable to a user.  Accepted values: OFF (disabled), W (write operations only).</p>
+  </div>
+  <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">AUDIT&#95;LOG&#95;SINK&#95;TYPE</code> · <span class="config-def-label">Default</span> <code>none</code></p>
     <p class="config-def-desc">Type of external sink. Accepted values: none, elasticsearch.</p>
   </div>
@@ -1628,11 +1764,11 @@ sidebar:
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;TOPIC&#95;MAX&#95;SEGMENTS&#95;COUNT</code> · <span class="config-def-label">Default</span> <code>0</code></p>
-    <p class="config-def-desc">Maximum number of segments in topics. Excessively large values may cause processing errors. Defaults to 0, which disables the limit.</p>
+    <p class="config-def-desc">Maximum number of segments in topic names and topic filters. Segments are separated by "/", so a topic with N slashes  has N + 1 segments (e.g., a/b/c has 3 segments). Topics with more segments than the limit are rejected.  Excessively large values may cause processing errors. Defaults to 0, which disables the limit.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;TOPIC&#95;ALIAS&#95;MAX</code> · <span class="config-def-label">Default</span> <code>10</code></p>
-    <p class="config-def-desc">Maximum number of topic aliases per connection. Defaults to 0, which disables the Topic Alias feature.</p>
+    <p class="config-def-desc">Maximum number of topic aliases per connection. Set to 0 to disable the Topic Alias feature. Defaults to 10.</p>
   </div>
   <div class="config-def-item">
     <p class="config-def-meta"><code class="config-def-env">MQTT&#95;TOPIC&#95;MIN&#95;LENGTH&#95;FOR&#95;ALIAS&#95;REPLACEMENT</code> · <span class="config-def-label">Default</span> <code>50</code></p>
