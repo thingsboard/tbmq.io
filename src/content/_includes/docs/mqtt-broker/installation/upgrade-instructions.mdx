@@ -1,21 +1,126 @@
 import InstallationCardGrid from '~/components/InstallationCardGrid.astro';
 import Tabs    from '@components/Tabs.astro';
 import TabItem from '@components/TabItem.astro';
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Code } from '@astrojs/starlight/components';
 import { Products } from '~/models/site.models';
 import DocLink from '~/components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
+import UpgradePath from '~/components/UpgradePath.astro';
+import Badge from '~/components/Badge.astro';
 import { TBMQ_PREV_VER, TBMQ_VER } from '~/data/versions';
+
+export const ceUpgradePath = [
+  { version: '1.0.x' },
+  { version: '1.1.0', note: 'upgrading-to-201-and-earlier', downtime: 'stop' },
+  { version: '1.2.0', note: 'upgrading-to-201-and-earlier', downtime: 'stop' },
+  { version: '1.2.1', note: 'upgrading-to-201-and-earlier', downtime: 'stop' },
+  { version: '1.3.0', note: 'upgrading-to-201-and-earlier', downtime: 'stop' },
+  { version: '1.4.0', note: 'upgrading-to-201-and-earlier', downtime: 'stop' },
+  { version: '2.0.0', note: 'upgrading-to-200', level: 'action', downtime: 'stop' },
+  { version: '2.0.1', note: 'upgrading-to-201-and-earlier', downtime: 'stop' },
+  { version: '2.1.0', note: 'upgrading-to-210', level: 'action', downtime: 'stop' },
+  { version: '2.2.0', note: 'upgrading-to-220', level: 'action', downtime: 'stop' },
+  { version: '2.3.0', note: 'upgrading-to-230', level: 'action', downtime: 'stop' },
+  { version: '2.4.0', note: 'upgrading-to-240', level: 'review', downtime: 'rolling' },
+  { version: '2.4.1', note: 'upgrading-to-241', level: 'review', downtime: 'rolling' },
+];
+
+export const schemaVersionQuery = `SELECT schema_version FROM tb_schema_settings;`;
+
+TBMQ upgrades one release at a time. Each upgrade migrates the PostgreSQL database to the new version and restarts
+TBMQ on the new image; some releases also need manual changes first.
+
+## Before you upgrade
+
+1. **Find your current version.** Log in to the TBMQ UI: the **Version** card on the **Home** page shows the
+   deployed version under **Current**.
+
+   To confirm which version the database is on, run this against the TBMQ database:
+
+   <Code code={schemaVersionQuery} lang="sql" />
+
+   The result encodes the version as `major × 1000000 + minor × 1000 + patch`. For example, `2004000` is 2.4.0.
+
+2. **Back up PostgreSQL.** The guide for your deployment links its backup and restore instructions.
+
+3. **Read the notes for every release between your version and the target**, not only the last one. Some releases
+   need changes before the upgrade runs, and each note says whether you must
+   [stop TBMQ or can upgrade without downtime](#downtime).
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<Aside type="caution" title="Running 2.1.0 or earlier? Fix the Bitnami images first">
+  On August 28, 2025, Bitnami moved its versioned images from `docker.io/bitnami` to `docker.io/bitnamilegacy`, which
+  receives no updates. Configuration files from TBMQ 2.1.0 and earlier reference `bitnami/kafka` and, from 2.0.0,
+  `bitnami/redis` — these can no longer be pulled. Replace `bitnami/` with `bitnamilegacy/` in your Docker Compose files
+  or Kubernetes manifests before you restart or upgrade. TBMQ 2.3.0 replaces the Bitnami images entirely.
+</Aside>
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={2} id="upgrade-path" exclude="mqtt-broker-pe">Upgrade path</ConditionalHeading>
+
+Upgrade along this chain one step at a time: each upgrade accepts only the release right before it. The one exception
+is 2.1.0, which accepts both 2.0.0 and 2.0.1. Select a version to jump to its notes.
+
+<UpgradePath steps={ceUpgradePath} />
+
+<Aside type="tip">
+  Interested in TBMQ PE? Once you are on the latest TBMQ version, you can
+  <DocLink product={Products.TBMQ_PE} path="installation/upgrade-instructions/#upgrade-from-tbmq-to-tbmq-pe" bold={false}>migrate to TBMQ PE</DocLink>.
+</Aside>
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="version-history-pe" showFor="mqtt-broker-pe">Version history</ConditionalHeading>
+
+The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.
+
+| Target version | Upgrade from    | Downtime                                           | Notes                                                                                                                                 |
+| -------------- | --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.4.1PE**    | 2.4.0PE         | <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> | See [what the 2.4.1PE upgrade does](#upgrading-to-241-pe) below                                                                       |
+| **2.4.1PE**    | TBMQ 2.4.1 (CE) | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                         |
+| **2.4.0PE**    | 2.3.0PE         | <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> | See [what the 2.4.0PE upgrade does](#upgrading-to-240-pe) below                                                                       |
+| **2.4.0PE**    | TBMQ 2.4.0 (CE) | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                         |
+| **2.3.0PE**    | 2.2.0PE         | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        |                                                                                                                                       |
+| **2.3.0PE**    | TBMQ 2.3.0 (CE) | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                         |
+| **2.2.0PE**    | TBMQ 2.2.0 (CE) | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) — [third-party changes apply](#third-party-component-updates-in-tbmq-pe-v220) |
+</ShowFor>
+
+## Downtime
+
+Every version note says which of two kinds of upgrade it is:
+
+- <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade migrates the database, then
+  start them on the new version. MQTT clients cannot connect until the nodes are back.
+- <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> — the database is migrated while the old nodes keep running, then
+  the nodes are replaced one at a time. The cluster keeps accepting connections: clients on the node being replaced are
+  disconnected and reconnect to another node through the load balancer.
+
+A rolling upgrade needs at least two TBMQ nodes and a deployment that replaces them one by one:
+
+| Deployment                                     | Rolling upgrade                                                                                                 |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Docker (Linux, macOS, Windows)                 | No — a single node, so clients are disconnected while it restarts                                               |
+| Docker Compose cluster                         | Not yet — its upgrade procedure stops every node                                                                |
+| Kubernetes scripts (Minikube, AWS, Azure, GCP) | Yes — pods are replaced one at a time, each only after the previous one accepts MQTT connections on port `1883` |
+| Helm                                           | Yes — same one-at-a-time pod replacement                                                                        |
+
+The Kubernetes manifests and the Helm chart run two TBMQ nodes by default.
+
+## Run the upgrade
+
+Open the guide for your deployment. Its **Upgrading** section has the commands, plus any deployment-specific steps for
+the notes on this page.
 
 <Tabs defaultTab="on-premises" urlParam="installationType">
   <TabItem label="On-premises" id="on-premises" icon="tabler:server-2">
-    <h2>Standalone</h2>
+    <h3>Standalone</h3>
     <InstallationCardGrid product={props.product} items={[
       { path: 'installation/docker#upgrading', title: 'Docker (Linux, macOS)', icon: '/src/assets/images/installation/docker-linux-mac.svg', accent: 'var(--sl-color-blue)' },
       { path: 'installation/docker-windows#upgrading', title: 'Docker (Windows)', icon: '/src/assets/images/installation/docker-windows.svg', accent: 'var(--sl-color-blue)' },
     ]} />
-    <h2>Cluster</h2>
+    <h3>Cluster</h3>
     <InstallationCardGrid product={props.product} items={[
       { path: 'installation/cluster/docker-compose-setup#upgrading', title: 'Docker Compose', icon: '/src/assets/images/installation/docker-compose.svg', accent: 'var(--sl-color-blue)' },
       { path: 'installation/cluster/minikube-cluster-setup#upgrading', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)' },
@@ -40,27 +145,141 @@ import { TBMQ_PREV_VER, TBMQ_VER } from '~/data/versions';
   </TabItem>
 </Tabs>
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<ConditionalHeading level={2} id="version-notes" exclude="mqtt-broker-pe">Version notes</ConditionalHeading>
+
+What each upgrade changes and what you must do, newest first.
+
+<ConditionalHeading level={3} id="upgrading-to-241" exclude="mqtt-broker-pe">Upgrading to 2.4.1</ConditionalHeading>
+
+**From 2.4.0.** The upgrade only records the new schema version — no table is created or altered, and no data is
+migrated.
+
+**Downtime:** <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> on deployments that [support it](#downtime).
+
+**Check before upgrading:** `MQTT_TOPIC_MAX_SEGMENTS_COUNT` now counts topic segments instead of `/` delimiters. If you
+set it, raise it by 1 to keep the previous limit. The default `0` (no limit) is unaffected. See the
+<DocLink product={props.product} path="releases/#v241-october-8-2026" bold={false}>2.4.1 release notes</DocLink> for the
+other behavior changes.
+
+<ConditionalHeading level={3} id="upgrading-to-240" exclude="mqtt-broker-pe">Upgrading to 2.4.0</ConditionalHeading>
+
+**From 2.3.0.** The upgrade only records the new schema version — no table is created or altered, and no data is
+migrated.
+
+**Downtime:** <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> on deployments that [support it](#downtime). During a rolling upgrade, don't create, edit or delete integrations until every TBMQ node runs 2.4.0: 2.3.0
+nodes ignore the integration change notifications that 2.4.0 nodes send.
+
+**Check before upgrading:** if you scrape TBMQ metrics, several Prometheus metric and tag names changed, so queries,
+recording rules, alerts and dashboards need updating. The
+<DocLink product={props.product} path="releases/#v240-august-27-2026" bold={false}>2.4.0 release notes</DocLink> list
+them.
+
+<ConditionalHeading level={3} id="upgrading-to-230" exclude="mqtt-broker-pe">Upgrading to 2.3.0</ConditionalHeading>
+
+**From 2.2.0.** This release replaces the Bitnami images for third-party components with official open-source images,
+in TBMQ's Docker Compose files and Kubernetes manifests alike.
+
+**Downtime:** <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade.
+
+| Component      | 2.2.0                       | 2.3.0                | What it means for your data                                                                       |
+| -------------- | --------------------------- | -------------------- | ------------------------------------------------------------------------------------------------- |
+| PostgreSQL     | `postgres:16`               | `postgres:17`        | Major-version upgrade: PostgreSQL 17 cannot open a 16 data directory, so the data must be migrated |
+| Kafka          | `bitnamilegacy/kafka:3.7.0` | `apache/kafka:4.0.0` | New data directory — the Bitnami volume cannot be reused                                          |
+| Redis → Valkey | `bitnamilegacy/redis:7.2.5` | `valkey/valkey:8.0`  | New data directory and a new volume, `tbmq-valkey-data`                                           |
+
+The TBMQ upgrade migrates only the PostgreSQL schema. It does not upgrade PostgreSQL itself and moves no Kafka or
+Redis data. Before running it:
+
+1. **Back up everything you intend to keep:** the PostgreSQL database (for example, with `pg_dump`), and the Kafka and
+   Redis volumes if you plan to migrate them.
+2. **Upgrade PostgreSQL 16 to 17**, for example with `pg_upgrade` or a dump and restore into a fresh PostgreSQL 17
+   instance.
+3. **Decide what to do with Kafka and Redis data:** migrate it manually to the new images, or start them on new, empty
+   volumes.
+
+<Aside type="caution">
+  Empty Kafka and Valkey volumes mean losing client sessions and subscriptions, retained messages, and messages not yet
+  delivered to persistent clients. Users, MQTT client credentials and settings live in PostgreSQL and are kept.
+</Aside>
+
+These changes follow the long-term plan in the
+<a href="https://github.com/thingsboard/thingsboard-ce-k8s/blob/master/BITNAMI-IMAGE-MIGRATION.md#3-long-term-production-solution" target="_blank" rel="noopener noreferrer">Bitnami image migration guide</a>.
+<DocLink product={props.product} path="help" bold={false}>Contact us</DocLink> if you need guidance on the migration.
+
+<ConditionalHeading level={3} id="upgrading-to-220" exclude="mqtt-broker-pe">Upgrading to 2.2.0</ConditionalHeading>
+
+**From 2.1.0.** MQTT authentication settings move from YAML and environment variables into the database. The upgrade
+creates the authentication providers from these legacy variables, each defaulting to `false`:
+
+- `SECURITY_MQTT_BASIC_ENABLED` — enables the Basic provider
+- `SECURITY_MQTT_SSL_ENABLED` — enables the X.509 provider
+- `SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT` — usually `false`
+
+**Downtime:** <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade.
+
+**Do before upgrading:** pass your current values of these variables to the upgrade. Where they go depends on the
+deployment, and the deployment guide says which file to set them in.
+
+<Aside type="danger" title="Missing values disable authentication">
+  If the upgrade does not receive these variables, it creates the Basic and X.509 providers disabled. With no provider
+  enabled, TBMQ accepts every client without authentication. After the upgrade, check **Authentication → Providers** in
+  the TBMQ UI and enable the providers you use.
+</Aside>
+
+The upgrade also makes MQTT client credential names unique: where two credentials share a name, the later one gets a
+random three-character suffix.
+
+<ConditionalHeading level={3} id="upgrading-to-210" exclude="mqtt-broker-pe">Upgrading to 2.1.0</ConditionalHeading>
+
+**From 2.0.0 or 2.0.1.** From this release on, the upgrade detects the source version itself — `fromVersion` is no
+longer needed.
+
+**Downtime:** <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade.
+
+**Do before upgrading:**
+
+- **Add the Integration Executor service.** This release introduces the
+  <DocLink product={props.product} path="integrations" bold={false}>Integration Executor</DocLink> microservice; the
+  deployment guide shows how to add it.
+- **Upgrade the third-party services.** PostgreSQL moves from 15 to 16, a major-version upgrade that needs a data
+  migration (`pg_upgrade` or dump and restore). Kafka moves from 3.5.1 to 3.7.0 and Redis from 7.0 to 7.2.5; follow
+  each project's upgrade notes.
+
+<ConditionalHeading level={3} id="upgrading-to-200" exclude="mqtt-broker-pe">Upgrading to 2.0.0</ConditionalHeading>
+
+**From 1.4.0**, with `fromVersion` set to `1.4.0`. Redis becomes a required component: TBMQ now stores messages for
+persistent DEVICE clients in Redis instead of PostgreSQL, and the upgrade copies the stored messages across. See the
+<DocLink product={props.product} path="architecture" bold={false}>architecture</DocLink> for details.
+
+**Downtime:** <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade.
+
+**Do before upgrading:** back up PostgreSQL. Standalone Docker deployments must also add a Redis service; the Docker
+guides show how.
+
+<ConditionalHeading level={3} id="upgrading-to-201-and-earlier" exclude="mqtt-broker-pe">Upgrading to 2.0.1 and earlier</ConditionalHeading>
+
+**Downtime:** <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before each of these upgrades.
+
+They need no other preparation, but you must pass the version you are upgrading **from** as `fromVersion`:
+
+| Target | `fromVersion`      |
+| ------ | ------------------ |
+| 2.0.1  | `2.0.0`            |
+| 1.4.0  | `1.3.0`            |
+| 1.3.0  | `1.2.1`            |
+| 1.2.1  | `1.2.0`            |
+| 1.2.0  | `1.1.0`            |
+| 1.1.0  | `1.0.0` or `1.0.1` |
+</ShowFor>
+
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-<ConditionalHeading level={2} id="version-history-pe" showFor="mqtt-broker-pe">Version history</ConditionalHeading>
-
-Select a card above to open the upgrade guide for your deployment type, then follow its steps for the target version.
-Each guide includes instructions for pulling the new image and running the upgrade script.
-
-The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.
-
-| Target version | Upgrade from    | Notes                                                                                                                                                    |
-| -------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **2.4.1PE**    | 2.4.0PE         | See [what the 2.4.1PE upgrade does](#upgrading-to-241-pe) below                                                                                          |
-| **2.4.1PE**    | TBMQ 2.4.1 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
-| **2.4.0PE**    | 2.3.0PE         | See [what the 2.4.0PE upgrade does](#upgrading-to-240-pe) below                                                                                          |
-| **2.4.0PE**    | TBMQ 2.4.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
-| **2.3.0PE**    | 2.2.0PE         |                                                                                                                                                          |
-| **2.3.0PE**    | TBMQ 2.3.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                                            |
-| **2.2.0PE**    | TBMQ 2.2.0 (CE) | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) — [third-party changes apply](#third-party-component-updates-in-tbmq-pe-v220) |
-
 <ConditionalHeading level={2} id="upgrading-to-241-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.1PE</ConditionalHeading>
 
 The 2.4.1PE upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
+
+**Downtime:** <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> on deployments that [support it](#downtime). 2.4.1PE adds new source integration types; create them only after every TBMQ node and Integration Executor
+runs 2.4.1PE.
 
 Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading.
 `MQTT_TOPIC_MAX_SEGMENTS_COUNT` now counts topic segments instead of `/` delimiters. If you set it, raise it by 1 to keep the previous limit. The default `0` (no limit) is unaffected.
@@ -70,12 +289,19 @@ Review the behavior changes in the <DocLink product={props.product} path="releas
 The 2.4.0PE upgrade records the new schema version and creates the `dropped_msg` table and its index, used by dropped message analytics.
 Nothing else changes: no existing table is altered and no data is migrated.
 
+**Downtime:** <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> on deployments that [support it](#downtime). 2.3.0PE nodes never use the new table, so they keep working while the cluster is replaced. Don't create, edit
+or delete integrations until every TBMQ node runs 2.4.0PE: 2.3.0PE nodes ignore the integration change notifications
+that 2.4.0PE nodes send.
+
 <Aside type="note">
   If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
   Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
 </Aside>
 
 <ConditionalHeading level={2} id="upgrade-from-tbmq-to-tbmq-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
+
+**Downtime:** <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade. The migration creates the PE tables and makes a role mandatory for every user
+(`broker_user.role_id` becomes `NOT NULL`), which TBMQ CE nodes don't set — so no node may run during it.
 
 You can migrate from TBMQ to TBMQ PE of the **same version**.
 For example, TBMQ {TBMQ_VER} can be upgraded to TBMQ PE {TBMQ_VER}.
@@ -102,13 +328,13 @@ These updates follow the modernization plan outlined in the <a href="https://git
 
 | Component            | TBMQ v2.2.0                  | TBMQ PE v2.2.0      | Notes                                                                                       |
 | -------------------- | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| **PostgreSQL**       | `postgres:16`                | `postgres:17`       | Improved performance and resource efficiency. Existing data volumes remain compatible.      |
+| **PostgreSQL**       | `postgres:16`                | `postgres:17`       | Major-version upgrade: PostgreSQL 17 cannot open a 16 data directory, so the data must be migrated. |
 | **Kafka**            | `bitnamilegacy/kafka:3.7.0`  | `apache/kafka:4.0.0` | Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.   |
 | **Redis → Valkey** | `bitnamilegacy/redis:7.2.5`  | `valkey/valkey:8.0` | Migrated from Bitnami Redis to Valkey. A new volume `tbmq-valkey-data` is introduced.       |
 
 Before starting, create full backups of your environment — including the PostgreSQL database (for example, using `pg_dump`) and your Kafka and Redis data volumes if you plan to migrate them.
 
-PostgreSQL is upgraded from **16 to 17**. Although existing data volumes remain compatible, you must perform a proper database version upgrade (for example, using `pg_upgrade`) to ensure data integrity.
+PostgreSQL is upgraded from **16 to 17**. PostgreSQL 17 cannot start on a 16 data directory, so you must migrate the data (for example, using `pg_upgrade` or a dump and restore).
 
 Kafka and Redis have been migrated from Bitnami images to official open-source alternatives. The new images use **different internal data directories and volume mappings**, so existing Bitnami volumes cannot be reused directly. You must either migrate your data manually or start from new, empty volumes.
 
@@ -123,118 +349,23 @@ The standard upgrade script updates only the PostgreSQL database schema and does
 </Aside>
 </ShowFor>
 
-<ShowFor product={props.product} show={[Products.TBMQ]}>
-
-<Aside type="tip">
-  Interested in TBMQ PE? You can upgrade your TBMQ installation to <DocLink product={Products.TBMQ_PE} path="installation/upgrade-instructions">TBMQ PE</DocLink>.
-</Aside>
-
-<ConditionalHeading level={2} id="version-history" exclude="mqtt-broker-pe">Version history</ConditionalHeading>
-
-Select a card above to open the upgrade guide for your deployment type, then follow its steps for the target version.
-Each guide includes instructions for pulling the new image and running the upgrade script.
-
-The table below lists all supported upgrade paths. Versions must be upgraded sequentially — you cannot skip versions.
-
-| Target version | Upgrade from   | Notes                                                                                       |
-| -------------- | -------------- | -------------------------------------------------------------------------------------------- |
-| **2.4.1**      | 2.4.0          | See [what the 2.4.1 upgrade does](#upgrading-to-241) below                                   |
-| **2.4.0**      | 2.3.0          | See [what the 2.4.0 upgrade does](#upgrading-to-240) below                                   |
-| **2.3.0**      | 2.2.0          | See [third-party component updates](#third-party-component-updates-in-v230) below           |
-| **2.2.0**      | 2.1.0          | See [Bitnami images notice](#notice-about-bitnami-images) below                             |
-| **2.1.0**      | 2.0.0 or 2.0.1 | `fromVersion` is auto-detected — no longer required                                     |
-| **2.0.1**      | 2.0.0          | `fromVersion`: `2.0.0`                                                                      |
-| **2.0.0**      | 1.4.0          | `fromVersion`: `1.4.0` — see [migration note](#upgrading-to-200) below                  |
-| **1.4.0**      | 1.3.0          | `fromVersion`: `1.3.0`                                                                      |
-| **1.3.0**      | 1.2.1          | `fromVersion`: `1.2.1`                                                                      |
-| **1.2.1**      | 1.2.0          | `fromVersion`: `1.2.0`                                                                      |
-| **1.2.0**      | 1.1.0          | `fromVersion`: `1.1.0`                                                                      |
-| **1.1.0**      | 1.0.0 or 1.0.1 | `fromVersion`: `1.0.0` or `1.0.1`                                                           |
-
-<ConditionalHeading level={2} id="upgrading-to-241" exclude="mqtt-broker-pe">Upgrading to 2.4.1</ConditionalHeading>
-
-The 2.4.1 upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
-
-Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading.
-`MQTT_TOPIC_MAX_SEGMENTS_COUNT` now counts topic segments instead of `/` delimiters. If you set it, raise it by 1 to keep the previous limit. The default `0` (no limit) is unaffected.
-
-<ConditionalHeading level={2} id="upgrading-to-240" exclude="mqtt-broker-pe">Upgrading to 2.4.0</ConditionalHeading>
-
-The 2.4.0 upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
-
-<Aside type="note">
-  If you scrape TBMQ metrics, review the <DocLink product={props.product} path="releases/#v240-august-27-2026">2.4.0 release notes</DocLink> before upgrading.
-  Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
-</Aside>
-
-<ConditionalHeading level={2} id="third-party-component-updates-in-v230" exclude="mqtt-broker-pe">Third-party component updates in v2.3.0</ConditionalHeading>
-
-TBMQ v2.3.0 migrates all third-party components from Bitnami images to official open-source alternatives.
-These changes improve performance, stability, and remove the dependency on Bitnami's image catalog.
-
-These updates follow the modernization plan outlined in the <a href="https://github.com/thingsboard/thingsboard-ce-k8s/blob/master/BITNAMI-IMAGE-MIGRATION.md#3-long-term-production-solution" target="_blank" rel="noopener noreferrer">Bitnami Image Migration</a> guide.
-
-| Component            | TBMQ v2.2.0                  | TBMQ v2.3.0         | Notes                                                                                       |
-| -------------------- | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| **PostgreSQL**       | `postgres:16`                | `postgres:17`       | Improved performance and resource efficiency. Existing data volumes remain compatible.      |
-| **Kafka**            | `bitnamilegacy/kafka:3.7.0`  | `apache/kafka:4.0.0` | Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.   |
-| **Redis → Valkey** | `bitnamilegacy/redis:7.2.5`  | `valkey/valkey:8.0` | Migrated from Bitnami Redis to Valkey. A new volume `tbmq-valkey-data` is introduced.       |
-
-Before starting, create full backups of your environment — including the PostgreSQL database (for example, using `pg_dump`) and your Kafka and Redis data volumes if you plan to migrate them.
-
-PostgreSQL is upgraded from **16 to 17**. Although existing data volumes remain compatible, you must perform a proper database version upgrade (for example, using `pg_upgrade`) to ensure data integrity.
-
-Kafka and Redis have been migrated from Bitnami images to official open-source alternatives. The new images use **different internal data directories and volume mappings**, so existing Bitnami volumes cannot be reused directly. You must either migrate your data manually or start from new, empty volumes.
-
-<Aside type="caution">
-  Starting from new volumes removes all data stored in Kafka and Redis, including client session states, undelivered messages, retained messages, and any other persisted broker data.
-</Aside>
-
-The standard upgrade script updates only the PostgreSQL database schema and does not include data migration logic for Kafka or Valkey.
-
-<Aside type="note">
-  <DocLink product={props.product} path="help">Contact us</DocLink> if you need guidance for the migration. We can offer general recommendations to help facilitate a smoother upgrade.
-</Aside>
-
-<ConditionalHeading level={2} id="notice-about-bitnami-images" exclude="mqtt-broker-pe">Notice about Bitnami images (v2.2.0)</ConditionalHeading>
-
-TBMQ deployments prior to v2.3.0 use **Bitnami images** for third-party components such as PostgreSQL, Redis, and Kafka.
-The Bitnami team <a href="https://github.com/bitnami/charts/issues/35164" target="_blank" rel="noopener noreferrer">has announced important upcoming changes</a> to their catalog that affect these images.
-
-- Starting **August 28, 2025**, the public `docker.io/bitnami` registry will only provide a small set of "latest" hardened images for development use.
-- All versioned images will be moved to a temporary legacy registry: `docker.io/bitnamilegacy`. These images will remain available but will not receive updates or security patches.
-- The long-term supported solution is Bitnami's new Secure Images (subscription-based).
-
-**Recommended:** Complete the upgrade to v2.2.0 first (upgrades must be sequential), then continue to v2.3.0, which replaces all Bitnami images with official open-source alternatives. See [third-party component updates in v2.3.0](#third-party-component-updates-in-v230) for details.
-
-If you are staying on v2.2.0 for now, update your image references from `docker.io/bitnami/...` to `docker.io/bitnamilegacy/...` to avoid disruption after August 28, 2025.
-
-<ConditionalHeading level={2} id="upgrading-to-200" exclude="mqtt-broker-pe">Migration note for v2.0.0</ConditionalHeading>
-
-Version 2.0.0 introduces significant improvements, including a migration from PostgreSQL to Redis for storing messages for persistent DEVICE clients.
-For details, see the <DocLink product={props.product} path="architecture">architecture documentation</DocLink>.
-
-<Aside type="caution">
-  Back up your PostgreSQL database before upgrading to 2.0.0.
-</Aside>
-</ShowFor>
-
 ## Troubleshooting
 
-The upgrade validates the database before it changes anything, and stops with one of the messages below.
+The upgrade validates the database before it changes anything. If a check fails, the upgrade stops without touching the
+database; look for the line starting with `Upgrade failed:` in its output.
 
 **`Upgrade failed: database already upgraded to current version.`**
 
-The schema version recorded in the database already matches the version you are upgrading to — either the upgrade
-already completed, or an earlier run failed after the version had been recorded. See
-[forcing a re-upgrade](#forcing-a-re-upgrade) below.
+The database is already on the version you are upgrading to, so there is nothing to do — usually because this upgrade
+already completed. Start TBMQ on the new version.
 
 **`Upgrade failed: database version 'X' is not supported for upgrade. Supported versions are: [...]`**
 
-An upgrade accepts only the versions listed in the message, normally just the one immediately before the target. Upgrade
-one version at a time along the paths in the version history above.
+The database is on version `X`, but this upgrade accepts only the versions in the list — normally just the release
+immediately before the target. Upgrade one release at a time along the supported upgrade paths above, starting
+from `X`.
 
-**`Upgrade failed: can't upgrade TBMQ <A> database using TBMQ <B>.`**
+**`Upgrade failed: can't upgrade TBMQ CE database using TBMQ PE.`** (or `… TBMQ PE database using TBMQ CE.`)
 
 The edition you are upgrading with does not match the edition recorded in the database. Use TBMQ to upgrade a TBMQ
 database and TBMQ PE to upgrade a TBMQ PE database.
@@ -250,19 +381,43 @@ A CE-to-PE migration is only supported at the same version. Upgrade TBMQ to the 
 then migrate to TBMQ PE.
 </ShowFor>
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+**`Upgrade failed: can't upgrade TBMQ null database using TBMQ CE.`**
+
+The `tb_schema_settings` table is empty: the upgrade is pointed at the wrong database, or at one that a TBMQ
+installation never initialized. Check the database connection settings of the upgrade.
+
 **`Upgrade failed: the database schema version is missing.`**
 
-The `tb_schema_settings` table holds no version. Either the upgrade is pointed at the wrong database, or that database
-was never initialized by a TBMQ installation.
+The `tb_schema_settings` table records an edition but no version, or it is empty and the checks were skipped with
+`SKIP_SCHEMA_VERSION_CHECK`. Check that the upgrade points at your TBMQ database.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+**`Upgrade failed: the database schema version is missing.`**
+
+The `tb_schema_settings` table holds no version: the upgrade is pointed at the wrong database, or at one that a TBMQ
+installation never initialized. Check the database connection settings of the upgrade.
+</ShowFor>
 
 ### Forcing a re-upgrade
 
 Setting the `SKIP_SCHEMA_VERSION_CHECK` environment variable to `true` on the upgrade makes it skip **all** of the
-validation above and run regardless. Where that variable goes depends on the deployment — see the guide for your
-deployment type.
+validation above and run regardless. Set it where your deployment's upgrade reads its environment:
+
+| Deployment                                | Where to set `SKIP_SCHEMA_VERSION_CHECK=true`                         |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| Docker (Linux, macOS, Windows)            | `.tbmq-upgrade.env`, next to `docker-compose.yml`                     |
+| Docker Compose cluster                    | `tbmq.env`                                                            |
+| Kubernetes scripts (Minikube, AWS, Azure, GCP) | the `env` list of the `tb-db-setup` pod in `database-setup.yml` |
+
+Remove it again once the upgrade has run.
+
+A normal upgrade never needs it. The new version is recorded only after the schema and data changes succeed, so a run
+that fails part-way leaves the old version in place, and the check lets you run the upgrade again once the cause is
+fixed.
 
 <Aside type="caution">
   This disables every safety check, not only the version comparison, so it will also let an upgrade run against an
-  unsupported version or the wrong edition. Use it only when you know a previous run did not finish, and back up your
-  database first.
+  unsupported version or the wrong edition. Back up your database before using it.
 </Aside>
