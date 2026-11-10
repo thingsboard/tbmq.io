@@ -102,7 +102,7 @@ A rolling upgrade needs at least two TBMQ nodes and a deployment that replaces t
 | Deployment                                     | Rolling upgrade                                                                                                 |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Docker (Linux, macOS, Windows)                 | No — a single node, so clients are disconnected while it restarts                                               |
-| Docker Compose cluster                         | No — every node runs on one host, and the upgrade script stops them all; clients reconnect once it finishes    |
+| Docker Compose cluster                         | No — its upgrade procedure stops every node; clients reconnect once the cluster starts again                  |
 | Kubernetes scripts (Minikube, AWS, Azure, GCP) | Yes — pods are replaced one at a time, each only after the previous one accepts MQTT connections on port `1883` |
 | Helm                                           | Yes — same one-at-a-time pod replacement                                                                        |
 
