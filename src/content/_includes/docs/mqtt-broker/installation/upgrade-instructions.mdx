@@ -102,11 +102,12 @@ A rolling upgrade needs at least two TBMQ nodes and a deployment that replaces t
 | Deployment                                     | Rolling upgrade                                                                                                 |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Docker (Linux, macOS, Windows)                 | No — a single node, so clients are disconnected while it restarts                                               |
-| Docker Compose cluster                         | Not yet — its upgrade procedure stops every node                                                                |
+| Docker Compose cluster                         | No — every node runs on one host, and the upgrade script stops them all; clients reconnect once it finishes    |
 | Kubernetes scripts (Minikube, AWS, Azure, GCP) | Yes — pods are replaced one at a time, each only after the previous one accepts MQTT connections on port `1883` |
 | Helm                                           | Yes — same one-at-a-time pod replacement                                                                        |
 
-The Kubernetes manifests and the Helm chart run two TBMQ nodes by default.
+The Kubernetes manifests and the Helm chart run two TBMQ nodes by default. If you need upgrades without downtime, deploy
+on Kubernetes or Helm.
 
 ## Run the upgrade
 
