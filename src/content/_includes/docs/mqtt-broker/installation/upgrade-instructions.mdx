@@ -42,7 +42,7 @@ TBMQ on the new image; some releases also need manual changes first.
 
    The result encodes the version as `major × 1000000 + minor × 1000 + patch`. For example, `2004000` is 2.4.0.
 
-2. **Back up PostgreSQL.** The guide for your deployment links its backup and restore instructions.
+2. **Back up PostgreSQL**, for example with `pg_dump`, or with your managed database's snapshots.
 
 3. **Read the notes for every release between your version and the target**, not only the last one. Some releases
    need changes before the upgrade runs, and each note says whether you must
@@ -95,15 +95,15 @@ Every version note says which of two kinds of upgrade it is:
   start them on the new version. MQTT clients cannot connect until the nodes are back.
 - <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> — the database is migrated while the old nodes keep running, then
   the nodes are replaced one at a time. The cluster keeps accepting connections: clients on the node being replaced are
-  disconnected and reconnect to another node through the load balancer.
+  disconnected, and when they reconnect, the load balancer sends them to a running node.
 
 A rolling upgrade needs at least two TBMQ nodes and a deployment that replaces them one by one:
 
 | Deployment                                     | Rolling upgrade                                                                                                 |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Docker (Linux, macOS, Windows)                 | No — a single node, so clients are disconnected while it restarts                                               |
-| Docker Compose cluster                         | No — its upgrade procedure stops every node; clients reconnect once the cluster starts again                  |
-| Kubernetes scripts (Minikube, AWS, Azure, GCP) | Yes — pods are replaced one at a time, each only after the previous one accepts MQTT connections on port `1883` |
+| Docker Compose cluster                         | No — its upgrade procedure stops every node; clients can reconnect once the cluster is back |
+| Kubernetes scripts (Minikube, AWS, Azure, GCP) | Yes — pods are replaced one at a time, each only after the previous one is ready |
 | Helm                                           | Yes — same one-at-a-time pod replacement                                                                        |
 
 The Kubernetes manifests and the Helm chart run two TBMQ nodes by default. If you need upgrades without downtime, deploy
@@ -187,7 +187,7 @@ in TBMQ's Docker Compose files and Kubernetes manifests alike.
 | -------------- | --------------------------- | -------------------- | ------------------------------------------------------------------------------------------------- |
 | PostgreSQL     | `postgres:16`               | `postgres:17`        | Major-version upgrade: PostgreSQL 17 cannot open a 16 data directory, so the data must be migrated |
 | Kafka          | `bitnamilegacy/kafka:3.7.0` | `apache/kafka:4.0.0` | New data directory — the Bitnami volume cannot be reused                                          |
-| Redis → Valkey | `bitnamilegacy/redis:7.2.5` | `valkey/valkey:8.0`  | New data directory and a new volume, `tbmq-valkey-data`                                           |
+| Redis → Valkey | `bitnamilegacy/redis:7.2.5` | `valkey/valkey:8.0`  | New data directory and a new volume                                                               |
 
 The TBMQ upgrade migrates only the PostgreSQL schema. It does not upgrade PostgreSQL itself and moves no Kafka or
 Redis data. Before running it:
@@ -331,7 +331,7 @@ These updates follow the modernization plan outlined in the <a href="https://git
 | -------------------- | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
 | **PostgreSQL**       | `postgres:16`                | `postgres:17`       | Major-version upgrade: PostgreSQL 17 cannot open a 16 data directory, so the data must be migrated. |
 | **Kafka**            | `bitnamilegacy/kafka:3.7.0`  | `apache/kafka:4.0.0` | Migrated from Bitnami to the official Apache Kafka image. New volume paths are required.   |
-| **Redis → Valkey** | `bitnamilegacy/redis:7.2.5`  | `valkey/valkey:8.0` | Migrated from Bitnami Redis to Valkey. A new volume `tbmq-valkey-data` is introduced.       |
+| **Redis → Valkey** | `bitnamilegacy/redis:7.2.5`  | `valkey/valkey:8.0` | Migrated from Bitnami Redis to Valkey, with a new volume.       |
 
 Before starting, create full backups of your environment — including the PostgreSQL database (for example, using `pg_dump`) and your Kafka and Redis data volumes if you plan to migrate them.
 
@@ -353,7 +353,7 @@ The standard upgrade script updates only the PostgreSQL database schema and does
 ## Troubleshooting
 
 The upgrade validates the database before it changes anything. If a check fails, the upgrade stops without touching the
-database; look for the line starting with `Upgrade failed:` in its output.
+database; search its output for `Upgrade failed:` and match the message that follows it below.
 
 **`Upgrade failed: database already upgraded to current version.`**
 
