@@ -1,10 +1,17 @@
 import { Aside, Code } from '@astrojs/starlight/components';
-import { TBMQ_BRANCH } from '~/data/versions';
+import { TBMQ_BRANCH, TBMQ_VER } from '~/data/versions';
 
 export const cloneCmd = `git clone -b ${TBMQ_BRANCH} https://github.com/thingsboard/tbmq.git
 cd tbmq`;
 
-This guide covers downloading and building TBMQ from source. Instructions are tested on Ubuntu 20.04 LTS, 22.04 LTS, and 24.04 LTS.
+export const imagesList = `thingsboard/tbmq:${TBMQ_VER}
+thingsboard/tbmq-node:${TBMQ_VER}
+thingsboard/tbmq-integration-executor:${TBMQ_VER}`;
+
+This guide covers downloading and building TBMQ from source. Instructions are tested on Ubuntu 22.04 LTS and 24.04 LTS.
+
+The build produces installation packages for Linux and Windows and, optionally, local Docker images. The first build
+downloads all dependencies and can take 15 minutes or more; later builds reuse them.
 
 ## Required tools
 
@@ -31,9 +38,7 @@ Verify the installation:
 java -version
 ```
 
-Expected output:
-
-```text
+```text title="Expected output"
 openjdk version "25.0.xx"
 OpenJDK Runtime Environment (...)
 OpenJDK 64-Bit Server VM (build ...)
@@ -47,9 +52,29 @@ TBMQ requires Maven 3.6.3 or later:
 sudo apt install maven
 ```
 
-<Aside type="caution">
-  Maven installation may set Java 7 as the default JVM on some Linux systems. If that happens, follow the <a href="#java">Java instructions</a> above to restore Java 25 as the default.
-</Aside>
+Installing Maven also installs your distribution's default Java runtime. Check that Maven runs on Java 25:
+
+```bash
+mvn -version
+```
+
+The output must include `Java version: 25`. If it shows another version, follow the [Java instructions](#java) above to
+restore Java 25 as the default.
+
+### Git
+
+Install Git to clone the source code:
+
+```bash
+sudo apt install git
+```
+
+### Docker
+
+Docker is needed only to [build local Docker images](#build-local-docker-images) and to [run the tests](#running-tests).
+<a href="https://docs.docker.com/engine/install/ubuntu/" target="_blank" rel="noopener noreferrer">Install Docker</a>,
+then make sure your user can <a href="https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user" target="_blank" rel="noopener noreferrer">run Docker without root</a> —
+the build talks to Docker as the user who runs Maven.
 
 ## Source code
 
@@ -67,11 +92,20 @@ mvn clean install -DskipTests
 
 ## Build local Docker images
 
-Make sure <a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener noreferrer">Docker</a> is installed, then run:
+To also build the Docker images, run the build with the Docker plugin enabled:
 
 ```bash
 mvn clean install -DskipTests -Ddockerfile.skip=false
 ```
+
+The build creates the following images, each also tagged `latest`:
+
+<Code code={imagesList} lang="text" />
+
+<Aside type="caution">
+  These tags match the images published on Docker Hub, so they replace any copies of those images you have pulled, and
+  Docker Compose runs your local build instead. Run `docker pull` with the image name to get the published image back.
+</Aside>
 
 ## Build artifacts
 
@@ -81,10 +115,16 @@ Debian, RPM, and Windows packages are located in the target folder:
 cd application/target
 ```
 
+| File                                  | Package                     |
+| ------------------------------------- | --------------------------- |
+| `thingsboard-mqtt-broker.deb`         | Debian and Ubuntu package   |
+| `thingsboard-mqtt-broker.rpm`         | RPM package                 |
+| `thingsboard-mqtt-broker-windows.zip` | Windows package             |
+
 ## Running tests
 
-<a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener noreferrer">Docker</a> is required to run integration and black-box tests.
-Make sure your user can <a href="https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user" target="_blank" rel="noopener noreferrer">run Docker without root</a>.
+Integration tests start their dependencies in Docker containers through Testcontainers, so they need
+[Docker](#docker) with access for your user.
 
 <Aside type="tip">
   Main and release branches are already tested in CI — you can skip tests to avoid requiring Docker locally.
