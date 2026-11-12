@@ -3,24 +3,30 @@ import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
-import { TBMQ_BRANCH } from '~/data/versions';
+import { TBMQ_BRANCH, TBMQ_PE_VER, TBMQ_PREV_VER, TBMQ_VER } from '~/data/versions';
 import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
 
 export const installCmdCe = `wget https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/msa/tbmq/configs/tbmq-install-and-run.sh &&
-sudo chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
+chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
 
 export const installCmdPe = `wget https://raw.githubusercontent.com/thingsboard/tbmq-pe-docker-compose/${TBMQ_BRANCH}/basic/tbmq-install-and-run.sh &&
-sudo chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
+chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
+
+export const downloadComposePe = `wget https://raw.githubusercontent.com/thingsboard/tbmq-pe-docker-compose/${TBMQ_BRANCH}/basic/docker-compose.yml`;
 
 export const upgradeCmdCe = `wget -O tbmq-upgrade.sh https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/msa/tbmq/configs/tbmq-upgrade.sh &&
-sudo chmod +x tbmq-upgrade.sh && ./tbmq-upgrade.sh`;
+chmod +x tbmq-upgrade.sh`;
 
 export const upgradeCmdPe = `wget -O tbmq-upgrade.sh https://raw.githubusercontent.com/thingsboard/tbmq-pe-docker-compose/${TBMQ_BRANCH}/basic/tbmq-upgrade.sh &&
-sudo chmod +x tbmq-upgrade.sh && ./tbmq-upgrade.sh`;
+chmod +x tbmq-upgrade.sh`;
+
+export const createVolumes230 = `docker volume create tbmq-kafka-secrets
+docker volume create tbmq-kafka-config
+docker volume create tbmq-valkey-data`;
 
 export const createEnvFile220Ce = `cat > .tbmq-upgrade.env <<'EOF'
 SECURITY_MQTT_BASIC_ENABLED=true
-SECURITY_MQTT_SSL_ENABLED=true
+SECURITY_MQTT_SSL_ENABLED=false
 SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT=false
 EOF`;
 
@@ -165,43 +171,60 @@ choose a pay-as-you-go subscription or a perpetual license, and use the calculat
 
 ## Installation
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
 Run the following commands to download and run the TBMQ install script:
 
-{props.product !== Products.TBMQ_PE && <Code code={installCmdCe} lang="bash" />}
-{props.product === Products.TBMQ_PE && <Code code={installCmdPe} lang="bash" />}
-
-The script downloads the `docker-compose.yml` file, creates the necessary Docker volumes, installs the database, and starts TBMQ.
-Key configuration points in the `docker-compose.yml`:
-
-<ul>
-  <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
-    <li><code>TBMQ_LICENSE_SECRET: YOUR_LICENSE_KEY_HERE</code> — placeholder for the PE license key (see below);</li>
-    <li><code>TBMQ_LICENSE_INSTANCE_DATA_FILE: /data/tbmq-instance-license.data</code> — path to the auto-generated instance data file used to identify this TBMQ instance;</li>
-  </ShowFor>
-  <li><code>8083:8083</code> — exposes the HTTP UI on port 8083;</li>
-  <li><code>1883:1883</code> — exposes the MQTT port 1883;</li>
-  <li><code>8084:8084</code> — exposes MQTT over WebSockets on port 8084;</li>
-  <li><code>tbmq-valkey-data:/data</code> — Valkey data volume;</li>
-  <li><code>tbmq-postgres-data:/var/lib/postgresql/data</code> — PostgreSQL data volume;</li>
-  <li><code>tbmq-kafka-data:/var/lib/kafka/data</code> — Kafka data volume;</li>
-  <li><code>tbmq-logs:/var/log/thingsboard-mqtt-broker</code> — TBMQ logs volume;</li>
-  <li><code>tbmq-data:/data</code> — TBMQ data directory (contains <code>.firstlaunch</code> after DB installation);</li>
-  <li><code>tbmq</code> — Docker service name;</li>
-  <li><code>restart: always</code> — auto-restarts TBMQ on system reboot or failure.</li>
-</ul>
+<Code code={installCmdCe} lang="bash" />
+</ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+Download the `docker-compose.yml` file:
+
+<Code code={downloadComposePe} lang="bash" />
+
 <ConditionalHeading level={3} id="configure-the-license-key" showFor="mqtt-broker-pe">Configure the license key</ConditionalHeading>
 
 <LicenseTrial />
 
 Open the downloaded `docker-compose.yml`, find `TBMQ_LICENSE_SECRET`, and replace **YOUR_LICENSE_KEY_HERE** with your actual license key.
-Then re-run the script to apply the change:
-
-<Code code="./tbmq-install-and-run.sh" lang="bash" />
 
 <Aside type="caution">The broker will not start without a valid license key.</Aside>
+
+<ConditionalHeading level={3} id="run-the-install-script" showFor="mqtt-broker-pe">Run the install script</ConditionalHeading>
+
+From the same directory, run the following commands to download and run the TBMQ install script. It uses the
+`docker-compose.yml` you edited instead of downloading a new one:
+
+<Code code={installCmdPe} lang="bash" />
 </ShowFor>
+
+The script downloads the `docker-compose.yml` file if it is not already in the current directory, creates the necessary Docker volumes, installs the database, and starts TBMQ.
+It then follows the container logs; press **Ctrl+C** to stop following them — TBMQ keeps running.
+
+<details>
+<summary>Key configuration points in the <code>docker-compose.yml</code></summary>
+
+- `8083:8083` — exposes the HTTP UI on port 8083;
+- `1883:1883` — exposes the MQTT port 1883;
+- `8084:8084` — exposes MQTT over WebSockets on port 8084;
+- `tbmq-valkey-data:/data` — Valkey data volume;
+- `tbmq-postgres-data:/var/lib/postgresql/data` — PostgreSQL data volume;
+- `tbmq-kafka-data:/var/lib/kafka/data` — Kafka data volume;
+- `tbmq-kafka-secrets:/etc/kafka/secrets` and `tbmq-kafka-config:/mnt/shared/config` — Kafka secrets and configuration volumes;
+- `tbmq-logs:/var/log/thingsboard-mqtt-broker` — TBMQ logs volume;
+- `tbmq-data:/data` — TBMQ data directory (contains `.firstlaunch` after DB installation);
+- `tbmq-ie-logs:/var/log/tbmq-integration-executor` — Integration Executor logs volume;
+- `tbmq` — Docker service name;
+- `tbmq-integration-executor` — Docker service name of the <DocLink product={props.product} path="integrations" bold={false}>Integration Executor</DocLink>, which runs integrations;
+- `restart: always` — auto-restarts TBMQ on system reboot or failure.
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+The PE file also sets the license:
+
+- `TBMQ_LICENSE_SECRET` — the PE license key you set in [Configure the license key](#configure-the-license-key);
+- `TBMQ_LICENSE_INSTANCE_DATA_FILE: /data/tbmq-instance-license.data` — path to the auto-generated instance data file used to identify this TBMQ instance.
+</ShowFor>
+</details>
 
 <Aside>
   If TBMQ is installed on the same host where ThingsBoard is already running, the following error may occur:
@@ -321,6 +344,15 @@ Then proceed with the [upgrade](#run-upgrade).
 
 Review the <DocLink product={props.product} path="installation/upgrade-instructions/#upgrading-to-230">third-party component updates</DocLink> for full details.
 
+The 2.3.0 upgrade script changes only the `tbmq` and `tbmq-integration-executor` image tags, and runs the database
+upgrade against a Valkey service named `valkey`. Before running it, replace your `docker-compose.yml` with the
+<a href="https://github.com/thingsboard/tbmq/blob/release-2.3.0/msa/tbmq/configs/docker-compose.yml" target="_blank" rel="noopener noreferrer">2.3.0 version</a>,
+carrying over your own changes. The new file keeps the `tbmq-postgres-data` and `tbmq-kafka-data` volume names but runs
+PostgreSQL 17 and Apache Kafka on them, so migrate or empty those volumes first, as the upgrade notes describe. Then
+create the new volumes:
+
+<Code code={createVolumes230} lang="bash" />
+
 The upgrade script requires a **`.tbmq-upgrade.env`** file.
 If it does not already exist from a previous upgrade, create an empty one:
 
@@ -341,8 +373,10 @@ The upgrade script requires a **`.tbmq-upgrade.env`** file in the same directory
 
 <Code code={createEnvFile220Ce} lang="bash" />
 
+The example matches the default `docker-compose.yml`, which enables only Basic authentication.
+
 <Aside type="tip">
-  If you use only Basic authentication, set `SECURITY_MQTT_SSL_ENABLED=false`.
+  If you also use X.509 authentication, set `SECURITY_MQTT_SSL_ENABLED=true`.
   If you use only X.509 authentication, set `SECURITY_MQTT_BASIC_ENABLED=false` and `SECURITY_MQTT_SSL_ENABLED=true`.
 </Aside>
 
@@ -353,6 +387,12 @@ The upgrade script requires a **`.tbmq-upgrade.env`** file in the same directory
   - `SECURITY_MQTT_BASIC_ENABLED` (`true|false`)
   - `SECURITY_MQTT_SSL_ENABLED` (`true|false`)
   - `SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT` (`true|false`) — usually `false`
+
+<Aside type="danger" title="Missing values disable authentication">
+  A variable missing from the file defaults to `false`, so the upgrade creates that provider disabled. With no provider
+  enabled, TBMQ accepts every client without authentication. After the upgrade, check **Authentication → Providers** in
+  the TBMQ UI. See the <DocLink product={props.product} path="installation/upgrade-instructions/#upgrading-to-220" bold={false}>2.2.0 upgrade notes</DocLink>.
+</Aside>
 
 Once the file is created, proceed with the [upgrade](#run-upgrade).
 </details>
@@ -461,7 +501,7 @@ Then proceed with the [upgrade](#run-upgrade).
 <ConditionalHeading level={3} id="upgrade-to-2-3-0-pe" showFor="mqtt-broker-pe">Upgrade to 2.3.0</ConditionalHeading>
 
 <details>
-<summary>This is a standard upgrade from v2.2.0.</summary>
+<summary>This is a standard upgrade from v2.2.0PE.</summary>
 
 No third-party component changes are required — the official images are already in use since v2.2.0.
 
@@ -499,18 +539,41 @@ Then proceed with the [upgrade](#run-upgrade).
 
 ### Run upgrade
 
-To update to the latest version, run the following commands:
+Run the upgrade from the directory that contains `docker-compose.yml` and `.tbmq-upgrade.env`. Download the upgrade script:
 
-{props.product !== Products.TBMQ_PE && <Code code={upgradeCmdCe} lang="bash" />}
-{props.product === Products.TBMQ_PE && <Code code={upgradeCmdPe} lang="bash" />}
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+<Code code={upgradeCmdCe} lang="bash" />
+
+The script upgrades TBMQ {TBMQ_PREV_VER} to {TBMQ_VER}. It changes the `tbmq` and `tbmq-integration-executor` image tags in
+`docker-compose.yml`, keeping the original as `docker-compose.yml.bak`, and stops with
+`Failed to replace the image version` if the file does not reference TBMQ {TBMQ_PREV_VER}.
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<Code code={upgradeCmdPe} lang="bash" />
+
+The script upgrades TBMQ PE {TBMQ_PREV_VER}PE, or TBMQ {TBMQ_VER} (CE), to {TBMQ_PE_VER}. It changes the `tbmq` and
+`tbmq-integration-executor` image tags in `docker-compose.yml`, keeping the original as `docker-compose.yml.bak`, and stops
+with `Failed to replace the image version` if the file references neither version.
+</ShowFor>
+
+<Aside type="caution">
+  The script connects to PostgreSQL and Valkey with the default settings from `docker-compose.yml`. If you changed them,
+  edit the `db_url`, `db_username`, `db_password`, and `valkey_url` variables at the top of `tbmq-upgrade.sh` to match
+  before running it.
+</Aside>
+
+Run the upgrade:
+
+<Code code="./tbmq-upgrade.sh" lang="bash" />
+
+After the database upgrade, the script asks you to confirm removing the stopped `tbmq` container
+(`Going to remove …-tbmq-1`). Answer `y`; the script then starts TBMQ on the new version.
 
 The upgrade script stops the `tbmq` service while the upgrade runs and starts it again afterwards, so expect a brief interruption.
 
-<Aside type="caution">
-  Replace `valkey_url`, `db_url`, `db_username`, and `db_password` variables in the script with the corresponding values used during DB initialization.
-</Aside>
-
 <Aside type="tip">
+  Each script upgrades from the previous release only, so upgrade one release at a time.
   To upgrade to a specific version (e.g., TBMQ v2.0.0),
   replace the release branch in the command above with the target branch name, e.g., **release-2.0.0**.
 </Aside>
@@ -534,14 +597,27 @@ Obtain a valid SSL certificate and private key. For example:
 
 **Mount certificates into the container**
 
-In your `docker-compose.yml`, mount the directory containing the certificates:
+In your `docker-compose.yml`, mount the directory containing the certificates into the `tbmq` service:
 
 ```yaml
-volumes:
-  - PATH_TO_CERTS:/config/certificates
+services:
+  tbmq:
+    volumes:
+      - tbmq-logs:/var/log/thingsboard-mqtt-broker
+      - tbmq-data:/data
+      - PATH_TO_CERTS:/config/certificates
 ```
 
-Replace `PATH_TO_CERTS` with the path to your certificate files. Ensure TBMQ has read access to these files.
+Replace `PATH_TO_CERTS` with the path to your certificate files.
+
+TBMQ runs as the `thingsboard` user (UID `799`) inside the container and must be able to read both files. Private keys
+are usually readable only by their owner, so give that user ownership of the files:
+
+```bash
+sudo chown 799:799 PATH_TO_CERTS/mqttserver.pem PATH_TO_CERTS/mqttserver_key.pem
+```
+
+If TBMQ cannot read a file, it fails to start and logs `Permission denied` for that file.
 
 **Configure environment variables**
 
@@ -560,11 +636,16 @@ LISTENER_SSL_PEM_KEY_PASSWORD: "server_key_password"
 
 **Expose the MQTTS port**
 
-In `docker-compose.yml`:
+In `docker-compose.yml`, add the port to the `tbmq` service:
 
 ```yaml
-ports:
-  - "8883:8883"
+services:
+  tbmq:
+    ports:
+      - "8083:8083"
+      - "1883:1883"
+      - "8084:8084"
+      - "8883:8883"
 ```
 
 **Restart TBMQ**
