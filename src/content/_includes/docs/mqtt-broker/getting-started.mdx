@@ -11,10 +11,10 @@ import TabItem from '@components/TabItem.astro';
 import LearnLink from '@components/LearnLink.astro';
 
 export const linuxInstall = `wget https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/msa/tbmq/configs/tbmq-install-and-run.sh &&
-sudo chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
+chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
 
 export const linuxPeInstall = `wget https://raw.githubusercontent.com/thingsboard/tbmq-pe-docker-compose/${TBMQ_BRANCH}/basic/tbmq-install-and-run.sh &&
-sudo chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
+chmod +x tbmq-install-and-run.sh && ./tbmq-install-and-run.sh`;
 
 export const windowsInstall = `Invoke-WebRequest -Uri "https://raw.githubusercontent.com/thingsboard/tbmq/${TBMQ_BRANCH}/msa/tbmq/configs/windows/tbmq-install-and-run.ps1" \`
 -OutFile ".\\tbmq-install-and-run.ps1"; .\\tbmq-install-and-run.ps1`;
