@@ -669,12 +669,15 @@ After pulling, run the database upgrade and then apply the updated manifests to 
   running the previous image until `k8s-deploy-tbmq.sh` applies the updated manifests.
 </Aside>
 
-<Aside>
-You may optionally stop TBMQ pods before running the database upgrade to ensure a consistent DB state:
+<Aside title="Upgrades that stop TBMQ">
+  Upgrades to 2.4.0 and later are rolling upgrades: Kubernetes replaces the TBMQ pods one at a time, so the cluster keeps
+  accepting connections. Upgrades to 2.3.0 and earlier must stop every TBMQ node while the database is migrated — see
+  the <DocLink product={props.product} path="installation/upgrade-instructions/#downtime" bold={false}>downtime of each version</DocLink>.
+  For those, delete the TBMQ pods before the database upgrade:
 
-<Code code="./k8s-delete-tbmq.sh" lang="bash" />
+  <Code code={`./k8s-delete-tbmq.sh\n./k8s-upgrade-tbmq.sh\n./k8s-deploy-tbmq.sh`} lang="bash" />
 
-This causes downtime, but most upgrades do not require stopping TBMQ.
+  MQTT clients can't connect from the first command until the new pods are ready.
 </Aside>
 
 ## Cluster deletion
