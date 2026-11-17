@@ -1,7 +1,6 @@
-import InstallationCardGrid from '~/components/InstallationCardGrid.astro';
-import Tabs    from '@components/Tabs.astro';
-import TabItem from '@components/TabItem.astro';
-import { Aside, Code } from '@astrojs/starlight/components';
+import GuideLinkPanels from '~/components/Installations/GuideLinkPanels.astro';
+import DowntimeModes from '~/components/Installations/DowntimeModes.astro';
+import { Aside, Code, Steps } from '@astrojs/starlight/components';
 import { Products } from '~/models/site.models';
 import DocLink from '~/components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
@@ -33,6 +32,8 @@ TBMQ on the new image; some releases also need manual changes first.
 
 ## Before you upgrade
 
+<Steps>
+
 1. **Find your current version.** Log in to the TBMQ UI: the **Version** card on the **Home** page shows the
    deployed version under **Current**.
 
@@ -47,6 +48,8 @@ TBMQ on the new image; some releases also need manual changes first.
 3. **Read the notes for every release between your version and the target**, not only the last one. Some releases
    need changes before the upgrade runs, and each note says whether you must
    [stop TBMQ or can upgrade without downtime](#downtime).
+
+</Steps>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
 <Aside type="caution" title="Running 2.1.0 or earlier? Fix the Bitnami images first">
@@ -91,11 +94,12 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 Every version note says which of two kinds of upgrade it is:
 
-- <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" /> — stop every TBMQ node before the upgrade migrates the database, then
-  start them on the new version. MQTT clients cannot connect until the nodes are back.
-- <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> — the database is migrated while the old nodes keep running, then
-  the nodes are replaced one at a time. The cluster keeps accepting connections: clients on the node being replaced are
-  disconnected, and when they reconnect, the load balancer sends them to a running node.
+<DowntimeModes modes={[
+  { badge: 'Stop TBMQ', variant: 'danger', icon: 'tabler:player-stop',
+    text: 'Stop every TBMQ node before the upgrade migrates the database, then start them on the new version. MQTT clients cannot connect until the nodes are back.' },
+  { badge: 'Rolling upgrade', variant: 'success', icon: 'tabler:refresh',
+    text: 'The database is migrated while the old nodes keep running, then the nodes are replaced one at a time. The cluster keeps accepting connections: clients on the node being replaced are disconnected, and when they reconnect, the load balancer sends them to a running node.' },
+]} />
 
 A rolling upgrade needs at least two TBMQ nodes and a deployment that replaces them one by one:
 
@@ -114,37 +118,27 @@ on Kubernetes or Helm.
 Open the guide for your deployment. Its **Upgrading** section has the commands, plus any deployment-specific steps for
 the notes on this page.
 
-<Tabs defaultTab="on-premises" urlParam="installationType">
-  <TabItem label="On-premises" id="on-premises" icon="tabler:server-2">
-    <h3>Standalone</h3>
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/docker#upgrading', title: 'Docker (Linux, macOS)', icon: '/src/assets/images/installation/docker-linux-mac.svg', accent: 'var(--sl-color-blue)' },
-      { path: 'installation/docker-windows#upgrading', title: 'Docker (Windows)', icon: '/src/assets/images/installation/docker-windows.svg', accent: 'var(--sl-color-blue)' },
-    ]} />
-    <h3>Cluster</h3>
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/docker-compose-setup#upgrading', title: 'Docker Compose', icon: '/src/assets/images/installation/docker-compose.svg', accent: 'var(--sl-color-blue)' },
-      { path: 'installation/cluster/minikube-cluster-setup#upgrading', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)' },
-    ]} />
-  </TabItem>
-  <TabItem label="Cloud" id="cloud" icon="tabler:cloud">
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/aws-cluster-setup#upgrading', title: 'AWS', icon: '/src/assets/images/installation/aws.svg', accent: 'var(--sl-color-orange)' },
-      { path: 'installation/cluster/azure-cluster-setup#upgrading', title: 'Azure', icon: '/src/assets/images/installation/azure.svg', accent: 'var(--color-product-trendz)' },
-      { path: 'installation/cluster/gcp-cluster-setup#upgrading', title: 'Google Cloud Platform', icon: '/src/assets/images/installation/gcp-platform.svg', accent: 'var(--sl-color-red)' },
-    ]} />
-  </TabItem>
-  <TabItem label="Helm" id="helm" icon="tabler:hexagon-letter-h">
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/helm-cluster-setup-minikube#upgrading', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)' },
-      { path: 'installation/cluster/helm-cluster-setup-aws#upgrading', title: 'AWS EKS', icon: '/src/assets/images/installation/eks.svg', accent: 'var(--sl-color-orange)' },
-    ]} />
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/helm-cluster-setup-azure#upgrading', title: 'Azure AKS', icon: '/src/assets/images/installation/azure-kubernetes.svg', accent: 'var(--color-product-trendz)' },
-      { path: 'installation/cluster/helm-cluster-setup-gcp#upgrading', title: 'GCP GKE', icon: '/src/assets/images/installation/gcp-kubernetes.svg', accent: 'var(--sl-color-red)' },
-    ]} />
-  </TabItem>
-</Tabs>
+<GuideLinkPanels product={props.product} groups={[
+  { label: 'Standalone', icon: 'tabler:server', items: [
+    { path: 'installation/docker#upgrading', title: 'Docker (Linux, macOS)', icon: '/src/assets/images/installation/docker-linux-mac.svg' },
+    { path: 'installation/docker-windows#upgrading', title: 'Docker (Windows)', icon: '/src/assets/images/installation/docker-windows.svg' },
+  ] },
+  { label: 'Cluster', icon: 'tabler:server-2', items: [
+    { path: 'installation/cluster/docker-compose-setup#upgrading', title: 'Docker Compose', icon: '/src/assets/images/installation/docker-compose.svg' },
+    { path: 'installation/cluster/minikube-cluster-setup#upgrading', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg' },
+  ] },
+  { label: 'Cloud', icon: 'tabler:cloud', items: [
+    { path: 'installation/cluster/aws-cluster-setup#upgrading', title: 'AWS', icon: '/src/assets/images/installation/aws.svg' },
+    { path: 'installation/cluster/azure-cluster-setup#upgrading', title: 'Azure', icon: '/src/assets/images/installation/azure.svg' },
+    { path: 'installation/cluster/gcp-cluster-setup#upgrading', title: 'Google Cloud Platform', icon: '/src/assets/images/installation/gcp-platform.svg' },
+  ] },
+  { label: 'Helm', icon: 'tabler:hexagon-letter-h', items: [
+    { path: 'installation/cluster/helm-cluster-setup-minikube#upgrading', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg' },
+    { path: 'installation/cluster/helm-cluster-setup-aws#upgrading', title: 'AWS EKS', icon: '/src/assets/images/installation/eks.svg' },
+    { path: 'installation/cluster/helm-cluster-setup-azure#upgrading', title: 'Azure AKS', icon: '/src/assets/images/installation/azure-kubernetes.svg' },
+    { path: 'installation/cluster/helm-cluster-setup-gcp#upgrading', title: 'GCP GKE', icon: '/src/assets/images/installation/gcp-kubernetes.svg' },
+  ] },
+]} />
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
 <ConditionalHeading level={2} id="version-notes" exclude="mqtt-broker-pe">Version notes</ConditionalHeading>

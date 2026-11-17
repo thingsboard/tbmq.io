@@ -1,0 +1,95 @@
+---
+// DowntimeModes.astro
+// Side-by-side cards for the two upgrade kinds on the upgrade instructions page.
+// The badges match the ones each version note uses, so a reader can map a note to its card.
+
+import Icon from '~/components/starlight/Icon.astro';
+import Badge from '~/components/Badge.astro';
+
+export interface DowntimeMode {
+	badge: string;
+	variant: 'danger' | 'success';
+	icon: string; // tabler icon name
+	text: string;
+}
+
+interface Props {
+	modes: DowntimeMode[];
+}
+
+const { modes } = Astro.props;
+---
+
+<ul class="dm-grid">
+	{
+		modes.map((mode) => (
+			<li class:list={['dm-card', `dm-card--${mode.variant}`]}>
+				<span class="dm-card__head">
+					<span class="dm-card__icon" aria-hidden="true">
+						<Icon name={mode.icon} />
+					</span>
+					<Badge text={mode.badge} variant={mode.variant} class="nowrap-badge" />
+				</span>
+				<span class="dm-card__text">{mode.text}</span>
+			</li>
+		))
+	}
+</ul>
+
+<style>
+	.dm-grid {
+		list-style: none;
+		padding: 0;
+		margin: 1rem 0 0;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	@media (max-width: 640px) {
+		.dm-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.dm-card {
+		--dm-accent: var(--sl-color-red);
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin: 0;
+		padding: 1.25rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-top: 3px solid var(--dm-accent);
+		border-radius: 0.75rem;
+		background: var(--sl-color-bg);
+	}
+
+	.dm-card--success {
+		--dm-accent: var(--sl-color-green);
+	}
+
+	.dm-card__head {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+	}
+
+	.dm-card__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.5rem;
+		font-size: 1.125rem;
+		color: var(--dm-accent);
+		background: color-mix(in srgb, var(--dm-accent) 12%, transparent);
+	}
+
+	.dm-card__text {
+		font-size: var(--sl-text-sm);
+		line-height: 1.6;
+		color: var(--sl-color-gray-2);
+	}
+</style>
