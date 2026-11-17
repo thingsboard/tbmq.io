@@ -310,8 +310,9 @@ Recommendations:
 - **Parameter groups**: Use the default Valkey 8.x group or create a custom parameter group for easier tuning later.
 - **Networking**: Choose the cluster's VPC and its **private subnets**. Attach the
   `eksctl-tbmq-cluster-ClusterSharedNodeSecurityGroup-*` security group.
-- **Encryption in transit**: TBMQ connects without TLS by default. If you enable encryption in transit,
-  [enable TLS in TBMQ](#connect-to-amazon-elasticache). Encryption at rest doesn't affect TBMQ.
+- **Encryption in transit**: Check this setting before you create the cache. TBMQ connects without TLS by default, so
+  if encryption in transit is enabled, [enable TLS in TBMQ](#connect-to-amazon-elasticache). Encryption at rest
+  doesn't affect TBMQ.
 - **Access control**: Leave it off, or set a password and pass it to TBMQ as `REDIS_PASSWORD`.
 - **Backups**: Enable automatic backups with a 1–7 day retention period.
 
@@ -879,7 +880,10 @@ aws elbv2 describe-load-balancers --region us-east-1 --query 'LoadBalancers[].Lo
 
 Delete the Amazon RDS database, the Amazon MSK cluster, and the Amazon ElastiCache cache in the AWS Console, and wait
 until they are deleted. They use the cluster's VPC and security group, so `eksctl` can't delete the cluster while they
-exist. Then delete the controller and the EKS cluster (update the cluster name and region if different):
+exist. Then delete the subnet groups created for them: the DB subnet group in **RDS** → **Subnet groups** and the cache
+subnet group in **ElastiCache** → **Subnet groups**. Deleting the database and the cache doesn't remove them.
+
+Delete the controller and the EKS cluster (update the cluster name and region if different):
 
 ```bash
 helm uninstall aws-load-balancer-controller -n kube-system
