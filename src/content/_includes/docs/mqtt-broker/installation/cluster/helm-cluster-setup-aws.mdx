@@ -1,4 +1,6 @@
-import { Aside, Code, Steps } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
 import ShowFor from '~/components/ShowFor.astro';
@@ -43,6 +45,23 @@ The chart deploys only TBMQ: two broker nodes and two Integration Executors. Pos
 cache run separately. This guide deploys them in the cluster with CrunchyData PGO, Strimzi, and Valkey; you can use
 Amazon RDS, Amazon MSK, and Amazon ElastiCache instead. Web traffic goes through an AWS Application Load Balancer (ALB)
 and MQTT traffic through an AWS Network Load Balancer (NLB).
+
+<DeploymentAtGlance host="EKS cluster · TBMQ Helm chart" hostIcon="simple-icons:amazoneks" services={[
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor × 2', icon: 'tabler:plug-connected' },
+  { name: 'AWS Load Balancer Controller', icon: 'simple-icons:awselasticloadbalancing' },
+]} managedLabel="Dependencies" managedIcon="simple-icons:kubernetes" managed={[
+  { name: 'PostgreSQL (PGO or RDS)', icon: 'simple-icons:postgresql' },
+  { name: 'Kafka (Strimzi or MSK)', icon: 'simple-icons:apachekafka' },
+  { name: 'Valkey (or ElastiCache)', icon: 'tabler:database' },
+]} portsLabel="Load balancer ports" ports={[
+  { port: '80', protocol: 'HTTP · ALB', use: 'TBMQ UI and REST API' },
+  { port: '443', protocol: 'HTTPS · ALB', use: 'TBMQ UI and REST API, once you enable', linkText: 'HTTPS access', href: '#https-access' },
+  { port: '1883', protocol: 'MQTT · NLB', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets · NLB', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS · NLB', use: 'MQTT clients that connect over TLS, once you configure', linkText: 'TLS termination or mutual TLS', href: '#mqtts-access' },
+  { port: '8085', protocol: 'MQTT over secure WebSockets · NLB', use: 'MQTT clients that connect over secure WebSockets, once you configure', linkText: 'TLS termination or mutual TLS', href: '#mqtts-access' },
+]} />
 
 <Aside>
   This guide names the EKS cluster **`tbmq`**, as the provided `cluster.yml` does. If you change the name, change it in
@@ -972,3 +991,27 @@ eksctl delete cluster -r us-east-1 -n tbmq -w
 ```
 
 Use your cluster's region in `-r`. The deletion takes about 15 minutes.
+
+## Next steps
+
+<CardGrid>
+  <Card title="Connect your first client" icon="rocket" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Change broker settings through environment variables in `tbmq.customEnv` of your `values.yaml`.
+    See <DocLink product={props.product} path="installation/how-to-change-config" bold={false}>How to change configuration</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="open-book" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+</CardGrid>
