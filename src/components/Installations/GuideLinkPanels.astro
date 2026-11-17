@@ -12,7 +12,7 @@
 //   ]} />
 
 import Icon from '~/components/starlight/Icon.astro';
-import { Products, productDocsPrefix } from '~/models/site.models';
+import { Products, docsLink } from '~/models/site.models';
 
 export interface GuideLink {
 	path: string; // docs path relative to the edition prefix; may carry a #hash
@@ -32,7 +32,6 @@ interface Props {
 }
 
 const { groups, product } = Astro.props;
-const prefix = productDocsPrefix[product];
 
 const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 	eager: true,
@@ -42,11 +41,11 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 
 const resolved = groups.map((group) => ({
 	...group,
-	items: group.items.map((item) => {
-		const [basePath, hash] = item.path.split('#');
-		const href = `/docs/${prefix}${basePath.endsWith('/') ? basePath : basePath + '/'}${hash ? '#' + hash : ''}`;
-		return { ...item, href, iconRaw: svgModules[item.icon] ?? null };
-	}),
+	items: group.items.map((item) => ({
+		...item,
+		href: docsLink(product, item.path),
+		iconRaw: svgModules[item.icon] ?? null,
+	})),
 }));
 ---
 

@@ -225,9 +225,9 @@ What each upgrade needs before you run the upgrade — select a version for its 
 | -------------------------- | ------------------------------------------------------------------------------------ |
 | [2.4.1](#upgrade-to-2-4-1) | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                    |
 | [2.4.0](#upgrade-to-2-4-0) | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics     |
-| [2.3.0](#upgrade-to-2-3-0) | Plan the third-party component migration                                             |
-| [2.2.0](#upgrade-to-2-2-0) | Check the authentication settings in `database-setup.yml`                            |
-| [2.1.0](#upgrade-to-2-1-0) | Upgrade the third-party services                                                     |
+| [2.3.0](#upgrade-to-2-3-0) | [Delete the TBMQ pods first](#run-upgrade). Plan the third-party component migration  |
+| [2.2.0](#upgrade-to-2-2-0) | [Delete the TBMQ pods first](#run-upgrade). Check the authentication settings in `database-setup.yml` |
+| [2.1.0](#upgrade-to-2-1-0) | [Delete the TBMQ pods first](#run-upgrade). Upgrade the third-party services          |
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
@@ -235,7 +235,7 @@ What each upgrade needs before you run the upgrade — select a version for its 
 | ----------------------------------------- | --------------------------------------------------------------------------------- |
 | [2.4.1](#upgrade-to-2-4-1-pe)             | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                 |
 | [2.4.0](#upgrade-to-2-4-0-pe)             | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics  |
-| [2.3.0](#upgrade-to-2-3-0-pe)             | Nothing                                                                           |
+| [2.3.0](#upgrade-to-2-3-0-pe)             | [Delete the TBMQ pods first](#run-upgrade)                                        |
 | [TBMQ to TBMQ PE](#upgrade-from-ce-to-pe) | Move to the PE repository and set the license key; this path has its own commands |
 </ShowFor>
 
