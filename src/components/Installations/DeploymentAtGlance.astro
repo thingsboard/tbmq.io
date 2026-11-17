@@ -2,7 +2,8 @@
 // DeploymentAtGlance.astro
 // Opening summary for an installation guide: the containers the deployment runs on its
 // host, then one tile per port TBMQ exposes (port, protocol, what it's for). The labels and
-// icons are overridable, so the same layout also shows build tools and build outputs.
+// icons are overridable, so the same layout also shows build tools and build outputs. An
+// optional second group (`managed`) sits beside the host, e.g. a cloud's managed services.
 //
 // Usage:
 //   <DeploymentAtGlance host="One host · Docker" services={[
@@ -34,6 +35,9 @@ interface Props {
 	host: string;
 	hostIcon?: string;
 	services: GlanceService[];
+	managedLabel?: string;
+	managedIcon?: string;
+	managed?: GlanceService[];
 	portsLabel?: string;
 	portsIcon?: string;
 	ports: GlancePort[];
@@ -43,6 +47,9 @@ const {
 	host,
 	hostIcon = 'tabler:server',
 	services,
+	managedLabel = 'Managed services',
+	managedIcon = 'tabler:cloud',
+	managed,
 	portsLabel = 'Ports',
 	portsIcon = 'tabler:plug-connected',
 	ports,
@@ -50,6 +57,11 @@ const {
 
 // Rows of four by default; three when that divides the tiles evenly (e.g. six ports).
 const cols = ports.length > 4 && ports.length % 3 === 0 ? 3 : Math.min(ports.length, 4);
+
+const groups = [
+	{ label: host, icon: hostIcon, items: services },
+	...(managed?.length ? [{ label: managedLabel, icon: managedIcon, items: managed }] : []),
+];
 
 const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 	eager: true,
@@ -59,27 +71,33 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 ---
 
 <div class="dg">
-	<div class="dg-host">
-		<p class="dg-label">
-			<span class="dg-label__icon" aria-hidden="true"><Icon name={hostIcon} /></span>
-			{host}
-		</p>
-		<ul class="dg-services">
-			{
-				services.map((s) => (
-					<li class="dg-service">
-						<span class="dg-service__icon" aria-hidden="true">
-							{s.logo && svgModules[s.logo] ? (
-								<Fragment set:html={svgModules[s.logo]} />
-							) : (
-								s.icon && <Icon name={s.icon} />
-							)}
+	<div class:list={['dg-groups', { 'dg-groups--two': groups.length > 1 }]}>
+		{
+			groups.map((g) => (
+				<div class="dg-host">
+					<p class="dg-label">
+						<span class="dg-label__icon" aria-hidden="true">
+							<Icon name={g.icon} />
 						</span>
-						{s.name}
-					</li>
-				))
-			}
-		</ul>
+						{g.label}
+					</p>
+					<ul class="dg-services">
+						{g.items.map((s) => (
+							<li class="dg-service">
+								<span class="dg-service__icon" aria-hidden="true">
+									{s.logo && svgModules[s.logo] ? (
+										<Fragment set:html={svgModules[s.logo]} />
+									) : (
+										s.icon && <Icon name={s.icon} />
+									)}
+								</span>
+								{s.name}
+							</li>
+						))}
+					</ul>
+				</div>
+			))
+		}
 	</div>
 	<p class="dg-label dg-label--ports">
 		<span class="dg-label__icon" aria-hidden="true"><Icon name={portsIcon} /></span>
@@ -143,6 +161,26 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 		display: flex;
 		font-size: 1rem;
 		color: var(--color-brand);
+	}
+
+	.dg-groups {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.dg-groups--two {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	/* Starlight spaces adjacent content blocks with margin-top; grid gap does that here. */
+	.dg-groups > .dg-host {
+		margin-top: 0;
+	}
+
+	@media (max-width: 720px) {
+		.dg-groups--two {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.dg-host {

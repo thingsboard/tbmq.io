@@ -1,4 +1,6 @@
-import { Aside, Code } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ImageGallery from '~/components/ImageGallery.astro';
@@ -33,6 +35,23 @@ This guide covers deploying a TBMQ cluster on Amazon Elastic Kubernetes Service 
 The scripts deploy two TBMQ broker nodes and two Integration Executors. TBMQ stores its data in Amazon RDS for
 PostgreSQL, Amazon MSK (Kafka), and Amazon ElastiCache (Valkey), which you create in the AWS Console. Web traffic goes
 through an AWS Application Load Balancer (ALB) and MQTT traffic through an AWS Network Load Balancer (NLB).
+
+<DeploymentAtGlance host="EKS cluster" hostIcon="simple-icons:amazoneks" services={[
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor × 2', icon: 'tabler:plug-connected' },
+  { name: 'AWS Load Balancer Controller', icon: 'simple-icons:awselasticloadbalancing' },
+]} managedLabel="AWS managed services" managedIcon="simple-icons:amazonwebservices" managed={[
+  { name: 'RDS for PostgreSQL', icon: 'simple-icons:amazonrds' },
+  { name: 'MSK (Kafka)', icon: 'simple-icons:apachekafka' },
+  { name: 'ElastiCache (Valkey)', icon: 'simple-icons:amazonelasticache' },
+]} portsLabel="Load balancer ports" ports={[
+  { port: '80', protocol: 'HTTP · ALB', use: 'TBMQ UI and REST API' },
+  { port: '443', protocol: 'HTTPS · ALB', use: 'TBMQ UI and REST API, with the', linkText: 'HTTPS load balancer', href: '#https-load-balancer' },
+  { port: '1883', protocol: 'MQTT · NLB', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets · NLB', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS · NLB', use: 'MQTT clients that connect over TLS, with', linkText: 'one-way or two-way TLS', href: '#mqtt-load-balancer-with-one-way-tls' },
+  { port: '8085', protocol: 'MQTT over secure WebSockets · NLB', use: 'MQTT clients that connect over secure WebSockets, with', linkText: 'one-way or two-way TLS', href: '#mqtt-load-balancer-with-one-way-tls' },
+]} />
 
 <Aside>
   This guide names the EKS cluster **`tbmq`**, as the provided `cluster.yml` does. If you change the name, change it in
@@ -657,9 +676,13 @@ See the <a href="https://kubernetes.io/docs/reference/kubectl/cheatsheet/" targe
 
 ## Upgrading
 
+<Steps>
+
 1. Check the **version-specific notes** below for any preparation your target version requires.
 2. [Back up your database](#backup-and-restore-optional) (optional but recommended).
 3. [Run the upgrade](#run-upgrade) commands.
+
+</Steps>
 
 For full version history and supported upgrade paths, see the{' '}
 <DocLink product={props.product} path="installation/upgrade-instructions">upgrade instructions</DocLink> page.{' '}
@@ -859,33 +882,62 @@ After pulling, run the database upgrade and then apply the updated manifests to 
 
 ## Cluster deletion
 
-Delete the TBMQ nodes:
+<Steps>
 
-```bash
-./k8s-delete-tbmq.sh
-```
+1. **Delete the TBMQ nodes.**
 
-Delete every resource in the `thingsboard-mqtt-broker` namespace, including the load balancer Ingress and Services:
+   ```bash
+   ./k8s-delete-tbmq.sh
+   ```
 
-```bash
-./k8s-delete-all.sh
-```
+2. **Delete every resource in the `thingsboard-mqtt-broker` namespace**, including the load balancer Ingress and Services:
 
-The AWS Load Balancer Controller then deletes the ALB and the NLB. Wait until this command lists no load balancer
-whose name starts with `k8s-thingsbo`:
+   ```bash
+   ./k8s-delete-all.sh
+   ```
 
-```bash
-aws elbv2 describe-load-balancers --region us-east-1 --query 'LoadBalancers[].LoadBalancerName'
-```
+3. **Wait for the load balancers to go.** The AWS Load Balancer Controller then deletes the ALB and the NLB. Wait until
+   this command lists no load balancer whose name starts with `k8s-thingsbo`:
 
-Delete the Amazon RDS database, the Amazon MSK cluster, and the Amazon ElastiCache cache in the AWS Console, and wait
-until they are deleted. They use the cluster's VPC and security group, so `eksctl` can't delete the cluster while they
-exist. Then delete the subnet groups created for them: the DB subnet group in **RDS** → **Subnet groups** and the cache
-subnet group in **ElastiCache** → **Subnet groups**. Deleting the database and the cache doesn't remove them.
+   ```bash
+   aws elbv2 describe-load-balancers --region us-east-1 --query 'LoadBalancers[].LoadBalancerName'
+   ```
 
-Delete the controller and the EKS cluster (update the cluster name and region if different):
+4. **Delete the managed services.** Delete the Amazon RDS database, the Amazon MSK cluster, and the Amazon ElastiCache
+   cache in the AWS Console, and wait until they are deleted. They use the cluster's VPC and security group, so `eksctl`
+   can't delete the cluster while they exist. Then delete the subnet groups created for them: the DB subnet group in
+   **RDS** → **Subnet groups** and the cache subnet group in **ElastiCache** → **Subnet groups**. Deleting the database
+   and the cache doesn't remove them.
 
-```bash
-helm uninstall aws-load-balancer-controller -n kube-system
-eksctl delete cluster -r us-east-1 -n tbmq -w
-```
+5. **Delete the controller and the EKS cluster** (update the cluster name and region if different):
+
+   ```bash
+   helm uninstall aws-load-balancer-controller -n kube-system
+   eksctl delete cluster -r us-east-1 -n tbmq -w
+   ```
+
+</Steps>
+
+## Next steps
+
+<CardGrid>
+  <Card title="Connect your first client" icon="rocket" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Change broker settings through environment variables in `tbmq.yml`.
+    See <DocLink product={props.product} path="installation/how-to-change-config" bold={false}>How to change configuration</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="open-book" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+</CardGrid>
