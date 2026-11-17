@@ -25,6 +25,7 @@ export interface GlancePort {
 	port: string;
 	protocol: string;
 	use: string;
+	code?: string; // optional inline code appended after `use`, in parentheses
 	linkText?: string; // optional link appended after `use`
 	href?: string;
 }
@@ -46,6 +47,9 @@ const {
 	portsIcon = 'tabler:plug-connected',
 	ports,
 } = Astro.props;
+
+// Rows of four by default; three when that divides the tiles evenly (e.g. six ports).
+const cols = ports.length > 4 && ports.length % 3 === 0 ? 3 : Math.min(ports.length, 4);
 
 const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 	eager: true,
@@ -81,7 +85,7 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 		<span class="dg-label__icon" aria-hidden="true"><Icon name={portsIcon} /></span>
 		{portsLabel}
 	</p>
-	<ul class="dg-ports">
+	<ul class="dg-ports" style={`--dg-cols: ${cols}`}>
 		{
 			ports.map((p) => (
 				<li class="dg-port">
@@ -89,6 +93,14 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 					<span class="dg-port__proto">{p.protocol}</span>
 					<span class="dg-port__use">
 						{p.use}
+						{p.code && (
+							<>
+								{' '}
+								<span class="dg-port__code">
+									(<code>{p.code}</code>)
+								</span>
+							</>
+						)}
 						{p.linkText && p.href && (
 							<>
 								{' '}
@@ -183,7 +195,7 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 
 	.dg-ports {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+		grid-template-columns: repeat(var(--dg-cols, 4), minmax(0, 1fr));
 		gap: 0.5rem;
 	}
 
@@ -217,5 +229,20 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 		font-size: var(--sl-text-xs);
 		line-height: 1.5;
 		color: var(--sl-color-gray-2);
+	}
+
+	.dg-port__code {
+		white-space: nowrap;
+	}
+
+	@media (max-width: 720px) {
+		.dg-ports {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.dg-port__code {
+			white-space: normal;
+			overflow-wrap: anywhere;
+		}
 	}
 </style>

@@ -1,5 +1,6 @@
 import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
 import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
@@ -54,14 +55,21 @@ This guide covers setting up TBMQ in cluster mode using Docker Compose.
 The scripts run two TBMQ nodes, two Integration Executors, PostgreSQL, Kafka, and Valkey on one host, with HAProxy in
 front of the TBMQ nodes. Clients connect to HAProxy, which listens on these host ports:
 
-| Port   | Protocol                 | Used for                                                                              |
-| ------ | ------------------------ | ------------------------------------------------------------------------------------- |
-| `80`   | HTTP                     | TBMQ UI and REST API                                                                  |
-| `443`  | HTTPS                    | TBMQ UI and REST API over HTTPS; see [Generate certificate for HTTPS](#generate-certificate-for-https) |
-| `1883` | MQTT                     | MQTT clients                                                                          |
-| `8084` | MQTT over WebSockets     | MQTT clients that connect over WebSockets                                             |
-| `8883` | MQTTS                    | MQTT clients that connect over TLS, once you [enable MQTTS](#enable-mqtts-mqtt-over-ssltls) |
-| `8085` | MQTT over secure WebSockets | MQTT clients that connect over secure WebSockets, once you enable the TBMQ WSS listener (`LISTENER_WSS_ENABLED`) |
+<DeploymentAtGlance host="One host · Docker Compose" services={[
+  { name: 'HAProxy', icon: 'tabler:arrows-split' },
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor × 2', icon: 'tabler:plug-connected' },
+  { name: 'PostgreSQL', icon: 'simple-icons:postgresql' },
+  { name: 'Kafka', icon: 'simple-icons:apachekafka' },
+  { name: 'Valkey', icon: 'tabler:database' },
+]} portsLabel="HAProxy ports" ports={[
+  { port: '80', protocol: 'HTTP', use: 'TBMQ UI and REST API' },
+  { port: '443', protocol: 'HTTPS', use: 'TBMQ UI and REST API over HTTPS; see', linkText: 'Generate certificate for HTTPS', href: '#generate-certificate-for-https' },
+  { port: '1883', protocol: 'MQTT', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS', use: 'MQTT clients that connect over TLS, once you', linkText: 'enable MQTTS', href: '#enable-mqtts-mqtt-over-ssltls' },
+  { port: '8085', protocol: 'MQTT over secure WebSockets', use: 'MQTT clients that connect over secure WebSockets, once you enable the TBMQ WSS listener', code: 'LISTENER_WSS_ENABLED' },
+]} />
 
 ## Prerequisites
 
