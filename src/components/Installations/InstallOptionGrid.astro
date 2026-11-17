@@ -1,0 +1,261 @@
+---
+// InstallOptionGrid.astro
+// Grid of installation-guide cards for the docs installation index: logo, title,
+// one-line description and fact chips, with the whole card as the link.
+//
+// Usage:
+//   <InstallOptionGrid product={props.product} items={[
+//     { path: 'installation/docker', title: 'Docker', icon: '/src/assets/images/installation/docker-linux-mac.svg',
+//       description: '…', chips: ['1 host', '1 broker node'] },
+//   ]} />
+
+import { Badge } from '@astrojs/starlight/components';
+import Icon from '~/components/starlight/Icon.astro';
+import { Products, productDocsPrefix } from '~/models/site.models';
+
+export interface InstallOption {
+	path: string; // docs path relative to the edition prefix, a site path starting with '/', or an absolute URL
+	title: string;
+	icon: string; // SVG path inside /src/assets/
+	description: string;
+	chips?: string[];
+	accent?: string; // glow colour behind the logo
+	badge?: string;
+	target?: string;
+}
+
+interface Props {
+	items: InstallOption[];
+	product: Products;
+	columns?: 2 | 3;
+}
+
+const { items, product, columns = 2 } = Astro.props;
+const prefix = productDocsPrefix[product];
+
+const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
+	eager: true,
+	query: '?raw',
+	import: 'default',
+});
+
+const cards = items.map((item) => {
+	const external = /^https?:\/\//.test(item.path);
+	let href = item.path;
+	if (!external && !item.path.startsWith('/')) {
+		const [basePath, hash] = item.path.split('#');
+		href = `/docs/${prefix}${basePath.endsWith('/') ? basePath : basePath + '/'}${hash ? '#' + hash : ''}`;
+	}
+	return { ...item, href, external, iconRaw: svgModules[item.icon] ?? null };
+});
+---
+
+<ul class:list={['io-grid', `io-grid--${columns}`]}>
+	{
+		cards.map((card) => (
+			<li class="io-card" style={card.accent ? `--io-accent: ${card.accent}` : undefined}>
+				<a
+					class="io-card__link"
+					href={card.href}
+					target={card.target}
+					rel={card.target === '_blank' ? 'noopener noreferrer' : undefined}
+				>
+					<div class="io-card__top">
+						<div class="io-card__logo" aria-hidden="true">
+							{card.iconRaw && <Fragment set:html={card.iconRaw} />}
+						</div>
+						{card.badge && (
+							<span class="io-card__badge">
+								<Badge text={card.badge} variant="tip" size="small" />
+							</span>
+						)}
+					</div>
+					<span class="io-card__title">{card.title}</span>
+					<span class="io-card__desc">{card.description}</span>
+					{card.chips && card.chips.length > 0 && (
+						<span class="io-card__chips">
+							{card.chips.map((chip) => (
+								<span class="io-card__chip">{chip}</span>
+							))}
+						</span>
+					)}
+					<span class="io-card__go" aria-hidden="true">
+						<Icon name={card.external ? 'tabler:arrow-up-right' : 'tabler:arrow-right'} />
+					</span>
+				</a>
+			</li>
+		))
+	}
+</ul>
+
+<style>
+	.io-grid {
+		list-style: none;
+		padding: 0;
+		margin: 1.25rem 0 0;
+		display: grid;
+		gap: 1rem;
+	}
+
+	.io-grid--2 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.io-grid--3 {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	@media (max-width: 1100px) {
+		.io-grid--3 {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 640px) {
+		.io-grid--2,
+		.io-grid--3 {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.io-card {
+		position: relative;
+		margin: 0;
+		overflow: hidden;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.75rem;
+		background: var(--sl-color-bg);
+		transition:
+			border-color 0.15s,
+			box-shadow 0.15s,
+			transform 0.15s;
+	}
+
+	.io-card::before {
+		content: '';
+		position: absolute;
+		top: -2.5rem;
+		inset-inline-start: -2.5rem;
+		width: 8rem;
+		height: 8rem;
+		border-radius: 100%;
+		background: var(--io-accent, var(--color-brand));
+		filter: blur(3.5rem);
+		opacity: 0.18;
+		pointer-events: none;
+	}
+
+	.io-card:hover {
+		border-color: var(--color-brand);
+		box-shadow: 0 0.75rem 2rem -1.25rem rgba(0, 0, 0, 0.35);
+		transform: translateY(-2px);
+	}
+
+	.io-card__link {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		height: 100%;
+		padding: 1.5rem 1.5rem 1.25rem;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.io-card__link:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: -2px;
+		border-radius: 0.75rem;
+	}
+
+	.io-card__top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
+	/* Icons drawn with fill="currentColor" (the TBMQ mark) pick up the brand green. */
+	.io-card__logo {
+		display: flex;
+		align-items: center;
+		height: 2.25rem;
+		color: var(--color-brand);
+	}
+
+	.io-card__logo :global(svg) {
+		width: auto;
+		height: 100%;
+	}
+
+	.io-card__top :global(.sl-badge) {
+		flex-shrink: 0;
+		border-color: var(--color-brand);
+		background: var(--color-bg-brand-tint);
+		color: var(--color-brand);
+	}
+
+	.io-card__title {
+		margin: 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+		line-height: 1.3;
+		color: var(--sl-color-white);
+	}
+
+	.io-card__desc {
+		margin: 0;
+		font-size: var(--sl-text-sm);
+		line-height: 1.55;
+		color: var(--sl-color-gray-2);
+	}
+
+	.io-card__chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: auto;
+		padding-top: 0.75rem;
+		padding-inline-end: 2rem;
+	}
+
+	.io-card__chip {
+		padding: 0.125rem 0.5rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 999px;
+		font-size: var(--sl-text-xs);
+		line-height: 1.5;
+		color: var(--sl-color-gray-2);
+		background: var(--sl-color-gray-7, var(--sl-color-gray-6));
+	}
+
+	.io-card__go {
+		position: absolute;
+		inset-inline-end: 1.25rem;
+		bottom: 1.25rem;
+		display: flex;
+		font-size: 1.25rem;
+		color: var(--sl-color-gray-3);
+		transition:
+			color 0.15s,
+			transform 0.15s;
+	}
+
+	.io-card:hover .io-card__go {
+		color: var(--color-brand);
+		transform: translateX(3px);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.io-card,
+		.io-card__go {
+			transition: none;
+		}
+
+		.io-card:hover,
+		.io-card:hover .io-card__go {
+			transform: none;
+		}
+	}
+</style>

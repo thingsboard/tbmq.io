@@ -84,7 +84,12 @@ export interface DynamicRedirectGroup {
  */
 export const CATCH_ALL_REDIRECTS: CatchAllRedirect[] = [];
 
-export const SINGLE_REDIRECTS: SingleRedirect[] = [];
+// The docs Live demo page duplicated the /live-demo/ landing (same connect commands
+// and production CTA); removed 2026-11.
+export const SINGLE_REDIRECTS: SingleRedirect[] = [
+	{ oldPath: 'installation/live-demo', target: '/live-demo/' },
+	{ oldPath: 'pe/installation/live-demo', target: '/live-demo/' },
+];
 
 // The legal pages moved /products/mqtt-broker/{privacy-policy,terms-of-use}/ →
 // /product/…/ (2026-08, via an interim /products/…/ hop — both old shapes are

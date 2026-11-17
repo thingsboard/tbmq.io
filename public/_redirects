@@ -7,6 +7,10 @@
 # === Auto-generated redirects from src/data/redirects.ts ===
 
 
+# Single page redirects
+/docs/installation/live-demo/ /live-demo/ 301
+/docs/pe/installation/live-demo/ /live-demo/ 301
+
 # Non-docs redirects (from NON_DOCS_REDIRECTS)
 /community/ / 301
 
