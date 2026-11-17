@@ -11,7 +11,7 @@
 
 import { Badge } from '@astrojs/starlight/components';
 import Icon from '~/components/starlight/Icon.astro';
-import { Products, productDocsPrefix } from '~/models/site.models';
+import { Products, docsLink } from '~/models/site.models';
 
 export interface InstallOption {
 	path: string; // docs path relative to the edition prefix, a site path starting with '/', or an absolute URL
@@ -31,7 +31,6 @@ interface Props {
 }
 
 const { items, product, columns = 2 } = Astro.props;
-const prefix = productDocsPrefix[product];
 
 const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 	eager: true,
@@ -41,11 +40,7 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 
 const cards = items.map((item) => {
 	const external = /^https?:\/\//.test(item.path);
-	let href = item.path;
-	if (!external && !item.path.startsWith('/')) {
-		const [basePath, hash] = item.path.split('#');
-		href = `/docs/${prefix}${basePath.endsWith('/') ? basePath : basePath + '/'}${hash ? '#' + hash : ''}`;
-	}
+	const href = external || item.path.startsWith('/') ? item.path : docsLink(product, item.path);
 	return { ...item, href, external, iconRaw: svgModules[item.icon] ?? null };
 });
 ---

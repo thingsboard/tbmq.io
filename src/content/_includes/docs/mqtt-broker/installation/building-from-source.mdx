@@ -1,4 +1,7 @@
-import { Aside, Code } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import DocLink from '@components/DocLink.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import { TBMQ_BRANCH, TBMQ_VER } from '~/data/versions';
 
 export const cloneCmd = `git clone -b ${TBMQ_BRANCH} https://github.com/thingsboard/tbmq.git
@@ -12,6 +15,18 @@ This guide covers downloading and building TBMQ from source. Instructions are te
 
 The build produces installation packages for Linux and Windows and, optionally, local Docker images. The first build
 downloads all dependencies and can take 15 minutes or more; later builds reuse them.
+
+<DeploymentAtGlance host="Required tools" hostIcon="tabler:tool" services={[
+  { name: 'Java 25', icon: 'simple-icons:openjdk' },
+  { name: 'Maven 3.6.3+', icon: 'simple-icons:apachemaven' },
+  { name: 'Git', icon: 'simple-icons:git' },
+  { name: 'Docker (images and tests)', icon: 'simple-icons:docker' },
+]} portsLabel="Build outputs" portsIcon="tabler:package" ports={[
+  { port: '.deb', protocol: 'Debian and Ubuntu package', use: 'thingsboard-mqtt-broker.deb' },
+  { port: '.rpm', protocol: 'RPM package', use: 'thingsboard-mqtt-broker.rpm' },
+  { port: '.zip', protocol: 'Windows package', use: 'thingsboard-mqtt-broker-windows.zip' },
+  { port: 'Images', protocol: 'Local Docker images', use: 'Optional:', linkText: 'build local Docker images', href: '#build-local-docker-images' },
+]} />
 
 ## Required tools
 
@@ -160,3 +175,27 @@ Common fixes for build issues:
   ```bash
   mvn -T 0.8C license:format clean install -DskipTests -Ddockerfile.skip=false
   ```
+
+## Next steps
+
+<CardGrid>
+  <Card title="Run your build" icon="rocket" headingLevel={3}>
+    The Docker install runs the `thingsboard/tbmq` images, so after a local image build it runs your build.
+    See <DocLink product={props.product} path="installation/docker" bold={false}>Docker (Linux, macOS)</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Every broker parameter, its environment variable, and its default.
+    See the <DocLink product={props.product} path="installation/config" bold={false}>configuration reference</DocLink>.
+  </Card>
+
+  <Card title="Connect your first client" icon="approve-check-circle" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Learn the architecture" icon="open-book" headingLevel={3}>
+    How the broker nodes, Kafka, Valkey, and PostgreSQL fit together.
+    See <DocLink product={props.product} path="architecture" bold={false}>Architecture</DocLink>.
+  </Card>
+</CardGrid>

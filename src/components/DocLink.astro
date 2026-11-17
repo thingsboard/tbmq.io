@@ -1,5 +1,5 @@
 ---
-import { Products, productDocsPrefix } from '~/models/site.models';
+import { Products, docsLink } from '~/models/site.models';
 
 interface Props {
 	product: Products;
@@ -8,10 +8,7 @@ interface Props {
 	target?: '_blank' | '_self' | '_parent' | '_top';
 }
 const { product, path, bold = true, target } = Astro.props;
-const [pathWithQuery, anchor] = path.split('#');
-const [pathPart, query] = pathWithQuery.split('?');
-const normalizedPath = pathPart === '' ? '' : (pathPart.endsWith('/') ? pathPart : pathPart + '/');
-const href = `/docs/${productDocsPrefix[product]}${normalizedPath}${query ? '?' + query : ''}${anchor ? '#' + anchor : ''}`;
+const href = docsLink(product, path);
 ---
 
 <a href={href} target={target} rel={target === '_blank' ? 'noopener noreferrer' : undefined}

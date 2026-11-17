@@ -1,5 +1,6 @@
 import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
 import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
@@ -153,12 +154,18 @@ For cluster installation, see the <DocLink product={props.product} path="install
 The install script runs TBMQ, PostgreSQL, Kafka, Valkey, and the Integration Executor as Docker containers on one host.
 Once it is running, TBMQ listens on these ports:
 
-| Port   | Protocol             | Used for                                                                  |
-| ------ | -------------------- | ------------------------------------------------------------------------- |
-| `8083` | HTTP                 | TBMQ UI and REST API                                                      |
-| `1883` | MQTT                 | MQTT clients                                                              |
-| `8084` | MQTT over WebSockets | MQTT clients that connect over WebSockets                                 |
-| `8883` | MQTTS                | MQTT clients that connect over TLS, once you [enable MQTTS](#enabling-mqtts-mqtt-over-ssltls) |
+<DeploymentAtGlance host="One host · Docker Desktop" services={[
+  { name: 'TBMQ', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor', icon: 'tabler:plug-connected' },
+  { name: 'PostgreSQL', icon: 'simple-icons:postgresql' },
+  { name: 'Kafka', icon: 'simple-icons:apachekafka' },
+  { name: 'Valkey', icon: 'tabler:database' },
+]} ports={[
+  { port: '8083', protocol: 'HTTP', use: 'TBMQ UI and REST API' },
+  { port: '1883', protocol: 'MQTT', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS', use: 'MQTT clients that connect over TLS, once you', linkText: 'enable MQTTS', href: '#enabling-mqtts-mqtt-over-ssltls' },
+]} />
 
 ## Prerequisites
 

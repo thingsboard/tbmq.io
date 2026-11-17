@@ -14,8 +14,13 @@ export function getDocsPrefix(product: Products): string {
 	return productDocsPrefix[product];
 }
 
-/** Builds a full docs link: /docs/{prefix}{path}/ */
+/**
+ * Builds a full docs link: /docs/{prefix}{path}/, keeping any ?query and #anchor after the
+ * trailing slash (e.g. 'installation/docker#upgrading' → '/docs/pe/installation/docker/#upgrading').
+ */
 export function docsLink(product: Products, path: string): string {
-	const normalizedPath = path === '' ? '' : (path.endsWith('/') ? path : path + '/');
-	return `/docs/${productDocsPrefix[product]}${normalizedPath}`;
+	const [pathWithQuery, anchor] = path.split('#');
+	const [pathPart, query] = pathWithQuery.split('?');
+	const normalizedPath = pathPart === '' ? '' : pathPart.endsWith('/') ? pathPart : pathPart + '/';
+	return `/docs/${productDocsPrefix[product]}${normalizedPath}${query ? '?' + query : ''}${anchor ? '#' + anchor : ''}`;
 }
