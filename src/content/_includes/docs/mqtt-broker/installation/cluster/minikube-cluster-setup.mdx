@@ -1,4 +1,5 @@
 import { Aside, Code, Steps } from '@astrojs/starlight/components';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
@@ -29,12 +30,18 @@ This guide covers setting up TBMQ in cluster mode using Minikube.
 The scripts deploy two TBMQ nodes, an Integration Executor, PostgreSQL, Kafka, and Valkey into the
 `thingsboard-mqtt-broker` namespace. The TBMQ service is exposed on these node ports of the Minikube IP:
 
-| Port    | Protocol             | Used for                                                                    |
-| ------- | -------------------- | --------------------------------------------------------------------------- |
-| `30001` | HTTP                 | TBMQ UI and REST API                                                        |
-| `30002` | MQTT                 | MQTT clients                                                                |
-| `30003` | MQTTS                | MQTT clients that connect over TLS, once you enable the TBMQ SSL listener (`LISTENER_SSL_ENABLED`) |
-| `30004` | MQTT over WebSockets | MQTT clients that connect over WebSockets                                   |
+<DeploymentAtGlance host="Minikube cluster" hostIcon="simple-icons:kubernetes" services={[
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor', icon: 'tabler:plug-connected' },
+  { name: 'PostgreSQL', icon: 'simple-icons:postgresql' },
+  { name: 'Kafka', icon: 'simple-icons:apachekafka' },
+  { name: 'Valkey', icon: 'tabler:database' },
+]} portsLabel="Node ports on the Minikube IP" ports={[
+  { port: '30001', protocol: 'HTTP', use: 'TBMQ UI and REST API' },
+  { port: '30002', protocol: 'MQTT', use: 'MQTT clients' },
+  { port: '30003', protocol: 'MQTTS', use: 'MQTT clients that connect over TLS, once you enable the TBMQ SSL listener', code: 'LISTENER_SSL_ENABLED' },
+  { port: '30004', protocol: 'MQTT over WebSockets', use: 'MQTT clients that connect over WebSockets' },
+]} />
 
 ## Prerequisites
 

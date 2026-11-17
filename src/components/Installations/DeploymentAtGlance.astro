@@ -231,18 +231,14 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 		color: var(--sl-color-gray-2);
 	}
 
+	/* Env var names are long single words: let them break rather than overflow the tile. */
 	.dg-port__code {
-		white-space: nowrap;
+		overflow-wrap: anywhere;
 	}
 
 	@media (max-width: 720px) {
 		.dg-ports {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-
-		.dg-port__code {
-			white-space: normal;
-			overflow-wrap: anywhere;
 		}
 	}
 </style>
