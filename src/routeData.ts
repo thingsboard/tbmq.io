@@ -171,9 +171,6 @@ function sidebarEntryMatchesVersionAndLanguage(
 	lang: SupportedLanguage
 ): boolean {
 	if (entry.type === 'link') {
-		// Links outside /docs/ carry no edition in their href; the sidebar tags them instead.
-		const edition = entry.attrs['data-edition'];
-		if (edition !== undefined) return (edition === 'pe') === (version === Products.TBMQ_PE);
 		const key = `${version}|${lang}|${entry.href}`;
 		const cached = sidebarLinkMatchCache.get(key);
 		if (cached !== undefined) return cached;
@@ -238,18 +235,16 @@ function hasCurrent(entries: StarlightRouteData['sidebar']): boolean {
 /**
  * Clear pagination links that cross product version boundaries.
  * Starlight builds prev/next from the combined sidebar, so without this
- * the last CE page would link to the first PE page, etc. Off-docs sidebar
- * links (e.g. Live demo → /live-demo/) are dropped too: pagination stays in the docs.
+ * the last CE page would link to the first PE page, etc.
  */
 function filterPaginationByVersion(starlightRoute: StarlightRouteData) {
 	const version = getVersionFromSlug(starlightRoute.id);
 	const { pagination } = starlightRoute;
-	const keep = (href: string) => docsPathRegex.test(href) && linkMatchesVersion(href, version);
 
-	if (pagination.prev && !keep(pagination.prev.href)) {
+	if (pagination.prev && !linkMatchesVersion(pagination.prev.href, version)) {
 		pagination.prev = undefined;
 	}
-	if (pagination.next && !keep(pagination.next.href)) {
+	if (pagination.next && !linkMatchesVersion(pagination.next.href, version)) {
 		pagination.next = undefined;
 	}
 }
