@@ -1,4 +1,5 @@
 import { Aside, Code } from '@astrojs/starlight/components';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import { TBMQ_BRANCH, TBMQ_VER } from '~/data/versions';
 
 export const cloneCmd = `git clone -b ${TBMQ_BRANCH} https://github.com/thingsboard/tbmq.git
@@ -12,6 +13,18 @@ This guide covers downloading and building TBMQ from source. Instructions are te
 
 The build produces installation packages for Linux and Windows and, optionally, local Docker images. The first build
 downloads all dependencies and can take 15 minutes or more; later builds reuse them.
+
+<DeploymentAtGlance host="Required tools" hostIcon="tabler:tool" services={[
+  { name: 'Java 25', icon: 'simple-icons:openjdk' },
+  { name: 'Maven 3.6.3+', icon: 'simple-icons:apachemaven' },
+  { name: 'Git', icon: 'simple-icons:git' },
+  { name: 'Docker (images and tests)', icon: 'simple-icons:docker' },
+]} portsLabel="Build outputs" portsIcon="tabler:package" ports={[
+  { port: '.deb', protocol: 'Debian and Ubuntu package', use: 'thingsboard-mqtt-broker.deb' },
+  { port: '.rpm', protocol: 'RPM package', use: 'thingsboard-mqtt-broker.rpm' },
+  { port: '.zip', protocol: 'Windows package', use: 'thingsboard-mqtt-broker-windows.zip' },
+  { port: 'Images', protocol: 'Local Docker images', use: 'Optional:', linkText: 'build local Docker images', href: '#build-local-docker-images' },
+]} />
 
 ## Required tools
 

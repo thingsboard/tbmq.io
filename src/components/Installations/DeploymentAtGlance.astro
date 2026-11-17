@@ -1,7 +1,8 @@
 ---
 // DeploymentAtGlance.astro
 // Opening summary for an installation guide: the containers the deployment runs on its
-// host, then one tile per port TBMQ exposes (port, protocol, what it's for).
+// host, then one tile per port TBMQ exposes (port, protocol, what it's for). The labels and
+// icons are overridable, so the same layout also shows build tools and build outputs.
 //
 // Usage:
 //   <DeploymentAtGlance host="One host · Docker" services={[
@@ -30,11 +31,21 @@ export interface GlancePort {
 
 interface Props {
 	host: string;
+	hostIcon?: string;
 	services: GlanceService[];
+	portsLabel?: string;
+	portsIcon?: string;
 	ports: GlancePort[];
 }
 
-const { host, services, ports } = Astro.props;
+const {
+	host,
+	hostIcon = 'tabler:server',
+	services,
+	portsLabel = 'Ports',
+	portsIcon = 'tabler:plug-connected',
+	ports,
+} = Astro.props;
 
 const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 	eager: true,
@@ -46,7 +57,7 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 <div class="dg">
 	<div class="dg-host">
 		<p class="dg-label">
-			<span class="dg-label__icon" aria-hidden="true"><Icon name="tabler:server" /></span>
+			<span class="dg-label__icon" aria-hidden="true"><Icon name={hostIcon} /></span>
 			{host}
 		</p>
 		<ul class="dg-services">
@@ -67,8 +78,8 @@ const svgModules = import.meta.glob<string>('/src/assets/**/*.svg', {
 		</ul>
 	</div>
 	<p class="dg-label dg-label--ports">
-		<span class="dg-label__icon" aria-hidden="true"><Icon name="tabler:plug-connected" /></span>
-		Ports
+		<span class="dg-label__icon" aria-hidden="true"><Icon name={portsIcon} /></span>
+		{portsLabel}
 	</p>
 	<ul class="dg-ports">
 		{
