@@ -238,16 +238,18 @@ function hasCurrent(entries: StarlightRouteData['sidebar']): boolean {
 /**
  * Clear pagination links that cross product version boundaries.
  * Starlight builds prev/next from the combined sidebar, so without this
- * the last CE page would link to the first PE page, etc.
+ * the last CE page would link to the first PE page, etc. Off-docs sidebar
+ * links (e.g. Live demo → /live-demo/) are dropped too: pagination stays in the docs.
  */
 function filterPaginationByVersion(starlightRoute: StarlightRouteData) {
 	const version = getVersionFromSlug(starlightRoute.id);
 	const { pagination } = starlightRoute;
+	const keep = (href: string) => docsPathRegex.test(href) && linkMatchesVersion(href, version);
 
-	if (pagination.prev && !linkMatchesVersion(pagination.prev.href, version)) {
+	if (pagination.prev && !keep(pagination.prev.href)) {
 		pagination.prev = undefined;
 	}
-	if (pagination.next && !linkMatchesVersion(pagination.next.href, version)) {
+	if (pagination.next && !keep(pagination.next.href)) {
 		pagination.next = undefined;
 	}
 }
