@@ -300,7 +300,7 @@ redis:
 ```
 
 `redis.connectionType` defaults to `cluster`, so change it for a single Valkey node. For other setups, see the
-<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#step-2-prepare-your-valuesyaml" target="_blank" rel="noopener noreferrer">connection settings</a>
+<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#step-2-prepare-your-values-yaml" target="_blank" rel="noopener noreferrer">connection settings</a>
 in the chart documentation.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
@@ -345,9 +345,9 @@ loadbalancer:
 ```
 
 It creates an Ingress for the web UI and a `LoadBalancer` Service for MQTT. The NGINX Ingress doesn't terminate HTTPS,
-and MQTTS (port `8883`) and secure WebSockets (port `8085`) are served only after you configure
+and MQTTS (port `8883`) is served only after you configure
 <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#mutual-tls-mtls-for-mqtt" target="_blank" rel="noopener noreferrer">mutual TLS</a>
-in the chart.
+in the chart. Secure WebSockets (port `8085`) also need the `LISTENER_WSS_*` variables set in `tbmq.customEnv`.
 
 ## Install the TBMQ Helm chart
 
@@ -617,7 +617,7 @@ and the release is marked `failed`; running the upgrade again without the flag f
 
 Chart 2.0.0 (TBMQ 2.3.0) removed the PostgreSQL, Kafka, and Redis subcharts that chart 1.x bundled. To upgrade a
 release from chart 1.x, follow
-<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#upgrading-from-chart-version-1x-to-200-tbmq-220--230" target="_blank" rel="noopener noreferrer">Upgrading from chart version 1.x to 2.0.0</a>
+<a href="https://github.com/thingsboard/helm-charts/tree/main/tbmq#upgrading-from-chart-version-1x-to-200-tbmq-220--230" target="_blank" rel="noopener noreferrer">Upgrading from chart version 1.x to 2.0.0</a>
 in the chart documentation.
 
 ## Uninstalling TBMQ Helm chart
