@@ -55,8 +55,10 @@ const {
 	ports,
 } = Astro.props;
 
-// Rows of four by default; three when that divides the tiles evenly (e.g. six ports).
-const cols = ports.length > 4 && ports.length % 3 === 0 ? 3 : Math.min(ports.length, 4);
+// Up to four tiles share one row. Beyond that, pick three or four columns, whichever leaves
+// fewer empty slots in the last row (six → 3 + 3, five → 3 + 2, eight → 4 + 4).
+const emptySlots = (c: number) => (c - (ports.length % c)) % c;
+const cols = ports.length <= 4 ? ports.length : emptySlots(3) < emptySlots(4) ? 3 : 4;
 
 const groups = [
 	{ label: host, icon: hostIcon, items: services },

@@ -1,4 +1,6 @@
-import { Aside, Code, Steps } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
 import ShowFor from '~/components/ShowFor.astro';
@@ -39,6 +41,21 @@ it to validate the whole setup on one machine.
 
 The chart deploys only TBMQ: two broker nodes and two Integration Executors. PostgreSQL, Kafka, and a Redis-compatible
 cache run separately. This guide deploys them with CrunchyData PGO, Strimzi, and Valkey, all in the `tbmq` namespace.
+
+<DeploymentAtGlance host="TBMQ Helm chart" hostIcon="simple-icons:helm" services={[
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor × 2', icon: 'tabler:plug-connected' },
+]} managedLabel="Dependencies you deploy" managedIcon="simple-icons:kubernetes" managed={[
+  { name: 'PostgreSQL (CrunchyData PGO)', icon: 'simple-icons:postgresql' },
+  { name: 'Kafka (Strimzi)', icon: 'simple-icons:apachekafka' },
+  { name: 'Valkey', icon: 'tabler:database' },
+]} portsLabel="Load balancer ports" ports={[
+  { port: '80', protocol: 'HTTP · NGINX Ingress', use: 'TBMQ UI and REST API' },
+  { port: '1883', protocol: 'MQTT · LoadBalancer', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets · LoadBalancer', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS · LoadBalancer', use: 'MQTT clients that connect over TLS, once you configure', linkText: 'mutual TLS', href: '#load-balancer-configuration' },
+  { port: '8085', protocol: 'MQTT over secure WebSockets · LoadBalancer', use: 'MQTT clients that connect over secure WebSockets, once you set the WSS listener variables', code: 'LISTENER_WSS_*' },
+]} />
 
 ## Prerequisites
 
@@ -657,3 +674,27 @@ clusters.
 ```bash
 minikube delete
 ```
+
+## Next steps
+
+<CardGrid>
+  <Card title="Connect your first client" icon="rocket" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Change broker settings through environment variables in `tbmq.customEnv` of your `values.yaml`.
+    See <DocLink product={props.product} path="installation/how-to-change-config" bold={false}>How to change configuration</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="open-book" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+</CardGrid>
