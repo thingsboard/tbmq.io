@@ -412,7 +412,7 @@ Valkey is reachable at `valkey:6379`.
 
 To use Amazon RDS, Amazon MSK, or Amazon ElastiCache instead of the in-cluster deployments, create them in the VPC that
 `eksctl` created for the cluster, and allow traffic from the cluster nodes. The
-<DocLink product={props.product} path="installation/cluster/aws-cluster-setup/#amazon-postgresql-db-configuration" bold={false}>AWS cluster setup guide</DocLink>
+<DocLink product={props.product} path="installation/cluster/aws-cluster-setup/#create-the-aws-managed-services" bold={false}>AWS cluster setup guide</DocLink>
 walks through creating each one. Then set their endpoints in [Connect to dependencies](#connect-to-dependencies)
 instead of the in-cluster values:
 
