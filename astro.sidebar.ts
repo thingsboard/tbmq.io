@@ -138,7 +138,8 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 const tbmqInstallItems = (prefix: string): SidebarConfig => {
 	const isPE = prefix.includes('/pe');
 	return [
-		{ label: 'Live demo', slug: `${prefix}/installation/live-demo` },
+		// Off-docs link: `data-edition` tells routeData.ts which edition's sidebar it belongs to.
+		{ label: 'Live demo', link: '/live-demo/', attrs: { 'data-edition': isPE ? 'pe' : 'ce' } },
 		{
 			label: 'On-premises',
 			collapsed: true,

@@ -171,6 +171,9 @@ function sidebarEntryMatchesVersionAndLanguage(
 	lang: SupportedLanguage
 ): boolean {
 	if (entry.type === 'link') {
+		// Links outside /docs/ carry no edition in their href; the sidebar tags them instead.
+		const edition = entry.attrs['data-edition'];
+		if (edition !== undefined) return (edition === 'pe') === (version === Products.TBMQ_PE);
 		const key = `${version}|${lang}|${entry.href}`;
 		const cached = sidebarLinkMatchCache.get(key);
 		if (cached !== undefined) return cached;
