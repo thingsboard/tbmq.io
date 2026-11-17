@@ -1,4 +1,5 @@
-import { Aside, Code, Steps } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
 import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
@@ -217,7 +218,26 @@ For full version history and supported upgrade paths, see the{' '}
 If the documentation does not cover your specific upgrade path,{' '}
 <DocLink product={props.product} path="help">contact us</DocLink> for guidance.
 
-If there are no version-specific notes for your upgrade path, skip directly to [Run upgrade](#run-upgrade).
+What each upgrade needs before you run the upgrade — select a version for its full notes:
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+| Upgrade to                 | Before running the upgrade                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| [2.4.1](#upgrade-to-2-4-1) | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                    |
+| [2.4.0](#upgrade-to-2-4-0) | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics     |
+| [2.3.0](#upgrade-to-2-3-0) | Plan the third-party component migration                                             |
+| [2.2.0](#upgrade-to-2-2-0) | Check the authentication settings in `database-setup.yml`                            |
+| [2.1.0](#upgrade-to-2-1-0) | Upgrade the third-party services                                                     |
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+| Upgrade to                                | Before running the upgrade                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------------------- |
+| [2.4.1](#upgrade-to-2-4-1-pe)             | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                 |
+| [2.4.0](#upgrade-to-2-4-0-pe)             | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics  |
+| [2.3.0](#upgrade-to-2-3-0-pe)             | Nothing                                                                           |
+| [TBMQ to TBMQ PE](#upgrade-from-ce-to-pe) | Move to the PE repository and set the license key; this path has its own commands |
+</ShowFor>
 
 ### Backup and restore (optional)
 
@@ -459,3 +479,27 @@ the PE `tbmq-pe-k8s/minikube` directory. PostgreSQL, Kafka, Valkey, and their da
   To upgrade to a specific version (e.g., v2.0.0), replace the branch in the commands above with the target branch
   name, e.g., `release-2.0.0`.
 </Aside>
+
+## Next steps
+
+<CardGrid>
+  <Card title="Connect your first client" icon="rocket" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Change broker settings through environment variables in `tbmq.yml`.
+    See <DocLink product={props.product} path="installation/how-to-change-config" bold={false}>How to change configuration</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="open-book" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+</CardGrid>
