@@ -689,7 +689,25 @@ For full version history and supported upgrade paths, see the{' '}
 If the documentation does not cover your specific upgrade path,{' '}
 <DocLink product={props.product} path="help">contact us</DocLink> for guidance.
 
-If there are no version-specific notes for your upgrade path, skip directly to [Run upgrade](#run-upgrade).
+What each upgrade needs before you run the upgrade — select a version for its full notes:
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+| Upgrade to                 | Before running the upgrade                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| [2.4.1](#upgrade-to-2-4-1) | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                    |
+| [2.4.0](#upgrade-to-2-4-0) | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics     |
+| [2.3.0](#upgrade-to-2-3-0) | [Delete the TBMQ pods first](#run-upgrade). Plan the third-party component migration  |
+| [2.2.0](#upgrade-to-2-2-0) | [Delete the TBMQ pods first](#run-upgrade). Check the authentication settings in `database-setup.yml` |
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+| Upgrade to                                | Before running the upgrade                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------------------- |
+| [2.4.1](#upgrade-to-2-4-1-pe)             | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                 |
+| [2.4.0](#upgrade-to-2-4-0-pe)             | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics  |
+| [2.3.0](#upgrade-to-2-3-0-pe)             | [Delete the TBMQ pods first](#run-upgrade)                                        |
+| [TBMQ to TBMQ PE](#upgrade-from-ce-to-pe) | Move to the PE repository, create the gp3 storage class if needed, and set the license key; this path has its own commands |
+</ShowFor>
 
 ### Backup and restore (optional)
 
