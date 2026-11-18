@@ -463,7 +463,11 @@ it creates: without the following settings, the broker nodes fail to start with
 the `tbmq` and `tbmq-ie` sections. They keep TBMQ's defaults without `segment.bytes`, and replicate each topic to three
 brokers:
 
-<Code code={props.product === Products.TBMQ_PE ? managedTopicsPeYaml : managedTopicsCeYaml} lang="yaml" />
+<Code
+  code={props.product === Products.TBMQ_PE ? managedTopicsPeYaml : managedTopicsCeYaml}
+  lang="yaml"
+  meta="maxLines=10 collapsible"
+/>
 
 For all `postgresql`, `kafka`, and `redis` keys, see the
 <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#step-2-prepare-your-values-yaml" target="_blank" rel="noopener noreferrer">connection settings</a>
