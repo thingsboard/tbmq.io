@@ -1,10 +1,13 @@
-import { Aside, Code } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 import { TBMQ_BRANCH } from '~/data/versions';
 import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
+import GcpKafkaCredentials from '@includes/docs/mqtt-broker/installation/cluster/gcp-kafka-credentials.mdx';
 
 export const cloneCmdCe = `git clone -b ${TBMQ_BRANCH} https://github.com/thingsboard/tbmq.git
 cd tbmq/k8s/gcp`;
@@ -20,42 +23,62 @@ export const kafkaCeOperatorReadmeUrl = `https://github.com/thingsboard/tbmq/blo
 export const kafkaPeReadmeUrl = `https://github.com/thingsboard/tbmq-pe-k8s/blob/${TBMQ_BRANCH}/gcp/kafka/README.md`;
 export const kafkaPeOperatorReadmeUrl = `https://github.com/thingsboard/tbmq-pe-k8s/blob/${TBMQ_BRANCH}/gcp/kafka/operator/README.md`;
 
-export const gitPullCmd = `git pull origin ${TBMQ_BRANCH}`;
+export const gitPullCmd = `git pull --no-rebase --no-edit origin ${TBMQ_BRANCH}`;
+
+export const gitPullTheirsCmd = `git merge --abort
+git pull --no-rebase --no-edit -X theirs origin ${TBMQ_BRANCH}`;
+
+export const gitDiffCmd = `git diff --stat origin/${TBMQ_BRANCH} -- .`;
 
 export const upgradeCmds = `./k8s-upgrade-tbmq.sh
 ./k8s-deploy-tbmq.sh`;
 
-This guide covers setting up TBMQ in cluster mode on Google Kubernetes Engine (GKE).
+This guide covers deploying a TBMQ cluster on Google Kubernetes Engine (GKE) with the TBMQ Kubernetes scripts.
+
+The scripts deploy two TBMQ broker nodes and two Integration Executors. TBMQ stores its data in Cloud SQL for
+PostgreSQL, Google Cloud Managed Service for Apache Kafka, and Memorystore for Valkey, which you create with the
+`gcloud` CLI. Web traffic goes through a Google Cloud Application Load Balancer, created from a GKE Ingress, and MQTT
+traffic through a passthrough Network Load Balancer, created from a Kubernetes Service.
+
+<DeploymentAtGlance host="GKE cluster" hostIcon="simple-icons:kubernetes" services={[
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor × 2', icon: 'tabler:plug-connected' },
+]} managedLabel="Google Cloud managed services" managedIcon="simple-icons:googlecloud" managed={[
+  { name: 'Cloud SQL for PostgreSQL', icon: 'simple-icons:postgresql' },
+  { name: 'Managed Service for Apache Kafka', icon: 'simple-icons:apachekafka' },
+  { name: 'Memorystore for Valkey', icon: 'tabler:database' },
+]} portsLabel="Load balancer ports" ports={[
+  { port: '80', protocol: 'HTTP · Application LB', use: 'TBMQ UI and REST API' },
+  { port: '443', protocol: 'HTTPS · Application LB', use: 'TBMQ UI and REST API, with the', linkText: 'HTTPS load balancer', href: '#https-load-balancer' },
+  { port: '1883', protocol: 'MQTT · Network LB', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets · Network LB', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS · Network LB', use: 'MQTT clients that connect over TLS, once you enable', linkText: 'MQTTS in TBMQ', href: '#mqtt-over-tls' },
+  { port: '8085', protocol: 'MQTT over secure WebSockets · Network LB', use: 'MQTT clients that connect over secure WebSockets, once you enable', linkText: 'MQTTS in TBMQ', href: '#mqtt-over-tls' },
+]} />
 
 ## Prerequisites
 
-Install <a href="https://kubernetes.io/docs/tasks/tools/" target="_blank" rel="noopener noreferrer">kubectl</a>,
-<a href="https://helm.sh/docs/intro/install/" target="_blank" rel="noopener noreferrer">helm</a>, and
-<a href="https://docs.cloud.google.com/sdk/docs/install-sdk" target="_blank" rel="noopener noreferrer">gcloud</a> tools.
-See the <a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/creating-a-zonal-cluster#before_you_begin" target="_blank" rel="noopener noreferrer">before you begin guide</a> for more info.
+Install the following tools:
 
-Create a new Google Cloud Platform project (recommended) or select an existing one. Make sure the correct project is active:
+- <a href="https://docs.cloud.google.com/sdk/docs/install-sdk" target="_blank" rel="noopener noreferrer">Google Cloud CLI</a> (`gcloud`)
+- the <a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl#install_plugin" target="_blank" rel="noopener noreferrer">GKE auth plugin</a> (`gke-gcloud-auth-plugin`), which `kubectl` uses to sign in to GKE
+- <a href="https://kubernetes.io/docs/tasks/tools/" target="_blank" rel="noopener noreferrer">kubectl</a>
+- <a href="https://helm.sh/docs/intro/install/" target="_blank" rel="noopener noreferrer">Helm</a>, only if you [run Kafka in the cluster](#run-kafka-in-the-cluster) with the Strimzi operator
 
-```bash
-gcloud init
-```
-
-Enable the required GCP services:
-
-```bash
-gcloud services enable container.googleapis.com sql-component.googleapis.com sqladmin.googleapis.com
-```
+Your Google Cloud account needs permission to create GKE clusters, Cloud SQL instances, Managed Kafka clusters,
+Memorystore instances, service accounts and their keys, and to grant IAM roles in the project.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
 
-Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the
-<a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>,
-choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
+You need a TBMQ PE license key. To buy one, open the
+<a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>, choose a pay-as-you-go
+subscription or a perpetual license, and use the calculator to size your deployment: session and throughput limits,
+production and development instances, and any add-ons.
 
-<Aside>
-  Throughout this guide, the license key is referred to as **YOUR_LICENSE_KEY_HERE**.
-</Aside>
+<LicenseTrial />
+
+You apply the key in [Configure the license key](#configure-the-license-key).
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
@@ -70,9 +93,31 @@ choose a pay-as-you-go subscription or a perpetual license, and use the calculat
 <Code code={cloneCmdPe} lang="bash" />
 </ShowFor>
 
-## Define environment variables
+Run every command in this guide from this directory.
 
-Define environment variables used throughout this guide. Execute the following command on Linux:
+## Configure your Kubernetes environment
+
+### Configure GCP tools
+
+Create a Google Cloud project (recommended) or choose an existing one, then sign in and select it:
+
+```bash
+gcloud init
+```
+
+Enable the APIs this guide uses:
+
+```bash
+gcloud services enable container.googleapis.com \
+  sqladmin.googleapis.com servicenetworking.googleapis.com \
+  managedkafka.googleapis.com memorystore.googleapis.com \
+  networkconnectivity.googleapis.com
+```
+
+### Define environment variables
+
+The commands in this guide read these variables. Set them in the shell you run the guide from; if you open a new
+shell, set them again:
 
 ```bash
 export GCP_PROJECT=$(gcloud config get-value project)
@@ -83,19 +128,29 @@ export GCP_ZONE3=us-central1-c
 export GCP_NETWORK=default
 export TB_CLUSTER_NAME=tbmq-cluster
 export TB_DATABASE_NAME=tbmq-db
-echo "Project: $GCP_PROJECT, region: $GCP_REGION, zones: $GCP_ZONE1,$GCP_ZONE2,$GCP_ZONE3, network: $GCP_NETWORK, cluster: $TB_CLUSTER_NAME, database: $TB_DATABASE_NAME"
+export TB_KAFKA_NAME=tbmq-kafka
+export TB_VALKEY_NAME=tbmq-valkey
+echo "Project: $GCP_PROJECT, region: $GCP_REGION, network: $GCP_NETWORK"
+echo "Zones: $GCP_ZONE1,$GCP_ZONE2,$GCP_ZONE3"
 ```
 
 Where:
-- `$GCP_PROJECT` — fetched from your current gcloud config.
-- `us-central1` — one of the available <a href="https://docs.cloud.google.com/compute/docs/regions-zones#available" target="_blank" rel="noopener noreferrer">compute regions</a> (**$GCP_REGION**).
-- `default` — default GCP network name (**$GCP_NETWORK**).
-- `tbmq-cluster` — cluster name (**$TB_CLUSTER_NAME**).
-- `tbmq-db` — database server name (**$TB_DATABASE_NAME**).
 
-## Configure and create GKE cluster
+- `GCP_PROJECT`: the project selected in your `gcloud` configuration.
+- `GCP_REGION` and `GCP_ZONE1`–`GCP_ZONE3`: a
+  <a href="https://docs.cloud.google.com/compute/docs/regions-zones#available" target="_blank" rel="noopener noreferrer">compute region</a>
+  and three of its zones. Every resource in this guide is created in this region.
+- `GCP_NETWORK`: the VPC network, `default` for the network every new project has. Its subnet in each region is also
+  named `default`; if you use another network, the commands below that name the subnet use `$GCP_NETWORK` too, so
+  give the subnet the same name or edit those commands.
+- `TB_CLUSTER_NAME`, `TB_DATABASE_NAME`, `TB_KAFKA_NAME`, `TB_VALKEY_NAME`: the names of the GKE cluster, the Cloud
+  SQL instance, the Kafka cluster, and the Valkey instance.
 
-Create a regional cluster distributed across 3 zones. The example below provisions one `e2-standard-4` node per zone (3 nodes total). Adjust `--machine-type` and `--num-nodes` as needed. See <a href="https://docs.cloud.google.com/compute/docs/machine-resource" target="_blank" rel="noopener noreferrer">GCP machine types</a> for options.
+### Create the GKE cluster
+
+Create a regional cluster with one `e2-standard-4` node in each of the three zones. To size the nodes for production,
+change `--machine-type` and `--num-nodes`; see
+<a href="https://docs.cloud.google.com/compute/docs/machine-resource" target="_blank" rel="noopener noreferrer">machine families</a>.
 
 ```bash
 gcloud container clusters create $TB_CLUSTER_NAME \
@@ -109,23 +164,42 @@ gcloud container clusters create $TB_CLUSTER_NAME \
   --machine-type=e2-standard-4
 ```
 
-Alternatively, follow the <a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/creating-a-regional-cluster" target="_blank" rel="noopener noreferrer">GKE regional cluster guide</a> for a custom setup.
-
-## Update kubectl context
+This takes about 10 minutes. When it finishes, `gcloud` adds the cluster to your kubeconfig and switches the current
+context to it. To get the credentials again later, for example on another machine:
 
 ```bash
 gcloud container clusters get-credentials $TB_CLUSTER_NAME --region $GCP_REGION
 ```
 
-## Provision Google Cloud SQL (PostgreSQL) instance
+<Aside type="caution" title="Check the kubectl context">
+  Every command in this guide runs against your current kubectl context. If you switched it, switch back first. This
+  command must print `gke_{project}_{region}_tbmq-cluster`:
 
-### Prerequisites
+  ```bash
+  kubectl config current-context
+  ```
+</Aside>
 
-Enable service networking to allow your K8S cluster to connect to the DB instance:
+## Create the Google Cloud managed services
+
+Create the PostgreSQL database, the Kafka cluster, and the Valkey cache in the cluster's region and VPC network. They
+get private IP addresses only, which the GKE nodes reach without further firewall rules. You can create them in
+parallel; the Kafka cluster takes the longest, about 30 minutes.
+
+### Cloud SQL for PostgreSQL
+
+Cloud SQL reaches your VPC network through
+<a href="https://docs.cloud.google.com/vpc/docs/private-services-access" target="_blank" rel="noopener noreferrer">private services access</a>,
+which each network needs once. Check whether the network already has it:
 
 ```bash
-gcloud services enable servicenetworking.googleapis.com --project=$GCP_PROJECT
+gcloud services vpc-peerings list --network=$GCP_NETWORK
+```
 
+If the output lists the `servicenetworking-googleapis-com` peering, skip to the instance. Otherwise, reserve an IP range
+for Google services and connect it to the network:
+
+```bash
 gcloud compute addresses create google-managed-services-$GCP_NETWORK \
   --global \
   --purpose=VPC_PEERING \
@@ -135,33 +209,25 @@ gcloud compute addresses create google-managed-services-$GCP_NETWORK \
 gcloud services vpc-peerings connect \
   --service=servicenetworking.googleapis.com \
   --ranges=google-managed-services-$GCP_NETWORK \
-  --network=$GCP_NETWORK \
-  --project=$GCP_PROJECT
+  --network=$GCP_NETWORK
 ```
 
-### Create database instance
-
-Create a PostgreSQL 17 instance with the following recommendations:
-
-- Same region as your GKE cluster (`$GCP_REGION`)
-- Same VPC network as your GKE cluster
-- Private IP only (no public IP)
-- High availability for production; single-zone for development
-- At least 2 vCPUs and 7.5 GB RAM
+Create a PostgreSQL 17 instance with a private IP address only, highly available across two zones of the region:
 
 ```bash
-gcloud beta sql instances create $TB_DATABASE_NAME \
+gcloud sql instances create $TB_DATABASE_NAME \
   --database-version=POSTGRES_17 \
   --region=$GCP_REGION --availability-type=regional \
   --no-assign-ip --network=projects/$GCP_PROJECT/global/networks/$GCP_NETWORK \
   --cpu=2 --memory=7680MB --edition=ENTERPRISE
 ```
 
-Alternatively, follow the <a href="https://docs.cloud.google.com/sql/docs/postgres/create-instance" target="_blank" rel="noopener noreferrer">Cloud SQL quickstart guide</a>.
+For development, `--availability-type=zonal` runs a single instance at half the cost. Give production at least 2 vCPUs
+and 7.5 GB of memory. For every option, see
+<a href="https://docs.cloud.google.com/sql/docs/postgres/create-instance" target="_blank" rel="noopener noreferrer">Create instances</a>.
 
-Note the `PRIVATE_ADDRESS` from the output — this is your **YOUR_DB_IP_ADDRESS**.
-
-### Set database password
+Set the password of the `postgres` user. Replace `secret` with a strong password; you need it to
+[connect TBMQ](#connect-to-cloud-sql):
 
 ```bash
 gcloud sql users set-password postgres \
@@ -169,143 +235,255 @@ gcloud sql users set-password postgres \
   --password=secret
 ```
 
-Replace `secret` with a strong password. This will be **YOUR_DB_PASSWORD**.
-
-### Create the database
+Create the database TBMQ connects to:
 
 ```bash
 gcloud sql databases create thingsboard_mqtt_broker --instance=$TB_DATABASE_NAME
 ```
 
-### Edit database settings
+### Managed Service for Apache Kafka
 
-Replace `YOUR_DB_IP_ADDRESS`, `YOUR_DB_PASSWORD`, and `YOUR_DB_NAME` in the configmap:
-
-```bash
-nano tbmq-db-configmap.yml
-```
-
-## Create namespace
+Create a Kafka cluster with 3 vCPUs and 3 GiB of memory, the smallest size the service offers. Its brokers get
+addresses in the region's subnet of your network:
 
 ```bash
-kubectl apply -f tbmq-namespace.yml
-kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
+gcloud managed-kafka clusters create $TB_KAFKA_NAME \
+  --location=$GCP_REGION \
+  --cpu=3 \
+  --memory=3GiB \
+  --subnets=projects/$GCP_PROJECT/regions/$GCP_REGION/subnetworks/$GCP_NETWORK \
+  --async
 ```
 
-## Provision Valkey cluster
+`--async` returns at once; the cluster takes about 30 minutes to create. To size it for production, see
+<a href="https://docs.cloud.google.com/managed-service-for-apache-kafka/docs/plan-cluster-size" target="_blank" rel="noopener noreferrer">Plan your Kafka cluster size</a>.
 
-TBMQ relies on **Valkey** to store messages for
+The cluster accepts only authenticated TLS connections. TBMQ signs in with a service account key over SASL/PLAIN.
+Create a service account, allow it to use Kafka, and create a key for it. Keep the key file outside the cloned
+repository, so Git never picks it up:
+
+```bash
+gcloud iam service-accounts create tbmq-kafka-client --display-name="TBMQ Kafka client"
+
+gcloud projects add-iam-policy-binding $GCP_PROJECT \
+  --member=serviceAccount:tbmq-kafka-client@$GCP_PROJECT.iam.gserviceaccount.com \
+  --role=roles/managedkafka.client --condition=None
+
+gcloud iam service-accounts keys create ~/tbmq-kafka-client-key.json \
+  --iam-account=tbmq-kafka-client@$GCP_PROJECT.iam.gserviceaccount.com
+```
+
+<Aside>
+  If your organization blocks service account key creation (the `iam.disableServiceAccountKeyCreation` policy), the
+  last command fails. Ask an administrator to exempt the project, or [run Kafka in the cluster](#run-kafka-in-the-cluster)
+  instead.
+</Aside>
+
+### Memorystore for Valkey
+
+TBMQ uses Valkey to store messages for
 <DocLink product={props.product} path="architecture/#persistent-device-client">DEVICE persistent clients</DocLink>
-and to reduce database load during authentication. Without caching, every new connection triggers a database query,
-which can overload the database under high connection rates.
+and to cache MQTT client credentials. Without the cache, every new connection queries the database to validate its
+credentials, which can overload the database under high connection rates.
 
-Use **Google Cloud Memorystore for Valkey**. Refer to the following resources:
+Memorystore reaches your network through
+<a href="https://docs.cloud.google.com/memorystore/docs/valkey/networking" target="_blank" rel="noopener noreferrer">Private Service Connect</a>,
+which needs a service connection policy for the network and region. Check whether one exists:
 
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/create-instances" target="_blank" rel="noopener noreferrer">Create Memorystore for Valkey instances</a> — provision Cluster Mode Enabled/Disabled instances, including networking prerequisites.
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/product-overview" target="_blank" rel="noopener noreferrer">Product overview</a> — architecture, shards, endpoints, and supported Valkey versions (including 8.0).
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/networking" target="_blank" rel="noopener noreferrer">Networking requirements</a> — Private Service Connect and service connection policy setup.
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/instance-node-specification" target="_blank" rel="noopener noreferrer">Instance and node specification</a> — choosing node types (e.g., `standard-small`, `highmem-medium`).
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/cluster-mode-enabled-and-disabled" target="_blank" rel="noopener noreferrer">Cluster vs Standalone</a> — comparing horizontal scaling and feature support.
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/ha-and-replicas" target="_blank" rel="noopener noreferrer">High availability and replicas</a> — multi-zone deployment and replica best practices.
-- <a href="https://docs.cloud.google.com/memorystore/docs/valkey/general-best-practices" target="_blank" rel="noopener noreferrer">Best practices</a> — memory management, eviction policies, and scaling guidance.
-
-Once your Valkey instance is ready, update `tbmq-cache-configmap.yml`:
-
-For **standalone** mode:
-
-```yaml
-REDIS_CONNECTION_TYPE: "standalone"
-REDIS_HOST: "YOUR_VALKEY_ENDPOINT_URL_WITHOUT_PORT"
-#REDIS_PASSWORD: "YOUR_REDIS_PASSWORD"
+```bash
+gcloud network-connectivity service-connection-policies list --region=$GCP_REGION \
+  --filter="serviceClass=gcp-memorystore"
 ```
 
-For **cluster** mode:
+If none is listed, create it:
 
-```yaml
-REDIS_CONNECTION_TYPE: "cluster"
-REDIS_NODES: "COMMA_SEPARATED_LIST_OF_NODES"
-#REDIS_PASSWORD: "YOUR_REDIS_PASSWORD"
-# Recommended in Kubernetes for handling dynamic IPs and failover:
-#REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_ENABLED: "true"
-#REDIS_JEDIS_CLUSTER_TOPOLOGY_REFRESH_ENABLED: "true"
+```bash
+gcloud network-connectivity service-connection-policies create tbmq-valkey-policy \
+  --network=$GCP_NETWORK \
+  --region=$GCP_REGION \
+  --service-class=gcp-memorystore \
+  --subnets=https://www.googleapis.com/compute/v1/projects/$GCP_PROJECT/regions/$GCP_REGION/subnetworks/$GCP_NETWORK
 ```
 
-## Installation
+Create a Valkey 8.0 instance with cluster mode enabled, one shard, and one replica in another zone:
 
-Run the installation script:
+```bash
+gcloud memorystore instances create $TB_VALKEY_NAME \
+  --location=$GCP_REGION \
+  --psc-auto-connections=network=projects/$GCP_PROJECT/global/networks/$GCP_NETWORK,projectId=$GCP_PROJECT \
+  --mode=cluster \
+  --shard-count=1 \
+  --replica-count=1 \
+  --node-type=standard-small \
+  --engine-version=VALKEY_8_0 \
+  --async
+```
+
+The instance takes about 15 minutes to create. Recommendations:
+
+- **Cluster mode**: enabled (`--mode=cluster`) for production, which this guide uses. With `--mode=cluster-disabled`,
+  a single primary node serves every key, with optional replicas; TBMQ supports both.
+- **Shards**: for production, 3 shards (`--shard-count=3`) with 1 replica each.
+- **Node type**: `standard-small` (6.5 GB) to start; see
+  <a href="https://docs.cloud.google.com/memorystore/docs/valkey/instance-node-specification" target="_blank" rel="noopener noreferrer">Instance and node specification</a>.
+- **Encryption in transit and authentication**: both off by default, which this guide uses. TBMQ connects without TLS
+  and without a password unless you configure it to.
+
+## Connect TBMQ to the managed services
+
+### Connect to Cloud SQL
+
+Once the instance is **RUNNABLE**, get its private IP address:
+
+```bash
+gcloud sql instances describe $TB_DATABASE_NAME --format="value(ipAddresses[0].ipAddress)"
+```
+
+In `tbmq-db-configmap.yml`, replace `YOUR_DB_IP_ADDRESS` with it, `YOUR_DB_NAME` with `thingsboard_mqtt_broker`, and
+`YOUR_DB_PASSWORD` with the password you set:
+
+```yaml
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://172.16.0.2:5432/thingsboard_mqtt_broker"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "secret"
+```
+
+### Connect to Managed Kafka
+
+Once the cluster is **ACTIVE**, get its bootstrap address:
+
+```bash
+gcloud managed-kafka clusters describe $TB_KAFKA_NAME --location=$GCP_REGION --format="value(bootstrapAddress)"
+```
+
+In both `tbmq.yml` and `tbmq-ie.yml`, uncomment the block marked
+`Uncomment the following lines to connect to Google Cloud Managed Service for Apache Kafka` and replace
+`PUT_YOUR_KAFKA_BOOTSTRAP_ADDRESS_HERE` with the address:
+
+```yaml
+            - name: TB_KAFKA_SERVERS
+              value: "bootstrap-xxxxxxxxxx.xxxxxxxxx.us-central1.managedkafka.s.cloud.goog:9092"
+            - name: TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG
+              valueFrom:
+                secretKeyRef:
+                  name: tbmq-kafka-credentials
+                  key: kafka-config
+```
+
+`TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG` carries the SASL settings and the service account key, from the
+`tbmq-kafka-credentials` Secret that you create after [installing the database schema](#install-the-database-schema).
+
+### Connect to Memorystore
+
+Once the instance is **ACTIVE**, list its endpoints:
+
+```bash
+gcloud memorystore instances describe $TB_VALKEY_NAME --location=$GCP_REGION \
+  --flatten="endpoints[].connections[]" \
+  --format="table(endpoints.connections.pscAutoConnection.connectionType:label=TYPE,endpoints.connections.pscAutoConnection.ipAddress:label=ADDRESS)"
+```
+
+```text
+TYPE                       ADDRESS
+CONNECTION_TYPE_DISCOVERY  10.128.0.36
+                           10.128.0.35
+```
+
+TBMQ connects to the `CONNECTION_TYPE_DISCOVERY` address; the other one is used by Memorystore internally. In
+`tbmq-cache-configmap.yml`, set it with port `6379` in `REDIS_NODES`, and keep `REDIS_CONNECTION_TYPE: "cluster"`:
+
+```yaml
+  REDIS_CONNECTION_TYPE: "cluster"
+  REDIS_NODES: "10.128.0.36:6379"
+```
+
+With cluster mode disabled, the command lists a `CONNECTION_TYPE_PRIMARY` address instead. Set it, without the port,
+in `REDIS_HOST`, and set the connection type to `standalone`:
+
+```yaml
+  REDIS_CONNECTION_TYPE: "standalone"
+  REDIS_HOST: "10.128.0.36"
+```
+
+## Install the database schema
+
+Run the installation script. It creates the `thingsboard-mqtt-broker` namespace, sets it as the namespace of your
+current kubectl context, and creates the TBMQ database schema:
 
 ```bash
 ./k8s-install-tbmq.sh
 ```
 
-After completion, you should see:
+When it finishes, the output includes:
 
 ```text
-Installation finished successfully!
+INFO  o.t.m.b.i.ThingsboardMqttBrokerInstallService - Installation finished successfully!
 ```
 
 <Aside>
-  If installation fails, verify that the PostgreSQL URL and password are set correctly in `tbmq-db-configmap.yml`.
+  If the installation fails, check the database settings in `tbmq-db-configmap.yml`, then run the script again.
 </Aside>
+
+## Configure the Kafka connection
+
+Skip this section if you [run Kafka in the cluster](#run-kafka-in-the-cluster).
+
+<GcpKafkaCredentials
+  namespace="thingsboard-mqtt-broker"
+  restartCmd="kubectl rollout restart statefulset/tbmq statefulset/tbmq-integration-executor -n thingsboard-mqtt-broker" />
+
+Managed Kafka keeps topic data in tiered storage, which rejects the `segment.bytes` setting TBMQ applies to every topic
+it creates. Apply the topic settings for Managed Kafka, which leave `segment.bytes` at the service's default and
+replicate each topic to three brokers:
+
+```bash
+kubectl apply -f kafka/managed/tbmq-kafka-topics-configmap.yml
+```
+
+`tbmq.yml` and `tbmq-ie.yml` read the `tbmq-kafka-topics-config` ConfigMap it creates, if it exists. Without it, the
+broker nodes fail to start with `PolicyViolationException: segment.bytes is an immutable property if remote storage is
+enabled`.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="configure-the-license-key" showFor="mqtt-broker-pe">Configure the license key</ConditionalHeading>
 
-<LicenseTrial />
-
-Create a Kubernetes secret with your license key:
+Create a Kubernetes Secret with your license key:
 
 <Code code={licenseKeyCmd} lang="bash" />
 
 <Aside>Replace **YOUR_LICENSE_KEY_HERE** with your actual license key.</Aside>
 </ShowFor>
 
-## Provision Kafka
+## Run Kafka in the cluster
 
-TBMQ requires a running Kafka cluster. Choose one of the following options:
+Skip this section if you use Managed Kafka. To run Kafka in GKE instead, skip
+[Managed Service for Apache Kafka](#managed-service-for-apache-kafka) and
+[Configure the Kafka connection](#configure-the-kafka-connection), deploy Kafka with one of these options, and in both
+`tbmq.yml` and `tbmq-ie.yml` uncomment the matching `TB_KAFKA_SERVERS` block instead of the Managed Kafka one.
 
-### Option 1. Deploy an Apache Kafka cluster
+### Option 1. Apache Kafka StatefulSet
 
-Runs as a StatefulSet with 3 pods in KRaft dual-role mode (each node acts as both controller and broker).
-Suitable for a lightweight, self-managed Kafka setup.
-
-See the <a href={props.product === Products.TBMQ_PE ? kafkaPeReadmeUrl : kafkaCeReadmeUrl} target="_blank" rel="noopener noreferrer">full deployment guide</a>.
-
-Quick steps:
+Three pods in KRaft dual-role mode: each node is both a controller and a broker. See the
+<a href={props.product === Products.TBMQ_PE ? kafkaPeReadmeUrl : kafkaCeReadmeUrl} target="_blank" rel="noopener noreferrer">full deployment guide</a>.
 
 ```bash
 kubectl apply -f kafka/tbmq-kafka.yml
 ```
 
-In `tbmq.yml` and `tbmq-ie.yml`, uncomment the section marked:
+Uncomment the block marked `Uncomment the following lines to connect to Apache Kafka`.
 
-```yaml
-# Uncomment the following lines to connect to Apache Kafka
-```
+### Option 2. Strimzi operator
 
-### Option 2. Deploy a Kafka cluster with the Strimzi Operator
-
-Uses the Strimzi Cluster Operator for easier upgrades, scaling, and operational management.
-
-See the <a href={props.product === Products.TBMQ_PE ? kafkaPeOperatorReadmeUrl : kafkaCeOperatorReadmeUrl} target="_blank" rel="noopener noreferrer">full deployment guide</a>.
-
-Install the Strimzi operator:
+The Strimzi Cluster Operator manages upgrades and scaling. See the
+<a href={props.product === Products.TBMQ_PE ? kafkaPeOperatorReadmeUrl : kafkaCeOperatorReadmeUrl} target="_blank" rel="noopener noreferrer">full deployment guide</a>.
 
 ```bash
 helm install tbmq-kafka -f kafka/operator/values-strimzi-kafka-operator.yaml oci://quay.io/strimzi-helm/strimzi-kafka-operator --version 0.47.0
-```
-
-Deploy the Kafka cluster:
-
-```bash
 kubectl apply -f kafka/operator/kafka-cluster.yaml
+kubectl wait kafka/tbmq --for=condition=Ready --timeout=300s
 ```
 
-In `tbmq.yml` and `tbmq-ie.yml`, uncomment the section marked:
-
-```yaml
-# Uncomment the following lines to connect to Strimzi
-```
+Uncomment the block marked `Uncomment the following lines to connect to Strimzi`.
 
 ## Start TBMQ
 
@@ -315,196 +493,225 @@ Deploy TBMQ:
 ./k8s-deploy-tbmq.sh
 ```
 
-After a few minutes, check pod status:
+Wait until the broker nodes are ready:
 
 ```bash
-kubectl get pods
+kubectl rollout status statefulset/tbmq -n thingsboard-mqtt-broker --timeout=600s
+kubectl get pods -n thingsboard-mqtt-broker
 ```
 
-You should see `tbmq-0` and `tbmq-1` pods, each in the `READY` state.
+```text
+NAME                          READY   STATUS    RESTARTS   AGE
+tbmq-0                        1/1     Running   0          2m
+tbmq-1                        1/1     Running   0          2m
+tbmq-integration-executor-0   1/1     Running   0          2m
+tbmq-integration-executor-1   1/1     Running   0          2m
+```
 
 ## Configure load balancers
 
-### Configure HTTP(S) load balancer
+The `receipts` directory holds one manifest per load balancer. Apply one HTTP manifest and the MQTT manifest:
 
-You have two options:
+| Manifest                  | Load balancer                    | Ports                                                                                 |
+|---------------------------|----------------------------------|---------------------------------------------------------------------------------------|
+| `http-load-balancer.yml`  | Application Load Balancer        | `80` (HTTP)                                                                           |
+| `https-load-balancer.yml` | Application Load Balancer        | `443` (HTTPS); `80` redirects to HTTPS                                                |
+| `mqtt-load-balancer.yml`  | Passthrough Network Load Balancer | `1883` (MQTT), `8084` (MQTT over WebSockets); `8883` and `8085` passed through to TBMQ |
 
-- **HTTP** — no HTTPS support. Suitable for development only.
-- **HTTPS** — SSL termination with Google-managed certificates. Recommended for production.
+### HTTP load balancer
 
-#### HTTP load balancer
+<Aside>Suitable for development only. For production, use the [HTTPS load balancer](#https-load-balancer) instead.</Aside>
 
 ```bash
 kubectl apply -f receipts/http-load-balancer.yml
 ```
 
-Check provisioning status:
+### HTTPS load balancer
 
-```bash
-kubectl get ingress
-```
-
-Once ready:
-
-```text
-NAME                     CLASS    HOSTS   ADDRESS         PORTS   AGE
-tbmq-http-loadbalancer   <none>   *       34.111.24.134   80      7m25s
-```
-
-#### HTTPS load balancer
-
-HTTPS uses <a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/managed-certs" target="_blank" rel="noopener noreferrer">Google-managed SSL certificates</a>.
-Read the <a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/managed-certs#prerequisites" target="_blank" rel="noopener noreferrer">prerequisites</a> carefully before proceeding.
-
-Reserve a static IP address:
+The Application Load Balancer serves HTTPS with a
+<a href="https://docs.cloud.google.com/kubernetes-engine/docs/how-to/managed-certs" target="_blank" rel="noopener noreferrer">Google-managed certificate</a>
+for your domain. Reserve a global static IP address, which the manifest names `tbmq-http-lb-address`, and print it:
 
 ```bash
 gcloud compute addresses create tbmq-http-lb-address --global
+gcloud compute addresses describe tbmq-http-lb-address --global --format="value(address)"
 ```
 
-Replace `PUT_YOUR_DOMAIN_HERE` with a valid domain name in the HTTPS load balancer config:
-
-```bash
-nano receipts/https-load-balancer.yml
-```
-
-Deploy:
+Point your domain at the address with a DNS `A` record. In `receipts/https-load-balancer.yml`, replace
+`PUT_YOUR_DOMAIN_HERE` with the domain, then apply the manifest:
 
 ```bash
 kubectl apply -f receipts/https-load-balancer.yml
 ```
 
-Check provisioning status:
+The certificate is issued once the domain resolves to the address, which can take up to 60 minutes. Its status turns
+`Active`:
 
 ```bash
-kubectl get ingress
+kubectl describe managedcertificate managed-cert -n thingsboard-mqtt-broker
 ```
 
-Once provisioned:
-
-```text
-NAME                      CLASS   HOSTS   ADDRESS         PORTS   AGE
-tbmq-https-loadbalancer   gce     *       34.111.24.134   80      7m25s
-```
-
-Assign your domain name to the load balancer IP address shown above. Verify DNS propagation:
-
-```bash
-dig YOUR_DOMAIN_NAME
-```
-
-Then wait for the Google-managed certificate to finish provisioning (up to 60 minutes). Check status:
-
-```bash
-kubectl describe managedcertificate managed-cert
-```
-
-### Configure MQTT load balancer
-
-Create a TCP load balancer that forwards traffic on ports 1883 and 8883:
+### MQTT load balancer
 
 ```bash
 kubectl apply -f receipts/mqtt-load-balancer.yml
 ```
 
-#### MQTT over SSL
+The Network Load Balancer passes TCP through to TBMQ unchanged, so it can't terminate TLS. It serves plain MQTT on
+`1883` and `8084`, and forwards `8883` and `8085` to TBMQ, which serves them once you enable
+[MQTT over TLS](#mqtt-over-tls).
 
-Follow <a href="/docs/security/mqtts/" target="_blank" rel="noopener noreferrer">this guide</a> to create a `.pem` certificate file.
-Save it as `server.pem` in the working directory.
+### MQTT over TLS
 
-Create a ConfigMap from your PEM files:
+TBMQ terminates TLS itself on `8883` (MQTTS) and `8085` (MQTT over secure WebSockets). This also supports
+<DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509 certificate authentication</DocLink>.
+
+Prepare the server certificate chain and its private key in PEM format; see
+<DocLink product={props.product} path="security/mqtts" bold={false}>MQTT over SSL</DocLink>. Create a ConfigMap from
+them. The same command replaces the files when you renew the certificate:
 
 ```bash
-kubectl create configmap tbmq-mqtts-config \
+kubectl create configmap tbmq-mqtts-config -n thingsboard-mqtt-broker \
   --from-file=server.pem=YOUR_PEM_FILENAME \
   --from-file=mqttserver_key.pem=YOUR_PEM_KEY_FILENAME \
   -o yaml --dry-run=client | kubectl apply -f -
 ```
 
 Where:
-- `YOUR_PEM_FILENAME` — path to your server certificate file
-- `YOUR_PEM_KEY_FILENAME` — path to your server certificate private key file
 
-Uncomment all sections marked with "Uncomment the following lines to enable two-way MQTTS" in `tbmq.yml`:
+- `YOUR_PEM_FILENAME`: the server certificate chain file.
+- `YOUR_PEM_KEY_FILENAME`: the server certificate's private key file.
+
+In `tbmq.yml`, uncomment the three blocks marked `Uncomment the following lines to enable two-way MQTTS`. They mount
+the certificate and enable MQTTS on `8883` and MQTT over secure WebSockets on `8085`. Apply the updated `tbmq.yml`,
+which restarts the broker nodes one at a time:
 
 ```bash
 kubectl apply -f tbmq.yml
 ```
 
-## Validate the setup
+## Validate HTTP access
 
-Open the TBMQ web interface using the DNS name of the load balancer:
+Get the address of the Application Load Balancer:
 
 ```bash
-kubectl get ingress
+kubectl get ingress -n thingsboard-mqtt-broker
 ```
 
 ```text
 NAME                     CLASS    HOSTS   ADDRESS         PORTS   AGE
-tbmq-http-loadbalancer   <none>   *       34.111.24.134   80      3d1h
+tbmq-http-loadbalancer   <none>   *       136.82.226.40   80      7m
 ```
 
-Use the `ADDRESS` of `tbmq-http-loadbalancer` to access the UI.
+The load balancer takes a few minutes to provision, and its address answers with `404` or `502` errors until the
+health checks pass. Then open `http://{ADDRESS}` in your browser, or your domain over HTTPS if you deployed the HTTPS
+load balancer, and sign in as System Administrator:
 
-You should see the TBMQ login page. Use the default **System Administrator** credentials:
-
-**Username:**
-
-```
+```text title="Username"
 sysadmin@thingsboard.org
 ```
 
-**Password:**
-
-```
+```text title="Password"
 sysadmin
 ```
 
-On first login, you are prompted to change the default password and re-login with the new credentials.
+Change the password after the first sign-in.
 
-### Validate MQTT access
+## Validate MQTT access
 
-The service `tbmq-mqtt-loadbalancer` is the LoadBalancer used for MQTT communication. Retrieve its `EXTERNAL-IP` with:
+Get the address of the Network Load Balancer:
 
 ```bash
-kubectl get services
+kubectl get svc tbmq-mqtt-loadbalancer -n thingsboard-mqtt-broker
 ```
 
 ```text
-NAME                     TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE
-tbmq-mqtt-loadbalancer   LoadBalancer   10.100.119.170   *******       1883:30308/TCP,8883:31609/TCP   6m58s
+NAME                     TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)                                                       AGE
+tbmq-mqtt-loadbalancer   LoadBalancer   34.118.227.221   104.198.132.85   1883:32086/TCP,8084:32211/TCP,8883:30408/TCP,8085:32092/TCP   3m
 ```
 
-Use the `EXTERNAL-IP` field to connect to the cluster via MQTT.
+MQTT clients connect to the `EXTERNAL-IP` on the ports listed in [Configure load balancers](#configure-load-balancers).
 
-### Troubleshooting
-
-View TBMQ pod logs:
+To check the broker end to end, publish and subscribe with the
+<a href="https://mosquitto.org/download/" target="_blank" rel="noopener noreferrer">Mosquitto clients</a>. A new
+installation has one MQTT credential, **TBMQ WebSockets MQTT Credentials**: username `tbmq_websockets_username` and no
+password. In one terminal, subscribe:
 
 ```bash
-kubectl logs -f tbmq-0
+mosquitto_sub -h {EXTERNAL-IP} -p 1883 -u tbmq_websockets_username -t 'tbmq/demo/#' -v -q 1
 ```
 
-Check the state of all StatefulSets:
+In another, publish:
 
 ```bash
-kubectl get statefulsets
+mosquitto_pub -h {EXTERNAL-IP} -p 1883 -u tbmq_websockets_username -t 'tbmq/demo/hello' -m 'hello from gke' -q 1
+```
+
+The subscriber prints `tbmq/demo/hello hello from gke`. A client that connects without a username is refused as not
+authorized, because MQTT Basic authentication is enabled by default. To create your own credentials, see
+<DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials" bold={false}>MQTT client credentials</DocLink>.
+
+## Troubleshooting
+
+View the logs of a broker node:
+
+```bash
+kubectl logs -f tbmq-0 -n thingsboard-mqtt-broker
+```
+
+Check the state of the StatefulSets:
+
+```bash
+kubectl get statefulsets -n thingsboard-mqtt-broker
+```
+
+If a broker node logs connection errors to PostgreSQL, Kafka, or Valkey, check the address you set, and that the
+service is in the same region and VPC network as the GKE cluster. Kafka authentication errors mean the
+`tbmq-kafka-credentials` Secret or the service account's `roles/managedkafka.client` role is wrong.
+
+If the Ingress `ADDRESS` or the Service `EXTERNAL-IP` stays empty, its events give the reason:
+
+```bash
+kubectl describe ingress -n thingsboard-mqtt-broker
+kubectl describe svc tbmq-mqtt-loadbalancer -n thingsboard-mqtt-broker
 ```
 
 See the <a href="https://kubernetes.io/docs/reference/kubectl/cheatsheet/" target="_blank" rel="noopener noreferrer">kubectl Cheat Sheet</a> for more details.
 
 ## Upgrading
 
+<Steps>
+
 1. Check the **version-specific notes** below for any preparation your target version requires.
 2. [Back up your database](#backup-and-restore-optional) (optional but recommended).
 3. [Run the upgrade](#run-upgrade) commands.
+
+</Steps>
 
 For full version history and supported upgrade paths, see the{' '}
 <DocLink product={props.product} path="installation/upgrade-instructions">upgrade instructions</DocLink> page.{' '}
 If the documentation does not cover your specific upgrade path,{' '}
 <DocLink product={props.product} path="help">contact us</DocLink> for guidance.
 
-If there are no version-specific notes for your upgrade path, skip directly to [Run upgrade](#run-upgrade).
+What each upgrade needs before you run the upgrade — select a version for its full notes:
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+| Upgrade to                 | Before running the upgrade                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| [2.4.1](#upgrade-to-2-4-1) | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                    |
+| [2.4.0](#upgrade-to-2-4-0) | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics     |
+| [2.3.0](#upgrade-to-2-3-0) | [Delete the TBMQ pods first](#run-upgrade). Plan the third-party component migration  |
+| [2.2.0](#upgrade-to-2-2-0) | [Delete the TBMQ pods first](#run-upgrade). Check the authentication settings in `database-setup.yml` |
+</ShowFor>
+
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+| Upgrade to                                | Before running the upgrade                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------------------- |
+| [2.4.1](#upgrade-to-2-4-1-pe)             | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                 |
+| [2.4.0](#upgrade-to-2-4-0-pe)             | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics  |
+| [2.3.0](#upgrade-to-2-3-0-pe)             | [Delete the TBMQ pods first](#run-upgrade)                                        |
+| [TBMQ to TBMQ PE](#upgrade-from-ce-to-pe) | Move to the PE repository and set the license key; this path has its own commands |
+</ShowFor>
 
 ### Backup and restore (optional)
 
@@ -638,7 +845,17 @@ Once the file is verified, proceed with the [upgrade](#run-upgrade).
 
 ### Run upgrade
 
-Pull the latest changes from the release branch:
+The upgrade merges the new release branch into your clone and keeps your settings. Git merges only committed changes,
+so commit your settings first:
+
+```bash
+git add -A .
+git commit -m "TBMQ configuration"
+```
+
+If Git asks who you are, set `git config user.name` and `git config user.email`, then commit again.
+
+Merge the release branch:
 
 <Code code={gitPullCmd} lang="bash" />
 
@@ -646,19 +863,23 @@ Pull the latest changes from the release branch:
   To upgrade to a specific version (e.g. v2.0.0), replace the branch with the target branch name, e.g. `release-2.0.0`.
 </Aside>
 
-**Note:** Make sure any custom changes are not lost during the merge.
+If the merge reports conflicts, list the conflicting files:
 
-<Aside>
-If you encounter conflicts during the merge that are unrelated to your changes, accept all remote changes:
+```bash
+git diff --name-only --diff-filter=U
+```
 
-1. Abort the current merge: `git merge --abort`
-2. Re-pull accepting remote changes: <code>git pull origin {TBMQ_BRANCH} -X theirs</code>
+If you didn't change any of them, for example the `pom.xml` files of the TBMQ source code, take the release's version
+of every conflict:
 
-Merge strategy options:
+<Code code={gitPullTheirsCmd} lang="bash" />
 
-- `-X ours` — auto-resolve conflicts by favoring your local version
-- `-X theirs` — auto-resolve conflicts by favoring the remote version
-</Aside>
+`-X theirs` keeps your changes wherever they don't conflict with the release. If a file you changed conflicts, resolve it
+by hand instead and run `git commit`.
+
+Check that your settings are the only differences from the release branch:
+
+<Code code={gitDiffCmd} lang="bash" />
 
 After pulling, run the database upgrade and then apply the updated manifests to roll out the new version:
 
@@ -682,20 +903,100 @@ After pulling, run the database upgrade and then apply the updated manifests to 
 
 ## Cluster deletion
 
-Delete TBMQ nodes:
+<Steps>
 
-```bash
-./k8s-delete-tbmq.sh
-```
+1. **Delete the TBMQ nodes.**
 
-Delete all TBMQ nodes, ConfigMaps, and load balancers:
+   ```bash
+   ./k8s-delete-tbmq.sh
+   ```
 
-```bash
-./k8s-delete-all.sh
-```
+2. **Delete Kafka, if it runs in the cluster with Strimzi.** Delete the Kafka cluster first, then the operator:
 
-Delete the GKE cluster:
+   ```bash
+   kubectl delete -f kafka/operator/kafka-cluster.yaml
+   helm uninstall tbmq-kafka
+   ```
 
-```bash
-gcloud container clusters delete $TB_CLUSTER_NAME --region=$GCP_REGION
-```
+3. **Delete the HTTPS load balancer, if you deployed it.** `k8s-delete-all.sh` doesn't delete its
+   `ManagedCertificate`, and GKE deletes the Google-managed SSL certificate only when that object is deleted:
+
+   ```bash
+   kubectl delete -f receipts/https-load-balancer.yml
+   ```
+
+4. **Delete the remaining resources in the `thingsboard-mqtt-broker` namespace**: the Services, including the MQTT load
+   balancer, the StatefulSets, the ConfigMaps, the Ingress, and the persistent volume claims:
+
+   ```bash
+   ./k8s-delete-all.sh
+   ```
+
+5. **Wait for the load balancers to go.** GKE deletes them once the Ingress and the Service are gone. Wait until this
+   command lists nothing:
+
+   ```bash
+   gcloud compute forwarding-rules list --filter="description~thingsboard-mqtt-broker" --format="table(name,IPAddress)"
+   ```
+
+6. **Delete the GKE cluster.**
+
+   ```bash
+   gcloud container clusters delete $TB_CLUSTER_NAME --region=$GCP_REGION
+   ```
+
+7. **Delete the managed services.**
+
+   ```bash
+   gcloud sql instances delete $TB_DATABASE_NAME
+   gcloud managed-kafka clusters delete $TB_KAFKA_NAME --location=$GCP_REGION
+   gcloud memorystore instances delete $TB_VALKEY_NAME --location=$GCP_REGION
+   ```
+
+8. **Delete the Kafka service account and its role binding.** Deleting the service account also deletes its key; delete
+   the local key file too:
+
+   ```bash
+   gcloud projects remove-iam-policy-binding $GCP_PROJECT \
+     --member=serviceAccount:tbmq-kafka-client@$GCP_PROJECT.iam.gserviceaccount.com \
+     --role=roles/managedkafka.client --condition=None
+   gcloud iam service-accounts delete tbmq-kafka-client@$GCP_PROJECT.iam.gserviceaccount.com
+   rm ~/tbmq-kafka-client-key.json
+   ```
+
+9. **Delete the network resources you created for this guide.** Skip any that existed before or that other services
+   in the project still use: the service connection policy, the HTTPS load balancer's static IP address, and the
+   private services access peering and its IP range.
+
+   ```bash
+   gcloud network-connectivity service-connection-policies delete tbmq-valkey-policy --region=$GCP_REGION
+   gcloud compute addresses delete tbmq-http-lb-address --global
+   gcloud services vpc-peerings delete --service=servicenetworking.googleapis.com --network=$GCP_NETWORK
+   gcloud compute addresses delete google-managed-services-$GCP_NETWORK --global
+   ```
+
+</Steps>
+
+## Next steps
+
+<CardGrid>
+  <Card title="Connect your first client" icon="rocket" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Change broker settings through environment variables in `tbmq.yml`.
+    See <DocLink product={props.product} path="installation/how-to-change-config" bold={false}>How to change configuration</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="open-book" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+</CardGrid>
