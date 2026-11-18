@@ -60,6 +60,10 @@ splits its settings across several files in the directory that holds its `docker
 | `cache-valkey.env`, `cache-valkey-cluster.env` or `cache-valkey-sentinel.env` | Valkey connection, for the cache mode that `CACHE` in `.env` selects              |
 | `.env`                                                                      | Image version, container names, the cache mode, and `JAVA_OPTS`                     |
 
+`JAVA_OPTS` in `.env` reaches the containers only through the `JAVA_OPTS: "${JAVA_OPTS}"` line in the `environment`
+section of each TBMQ and Integration Executor service in `docker-compose.yml`, which ships commented out. Uncomment it
+in every service that should use the value.
+
 Restart the TBMQ nodes and Integration Executors. The script recreates the containers whose image or settings changed
 and leaves PostgreSQL, Kafka, Valkey and HAProxy running:
 
@@ -123,6 +127,14 @@ kubectl rollout status statefulset/my-tbmq-cluster-tbmq-node -n tbmq --timeout=6
 
 ## Logging configuration
 
-Log levels live in `logback.xml`, not in environment variables, and TBMQ re-reads the file within 10 seconds without a
-restart. See <DocLink product={props.product} path="troubleshooting#enabling-component-logs" bold={false}>Enabling component logs</DocLink>
+Log levels live in `logback.xml`, not in environment variables. TBMQ re-reads the file every 10 seconds, so when an
+edit applies depends on how the file reaches the container:
+
+- **Docker Compose cluster:** within 10 seconds after `./scripts/docker-refresh-config.sh` copies it into the volume.
+- **Kubernetes scripts:** after Kubernetes syncs the applied ConfigMap into the pods, which can take a minute or more.
+- **Helm chart:** only after a restart. The chart mounts `logback.xml` with `subPath`, which doesn't receive ConfigMap
+  updates, so restart the pods after `helm upgrade`:
+  `kubectl rollout restart statefulset/my-tbmq-cluster-tbmq-node statefulset/my-tbmq-cluster-tbmq-ie -n tbmq`.
+
+See <DocLink product={props.product} path="troubleshooting#enabling-component-logs" bold={false}>Enabling component logs</DocLink>
 for where each deployment keeps the file.
