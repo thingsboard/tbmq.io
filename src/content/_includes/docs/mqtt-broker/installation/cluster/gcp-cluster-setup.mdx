@@ -67,19 +67,6 @@ Install the following tools:
 Your Google Cloud account needs permission to create GKE clusters, Cloud SQL instances, Managed Kafka clusters,
 Memorystore instances, service accounts and their keys, and to grant IAM roles in the project.
 
-Create a Google Cloud project (recommended) or choose an existing one, then sign in and select it:
-
-```bash
-gcloud init
-```
-
-Enable the APIs this guide uses:
-
-```bash
-gcloud services enable container.googleapis.com sqladmin.googleapis.com servicenetworking.googleapis.com \
-  managedkafka.googleapis.com memorystore.googleapis.com networkconnectivity.googleapis.com
-```
-
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
 
@@ -107,7 +94,24 @@ You apply the key in [Configure the license key](#configure-the-license-key).
 
 Run every command in this guide from this directory.
 
-## Define environment variables
+## Configure your Kubernetes environment
+
+### Configure GCP tools
+
+Create a Google Cloud project (recommended) or choose an existing one, then sign in and select it:
+
+```bash
+gcloud init
+```
+
+Enable the APIs this guide uses:
+
+```bash
+gcloud services enable container.googleapis.com sqladmin.googleapis.com servicenetworking.googleapis.com \
+  managedkafka.googleapis.com memorystore.googleapis.com networkconnectivity.googleapis.com
+```
+
+### Define environment variables
 
 The commands in this guide read these variables. Set them in the shell you run the guide from; if you open a new
 shell, set them again:
@@ -138,7 +142,7 @@ Where:
 - `TB_CLUSTER_NAME`, `TB_DATABASE_NAME`, `TB_KAFKA_NAME`, `TB_VALKEY_NAME`: the names of the GKE cluster, the Cloud
   SQL instance, the Kafka cluster, and the Valkey instance.
 
-## Create the GKE cluster
+### Create the GKE cluster
 
 Create a regional cluster with one `e2-standard-4` node in each of the three zones. To size the nodes for production,
 change `--machine-type` and `--num-nodes`; see
