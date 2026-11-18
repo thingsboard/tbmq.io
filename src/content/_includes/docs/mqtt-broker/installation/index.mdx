@@ -63,7 +63,7 @@ The TBMQ Kubernetes scripts on a managed Kubernetes service, with the cloud's ma
   { path: 'installation/cluster/azure-cluster-setup', title: 'Azure', icon: '/src/assets/images/installation/azure.svg', accent: 'var(--color-product-trendz)',
     description: 'AKS with Azure Database for PostgreSQL; Kafka runs in the cluster.', chips: ['AKS', '2 broker nodes'] },
   { path: 'installation/cluster/gcp-cluster-setup', title: 'Google Cloud Platform', icon: '/src/assets/images/installation/gcp-platform.svg', accent: 'var(--sl-color-red)',
-    description: 'GKE with Cloud SQL and Memorystore for Valkey; Kafka runs in the cluster.', chips: ['GKE', '2 broker nodes'] },
+    description: 'GKE with Cloud SQL, Managed Service for Apache Kafka and Memorystore for Valkey, behind an Application LB and a Network LB.', chips: ['GKE', '2 broker nodes'] },
 ]} />
 
 ## Helm
@@ -79,7 +79,7 @@ Redis-compatible cache run separately, in the cluster or as managed services.
   { path: 'installation/cluster/helm-cluster-setup-azure', title: 'Azure AKS', icon: '/src/assets/images/installation/azure-kubernetes.svg', accent: 'var(--color-product-trendz)',
     description: 'The chart on Azure Kubernetes Service.', chips: ['AKS', 'Helm chart'] },
   { path: 'installation/cluster/helm-cluster-setup-gcp', title: 'GCP GKE', icon: '/src/assets/images/installation/gcp-kubernetes.svg', accent: 'var(--sl-color-red)',
-    description: 'The chart on Google Kubernetes Engine.', chips: ['GKE', 'Helm chart'] },
+    description: 'The chart on GKE, with web traffic through an Application LB and MQTT through a Network LB.', chips: ['GKE', 'Helm chart'] },
 ]} />
 
 ## Compare the options
