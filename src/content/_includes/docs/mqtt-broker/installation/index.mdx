@@ -61,7 +61,7 @@ The TBMQ Kubernetes scripts on a managed Kubernetes service, with the cloud's ma
   { path: 'installation/cluster/aws-cluster-setup', title: 'AWS', icon: '/src/assets/images/installation/aws.svg', accent: 'var(--sl-color-orange)',
     description: 'EKS with Amazon RDS, Amazon MSK and Amazon ElastiCache, behind an ALB and an NLB.', chips: ['EKS', '2 broker nodes'] },
   { path: 'installation/cluster/azure-cluster-setup', title: 'Azure', icon: '/src/assets/images/installation/azure.svg', accent: 'var(--color-product-trendz)',
-    description: 'AKS with Azure Database for PostgreSQL; Kafka runs in the cluster.', chips: ['AKS', '2 broker nodes'] },
+    description: 'AKS with Azure Database for PostgreSQL and Azure Managed Redis, and Kafka in the cluster, behind an Application Gateway and an Azure LB.', chips: ['AKS', '2 broker nodes'] },
   { path: 'installation/cluster/gcp-cluster-setup', title: 'Google Cloud Platform', icon: '/src/assets/images/installation/gcp-platform.svg', accent: 'var(--sl-color-red)',
     description: 'GKE with Cloud SQL, Managed Service for Apache Kafka and Memorystore for Valkey, behind an Application LB and a Network LB.', chips: ['GKE', '2 broker nodes'] },
 ]} />
@@ -77,7 +77,7 @@ Redis-compatible cache run separately, in the cluster or as managed services.
   { path: 'installation/cluster/helm-cluster-setup-aws', title: 'AWS EKS', icon: '/src/assets/images/installation/eks.svg', accent: 'var(--sl-color-orange)',
     description: 'The chart on EKS, with web traffic through an ALB and MQTT through an NLB.', chips: ['EKS', 'Helm chart'] },
   { path: 'installation/cluster/helm-cluster-setup-azure', title: 'Azure AKS', icon: '/src/assets/images/installation/azure-kubernetes.svg', accent: 'var(--color-product-trendz)',
-    description: 'The chart on Azure Kubernetes Service.', chips: ['AKS', 'Helm chart'] },
+    description: 'The chart on AKS, with web traffic through an Application Gateway and MQTT through an Azure LB.', chips: ['AKS', 'Helm chart'] },
   { path: 'installation/cluster/helm-cluster-setup-gcp', title: 'GCP GKE', icon: '/src/assets/images/installation/gcp-kubernetes.svg', accent: 'var(--sl-color-red)',
     description: 'The chart on GKE, with web traffic through an Application LB and MQTT through a Network LB.', chips: ['GKE', 'Helm chart'] },
 ]} />
