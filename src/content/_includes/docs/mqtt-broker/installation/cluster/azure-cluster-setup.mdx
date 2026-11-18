@@ -231,7 +231,8 @@ az network private-dns link vnet create --resource-group $AKS_RESOURCE_GROUP \
 
 Create a PostgreSQL 17 flexible server in the `postgres` subnet, highly available with a standby server in another
 availability zone. Replace `YOUR_DB_PASSWORD` with a strong password of 8 to 128 characters that mixes upper and lower
-case letters, digits, and symbols; you need it to [connect TBMQ](#connect-to-postgresql):
+case letters, digits, and symbols other than quotes and backslashes; you need it to
+[connect TBMQ](#connect-to-postgresql):
 
 ```bash
 az postgres flexible-server create --resource-group $AKS_RESOURCE_GROUP \
@@ -243,7 +244,7 @@ az postgres flexible-server create --resource-group $AKS_RESOURCE_GROUP \
   --zonal-resiliency Enabled \
   --vnet tbmq-vnet --subnet postgres \
   --private-dns-zone tbmq.private.postgres.database.azure.com \
-  --admin-user tbmqadmin --admin-password YOUR_DB_PASSWORD \
+  --admin-user tbmqadmin --admin-password 'YOUR_DB_PASSWORD' \
   --yes
 ```
 
