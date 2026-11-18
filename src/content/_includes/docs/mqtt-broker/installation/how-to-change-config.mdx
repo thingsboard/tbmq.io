@@ -132,11 +132,11 @@ edit applies depends on how the file reaches the container:
 
 - **Docker Compose cluster:** within 10 seconds after `./scripts/docker-refresh-config.sh` copies it into the volume.
 - **Kubernetes scripts:** after Kubernetes syncs the applied ConfigMap into the pods, which can take a minute or more.
-- **Helm chart:** only after a restart. No values key changes the chart's default logging configuration. Create your
-  own ConfigMap with a `logback` key and set `existingLogbackConfigMap` (or `existingConfigMap`, which also holds
-  `conf`) under `tbmq` or `tbmq-ie` to its name with `helm upgrade`. To change it later, apply the ConfigMap with
-  `kubectl apply` and restart the pods, because the chart mounts `logback.xml` with `subPath`, which doesn't receive
-  ConfigMap updates:
+- **Helm chart:** no values key changes the chart's default logging configuration. Create your own ConfigMap with a
+  `logback` key and set `existingLogbackConfigMap` (or `existingConfigMap`, which also holds `conf`) under `tbmq` or
+  `tbmq-ie` to its name with `helm upgrade`. To change it later, apply the ConfigMap with `kubectl apply`; as with the
+  Kubernetes scripts, the change applies after Kubernetes syncs it into the pods. This needs chart 2.3.2 or later.
+  Older charts mount `logback.xml` with `subPath`, which doesn't receive ConfigMap updates, so restart the pods:
   `kubectl rollout restart statefulset/my-tbmq-cluster-tbmq-node statefulset/my-tbmq-cluster-tbmq-ie -n tbmq`.
 
 See <DocLink product={props.product} path="troubleshooting#enabling-component-logs" bold={false}>Enabling component logs</DocLink>
