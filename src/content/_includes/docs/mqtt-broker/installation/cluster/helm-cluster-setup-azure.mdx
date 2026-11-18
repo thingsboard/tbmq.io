@@ -1,9 +1,11 @@
-import { Aside, Code } from '@astrojs/starlight/components';
+import { Aside, CardGrid, Code, Steps } from '@astrojs/starlight/components';
+import Card from '~/components/Landing/Card.astro';
+import DeploymentAtGlance from '~/components/Installations/DeploymentAtGlance.astro';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
 import ShowFor from '~/components/ShowFor.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
-import { TBMQ_PE_VER } from '~/data/versions';
+import { TBMQ_VER, TBMQ_PE_VER } from '~/data/versions';
 import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
 
 export const peImagesYaml = `tbmq:
@@ -16,115 +18,178 @@ tbmq-ie:
     repository: thingsboard/tbmq-pe-integration-executor
     tag: ${TBMQ_PE_VER}`;
 
-This guide covers deploying a TBMQ cluster using the official Helm <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster" target="_blank" rel="noopener noreferrer">chart</a>
-on Azure using Azure Kubernetes Service (AKS).
+export const ceTagsYaml = `tbmq:
+  image:
+    tag: ${TBMQ_VER}
 
-<Aside>
-  Throughout this guide, the cluster name **`tbmq-cluster`** and resource group **`TBMQResources`** are used as defaults
-  (matching the environment variables defined below). If you choose different values, update them consistently across all commands.
-</Aside>
+tbmq-ie:
+  image:
+    tag: ${TBMQ_VER}`;
+
+export const peTagsYaml = `tbmq:
+  image:
+    tag: ${TBMQ_PE_VER}
+
+tbmq-ie:
+  image:
+    tag: ${TBMQ_PE_VER}`;
+
+This guide covers deploying a TBMQ cluster on Azure Kubernetes Service (AKS) with the official Helm
+<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster" target="_blank" rel="noopener noreferrer">chart</a>.
+
+The chart deploys only TBMQ: two broker nodes and two Integration Executors. PostgreSQL, Kafka, and a Redis-compatible
+cache run separately. This guide deploys them in the cluster with CrunchyData PGO, Strimzi, and Valkey; you can use
+Azure Database for PostgreSQL and Azure Managed Redis instead. Web traffic goes through an Azure Application Gateway,
+which the AKS ingress add-on configures, and MQTT traffic through an Azure Load Balancer.
+
+<DeploymentAtGlance host="AKS cluster · TBMQ Helm chart" hostIcon="simple-icons:kubernetes" services={[
+  { name: 'TBMQ × 2', logo: '/src/assets/images/installation/tbmq-ce.svg' },
+  { name: 'Integration Executor × 2', icon: 'tabler:plug-connected' },
+]} managedLabel="Dependencies" managedIcon="simple-icons:microsoftazure" managed={[
+  { name: 'PostgreSQL (PGO or Azure Database for PostgreSQL)', icon: 'simple-icons:postgresql' },
+  { name: 'Kafka (Strimzi)', icon: 'simple-icons:apachekafka' },
+  { name: 'Valkey (or Azure Managed Redis)', icon: 'simple-icons:redis' },
+]} portsLabel="Load balancer ports" ports={[
+  { port: '80', protocol: 'HTTP · Application Gateway', use: 'TBMQ UI and REST API' },
+  { port: '443', protocol: 'HTTPS · Application Gateway', use: 'TBMQ UI and REST API, once you enable', linkText: 'HTTPS access', href: '#https-access' },
+  { port: '1883', protocol: 'MQTT · Azure LB', use: 'MQTT clients' },
+  { port: '8084', protocol: 'MQTT over WebSockets · Azure LB', use: 'MQTT clients that connect over WebSockets' },
+  { port: '8883', protocol: 'MQTTS · Azure LB', use: 'MQTT clients that connect over TLS, once you configure', linkText: 'mutual TLS', href: '#mqtts-access' },
+  { port: '8085', protocol: 'MQTT over secure WebSockets · Azure LB', use: 'MQTT clients that connect over secure WebSockets, once you configure', linkText: 'mutual TLS', href: '#mqtts-access' },
+]} />
 
 ## Prerequisites
 
-To deploy a TBMQ cluster using Helm on AKS, you need the following tools installed on your local machine:
+Install the following tools:
 
-- <a href="https://helm.sh/docs/intro/install/" target="_blank" rel="noopener noreferrer">Helm</a>
+- <a href="https://learn.microsoft.com/en-us/cli/azure/install-azure-cli" target="_blank" rel="noopener noreferrer">Azure CLI</a> (`az`)
 - <a href="https://kubernetes.io/docs/tasks/tools/" target="_blank" rel="noopener noreferrer">kubectl</a>
-- <a href="https://learn.microsoft.com/en-us/cli/azure/" target="_blank" rel="noopener noreferrer">Azure CLI</a>
+- <a href="https://helm.sh/docs/intro/install/" target="_blank" rel="noopener noreferrer">Helm</a> 3.8 or later
+
+Your Azure account needs permission to create resource groups, virtual networks, and AKS clusters, and to assign roles
+on the virtual network, for example the **Owner** role on the subscription. To use the managed services, it also needs
+permission to create them.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="get-the-license-key" showFor="mqtt-broker-pe">Get the license key</ConditionalHeading>
 
-Before proceeding, ensure you have an active TBMQ license. If you don't have one yet, visit the
-<a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>,
-choose a pay-as-you-go subscription or a perpetual license, and use the calculator to size your deployment — session and throughput limits, production and development instances, and any add-ons — to obtain your license key.
+You need a TBMQ PE license key. To buy one, open the
+<a href="/pricing/?product=tbmq-pe" target="_blank" rel="noopener noreferrer">Pricing page</a>, choose a pay-as-you-go
+subscription or a perpetual license, and use the calculator to size your deployment: session and throughput limits,
+production and development instances, and any add-ons.
 
-You will apply the key later, in [Configure license and broker images](#configure-license-and-broker-images).
+<LicenseTrial />
+
+You apply the key in [Configure license and broker images](#configure-license-and-broker-images).
 </ShowFor>
 
 ## Configure your Kubernetes environment
 
 ### Configure Azure tools
 
-After installation, log in to the Azure CLI:
+Sign in and select the subscription to deploy into:
 
 ```bash
 az login
 ```
 
+Register the resource providers for AKS and its network. A provider registers once per subscription; the command
+returns at once for those that already are:
+
+```bash
+for ns in Microsoft.ContainerService Microsoft.Network; do
+  az provider register --namespace $ns --wait
+done
+```
+
 ### Define environment variables
 
-Define environment variables used in various commands throughout this guide.
-Execute the following command (Linux):
+The commands in this guide read these variables. Set them in the shell you run the guide from; if you open a new
+shell, set them again:
 
 ```bash
 export AKS_RESOURCE_GROUP=TBMQResources
 export AKS_LOCATION=eastus
 export AKS_GATEWAY=tbmq-gateway
 export TB_CLUSTER_NAME=tbmq-cluster
-echo "Your variables are ready to create resource group $AKS_RESOURCE_GROUP in location $AKS_LOCATION
-and cluster $TB_CLUSTER_NAME in it"
+export TB_DATABASE_NAME=tbmq-db
+export TB_REDIS_NAME=tbmq-cache
+echo "Resource group: $AKS_RESOURCE_GROUP, region: $AKS_LOCATION"
 ```
 
 Where:
 
-- `TBMQResources` — a logical group in which Azure resources are deployed and managed, referenced as `$AKS_RESOURCE_GROUP`
-- `eastus` — the Azure region for the resource group, referenced as `$AKS_LOCATION` (see all regions with `az account list-locations`)
-- `tbmq-gateway` — the name of the Azure Application Gateway
-- `tbmq-cluster` — the cluster name, referenced as `$TB_CLUSTER_NAME`
+- `AKS_RESOURCE_GROUP`: the resource group that holds every resource of this guide.
+- `AKS_LOCATION`: the Azure region. List the regions with `az account list-locations -o table`.
+- `AKS_GATEWAY`: the name of the Application Gateway that the ingress add-on creates.
+- `TB_CLUSTER_NAME`: the name of the AKS cluster.
+- `TB_DATABASE_NAME` and `TB_REDIS_NAME`: the names of the PostgreSQL server and the Redis cache. You need them only if
+  you [use Azure managed services](#use-azure-managed-services).
 
-### Configure and create AKS cluster
+### Create the AKS cluster
 
-Create the Azure Resource Group:
+Create the resource group and a virtual network. The `aks` subnet holds the AKS nodes and pods; the `postgres` and
+`endpoints` subnets are for the managed services, if you use them:
 
 ```bash
 az group create --name $AKS_RESOURCE_GROUP --location $AKS_LOCATION
+
+az network vnet create --resource-group $AKS_RESOURCE_GROUP --name tbmq-vnet \
+  --address-prefixes 10.10.0.0/16 \
+  --subnet-name aks --subnet-prefixes 10.10.0.0/20
+
+az network vnet subnet create --resource-group $AKS_RESOURCE_GROUP --vnet-name tbmq-vnet \
+  --name postgres --address-prefixes 10.10.17.0/24 \
+  --delegations Microsoft.DBforPostgreSQL/flexibleServers
+
+az network vnet subnet create --resource-group $AKS_RESOURCE_GROUP --vnet-name tbmq-vnet \
+  --name endpoints --address-prefixes 10.10.18.0/24
 ```
 
-For more details on `az group`, see the <a href="https://learn.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest" target="_blank" rel="noopener noreferrer">Azure CLI documentation</a>.
-
-Create the AKS cluster:
+Create a cluster with three `Standard_D4s_v6` nodes, one in each availability zone of the region, and the
+<a href="https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview" target="_blank" rel="noopener noreferrer">Application Gateway ingress add-on</a>,
+which creates the gateway in a new `10.10.16.0/24` subnet. TBMQ and the dependencies this guide deploys share these
+nodes:
 
 ```bash
+export AKS_SUBNET_ID=$(az network vnet subnet show --resource-group $AKS_RESOURCE_GROUP \
+  --vnet-name tbmq-vnet --name aks --query id -o tsv)
+
 az aks create --resource-group $AKS_RESOURCE_GROUP \
-    --name $TB_CLUSTER_NAME \
-    --generate-ssh-keys \
-    --enable-addons ingress-appgw \
-    --appgw-name $AKS_GATEWAY \
-    --appgw-subnet-cidr "10.225.0.0/24" \
-    --node-vm-size Standard_D4s_v6 \
-    --node-count 3
+  --name $TB_CLUSTER_NAME \
+  --vnet-subnet-id $AKS_SUBNET_ID \
+  --network-plugin azure \
+  --enable-addons ingress-appgw \
+  --appgw-name $AKS_GATEWAY \
+  --appgw-subnet-cidr 10.10.16.0/24 \
+  --node-vm-size Standard_D4s_v6 \
+  --node-count 3 \
+  --zones 1 2 3
 ```
 
-Key parameters:
+This takes about 10 minutes. To size the nodes for production, change `--node-vm-size` and `--node-count`; see
+<a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview" target="_blank" rel="noopener noreferrer">VM sizes</a>.
+If the command fails with a quota error, the subscription's vCPU quota for the VM family or the region is too low:
+<a href="https://learn.microsoft.com/en-us/azure/quotas/per-vm-quota-requests" target="_blank" rel="noopener noreferrer">request an increase</a>
+or choose another region. If the region has no availability zones, drop `--zones`.
 
-- `--node-count` — number of nodes in the node pool; can be changed later with `az aks scale` (default: 3)
-- `--enable-addons` — enables the <a href="https://learn.microsoft.com/en-us/azure/application-gateway/" target="_blank" rel="noopener noreferrer">Application Gateway</a> add-on, used as the HTTP load balancer for TBMQ
-- `--node-vm-size` — size of Virtual Machines for Kubernetes nodes (default: `Standard_DS2_v2`)
-- `--generate-ssh-keys` — generates SSH key files if missing, stored in `~/.ssh`
-
-For the full list of `az aks create` options, see the <a href="https://learn.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az_aks_create" target="_blank" rel="noopener noreferrer">Azure CLI reference</a>.
-Alternatively, use the <a href="https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-portal?tabs=azure-cli" target="_blank" rel="noopener noreferrer">Azure portal quickstart</a> for a guided setup.
-
-### Update the context of kubectl
-
-Connect `kubectl` to the newly created cluster:
+Add the cluster to your kubeconfig and switch the current context to it:
 
 ```bash
 az aks get-credentials --resource-group $AKS_RESOURCE_GROUP --name $TB_CLUSTER_NAME
-```
-
-Verify the connection:
-
-```bash
 kubectl get nodes
 ```
 
-You should see the cluster's node list.
+<Aside type="caution" title="Check the kubectl context">
+  Every command in this guide runs against your current kubectl context. If you switched it, switch back first. This
+  command must print `tbmq-cluster`:
+
+  ```bash
+  kubectl config current-context
+  ```
+</Aside>
 
 ## Add the TBMQ Cluster Helm repository
-
-Before installing the chart, add the TBMQ Helm repository to your local Helm client:
 
 ```bash
 helm repo add tbmq-helm-chart https://helm.thingsboard.io/tbmq
@@ -133,133 +198,361 @@ helm repo update
 
 ## Create namespace
 
-Create a dedicated namespace for your TBMQ cluster deployment:
+Create a namespace for TBMQ and its dependencies:
 
 ```bash
 kubectl create namespace tbmq
 ```
 
+Every command in this guide passes `-n tbmq`.
+
+## Deploy PostgreSQL, Kafka, and Valkey
+
+The chart doesn't include PostgreSQL, Kafka, or a Redis-compatible cache. Any instances that TBMQ can reach work. This
+section deploys a small set in the cluster; size it for your load before production. To use Azure Database for
+PostgreSQL and Azure Managed Redis instead, deploy only [Kafka](#kafka) here, then continue with
+[Use Azure managed services](#use-azure-managed-services).
+
+### PostgreSQL
+
+Install the CrunchyData PGO operator and wait for it:
+
 ```bash
-kubectl config set-context --current --namespace=tbmq
+helm install pgo oci://registry.developers.crunchydata.com/crunchydata/pgo \
+  --version 6.0.1 -n tbmq
+kubectl wait --for=condition=Ready pod -l postgres-operator.crunchydata.com/control-plane=pgo \
+  -n tbmq --timeout=180s
 ```
 
-This sets `tbmq` as the default namespace for your current context, so you don't need to pass `--namespace` to every command.
+Create a PostgreSQL 17 cluster with the `thingsboard_mqtt_broker` database:
+
+```bash
+cat <<'EOF' | kubectl apply -n tbmq -f -
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: tbmq-db
+spec:
+  postgresVersion: 17
+  instances:
+    - name: instance1
+      replicas: 1
+      dataVolumeClaimSpec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+  users:
+    - name: postgres
+      databases:
+        - thingsboard_mqtt_broker
+  backups:
+    pgbackrest:
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 10Gi
+EOF
+```
+
+Wait for the database pod. PGO creates it a few seconds after the manifest is applied, so the first command waits for
+the pod to exist:
+
+```bash
+until kubectl get pod -n tbmq -l postgres-operator.crunchydata.com/data=postgres 2>/dev/null | grep -q tbmq-db; do sleep 3; done
+kubectl wait --for=condition=Ready pod -l postgres-operator.crunchydata.com/data=postgres \
+  -n tbmq --timeout=300s
+```
+
+PGO serves the database at `tbmq-db-primary:5432` and stores the generated password in the Secret
+`tbmq-db-pguser-postgres`, key `password`.
+
+### Kafka
+
+Install the Strimzi operator and wait for it:
+
+```bash
+helm repo add strimzi https://strimzi.io/charts/
+helm repo update
+helm install strimzi strimzi/strimzi-kafka-operator --version 0.50.0 -n tbmq
+kubectl wait --for=condition=Ready pod -l name=strimzi-cluster-operator -n tbmq --timeout=180s
+```
+
+Create a three-node Kafka 4.0 cluster in KRaft mode:
+
+```bash
+cat <<'EOF' | kubectl apply -n tbmq -f -
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: combined
+  labels:
+    strimzi.io/cluster: tbmq-kafka
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 10Gi
+        deleteClaim: false
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: tbmq-kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 4.0.0
+    metadataVersion: "4.0"
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      auto.create.topics.enable: false
+      default.replication.factor: 2
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+EOF
+```
+
+Wait for the cluster; this takes a few minutes:
+
+```bash
+kubectl wait kafka/tbmq-kafka --for=condition=Ready -n tbmq --timeout=600s
+```
+
+Kafka is reachable at `tbmq-kafka-kafka-bootstrap:9092`.
+
+<Aside title="Why not Azure Event Hubs">
+  Azure Event Hubs serves the Kafka protocol, but each event hub is one topic, and a namespace holds at most 10 on the
+  Standard tier and 100 per processing unit on Premium. TBMQ needs at least 30 topics and creates another for each
+  persistent APPLICATION client, so it quickly outgrows a namespace.
+</Aside>
+
+### Valkey
+
+Install a standalone Valkey without a password and wait for it:
+
+```bash
+helm repo add valkey https://valkey.io/valkey-helm/
+helm repo update
+helm install valkey valkey/valkey --version 0.9.3 -n tbmq
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=valkey -n tbmq --timeout=180s
+```
+
+Valkey is reachable at `valkey:6379`.
+
+### Use Azure managed services
+
+To use Azure Database for PostgreSQL and Azure Managed Redis instead of the in-cluster PostgreSQL and Valkey, create
+them in the cluster's virtual network, as described in
+<DocLink product={props.product} path="installation/cluster/azure-cluster-setup/#create-the-azure-managed-services" bold={false}>Create the Azure managed services</DocLink>
+of the Azure cluster setup guide. Register their resource providers first:
+
+```bash
+for ns in Microsoft.DBforPostgreSQL Microsoft.Cache; do
+  az provider register --namespace $ns --wait
+done
+```
+
+The commands there read the environment variables you defined above. Once the services are ready, get the PostgreSQL
+host name, and the Redis host name and access key:
+
+```bash
+az postgres flexible-server show --resource-group $AKS_RESOURCE_GROUP --name $TB_DATABASE_NAME \
+  --query fullyQualifiedDomainName -o tsv
+az redisenterprise show --resource-group $AKS_RESOURCE_GROUP --name $TB_REDIS_NAME \
+  --query hostName -o tsv
+az redisenterprise database list-keys --resource-group $AKS_RESOURCE_GROUP \
+  --cluster-name $TB_REDIS_NAME --query primaryKey -o tsv
+```
+
+Create Secrets for the PostgreSQL password and the Redis access key in the `tbmq` namespace:
+
+```bash
+kubectl create secret generic tbmq-db-secret -n tbmq --from-literal=password='YOUR_DB_PASSWORD'
+kubectl create secret generic tbmq-redis-secret -n tbmq --from-literal=password='YOUR_REDIS_ACCESS_KEY'
+```
+
+Then set the host names in [Connect to dependencies](#connect-to-dependencies) instead of the in-cluster values:
+
+```yaml
+postgresql:
+  host: "tbmq-db.postgres.database.azure.com"
+  port: 5432
+  database: "thingsboard_mqtt_broker"
+  username: "tbmqadmin"
+  existingSecret: "tbmq-db-secret"
+  existingSecretPasswordKey: "password"
+
+kafka:
+  bootstrapServers: "tbmq-kafka-kafka-bootstrap:9092"
+
+redis:
+  connectionType: "standalone"
+  host: "tbmq-cache.eastus.redis.azure.net"
+  port: 10000
+  usePassword: true
+  existingSecret: "tbmq-redis-secret"
+  existingSecretPasswordKey: "password"
+```
+
+Azure Managed Redis accepts only TLS connections. In the same step, also enable TLS in `customEnv` of the `tbmq`
+section. TBMQ verifies the cache's certificate against the CA certificates of its container image, which include the
+roots that Azure certificates chain to:
+
+```yaml
+tbmq:
+  customEnv:
+    REDIS_SSL_ENABLED: "true"
+    REDIS_SSL_CERT_FILE: "/etc/ssl/certs/ca-certificates.crt"
+```
+
+For all `postgresql`, `kafka`, and `redis` keys, see the
+<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#step-2-prepare-your-values-yaml" target="_blank" rel="noopener noreferrer">connection settings</a>
+in the chart documentation.
 
 ## Modify default chart values
 
-To customize your TBMQ deployment, download the default `values.yaml` from the chart:
+Export the chart's default values to a `values.yaml` file:
 
 ```bash
 helm show values tbmq-helm-chart/tbmq-cluster > values.yaml
 ```
 
+The file pins the chart defaults, including the TBMQ image tags. Keep it: you edit and reuse it on every upgrade.
+
 <Aside>
-  Do not modify `installation.installDbSchema` directly in `values.yaml`.
-  This parameter is only required during the first installation to initialize the TBMQ database schema.
-  Instead, pass it explicitly using `--set` in the `helm install` command.
+  Do not set `installation.installDbSchema` in `values.yaml`. It creates the database schema and is needed only on the
+  first install, so the install command passes it with `--set`.
 </Aside>
 
-### Deploy and connect to dependencies
+### Connect to dependencies
 
-Starting with chart version 2.0.0, the TBMQ Helm chart no longer bundles PostgreSQL, Kafka, or a Redis-compatible cache.
-This step assumes you have already deployed all three so they're reachable from the `tbmq` namespace. On Azure, the
-common choices are managed services: Azure Database for PostgreSQL, Azure Event Hubs with the Kafka protocol enabled,
-and Azure Cache for Redis. You can also self-host any of them inside the AKS cluster with operators like CrunchyData
-PGO, Strimzi, or Valkey. For an Azure Database for PostgreSQL provisioning walkthrough, see the
-<DocLink product={props.product} path="installation/cluster/azure-cluster-setup/#provision-postgresql-db">Azure cluster setup guide</DocLink>.
-
-Point the chart at your instances by setting the connection values in `values.yaml`. At a minimum, set:
+In `values.yaml`, find the `postgresql`, `kafka`, and `redis` sections and set these keys to point at the services from
+the previous section:
 
 ```yaml
 postgresql:
-  host: "my-tbmq-db.postgres.database.azure.com"
+  host: "tbmq-db-primary"
   port: 5432
   database: "thingsboard_mqtt_broker"
   username: "postgres"
-  existingSecret: "my-pg-secret"
+  existingSecret: "tbmq-db-pguser-postgres"
   existingSecretPasswordKey: "password"
 
 kafka:
-  bootstrapServers: "my-eventhubs.servicebus.windows.net:9093"
+  bootstrapServers: "tbmq-kafka-kafka-bootstrap:9092"
 
 redis:
   connectionType: "standalone"
-  host: "my-tbmq-cache.redis.cache.windows.net"
+  host: "valkey"
   port: 6379
-  existingSecret: "my-redis-secret"
-  existingSecretPasswordKey: "redis-password"
+  usePassword: false
 ```
 
-Replace the hostnames, credentials, and `redis.connectionType` (`standalone` or `cluster`) with values that match
-your actual deployment. For the full set of supported keys, see the
-<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#infrastructure-configuration" target="_blank" rel="noopener noreferrer">Infrastructure Configuration</a>
-section of the chart documentation.
+`redis.connectionType` defaults to `cluster`, so change it for a single Valkey node.
 
-<Aside type="caution" title="Managed Azure dependencies need extra environment variables">
-  The chart's `kafka` and `redis` keys cover plaintext, in-VPC connections. Azure managed services have stricter
-  defaults that aren't exposed as top-level values — pass them through `customEnv`:
-
-  - **Azure Event Hubs (Kafka protocol)** is SASL_SSL-only on port 9093. Plumb the security settings into both
-    the broker and the Integration Executor via `TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG` on `tbmq.customEnv`
-    and `tbmq-ie.customEnv`.
-  - **Azure Cache for Redis** disables the non-SSL port (6379) by default. Use port 6380 and set
-    `REDIS_SSL_ENABLED: "true"` on `tbmq.customEnv` (only the broker connects to Redis).
-</Aside>
+If you use Azure managed services, set the `postgresql` and `redis` values from
+[Use Azure managed services](#use-azure-managed-services) instead, and add the Redis TLS settings from the same section
+to `customEnv` of the `tbmq` section. Without them, the broker nodes can't connect to Redis.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 
 <ConditionalHeading level={3} id="configure-license-and-broker-images" showFor="mqtt-broker-pe">Configure license and broker images</ConditionalHeading>
 
-<LicenseTrial />
-
-The chart defaults point at the open-source broker and Integration Executor images. Switch both to the PE variants
-and provide a license.
-
-In your `values.yaml`, update the `tbmq.image` and `tbmq-ie.image` blocks:
+The chart defaults to the Community Edition images. In `values.yaml`, set the PE images in the `tbmq.image` and
+`tbmq-ie.image` blocks:
 
 <Code code={peImagesYaml} lang="yaml" />
 
-Pre-create a Kubernetes Secret holding the license value in the namespace you plan to install into,
-and reference it from `values.yaml`:
+Create a Secret with your license key in the `tbmq` namespace:
 
 ```bash
-kubectl create secret generic my-tbmq-license -n tbmq \
-  --from-literal=license-key='YOUR_LICENSE_VALUE'
+kubectl create secret generic tbmq-license -n tbmq \
+  --from-literal=license-key='YOUR_LICENSE_KEY'
 ```
+
+Reference it in the `license` section of `values.yaml`:
 
 ```yaml
 license:
-  existingSecret: my-tbmq-license
+  existingSecret: tbmq-license
 ```
 
 <Aside type="tip">
-  Pre-creating a Secret keeps the license value out of `values.yaml`. For test setups, you can paste the value inline
-  with `license.secret: "YOUR_LICENSE_VALUE"` and let the chart render the Secret for you. See the
-  <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#professional-edition-pe" target="_blank" rel="noopener noreferrer">Professional Edition section</a>
-  of the chart documentation for trade-offs.
+  The Secret keeps the key out of `values.yaml` and survives `helm uninstall`. For a quick test, you can instead set
+  `license.secret: "YOUR_LICENSE_KEY"` in `values.yaml` and the chart creates the Secret. See the
+  <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#provide-your-license" target="_blank" rel="noopener noreferrer">license options</a>
+  in the chart documentation.
 </Aside>
 
 </ShowFor>
 
 ### Load balancer configuration
 
-By default, the Helm chart deploys a standard NGINX Ingress Controller for HTTP and MQTT traffic. Since you are deploying on Azure AKS, change the load balancer type:
+Set the load balancer type to `azure`:
 
 ```yaml
 loadbalancer:
   type: "azure"
 ```
 
-This automatically configures:
+The chart then creates two internet-facing load balancers:
 
-- Plain HTTP traffic exposed via Azure Application Gateway
-- Plain MQTT traffic exposed via Azure Load Balancer
+| Load balancer       | Kubernetes resource               | Ports                                                                                              |
+|---------------------|-----------------------------------|----------------------------------------------------------------------------------------------------|
+| Application Gateway | Ingress `my-tbmq-cluster-http-lb` | `80` (HTTP); `443` (HTTPS) with HTTPS enabled                                                      |
+| Azure Load Balancer | Service `my-tbmq-cluster-mqtt-lb` | `1883` (MQTT), `8084` (MQTT over WebSockets), `8883` (MQTTS), `8085` (MQTT over secure WebSockets) |
+
+The `azure` type needs chart version 2.3.2 or later; with earlier versions, `helm install` fails with
+`spec.ingressClassName: Invalid value: "azure/application-gateway"`.
+
+The Azure Load Balancer passes TCP through to TBMQ unchanged, so it can't terminate TLS. MQTTS and secure WebSockets
+work once TBMQ terminates TLS itself, with [mutual TLS](#mqtts-access).
 
 #### HTTPS access
 
-To enable TLS for HTTP traffic, set `loadbalancer.http.ssl.enabled` to `true` and update
-`loadbalancer.http.ssl.certificateRef` with the name of the SSL certificate already configured
-in your Azure Application Gateway:
+The Application Gateway terminates HTTPS with a certificate that you upload to it. Prepare the certificate of your
+domain and its private key as a password-protected PFX file, then add it to the gateway. The ingress add-on creates the
+gateway in the cluster's node resource group:
+
+```bash
+az network application-gateway ssl-cert create \
+  --resource-group $(az aks show --resource-group $AKS_RESOURCE_GROUP --name $TB_CLUSTER_NAME \
+    --query nodeResourceGroup -o tsv) \
+  --gateway-name $AKS_GATEWAY \
+  --name TBMQHTTPSCert \
+  --cert-file YOUR_CERT.pfx \
+  --cert-password YOUR_CERT_PASSWORD
+```
+
+Enable HTTPS in `values.yaml`, with the certificate's name in the gateway:
 
 ```yaml
 loadbalancer:
@@ -268,130 +561,194 @@ loadbalancer:
     enabled: true
     ssl:
       enabled: true
-      certificateRef: "<your-appgw-ssl-certificate-name>"
+      certificateRef: "TBMQHTTPSCert"
 ```
+
+The gateway serves HTTPS on `443` and redirects HTTP on `80` to HTTPS. After installing, point your domain at the
+gateway's address, shown in [Validate HTTP access](#validate-http-access), with a DNS `A` record.
 
 #### MQTTS access
 
-Azure Load Balancer does not support TLS termination for MQTT traffic.
-To secure MQTT communication, configure mutual TLS (mTLS) directly in TBMQ.
-Refer to the TBMQ Helm chart documentation for <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#configuring-mutual-tls-mtls-for-mqtt" target="_blank" rel="noopener noreferrer">details on configuring mTLS</a>.
+With mutual TLS, the Azure Load Balancer forwards ports `8883` and `8085` unchanged, and TBMQ terminates TLS itself.
+This also supports
+<DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509 certificate authentication</DocLink>.
+
+Create a Secret with the server certificate chain and its private key, in PEM format:
+
+```bash
+kubectl create secret generic tbmq-mqtts -n tbmq \
+  --from-file=server.pem=server-chain.pem \
+  --from-file=mqttserver_key.pem=server.key
+```
+
+Enable mutual TLS in `values.yaml`:
+
+```yaml
+loadbalancer:
+  type: "azure"
+  mqtt:
+    enabled: true
+    mutualTls:
+      enabled: true
+      existingSecretName: "tbmq-mqtts"
+```
+
+This enables MQTTS on `8883`. To also serve MQTT over secure WebSockets on `8085` with the same certificate, add to
+`customEnv` of the `tbmq` section:
+
+```yaml
+tbmq:
+  customEnv:
+    LISTENER_WSS_ENABLED: "true"
+    LISTENER_WSS_PEM_CERT: "/ssl-config/server.pem"
+    LISTENER_WSS_PEM_KEY: "/ssl-config/mqttserver_key.pem"
+```
+
+For a password-protected key and the other options, see
+<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#mutual-tls-mtls-for-mqtt" target="_blank" rel="noopener noreferrer">mutual TLS</a>
+in the chart documentation.
 
 ## Install the TBMQ Helm chart
 
-Make sure you're in the same directory as your customized `values.yaml` file, then install TBMQ:
+From the directory with your `values.yaml`, install the chart:
 
 ```bash
-helm install my-tbmq-cluster tbmq-helm-chart/tbmq-cluster \
+helm install my-tbmq-cluster tbmq-helm-chart/tbmq-cluster -n tbmq \
   -f values.yaml \
   --set installation.installDbSchema=true
 ```
 
-<Aside type="tip">
-  `my-tbmq-cluster` is the Helm release name. You can change it to any name of your choice —
-  it will be used to reference this deployment in future Helm commands.
-</Aside>
+`my-tbmq-cluster` is the Helm release name. It prefixes every resource the chart creates, and later `helm` commands
+refer to it.
 
-Once the deployment completes, you should see output similar to:
+Helm runs a one-time install pod that creates the database schema and returns when the pod succeeds, usually within a
+minute:
 
 ```text
 NAME: my-tbmq-cluster
-LAST DEPLOYED: Wed Mar 26 17:42:49 2025
 NAMESPACE: tbmq
 STATUS: deployed
 REVISION: 1
-TEST SUITE: None
-NOTES:
-TBMQ Cluster my-tbmq-cluster will be deployed in few minutes.
-Info:
-Namespace: tbmq
+...
+```
+
+The broker pods start after the schema exists. Wait until they are ready:
+
+```bash
+kubectl rollout status statefulset/my-tbmq-cluster-tbmq-node -n tbmq --timeout=600s
 ```
 
 ## Validate HTTP access
 
-Get the DNS name of the load balancers:
+Get the address of the Application Gateway:
 
 ```bash
-kubectl get ingress
+kubectl get ingress my-tbmq-cluster-http-lb -n tbmq
 ```
-
-Expected output:
 
 ```text
-NAME                          CLASS    HOSTS   ADDRESS         PORTS   AGE
-my-tbmq-cluster-http-lb       <none>   *       20.123.45.67    80      3d1h
+NAME                      CLASS                       HOSTS   ADDRESS         PORTS   AGE
+my-tbmq-cluster-http-lb   azure-application-gateway   *       20.56.253.254   80      2m
 ```
 
-Use the `ADDRESS` field of `my-tbmq-cluster-http-lb` to open the TBMQ web interface in your browser.
+Open `http://{ADDRESS}` in your browser, or your domain over HTTPS if you enabled it, and sign in as System
+Administrator:
 
-You should see the TBMQ login page. Use the default **System Administrator** credentials:
-
-**Username:**
-
-```
+```text title="Username"
 sysadmin@thingsboard.org
 ```
 
-**Password:**
-
-```
+```text title="Password"
 sysadmin
 ```
 
-On first login, you are prompted to change the default password and re-login with the new credentials.
+Change the password after the first sign-in.
 
 ## Validate MQTT access
 
-The service `my-tbmq-cluster-mqtt-lb` is the LoadBalancer used for MQTT communication. Retrieve its `EXTERNAL-IP` with:
+Get the address of the Azure Load Balancer:
 
 ```bash
-kubectl get services
+kubectl get svc my-tbmq-cluster-mqtt-lb -n tbmq
 ```
-
-Expected output:
 
 ```text
-NAME                          TYPE           CLUSTER-IP       EXTERNAL-IP              PORT(S)                                                         AGE
-my-tbmq-cluster-mqtt-lb       LoadBalancer   10.100.119.170   *******                  1883:30308/TCP,8084:30309/TCP,8883:31609/TCP,8085:31610/TCP     6m58s
+NAME                      TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)                                                       AGE
+my-tbmq-cluster-mqtt-lb   LoadBalancer   10.0.224.65   50.85.145.252   1883:31320/TCP,8084:30819/TCP,8883:31462/TCP,8085:31172/TCP   2m
 ```
 
-Use the `EXTERNAL-IP` field to connect to the cluster via MQTT.
+MQTT clients connect to `EXTERNAL-IP` on port `1883`, and MQTT over WebSockets on port `8084`.
+
+To check the broker end to end, publish and subscribe with the
+<a href="https://mosquitto.org/download/" target="_blank" rel="noopener noreferrer">Mosquitto clients</a>. A new
+installation has one MQTT credential, **TBMQ WebSockets MQTT Credentials**: username `tbmq_websockets_username` and no
+password. In one terminal, subscribe:
+
+```bash
+mosquitto_sub -h {EXTERNAL-IP} -p 1883 -u tbmq_websockets_username -t 'tbmq/demo/#' -v -q 1
+```
+
+In another, publish:
+
+```bash
+mosquitto_pub -h {EXTERNAL-IP} -p 1883 -u tbmq_websockets_username -t 'tbmq/demo/hello' -m 'hello from aks' -q 1
+```
+
+The subscriber prints `tbmq/demo/hello hello from aks`. A client that connects without a username is refused as not
+authorized, because MQTT Basic authentication is enabled by default. To create your own credentials, see
+<DocLink product={props.product} path="user-guide/ui/mqtt-client-credentials" bold={false}>MQTT client credentials</DocLink>.
 
 ## Troubleshooting
 
-To examine service logs for errors, view TBMQ logs with:
+List the TBMQ pods:
 
 ```bash
-kubectl logs -f my-tbmq-cluster-tbmq-node-0
+kubectl get pods -n tbmq -l 'app in (my-tbmq-cluster-tbmq-node,my-tbmq-cluster-tbmq-ie,install-job)'
 ```
 
-Check the state of all StatefulSets:
+View the logs of a broker node:
 
 ```bash
-kubectl get statefulsets
+kubectl logs -f my-tbmq-cluster-tbmq-node-0 -n tbmq
 ```
 
-See the <a href="https://kubernetes.io/docs/reference/kubectl/quick-reference/" target="_blank" rel="noopener noreferrer">kubectl Cheat Sheet</a> for more details.
+If `helm install` fails with `failed post-install`, the schema install did not succeed. Read the install pod's logs:
+
+```bash
+kubectl logs my-tbmq-cluster-install-pod -n tbmq
+```
+
+If applying the Kafka manifest fails with `no matches for kind "KafkaNodePool" in version "kafka.strimzi.io/v1"`, the
+cluster has the resource definitions of an older Strimzi release, which `helm install` doesn't upgrade. Replace them
+with the definitions of Strimzi 0.50.0, then apply the manifest again:
+
+```bash
+kubectl apply --server-side --force-conflicts \
+  -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-crds-0.50.0.yaml
+```
+
+Broker pods that stay in `Init:0/1` are waiting for the schema. For the common causes and fixes, see
+<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#troubleshooting-the-install" target="_blank" rel="noopener noreferrer">Troubleshooting the install</a>
+in the chart documentation.
+
+With Azure managed services, connection errors to PostgreSQL or Redis in the broker logs mean a wrong host name, or a
+private DNS zone that isn't linked to `tbmq-vnet`. Redis authentication errors mean the `tbmq-redis-secret` Secret holds
+a wrong access key.
+
+If the Ingress `ADDRESS` or the Service `EXTERNAL-IP` stays empty, its events give the reason. The ingress add-on logs
+how it configures the Application Gateway:
+
+```bash
+kubectl describe ingress my-tbmq-cluster-http-lb -n tbmq
+kubectl describe svc my-tbmq-cluster-mqtt-lb -n tbmq
+kubectl logs deployment/ingress-appgw-deployment -n kube-system
+```
 
 ## Upgrading
 
-Chart version 2.0.0 is a breaking change from the 1.x line: the Bitnami PostgreSQL, Kafka, and Redis subcharts that
-earlier versions bundled have been removed. Upgrades from chart 1.x require either keeping the existing in-cluster
-Bitnami stack (annotated with `helm.sh/resource-policy: keep`) or provisioning a fresh third-party stack
-(PostgreSQL 17, Apache Kafka 4.0.0, Valkey 8.0+). Same-edition upgrades and CE → PE cross-edition migration on the
-same TBMQ version are also supported via the chart's pre-upgrade hook.
-
-<Aside type="caution">
-  Always back up your PostgreSQL database before upgrading, regardless of which path you take.
-</Aside>
-
-For the full procedure, refer to the
-<a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#upgrading" target="_blank" rel="noopener noreferrer">Upgrading</a>
-section of the TBMQ Helm Chart documentation on Artifact Hub. It covers the chart 1.x → 2.0.0 migration paths, the
-`upgrade.upgradeDbSchema` and `upgrade.fromVersion` flags, and the CE → PE migration steps.
-
-For the version history of TBMQ itself and the supported upgrade paths between its versions, see the
-<DocLink product={props.product} path="installation/upgrade-instructions">upgrade instructions</DocLink> page.
+Back up your PostgreSQL database before upgrading. Then review the
+<DocLink product={props.product} path="installation/upgrade-instructions" bold={false}>upgrade instructions</DocLink>
+for the notes on every version between yours and the target.
 
 <Aside type="note">
   Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading to v2.4.1.
@@ -403,31 +760,194 @@ For the version history of TBMQ itself and the supported upgrade paths between i
   Several Prometheus metric and tag names changed, so queries, recording rules, alerts and dashboards need updating.
 </Aside>
 
+<ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+
+<ConditionalHeading level={3} id="upgrade-from-ce-to-pe" showFor="mqtt-broker-pe">Upgrade from TBMQ to TBMQ PE</ConditionalHeading>
+
+To move a Community Edition release to PE, first upgrade it to the same TBMQ version as the target PE release. Then:
+
+<Steps>
+
+1. **Switch `values.yaml` to PE.**
+
+   In the `values.yaml` of your CE release, set the PE images and the license exactly as for a fresh PE install: see
+   [Configure license and broker images](#configure-license-and-broker-images), including the license Secret.
+
+2. **Stop TBMQ.**
+
+   Scale the broker and Integration Executor to zero so nothing uses the database while it is migrated:
+
+   ```bash
+   kubectl scale statefulset/my-tbmq-cluster-tbmq-node --replicas=0 -n tbmq
+   kubectl scale statefulset/my-tbmq-cluster-tbmq-ie --replicas=0 -n tbmq
+   ```
+
+3. **Run the upgrade.**
+
+   ```bash
+   helm upgrade my-tbmq-cluster tbmq-helm-chart/tbmq-cluster -n tbmq \
+     -f values.yaml \
+     --set upgrade.upgradeDbSchema=true \
+     --set upgrade.fromVersion=ce
+   ```
+
+   The migration converts the database to PE, then Helm starts the broker and Integration Executor on the PE images
+   with their usual replica count.
+
+</Steps>
+
+Pass `upgrade.fromVersion=ce` only for this migration. On later PE upgrades, leave it out: with it, the migration fails.
+
+</ShowFor>
+
+### Run upgrade
+
+<Steps>
+
+1. **Update the chart repository.**
+
+   ```bash
+   helm repo update
+   ```
+
+2. **Compare versions.**
+
+   The `APP VERSION` column is the TBMQ version. Compare your release with the latest chart:
+
+   ```bash
+   helm list -n tbmq
+   helm search repo tbmq-helm-chart/tbmq-cluster
+   ```
+
+3. **Update `values.yaml`.**
+
+   Export the new defaults and compare them with your file:
+
+   ```bash
+   helm show values tbmq-helm-chart/tbmq-cluster > values-new.yaml
+   diff values.yaml values-new.yaml
+   ```
+
+   Carry the changes you need into `values.yaml`. Always update the image tags, or the release keeps running the old
+   TBMQ version:
+
+   <Code code={props.product === Products.TBMQ_PE ? peTagsYaml : ceTagsYaml} lang="yaml" />
+
+4. **Run the upgrade.**
+
+   ```bash
+   helm upgrade my-tbmq-cluster tbmq-helm-chart/tbmq-cluster -n tbmq \
+     -f values.yaml \
+     --set upgrade.upgradeDbSchema=true
+   ```
+
+   A pre-upgrade job migrates the database, then Kubernetes replaces the TBMQ pods one at a time, each after the
+   previous one is ready. Wait for it to finish:
+
+   ```bash
+   kubectl rollout status statefulset/my-tbmq-cluster-tbmq-node -n tbmq --timeout=600s
+   ```
+
+</Steps>
+
+If the `APP VERSION` doesn't change, there is nothing to migrate: run the same `helm upgrade` without
+`--set upgrade.upgradeDbSchema=true`. With it, the migration fails with `database already upgraded to current version`
+and the release is marked `failed`; running the upgrade again without the flag fixes it.
+
+<Aside title="Upgrades that stop TBMQ">
+  Upgrades to 2.4.0 and later are rolling upgrades: Kubernetes replaces the TBMQ pods one at a time, so the cluster keeps
+  accepting connections. Upgrades to 2.3.0 and earlier must stop every TBMQ node while the database is migrated — see
+  the <DocLink product={props.product} path="installation/upgrade-instructions/#downtime" bold={false}>downtime of each version</DocLink>.
+  For those, scale the TBMQ pods to zero before `helm upgrade`; Helm starts them again:
+
+  ```bash
+  kubectl scale statefulset/my-tbmq-cluster-tbmq-node --replicas=0 -n tbmq
+  kubectl scale statefulset/my-tbmq-cluster-tbmq-ie --replicas=0 -n tbmq
+  ```
+</Aside>
+
+<Aside type="tip">
+  To upgrade to a specific version, add `--version {chart-version}` to `helm show values` and `helm upgrade`.
+  `helm search repo tbmq-helm-chart/tbmq-cluster --versions` lists each chart version with its TBMQ version.
+  TBMQ versions must be upgraded one at a time: if you are more than one version behind, run the upgrade once for each
+  TBMQ version in between, with the chart version for it.
+</Aside>
+
+Chart 2.0.0 (TBMQ 2.3.0) removed the PostgreSQL, Kafka, and Redis subcharts that chart 1.x bundled. To upgrade a
+release from chart 1.x, follow
+<a href="https://github.com/thingsboard/helm-charts/tree/main/tbmq#upgrading-from-chart-version-1x-to-200-tbmq-220--230" target="_blank" rel="noopener noreferrer">Upgrading from chart version 1.x to 2.0.0</a>
+in the chart documentation.
+
 ## Uninstalling TBMQ Helm chart
 
-To uninstall the TBMQ Helm chart:
-
 ```bash
-helm delete my-tbmq-cluster
+helm uninstall my-tbmq-cluster -n tbmq
 ```
 
-This removes all TBMQ components associated with the release from the current namespace.
-
-The `helm delete` command removes only the logical resources of the TBMQ cluster. Per-pod PVCs created from the
-broker's `volumeClaimTemplate` are intentionally not deleted by `helm uninstall` and carry no `app=` label.
-Drop them explicitly by name pattern:
+This removes the TBMQ resources of the release, and AKS deletes the Azure Load Balancer rules and the Application
+Gateway configuration for them. It keeps the broker's data volumes; delete them with:
 
 ```bash
-kubectl get pvc -n tbmq -o name | grep tbmq-node-data | xargs -I {} kubectl delete -n tbmq {}
+kubectl delete pvc -n tbmq -l app=my-tbmq-cluster-tbmq-node
 ```
 
-Azure Database for PostgreSQL, Event Hubs, and Managed Redis resources are owned by Azure and are not affected by
-`helm delete`. Drop them through their own portal or IaC tooling if you no longer need them.
+PostgreSQL, Kafka, and Valkey keep running, and so do the Secrets you created.
 
-## Delete Kubernetes cluster
-
-To delete the AKS cluster:
+To remove the in-cluster dependencies too, delete the database and Kafka clusters while their operators still run,
+then the operators, Valkey, and the namespace:
 
 ```bash
-az aks delete --resource-group $AKS_RESOURCE_GROUP --name $TB_CLUSTER_NAME
+kubectl delete postgrescluster tbmq-db -n tbmq
+kubectl delete kafka tbmq-kafka -n tbmq
+kubectl delete kafkanodepool combined -n tbmq
+helm uninstall valkey strimzi pgo -n tbmq
+kubectl delete namespace tbmq
 ```
+
+Deleting the namespace first leaves it stuck in `Terminating`: the operators are removed before they can clean up their
+clusters. Deleting the namespace also deletes the remaining volumes and their disks.
+
+If you use Azure managed services, only Kafka runs in the cluster. Delete it, then its operator and the namespace:
+
+```bash
+kubectl delete kafka tbmq-kafka -n tbmq
+kubectl delete kafkanodepool combined -n tbmq
+helm uninstall strimzi -n tbmq
+kubectl delete namespace tbmq
+```
+
+The managed services aren't affected; [Delete the AKS cluster](#delete-the-aks-cluster) covers them.
+
+## Delete the AKS cluster
+
+Delete the resource group. This deletes everything in it: the AKS cluster with its node resource group and Application
+Gateway, the virtual network, and the managed services and their private endpoint and DNS zones, if you created them.
+It takes about 15 minutes:
+
+```bash
+az group delete --name $AKS_RESOURCE_GROUP
+```
+
+## Next steps
+
+<CardGrid>
+  <Card title="Connect your first client" icon="rocket" headingLevel={3}>
+    Set up client credentials, then publish and subscribe with an MQTT client.
+    See <DocLink product={props.product} path="getting-started" bold={false}>Getting started</DocLink>.
+  </Card>
+
+  <Card title="Secure the broker" icon="approve-check-circle" headingLevel={3}>
+    Choose the authentication provider that fits your clients.
+    See <DocLink product={props.product} path="security/overview" bold={false}>Security overview</DocLink>.
+  </Card>
+
+  <Card title="Tune the configuration" icon="setting" headingLevel={3}>
+    Change broker settings through environment variables in `tbmq.customEnv` of your `values.yaml`.
+    See <DocLink product={props.product} path="installation/how-to-change-config" bold={false}>How to change configuration</DocLink>.
+  </Card>
+
+  <Card title="Watch the broker" icon="open-book" headingLevel={3}>
+    Track sessions, throughput, and resource usage as traffic grows.
+    See <DocLink product={props.product} path="user-guide/ui/monitoring" bold={false}>Monitoring</DocLink>.
+  </Card>
+</CardGrid>
