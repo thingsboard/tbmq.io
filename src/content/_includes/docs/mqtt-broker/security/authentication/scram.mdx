@@ -1,22 +1,129 @@
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Code, Steps } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
+import DocLink from '@components/DocLink.astro';
 import LearnLink from '@components/LearnLink.astro';
 
-SCRAM (Salted Challenge Response Authentication Mechanism) is a secure challenge-response authentication method that allows clients to prove their identity without transmitting the actual password over the network. It is one of the <LearnLink slug="mqtt-authentication">MQTT authentication methods</LearnLink> TBMQ supports, alongside Basic, X.509, JWT, and HTTP.
-It is a SASL mechanism (defined in RFC 5802 and RFC 7677); rather than being part of MQTT itself, TBMQ carries it over the MQTT 5.0 enhanced-authentication framework — the `AUTH` packet together with the `Authentication Method` and `Authentication Data` properties. It provides stronger security guarantees than Basic authentication, and TBMQ supports two mechanisms: `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+export const scramClient = `// SCRAM (RFC 5802) over MQTT 5.0 enhanced authentication, using MQTT.js.
+// Usage: node scram-client.js <host> <username> <password> [SCRAM-SHA-256|SCRAM-SHA-512]
+const crypto = require('crypto');
+const mqtt = require('mqtt');
+
+const [host = 'localhost', username, password, method = 'SCRAM-SHA-256'] = process.argv.slice(2);
+const hash = method === 'SCRAM-SHA-512' ? 'sha512' : 'sha256';
+const keyLength = hash === 'sha512' ? 64 : 32;
+
+const hmac = (key, data) => crypto.createHmac(hash, key).update(data).digest();
+const escape = (name) => name.replace(/=/g, '=3D').replace(/,/g, '=2C');
+
+// 1. client-first-message, sent in CONNECT
+const clientNonce = crypto.randomBytes(18).toString('base64');
+const clientFirstBare = \`n=\${escape(username)},r=\${clientNonce}\`;
+let authMessage;
+let saltedPassword;
+
+const client = mqtt.connect(\`mqtt://\${host}:1883\`, {
+  protocolVersion: 5,
+  clientId: \`scram-demo-\${crypto.randomBytes(4).toString('hex')}\`,
+  properties: {
+    authenticationMethod: method,
+    authenticationData: Buffer.from(\`n,,\${clientFirstBare}\`),
+  },
+  reconnectPeriod: 0,
+});
+
+// 2. server-first-message arrives in an AUTH packet; answer with client-final-message
+client.handleAuth = (packet, callback) => {
+  const serverFirst = packet.properties.authenticationData.toString();
+  const attrs = Object.fromEntries(serverFirst.split(',').map((kv) => [kv[0], kv.slice(2)]));
+  if (!attrs.r.startsWith(clientNonce)) return callback(new Error('Server nonce mismatch'));
+
+  saltedPassword = crypto.pbkdf2Sync(password, Buffer.from(attrs.s, 'base64'), Number(attrs.i), keyLength, hash);
+  const clientKey = hmac(saltedPassword, 'Client Key');
+  const storedKey = crypto.createHash(hash).update(clientKey).digest();
+  const clientFinalNoProof = \`c=biws,r=\${attrs.r}\`;
+  authMessage = \`\${clientFirstBare},\${serverFirst},\${clientFinalNoProof}\`;
+  const clientSignature = hmac(storedKey, authMessage);
+  const proof = Buffer.from(clientKey.map((b, i) => b ^ clientSignature[i])).toString('base64');
+
+  callback(null, {
+    cmd: 'auth',
+    reasonCode: 0x18, // Continue authentication
+    properties: {
+      authenticationMethod: method,
+      authenticationData: Buffer.from(\`\${clientFinalNoProof},p=\${proof}\`),
+    },
+  });
+};
+
+// 3. CONNACK carries the server-final-message: verify the server's signature
+client.on('connect', (connack) => {
+  const serverFinal = connack.properties?.authenticationData?.toString();
+  const expected = hmac(hmac(saltedPassword, 'Server Key'), authMessage).toString('base64');
+  if (serverFinal !== \`v=\${expected}\`) {
+    console.error('Server signature mismatch, closing the connection');
+    return client.end();
+  }
+  console.log('Connected and server verified');
+  client.subscribe('sensors/#', () => client.publish('sensors/temperature', '21.5'));
+});
+
+client.on('message', (topic, payload) => {
+  console.log(\`Received \${payload} on \${topic}\`);
+  client.end();
+});
+
+client.on('error', (err) => {
+  console.error(\`Connection failed: \${err.message} (reason code \${err.code})\`);
+  client.end();
+});`;
+
+SCRAM (Salted Challenge Response Authentication Mechanism) is a password-based
+<LearnLink slug="mqtt-authentication">MQTT authentication method</LearnLink> in which the password never travels over
+the network. The client proves it knows the password, and the broker proves it holds the matching credentials. TBMQ
+supports `SCRAM-SHA-256` and `SCRAM-SHA-512` and runs them over MQTT 5.0 enhanced authentication: the `AUTH` packet and
+the **Authentication Method** and **Authentication Data** properties.
+
+Use SCRAM when you want password authentication but don't want the password sent in the `CONNECT` packet, as Basic
+authentication does. Combine it with TLS anyway: SCRAM protects the password, not the messages that follow.
 
 <Aside type="note">
-  SCRAM authentication is available for MQTT 5.0 clients only. When the SCRAM provider is enabled, the broker handles it directly per the MQTT 5.0 specification — it does not take part in the configured execution order of the other authentication providers.
+  SCRAM works only with MQTT 5.0 clients. A client chooses SCRAM by setting the **Authentication Method** property in
+  `CONNECT`, so TBMQ handles it directly and it does not take part in the execution order of the other authentication
+  providers.
 </Aside>
 
-Unlike Basic authentication, where credentials are sent directly in the `CONNECT` packet, SCRAM performs a multi-step handshake:
+## How it works
 
-1. The client sends an initial authentication message with the username.
-2. The broker responds with a server challenge (a random nonce and salt).
-3. The client computes a cryptographic response using the password and challenge data.
-4. The broker verifies the response without ever receiving the plaintext password.
+A SCRAM connection takes four messages:
 
-This approach protects against replay attacks and password interception even on unencrypted connections.
+1. The client sends `CONNECT` with **Authentication Method** set to `SCRAM-SHA-256` or `SCRAM-SHA-512` and the
+   client-first message (the username and a random nonce) in **Authentication Data**.
+2. TBMQ answers with an `AUTH` packet, reason code `0x18` (Continue authentication), that carries the server-first
+   message: the combined nonce, the salt and the iteration count.
+3. The client derives a proof from the password and sends it in an `AUTH` packet with reason code `0x18`.
+4. TBMQ verifies the proof and replies with `CONNACK`. On success, its **Authentication Data** holds the server-final
+   message, which lets the client verify that the broker knows the credentials too.
+
+<Aside>
+  Releases up to TBMQ 2.4.1 don't include the server-final message in `CONNACK`. With those versions, skip the
+  server signature check on the client.
+</Aside>
+
+TBMQ never stores the password. When you save SCRAM credentials, it keeps only a random 16-byte salt and two keys
+derived from the password with 4096 PBKDF2 iterations. You can't read the password back; to change it, enter a new one.
+
+A connected client can re-authenticate by sending an `AUTH` packet with reason code `0x19` (Re-authenticate) and the
+same authentication method. If re-authentication fails, TBMQ disconnects the client with reason code `0x87`
+(Not authorized).
+
+## Enable the provider
+
+The SCRAM provider is disabled by default. Enable it in the TBMQ UI; no restart is needed:
+
+- On the **Home** page, in the **Broker Settings** card, click the button next to **SCRAM authentication**.
+- Or go to **Authentication → Providers** and turn on the switch in the **SCRAM** row.
+
+The provider has no settings beyond its status.
 
 <ImageGallery product={props.product} images={[
   {
@@ -26,6 +133,86 @@ This approach protects against replay attacks and password interception even on 
   },
 ]} />
 
-<Aside type="caution">
-  Full SCRAM configuration and usage documentation is coming soon.
-</Aside>
+## Create SCRAM credentials
+
+<Steps>
+
+1. Go to **Authentication → Credentials** and click the **Add client credentials** button (plus icon).
+
+2. In **Client credentials details**, enter a **Name**, choose the **Client type**, and set **Credentials type** to
+   **SCRAM**. Click **Next: Authentication and authorization**.
+
+3. Under **Authentication**, enter the **Username** and **Password**, and choose the
+   **Secure Hash Algorithm (SHA)**: `SHA-256` or `SHA-512`. The client must use the matching method,
+   `SCRAM-SHA-256` or `SCRAM-SHA-512`.
+
+4. Under **Authorization rules**, set the **Publish authorization rule patterns** and
+   **Subscribe authorization rule patterns**, then click **Add**.
+
+</Steps>
+
+While the provider is disabled, the credentials table shows **SCRAM Auth is disabled** next to SCRAM credentials.
+
+You can also create SCRAM credentials with the
+<DocLink product={props.product} path="mqtt-client-credentials-management" bold={false}>REST API</DocLink>. Set
+`credentialsType` to `SCRAM` and pass `userName`, `password`, `algorithm` (`SHA_256` or `SHA_512`) and `authRules` in
+`credentialsValue`.
+
+### Credentials ID
+
+TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|$USERNAME`, so each username can have
+one set of SCRAM credentials. The client ID isn't checked: any client ID can connect with the username and password.
+
+## Authorization
+
+After a successful handshake, the publish and subscribe rule patterns of the matched credentials control which topics
+the client can use. They work as for <DocLink product={props.product} path="security/authentication/basic#authorization" bold={false}>Basic credentials</DocLink>:
+regular expressions such as `sensors/.*`, where `.*` allows any topic and an empty list forbids all. The **Client type**
+of the credentials decides whether the client connects as a DEVICE or an APPLICATION client.
+
+## Connect a client
+
+Many MQTT clients, including `mosquitto_pub` and `mosquitto_sub`, can't run an MQTT 5.0 `AUTH` exchange. The example
+below uses <a href="https://github.com/mqttjs/MQTT.js" target="_blank" rel="noopener noreferrer">MQTT.js</a> in Node.js,
+which can. It connects with SCRAM, verifies the
+server signature, then publishes to `sensors/temperature` and reads the message back.
+
+Install MQTT.js in an empty directory:
+
+```bash
+npm install mqtt
+```
+
+Save the client as `scram-client.js`:
+
+<Code code={scramClient} lang="js" title="scram-client.js" meta="maxLines=20 collapsible" />
+
+Run it with the username and password of your SCRAM credentials:
+
+```bash
+node scram-client.js localhost YOUR_USERNAME YOUR_PASSWORD SCRAM-SHA-256
+```
+
+On success, it prints:
+
+```text
+Connected and server verified
+Received 21.5 on sensors/temperature
+```
+
+The example connects over plain TCP on port 1883. For MQTTS, change the URL to `mqtts://` and port 8883.
+
+## Troubleshooting
+
+When SCRAM authentication fails, TBMQ refuses the connection with one of these `CONNACK` reason codes. Failed attempts,
+except an unsupported method, also appear on the
+<DocLink product={props.product} path="user-guide/ui/unauthorized-clients" bold={false}>Unauthorized clients</DocLink>
+page with the reason shown below.
+
+| Reason code                     | Unauthorized clients reason                                         | Cause                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `0x87` Not authorized           | Failed to verify the client's proof of password knowledge!          | Wrong password, or the method doesn't match the algorithm saved in the credentials       |
+| `0x87` Not authorized           | Failed to evaluate client first message!                            | No SCRAM credentials exist for the username                                              |
+| `0x87` Not authorized           | Enhanced authentication provider is disabled by broker configuration | The SCRAM provider is disabled                                                           |
+| `0x8C` Bad authentication method | —                                                                   | The **Authentication Method** isn't `SCRAM-SHA-256` or `SCRAM-SHA-512`                   |
+| `0x8A` Banned                   | Enhanced auth blocked client by …                                   | The client is on the <DocLink product={props.product} path="other/blocked-client" bold={false}>blocked clients</DocLink> list |
