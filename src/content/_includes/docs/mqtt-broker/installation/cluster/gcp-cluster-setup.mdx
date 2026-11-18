@@ -7,6 +7,7 @@ import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 import { TBMQ_BRANCH } from '~/data/versions';
 import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
+import GcpKafkaCredentials from '@includes/docs/mqtt-broker/installation/cluster/gcp-kafka-credentials.mdx';
 
 export const cloneCmdCe = `git clone -b ${TBMQ_BRANCH} https://github.com/thingsboard/tbmq.git
 cd tbmq/k8s/gcp`;
@@ -424,19 +425,9 @@ INFO  o.t.m.b.i.ThingsboardMqttBrokerInstallService - Installation finished succ
 
 Skip this section if you [run Kafka in the cluster](#run-kafka-in-the-cluster).
 
-Create the `tbmq-kafka-credentials` Secret from the service account key. It sets SASL over TLS, the PLAIN mechanism, the
-service account as the username, and the Base64-encoded key as the password. The same command replaces the key when you
-rotate it:
-
-```bash
-kubectl create secret generic tbmq-kafka-credentials -n thingsboard-mqtt-broker \
-  --from-literal=kafka-config="security.protocol:SASL_SSL;sasl.mechanism:PLAIN;sasl.jaas.config:org.apache.kafka.common.security.plain.PlainLoginModule required username=\"tbmq-kafka-client@$GCP_PROJECT.iam.gserviceaccount.com\" password=\"$(base64 -w0 ~/tbmq-kafka-client-key.json)\"\\;" \
-  -o yaml --dry-run=client | kubectl apply -f -
-```
-
-`base64 -w0` is the Linux syntax; on macOS, use `base64 -i ~/tbmq-kafka-client-key.json`. After you replace the key
-of a running deployment, restart the pods to pick it up:
-`kubectl rollout restart statefulset/tbmq statefulset/tbmq-integration-executor -n thingsboard-mqtt-broker`.
+<GcpKafkaCredentials
+  namespace="thingsboard-mqtt-broker"
+  restartCmd="kubectl rollout restart statefulset/tbmq statefulset/tbmq-integration-executor -n thingsboard-mqtt-broker" />
 
 Managed Kafka keeps topic data in tiered storage, which rejects the `segment.bytes` setting TBMQ applies to every topic
 it creates. Apply the topic settings for Managed Kafka, which leave `segment.bytes` at the service's default and
@@ -906,27 +897,34 @@ After pulling, run the database upgrade and then apply the updated manifests to 
    helm uninstall tbmq-kafka
    ```
 
-3. **Delete every resource in the `thingsboard-mqtt-broker` namespace**, including the load balancer Ingress and
-   Service and the persistent volume claims:
+3. **Delete the HTTPS load balancer, if you deployed it.** `k8s-delete-all.sh` doesn't delete its
+   `ManagedCertificate`, and GKE deletes the Google-managed SSL certificate only when that object is deleted:
+
+   ```bash
+   kubectl delete -f receipts/https-load-balancer.yml
+   ```
+
+4. **Delete the remaining resources in the `thingsboard-mqtt-broker` namespace**: the Services, including the MQTT load
+   balancer, the StatefulSets, the ConfigMaps, the Ingress, and the persistent volume claims:
 
    ```bash
    ./k8s-delete-all.sh
    ```
 
-4. **Wait for the load balancers to go.** GKE deletes them once the Ingress and the Service are gone. Wait until this
+5. **Wait for the load balancers to go.** GKE deletes them once the Ingress and the Service are gone. Wait until this
    command lists nothing:
 
    ```bash
    gcloud compute forwarding-rules list --filter="description~thingsboard-mqtt-broker" --format="table(name,IPAddress)"
    ```
 
-5. **Delete the GKE cluster.**
+6. **Delete the GKE cluster.**
 
    ```bash
    gcloud container clusters delete $TB_CLUSTER_NAME --region=$GCP_REGION
    ```
 
-6. **Delete the managed services.**
+7. **Delete the managed services.**
 
    ```bash
    gcloud sql instances delete $TB_DATABASE_NAME
@@ -934,7 +932,7 @@ After pulling, run the database upgrade and then apply the updated manifests to 
    gcloud memorystore instances delete $TB_VALKEY_NAME --location=$GCP_REGION
    ```
 
-7. **Delete the Kafka service account and its role binding.** Deleting the service account also deletes its key; delete
+8. **Delete the Kafka service account and its role binding.** Deleting the service account also deletes its key; delete
    the local key file too:
 
    ```bash
@@ -945,7 +943,7 @@ After pulling, run the database upgrade and then apply the updated manifests to 
    rm ~/tbmq-kafka-client-key.json
    ```
 
-8. **Delete the network resources you created for this guide.** Skip any that existed before or that other services
+9. **Delete the network resources you created for this guide.** Skip any that existed before or that other services
    in the project still use: the service connection policy, the HTTPS load balancer's static IP address, and the
    private services access peering and its IP range.
 

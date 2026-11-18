@@ -7,6 +7,7 @@ import ShowFor from '~/components/ShowFor.astro';
 import ConditionalHeading from '~/components/ConditionalHeading.astro';
 import { TBMQ_VER, TBMQ_PE_VER } from '~/data/versions';
 import LicenseTrial from '@includes/docs/mqtt-broker/installation/license-trial.mdx';
+import GcpKafkaCredentials from '@includes/docs/mqtt-broker/installation/cluster/gcp-kafka-credentials.mdx';
 
 export const peImagesYaml = `tbmq:
   image:
@@ -33,6 +34,95 @@ export const peTagsYaml = `tbmq:
 tbmq-ie:
   image:
     tag: ${TBMQ_PE_VER}`;
+
+export const managedTopicsCeYaml = `tbmq:
+  customEnv:
+    TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:2147483648;partitions:16;replication.factor:3"
+    TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+    TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+    TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+    TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+    TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:24;replication.factor:3"
+    TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+    TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+    TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"
+    TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_BLOCKED_CLIENT_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+
+tbmq-ie:
+  customEnv:
+    TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"`;
+
+export const managedTopicsPeYaml = `tbmq:
+  customEnv:
+    TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:2147483648;partitions:16;replication.factor:3"
+    TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+    TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+    TB_KAFKA_DROPPED_MSG_TOPIC_PROPERTIES: "cleanup.policy:delete;retention.ms:86400000;partitions:6;replication.factor:3"
+    TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+    TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+    TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:24;replication.factor:3"
+    TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+    TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+    TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_RABBITMQ_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_POSTGRESQL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_TIMESCALEDB_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_REDIS_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MQTT_SOURCE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MONGODB_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_IE_SOURCE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"
+    TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_BLOCKED_CLIENT_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+
+tbmq-ie:
+  customEnv:
+    TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_RABBITMQ_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_POSTGRESQL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_TIMESCALEDB_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_REDIS_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_KAFKA_SOURCE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MQTT_SOURCE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_DOWNLINK_MONGODB_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+    TB_KAFKA_IE_SOURCE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+    TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+    TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"`;
 
 This guide covers deploying a TBMQ cluster on Google Kubernetes Engine (GKE) with the official Helm
 <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster" target="_blank" rel="noopener noreferrer">chart</a>.
@@ -124,7 +214,9 @@ Where:
 - `GCP_REGION` and `GCP_ZONE1`–`GCP_ZONE3`: a
   <a href="https://docs.cloud.google.com/compute/docs/regions-zones#available" target="_blank" rel="noopener noreferrer">compute region</a>
   and three of its zones.
-- `GCP_NETWORK`: the VPC network, `default` for the network every new project has.
+- `GCP_NETWORK`: the VPC network, `default` for the network every new project has. Its subnet in each region is also
+  named `default`; the managed services commands name the subnet with `$GCP_NETWORK` too, so if you use another
+  network, give the subnet the same name or edit those commands.
 - `TB_CLUSTER_NAME`: the name of the GKE cluster.
 - `TB_DATABASE_NAME`, `TB_KAFKA_NAME`, `TB_VALKEY_NAME`: the names of the Cloud SQL instance, the Kafka cluster, and the
   Valkey instance. You need them only if you [use Google Cloud managed services](#use-google-cloud-managed-services).
@@ -356,19 +448,15 @@ gcloud memorystore instances describe $TB_VALKEY_NAME --location=$GCP_REGION \
 
 TBMQ connects to the Memorystore `CONNECTION_TYPE_DISCOVERY` address.
 
-Create Secrets in the `tbmq` namespace for the PostgreSQL password and for the Kafka connection. The Kafka Secret sets
-SASL over TLS, the PLAIN mechanism, the Kafka service account as the username, and its Base64-encoded key as the
-password. The same command replaces the key when you rotate it:
+Create the PostgreSQL password Secret in the `tbmq` namespace:
 
 ```bash
 kubectl create secret generic tbmq-db-secret -n tbmq --from-literal=password='YOUR_DB_PASSWORD'
-
-kubectl create secret generic tbmq-kafka-credentials -n tbmq \
-  --from-literal=kafka-config="security.protocol:SASL_SSL;sasl.mechanism:PLAIN;sasl.jaas.config:org.apache.kafka.common.security.plain.PlainLoginModule required username=\"tbmq-kafka-client@$GCP_PROJECT.iam.gserviceaccount.com\" password=\"$(base64 -w0 ~/tbmq-kafka-client-key.json)\"\\;" \
-  -o yaml --dry-run=client | kubectl apply -f -
 ```
 
-`base64 -w0` is the Linux syntax; on macOS, use `base64 -i ~/tbmq-kafka-client-key.json`.
+<GcpKafkaCredentials
+  namespace="tbmq"
+  restartCmd="kubectl rollout restart statefulset/my-tbmq-cluster-tbmq-node statefulset/my-tbmq-cluster-tbmq-ie -n tbmq" />
 
 Then set the addresses in [Connect to dependencies](#connect-to-dependencies) instead of the in-cluster values:
 
@@ -396,47 +484,12 @@ redis:
 
 Managed Kafka keeps topic data in tiered storage, which rejects the `segment.bytes` setting TBMQ applies to every topic
 it creates: without the following settings, the broker nodes fail to start with
-`PolicyViolationException: segment.bytes is an immutable property if remote storage is enabled`. In `values.yaml`, set
-the topic settings for Managed Kafka in `customEnv` of the `tbmq` and `tbmq-ie` sections. They keep TBMQ's defaults
-without `segment.bytes`, and replicate each topic to three brokers:
+`PolicyViolationException: segment.bytes is an immutable property if remote storage is enabled`. In
+[Connect to dependencies](#connect-to-dependencies), also set the topic settings for Managed Kafka in `customEnv` of
+the `tbmq` and `tbmq-ie` sections. They keep TBMQ's defaults without `segment.bytes`, and replicate each topic to three
+brokers:
 
-```yaml
-tbmq:
-  customEnv:
-    TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:2147483648;partitions:16;replication.factor:3"
-    TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
-    TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
-    TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
-    TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
-    TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
-    TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
-    TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:24;replication.factor:3"
-    TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
-    TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
-    TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
-    TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"
-    TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_BLOCKED_CLIENT_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
-
-tbmq-ie:
-  customEnv:
-    TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
-    TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
-    TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
-    TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"
-```
+<Code code={props.product === Products.TBMQ_PE ? managedTopicsPeYaml : managedTopicsCeYaml} lang="yaml" />
 
 For all `postgresql`, `kafka`, and `redis` keys, see the
 <a href="https://artifacthub.io/packages/helm/tbmq-helm-chart/tbmq-cluster#step-2-prepare-your-values-yaml" target="_blank" rel="noopener noreferrer">connection settings</a>
@@ -481,8 +534,12 @@ redis:
   usePassword: false
 ```
 
-`redis.connectionType` defaults to `cluster`, so change it for a single Valkey node. If you use Google Cloud managed
-services, set the values from [Use Google Cloud managed services](#use-google-cloud-managed-services) instead.
+`redis.connectionType` defaults to `cluster`, so change it for a single Valkey node.
+
+If you use Google Cloud managed services, set the `postgresql`, `kafka`, and `redis` values from
+[Use Google Cloud managed services](#use-google-cloud-managed-services) instead, and add the Kafka topic settings from
+the same section to `customEnv` of the `tbmq` and `tbmq-ie` sections. Without the topic settings, the broker nodes don't
+start.
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 
@@ -954,7 +1011,7 @@ The managed services aren't affected; [Delete the GKE cluster](#delete-the-gke-c
    ```
 
 5. **Delete the Google Cloud managed services**, if you use them: the instances, the Kafka service account and its
-   key, and the network resources you created for them. Follow steps 6–8 of
+   key, and the network resources you created for them. Follow steps 7–9 of
    <DocLink product={props.product} path="installation/cluster/gcp-cluster-setup/#cluster-deletion" bold={false}>Cluster deletion</DocLink>
    in the GCP cluster setup guide.
 
