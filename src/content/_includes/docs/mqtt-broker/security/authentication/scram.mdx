@@ -320,8 +320,10 @@ TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|
 - The client ID isn't checked. Any client ID can connect with the username and password.
 - The same username can also have Basic credentials (`username|$USERNAME`). The two don't conflict: a client that
   sends a SCRAM **Authentication Method** is checked against the SCRAM credentials, any other client against the
-  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, disable Basic to
-  lock out non-SCRAM clients — see [Accept only SCRAM clients](#accept-only-scram-clients).
+  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, lock out non-SCRAM
+  clients as described in [Accept only SCRAM clients](#accept-only-scram-clients): from TBMQ 2.4.2, disable every
+  other provider; on 2.4.1 and earlier, disabling them opens the broker instead, so keep X.509 enabled without
+  credentials.
 
 ## Authorization
 
