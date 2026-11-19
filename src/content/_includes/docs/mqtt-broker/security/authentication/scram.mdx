@@ -4,11 +4,14 @@ import DocLink from '@components/DocLink.astro';
 import LearnLink from '@components/LearnLink.astro';
 
 export const scramClient = `// SCRAM (RFC 5802) over MQTT 5.0 enhanced authentication, using MQTT.js.
-// Usage: node scram-client.js <host> <username> <password> [SCRAM-SHA-256|SCRAM-SHA-512]
+// Usage: node scram-client.js <host> <username> <password> [SCRAM-SHA-256|SCRAM-SHA-512] [--no-verify]
+// --no-verify skips the server signature check, for TBMQ 2.4.1 and earlier (no server-final message in CONNACK).
 const crypto = require('crypto');
 const mqtt = require('mqtt');
 
-const [host = 'localhost', username, password, method = 'SCRAM-SHA-256'] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const verifyServer = !args.includes('--no-verify');
+const [host = 'localhost', username, password, method = 'SCRAM-SHA-256'] = args.filter((a) => a !== '--no-verify');
 const hash = method === 'SCRAM-SHA-512' ? 'sha512' : 'sha256';
 const keyLength = hash === 'sha512' ? 64 : 32;
 
@@ -57,13 +60,17 @@ client.handleAuth = (packet, callback) => {
 
 // 3. CONNACK carries the server-final-message: verify the server's signature
 client.on('connect', (connack) => {
-  const serverFinal = connack.properties?.authenticationData?.toString();
-  const expected = hmac(hmac(saltedPassword, 'Server Key'), authMessage).toString('base64');
-  if (serverFinal !== \`v=\${expected}\`) {
-    console.error('Server signature mismatch, closing the connection');
-    return client.end();
+  if (verifyServer) {
+    const serverFinal = connack.properties?.authenticationData?.toString();
+    const expected = hmac(hmac(saltedPassword, 'Server Key'), authMessage).toString('base64');
+    if (serverFinal !== \`v=\${expected}\`) {
+      console.error('Server signature mismatch, closing the connection');
+      return client.end();
+    }
+    console.log('Connected and server verified');
+  } else {
+    console.log('Connected, server signature not verified');
   }
-  console.log('Connected and server verified');
   client.subscribe('sensors/#', () => client.publish('sensors/temperature', '21.5'));
 });
 
@@ -99,7 +106,7 @@ connection. Compared with the other username-and-password options:
 | | <DocLink product={props.product} path="security/authentication/basic" bold={false}>Basic</DocLink> | SCRAM |
 |---|---|---|
 | What the client sends | The password, in the `CONNECT` packet | A proof derived from the password; the password itself is never sent |
-| Who is verified | The client | The client **and** the broker |
+| Who is verified | The client | The client, and from TBMQ 2.4.2 also the broker |
 | What TBMQ stores | A bcrypt hash of the password | A salt and two keys derived from the password |
 | MQTT versions | 3.1, 3.1.1 and 5.0 | 5.0 only |
 | Credentials matched by | Client ID, username, password, depending on the authentication strategy | Username only |
@@ -132,6 +139,14 @@ SCRAM does not. The client chooses SCRAM itself, by setting the **Authentication
 - **Authentication Method** is absent → the connection goes through the execution order as usual. SCRAM credentials
   are never checked on this path.
 
+<Aside type="caution" title="Keep another provider enabled">
+  SCRAM doesn't count as an enabled provider for the execution order. If SCRAM is the only enabled provider, TBMQ
+  treats every non-SCRAM connection as if all providers were disabled: a client that omits the **Authentication
+  Method** connects with no credentials, as a DEVICE client with no topic restrictions. To accept only SCRAM clients,
+  keep the Basic provider enabled and delete the Basic credentials you no longer need. TBMQ then refuses every client
+  that doesn't use SCRAM.
+</Aside>
+
 ### The handshake
 
 A SCRAM connection takes four messages. Each one travels in the **Authentication Data** property of an MQTT packet:
@@ -143,9 +158,9 @@ A SCRAM connection takes four messages. Each one travels in the **Authentication
 3. **Client → TBMQ, `AUTH` with reason code `0x18`.** The client-final message: the combined nonce and a proof the
    client computes from the password, the salt and everything exchanged so far. The **Authentication Method** must be
    the same as in `CONNECT`.
-4. **TBMQ → client, `CONNACK`.** TBMQ checks the proof against the stored keys. On success, the reason code is `0x00`
-   and **Authentication Data** holds the server-final message: a server signature the client checks to confirm that
-   the broker holds its credentials.
+4. **TBMQ → client, `CONNACK`.** TBMQ checks the proof against the stored keys. On success, the reason code is `0x00`.
+   From TBMQ 2.4.2, **Authentication Data** holds the server-final message: a server signature the client checks to
+   confirm that the broker holds its credentials.
 
 This is what the four messages look like for user `sensor-01` with `SCRAM-SHA-256`:
 
@@ -159,8 +174,9 @@ CONNACK  v=MPv+kDTEu8GmVo23mERIM6PnySdyNlXHGRhTqjSBl5s=
 Nonces and the salt are random, and the proof changes with them, so a recorded exchange can't be replayed.
 
 <Aside>
-  Releases up to TBMQ 2.4.1 don't include the server-final message in `CONNACK`. With those versions, skip the
-  server signature check on the client.
+  TBMQ 2.4.1 and earlier don't include the server-final message in `CONNACK`, so a client can't verify the broker
+  on connection. Skip the server signature check with those versions. They do send it in the `AUTH` Success packet
+  that ends a [re-authentication](#re-authentication).
 </Aside>
 
 ### What TBMQ stores
@@ -246,15 +262,21 @@ curl --location --request POST 'http://localhost:8083/api/mqtt/client/credential
 }'
 ```
 
+All four `credentialsValue` fields are required when you create credentials:
+
 | `credentialsValue` field | Description |
 |---|---|
-| `userName` | Required. The username the client sends in the client-first message |
+| `userName` | The username the client sends in the client-first message |
 | `password` | The password. TBMQ derives the salt and keys from it and doesn't store it |
 | `algorithm` | `SHA_256` or `SHA_512` |
 | `authRules` | `pubAuthRulePatterns` and `subAuthRulePatterns`, lists of regular expressions |
 
+A request without `password` or `algorithm` fails with `Could not parse client credentials!`, and one without
+`authRules` with `AuthRules are null!`.
+
 `clientType` is `DEVICE` (the default when omitted) or `APPLICATION`. The response returns the derived `salt`,
-`serverKey` and `storedKey`, never the password.
+`serverKey` and `storedKey`, never the password. To update credentials without changing the password, send the
+`credentialsValue` back as returned, with `salt`, `serverKey` and `storedKey` in place of `password`.
 
 </TabItem>
 </Tabs>
@@ -275,7 +297,9 @@ TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|
 - The client ID isn't checked. Any client ID can connect with the username and password.
 - The same username can also have Basic credentials (`username|$USERNAME`). The two don't conflict: a client that
   sends a SCRAM **Authentication Method** is checked against the SCRAM credentials, any other client against the
-  Basic ones. This lets you move clients from Basic to SCRAM one at a time.
+  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, delete the Basic
+  credentials but keep the Basic provider enabled — see
+  [Keep another provider enabled](#scram-bypasses-the-provider-execution-order).
 
 ## Authorization
 
@@ -294,8 +318,8 @@ the client can use. They work as for
 The **Client type** of the credentials decides whether the client connects as a
 <DocLink product={props.product} path="user-guide/mqtt-client-type" bold={false}>DEVICE or APPLICATION</DocLink> client.
 
-Rules and client type are resolved when the handshake completes. Changes to the credentials apply on the client's next
-connection, or on its next [re-authentication](#re-authentication).
+Rules and client type are resolved when the handshake completes. Changes to the credentials apply when the client
+reconnects.
 
 ## Connect a client
 
@@ -327,6 +351,15 @@ Connected and server verified
 Received 21.5 on sensors/temperature
 ```
 
+TBMQ 2.4.1 and earlier don't send the server signature in `CONNACK`, so the check fails with
+`Server signature mismatch, closing the connection`. With those versions, add `--no-verify`:
+
+```bash
+node scram-client.js localhost YOUR_USERNAME YOUR_PASSWORD SCRAM-SHA-256 --no-verify
+```
+
+The first line then reads `Connected, server signature not verified`.
+
 The credentials' publish and subscribe rules must allow `sensors/temperature`, or the example connects but the
 round trip fails.
 
@@ -356,19 +389,22 @@ The MQTT.js example above is a complete implementation of the client side to com
 
 ## Re-authentication
 
-A connected client can repeat the SCRAM exchange without disconnecting, for example to refresh its authorization after
-you change its credentials. Re-authentication uses only `AUTH` packets:
+A connected client can repeat the SCRAM exchange without disconnecting, to prove again that it still knows the
+password. Re-authentication uses only `AUTH` packets:
 
 1. The client sends `AUTH` with reason code `0x19` (Re-authenticate), the same **Authentication Method** it used in
    `CONNECT`, and a new client-first message.
 2. TBMQ answers with `AUTH` `0x18` and a new server-first message, and the client sends `AUTH` `0x18` with its
    client-final message.
-3. TBMQ answers with `AUTH` `0x00` (Success) and the server-final message, then applies the authorization rules and
-   client type that the credentials have now.
+3. TBMQ answers with `AUTH` `0x00` (Success) and the server-final message.
 
 The session stays connected throughout. If re-authentication fails — wrong password, a different authentication method,
 or the provider was disabled — TBMQ disconnects the client with `DISCONNECT` reason code `0x87` (Not authorized).
 Only a client that connected with SCRAM can re-authenticate.
+
+Re-authentication is not a reliable way to apply changed credentials. New subscribe rules take effect, but TBMQ keeps
+its earlier publish decision for every topic the client has already published to, and the session keeps the client
+type it connected with. To apply new rules or a new client type, have the client reconnect.
 
 ## Troubleshooting
 
@@ -393,7 +429,7 @@ Other symptoms:
   is waiting for the client-final message. The client library doesn't implement the `AUTH` exchange, or isn't set up
   to answer it.
 - **The connection is accepted, but the client rejects the server signature.** On TBMQ 2.4.1 and earlier, `CONNACK`
-  carries no server-final message; skip the check for those versions. On later versions, check that the client
-  computes the signature with the same hash as the method it sent.
+  carries no server-final message; skip the check for those versions (`--no-verify` in the example client). From
+  2.4.2, check that the client computes the signature with the same hash as the method it sent.
 - **The client connects but can't publish or subscribe.** The authorization rules of the SCRAM credentials don't
-  match the topic. Rule changes apply on the next connection or re-authentication.
+  match the topic. Rule changes apply when the client reconnects.
