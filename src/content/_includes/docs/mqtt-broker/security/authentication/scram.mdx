@@ -252,9 +252,10 @@ the client gets after it connects.
 
 <Steps>
 
-1. Go to **Authentication → Credentials** and click the **Add client credentials** button (plus icon).
+1. Go to **Authentication → Credentials**, click **Add client credentials**, and choose **Add client credentials** in
+   the menu.
 
-2. In **Client credentials details**, enter a **Name**, choose the **Client type**, and set **Credentials type** to
+2. In **Client credentials details**, enter a **Name** (it must be unique), choose the **Client type**, and set **Credentials type** to
    **SCRAM**. Click **Next: Authentication and authorization**.
 
 3. Under **Authentication**, enter the **Username** and **Password**, and choose the
@@ -292,8 +293,9 @@ All four `credentialsValue` fields are required when you create credentials:
 | `algorithm` | `SHA_256` or `SHA_512` |
 | `authRules` | `pubAuthRulePatterns` and `subAuthRulePatterns`, lists of regular expressions |
 
-A request without `password` or `algorithm` fails with `Could not parse client credentials!`, and one without
-`authRules` with `AuthRules are null!`.
+A request without `password` or `algorithm` fails with `Could not parse client credentials!`, one without `userName`
+with `User name is empty!`, and one without `authRules` with `AuthRules are null!`. The `name` must be unique, or the
+request fails with `MQTT Client credentials with such name are already created!`.
 
 `clientType` is `DEVICE` (the default when omitted) or `APPLICATION`. The response returns the derived `salt`,
 `serverKey` and `storedKey`, never the password. To update credentials without changing the password, send the
@@ -314,7 +316,7 @@ While the provider is disabled, the credentials table shows **SCRAM Auth is disa
 TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|$USERNAME`, so:
 
 - Each username can have one set of SCRAM credentials. Saving a second one fails with
-  `Specified credentials are already registered!`.
+  `Such MQTT Client credentials are already created!`.
 - The client ID isn't checked. Any client ID can connect with the username and password.
 - The same username can also have Basic credentials (`username|$USERNAME`). The two don't conflict: a client that
   sends a SCRAM **Authentication Method** is checked against the SCRAM credentials, any other client against the
@@ -388,8 +390,8 @@ the broker uses a self-signed certificate, also pass its CA certificate in the `
 
 ### Check the connection in TBMQ
 
-Open **Sessions** and select the client. In **Client info**, the client credentials field reads **Auth provider**
-`SCRAM`, and **Client type** shows the type set in the credentials.
+Open **Sessions** and select the client. In **Client info**, **Auth provider** shows `SCRAM`, and **Client type** shows
+the type set in the credentials.
 
 ### Using another client library
 
@@ -419,8 +421,8 @@ password. Re-authentication uses only `AUTH` packets:
 3. TBMQ answers with `AUTH` `0x00` (Success) and the server-final message.
 
 The session stays connected throughout. If re-authentication fails — wrong password, a different authentication method,
-or the provider was disabled — TBMQ disconnects the client with `DISCONNECT` reason code `0x87` (Not authorized).
-Only a client that connected with SCRAM can re-authenticate.
+or the provider was disabled — TBMQ disconnects the client with `DISCONNECT` reason code `0x87` (Not authorized) and
+records the failure on the Unauthorized clients page. Only a client that connected with SCRAM can re-authenticate.
 
 Re-authentication is not a reliable way to apply changed credentials. New subscribe rules take effect, but TBMQ keeps
 its earlier publish decision for every topic the client has already published to, and the session keeps the client
