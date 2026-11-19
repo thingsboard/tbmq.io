@@ -137,28 +137,36 @@ SCRAM does not. The client chooses SCRAM itself, by setting the **Authentication
 - **Authentication Method** is any other value → TBMQ refuses the connection with `0x8C` (Bad authentication method).
   The value is case-sensitive: `scram-sha-256` is refused.
 - **Authentication Method** is absent → the connection goes through the execution order as usual. SCRAM credentials
-  are never checked on this path.
+  are never checked on this path. With SCRAM as the only enabled provider, see
+  [Accept only SCRAM clients](#accept-only-scram-clients).
 
-<Aside type="caution" title="Keep another provider enabled">
-  SCRAM doesn't count as an enabled provider for the execution order. If SCRAM is the only enabled provider, TBMQ
-  treats every non-SCRAM connection as if all providers were disabled: a client that omits the **Authentication
-  Method** connects with no credentials, as a DEVICE client with no topic restrictions.
+### Accept only SCRAM clients
 
-  To accept only SCRAM clients, disable the Basic provider and enable the
-  <DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509 provider</DocLink> without
-  creating any X.509 credentials, with its **Client authentication** setting left at **Requested** (the default).
-  X.509 then skips every client, on plain ports because there is no TLS and over TLS because no certificate matches.
-  The execution order ends without a success, so TBMQ refuses every client that doesn't use SCRAM, while SCRAM
-  clients connect as before. The built-in WebSocket client authenticates with Basic credentials, so it can't connect
-  in this setup.
+To accept only SCRAM clients, enable SCRAM and disable Basic, X.509, JWT and HTTP. From TBMQ 2.4.2, TBMQ then refuses
+every client that doesn't send an **Authentication Method** — every MQTT 3.x client, and every MQTT 5 client that
+doesn't use SCRAM. The client gets `CONNACK` `0x87` (Not authorized) on MQTT 5 or `0x05` (Connection Refused, not
+authorized) on MQTT 3.x, and the attempt appears on the
+<DocLink product={props.product} path="user-guide/ui/unauthorized-clients" bold={false}>Unauthorized clients</DocLink>
+page with the reason `Only SCRAM authentication is enabled; the client must use an MQTT 5 Authentication Method`. The
+built-in WebSocket client authenticates with Basic credentials, so it can't connect in this setup.
 
-  Keeping Basic enabled doesn't give SCRAM-only access. TBMQ always keeps one Basic credential that can't be deleted
-  or renamed: **TBMQ WebSockets MQTT Credentials**, username `tbmq_websockets_username`, no password and access to
-  all topics. A Basic credential without a password accepts any password, and the WebSocket client creates more of
-  them when a connection uses **Auto-generated credentials**. If you keep Basic enabled, set a strong password and
-  narrow authorization rules on the system credential, and delete or set passwords on the others. Anyone who knows a
-  remaining password can still connect without SCRAM.
+TBMQ runs without authentication only when every provider, SCRAM included, is disabled.
+
+<Aside type="caution" title="TBMQ 2.4.1 and earlier">
+  With SCRAM as the only enabled provider, these versions accept every client that omits the **Authentication
+  Method**, with no credentials, as a DEVICE client with no topic restrictions. To lock them out before you upgrade,
+  also enable the <DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509 provider</DocLink>
+  without creating any X.509 credentials. It skips every client, so the execution order ends without a success and
+  TBMQ refuses the connection.
+
+  If you rely on that open behaviour, enable another provider for those clients before you upgrade to 2.4.2. During a
+  rolling upgrade, nodes that aren't upgraded yet keep the old behaviour.
 </Aside>
+
+While Basic stays enabled next to SCRAM, for example during a migration, any client with valid Basic credentials can
+connect without SCRAM. That includes **TBMQ WebSockets MQTT Credentials**, the system credential behind the WebSocket
+client: username `tbmq_websockets_username`, no password, access to all topics, and it can't be deleted or renamed. A
+Basic credential without a password accepts any password, so set a strong password and narrow rules on it.
 
 ### The handshake
 
@@ -310,8 +318,8 @@ TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|
 - The client ID isn't checked. Any client ID can connect with the username and password.
 - The same username can also have Basic credentials (`username|$USERNAME`). The two don't conflict: a client that
   sends a SCRAM **Authentication Method** is checked against the SCRAM credentials, any other client against the
-  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, lock out
-  non-SCRAM clients as described in [Keep another provider enabled](#scram-bypasses-the-provider-execution-order).
+  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, disable Basic to
+  lock out non-SCRAM clients — see [Accept only SCRAM clients](#accept-only-scram-clients).
 
 ## Authorization
 
@@ -430,6 +438,7 @@ page with the reason shown below.
 | `0x87` Not authorized | Failed to verify the client's proof of password knowledge! | Wrong password, or the client's method doesn't match the algorithm saved in the credentials |
 | `0x87` Not authorized | Failed to evaluate client first message! | No SCRAM credentials exist for the username, or the client-first message is malformed or requests channel binding |
 | `0x87` Not authorized | Enhanced authentication provider is disabled by broker configuration | The SCRAM provider is disabled |
+| `0x87` Not authorized (`0x05` on MQTT 3.x) | Only SCRAM authentication is enabled; the client must use an MQTT 5 Authentication Method | From TBMQ 2.4.2: SCRAM is the only enabled provider and `CONNECT` has no **Authentication Method** |
 | `0x8C` Bad authentication method | — | The `CONNECT` **Authentication Method** isn't `SCRAM-SHA-256` or `SCRAM-SHA-512` (case-sensitive) |
 | `0x8C` Bad authentication method | Received AUTH message while authentication method mismatch with value from the client session ctx! | The `AUTH` packet's **Authentication Method** differs from the one in `CONNECT` |
 | `0x80` Unspecified error | — | `CONNECT` has an **Authentication Method** but no **Authentication Data** |
