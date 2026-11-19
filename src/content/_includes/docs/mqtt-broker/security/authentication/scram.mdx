@@ -1,4 +1,4 @@
-import { Aside, Code, Steps } from '@astrojs/starlight/components';
+import { Aside, Code, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 import ImageGallery from '~/components/ImageGallery.astro';
 import DocLink from '@components/DocLink.astro';
 import LearnLink from '@components/LearnLink.astro';
@@ -79,51 +79,108 @@ client.on('error', (err) => {
 
 SCRAM (Salted Challenge Response Authentication Mechanism) is a password-based
 <LearnLink slug="mqtt-authentication">MQTT authentication method</LearnLink> in which the password never travels over
-the network. The client proves it knows the password, and the broker proves it holds the matching credentials. TBMQ
-supports `SCRAM-SHA-256` and `SCRAM-SHA-512` and runs them over MQTT 5.0 enhanced authentication: the `AUTH` packet and
-the **Authentication Method** and **Authentication Data** properties.
+the network. The client proves it knows the password, and the broker proves it holds the matching credentials, so
+both sides are authenticated. TBMQ supports `SCRAM-SHA-256` and `SCRAM-SHA-512` (RFC 5802, RFC 7677) and runs them over
+<LearnLink slug="mqtt-5">MQTT 5.0</LearnLink> enhanced authentication: the `AUTH` packet and the **Authentication
+Method** and **Authentication Data** properties.
 
-Use SCRAM when you want password authentication but don't want the password sent in the `CONNECT` packet, as Basic
-authentication does. Combine it with TLS anyway: SCRAM protects the password, not the messages that follow.
-
-<Aside type="note">
-  SCRAM works only with MQTT 5.0 clients. A client chooses SCRAM by setting the **Authentication Method** property in
-  `CONNECT`, so TBMQ handles it directly and it does not take part in the execution order of the other authentication
-  providers.
+<Aside type="note" title="Before you start">
+  - SCRAM works only with **MQTT 5.0** clients, and the client library must support the `AUTH` packet exchange.
+    Many tools, including `mosquitto_pub` and `mosquitto_sub`, can't do it — see
+    [Connect a client](#connect-a-client).
+  - The SCRAM provider is **disabled by default**. Enable it before clients connect.
 </Aside>
+
+## When to use SCRAM
+
+SCRAM fits deployments that want password authentication without handing the password to the broker on every
+connection. Compared with the other username-and-password options:
+
+| | <DocLink product={props.product} path="security/authentication/basic" bold={false}>Basic</DocLink> | SCRAM |
+|---|---|---|
+| What the client sends | The password, in the `CONNECT` packet | A proof derived from the password; the password itself is never sent |
+| Who is verified | The client | The client **and** the broker |
+| What TBMQ stores | A bcrypt hash of the password | A salt and two keys derived from the password |
+| MQTT versions | 3.1, 3.1.1 and 5.0 | 5.0 only |
+| Credentials matched by | Client ID, username, password, depending on the authentication strategy | Username only |
+| `${clientId}` in authorization rules | Supported | Not supported |
+| Execution order | Takes part in the provider execution order | Outside the execution order |
+| Client tooling | Every MQTT client | Clients that implement the MQTT 5.0 `AUTH` exchange |
+
+Choose Basic when you need MQTT 3.x devices, per-client-ID credentials or the simplest client setup. Choose SCRAM when
+the password must not reach the broker, or when clients should verify that they are talking to a broker that holds
+their credentials.
+
+**SCRAM does not replace TLS.** It protects the password, not the messages that follow the handshake, and TBMQ does not
+support SCRAM channel binding. Without TLS, an attacker who records a handshake can still try to guess a weak password
+offline, and every `PUBLISH` after the handshake travels in clear text. Use SCRAM over an
+<DocLink product={props.product} path="security/mqtts" bold={false}>MQTTS</DocLink> listener in production.
 
 ## How it works
 
-A SCRAM connection takes four messages:
+### SCRAM bypasses the provider execution order
 
-1. The client sends `CONNECT` with **Authentication Method** set to `SCRAM-SHA-256` or `SCRAM-SHA-512` and the
-   client-first message (the username and a random nonce) in **Authentication Data**.
-2. TBMQ answers with an `AUTH` packet, reason code `0x18` (Continue authentication), that carries the server-first
-   message: the combined nonce, the salt and the iteration count.
-3. The client derives a proof from the password and sends it in an `AUTH` packet with reason code `0x18`.
-4. TBMQ verifies the proof and replies with `CONNACK`. On success, its **Authentication Data** holds the server-final
-   message, which lets the client verify that the broker knows the credentials too.
+The other providers — Basic, X.509, JWT and HTTP — run in the configured
+<DocLink product={props.product} path="security/overview#providers-execution-order" bold={false}>execution order</DocLink>.
+SCRAM does not. The client chooses SCRAM itself, by setting the **Authentication Method** property in `CONNECT`:
+
+- **Authentication Method** is `SCRAM-SHA-256` or `SCRAM-SHA-512` → TBMQ runs the SCRAM handshake and nothing else. The
+  **User Name** and **Password** fields of `CONNECT` and any client certificate are not used for authentication. If
+  SCRAM fails, TBMQ does not fall back to another provider.
+- **Authentication Method** is any other value → TBMQ refuses the connection with `0x8C` (Bad authentication method).
+  The value is case-sensitive: `scram-sha-256` is refused.
+- **Authentication Method** is absent → the connection goes through the execution order as usual. SCRAM credentials
+  are never checked on this path.
+
+### The handshake
+
+A SCRAM connection takes four messages. Each one travels in the **Authentication Data** property of an MQTT packet:
+
+1. **Client → TBMQ, `CONNECT`.** **Authentication Method** is `SCRAM-SHA-256` or `SCRAM-SHA-512`. **Authentication
+   Data** is the client-first message: the username and a random client nonce.
+2. **TBMQ → client, `AUTH` with reason code `0x18` (Continue authentication).** The server-first message: the client
+   nonce extended with a server nonce, the salt stored with the credentials, and the iteration count.
+3. **Client → TBMQ, `AUTH` with reason code `0x18`.** The client-final message: the combined nonce and a proof the
+   client computes from the password, the salt and everything exchanged so far. The **Authentication Method** must be
+   the same as in `CONNECT`.
+4. **TBMQ → client, `CONNACK`.** TBMQ checks the proof against the stored keys. On success, the reason code is `0x00`
+   and **Authentication Data** holds the server-final message: a server signature the client checks to confirm that
+   the broker holds its credentials.
+
+This is what the four messages look like for user `sensor-01` with `SCRAM-SHA-256`:
+
+```text
+CONNECT  n,,n=sensor-01,r=fyko+d2lbbFgONRv9qkxdawL
+AUTH     r=fyko+d2lbbFgONRv9qkxdawL3kd9v0rq2m8x1z7pbn4c5w6hya,s=QSXCR+Q6sek8bf92QSXCRw==,i=4096
+AUTH     c=biws,r=fyko+d2lbbFgONRv9qkxdawL3kd9v0rq2m8x1z7pbn4c5w6hya,p=OVa38kTF+vLvJpxHVxvAeTGO7KVCYNddmCCQWNTMxnw=
+CONNACK  v=MPv+kDTEu8GmVo23mERIM6PnySdyNlXHGRhTqjSBl5s=
+```
+
+Nonces and the salt are random, and the proof changes with them, so a recorded exchange can't be replayed.
 
 <Aside>
   Releases up to TBMQ 2.4.1 don't include the server-final message in `CONNACK`. With those versions, skip the
   server signature check on the client.
 </Aside>
 
-TBMQ never stores the password. When you save SCRAM credentials, it keeps only a random 16-byte salt and two keys
-derived from the password with 4096 PBKDF2 iterations. You can't read the password back; to change it, enter a new one.
+### What TBMQ stores
 
-A connected client can re-authenticate by sending an `AUTH` packet with reason code `0x19` (Re-authenticate) and the
-same authentication method. If re-authentication fails, TBMQ disconnects the client with reason code `0x87`
-(Not authorized).
+TBMQ never stores the password. When you save SCRAM credentials, it generates a random 16-byte salt, derives a salted
+password with PBKDF2 (4096 iterations, using the hash of the selected algorithm), and keeps only two keys derived from
+it: the stored key, which verifies client proofs, and the server key, which signs the server-final message. The
+iteration count is fixed and can't be configured.
+
+As a result, nobody — including administrators — can read a SCRAM password back from TBMQ. To change it, enter a new
+one. Treat the stored keys as secrets anyway: per RFC 5802, someone who obtains them can impersonate the broker to
+clients that use these credentials.
 
 ## Enable the provider
 
-The SCRAM provider is disabled by default. Enable it in the TBMQ UI; no restart is needed:
+The SCRAM provider is disabled by default and has no settings beyond its status. Enabling or disabling it takes effect
+on every TBMQ node immediately, with no restart:
 
 - On the **Home** page, in the **Broker Settings** card, click the button next to **SCRAM authentication**.
 - Or go to **Authentication → Providers** and turn on the switch in the **SCRAM** row.
-
-The provider has no settings beyond its status.
 
 <ImageGallery product={props.product} images={[
   {
@@ -133,7 +190,28 @@ The provider has no settings beyond its status.
   },
 ]} />
 
+While the provider is disabled, TBMQ refuses every SCRAM connection with `0x87` (Not authorized). Disabling it doesn't
+disconnect clients that are already connected; they are refused on their next connection or re-authentication.
+
+To enable the provider with the
+<DocLink product={props.product} path="rest-api" bold={false}>REST API</DocLink>, look up its ID and call `enable`
+with a system administrator's token:
+
+```bash
+SCRAM_PROVIDER_ID=$(curl -s 'http://localhost:8083/api/mqtt/auth/provider/type/SCRAM' \
+  --header "X-Authorization: Bearer $ACCESS_TOKEN" | jq -r '.id')
+
+curl --request POST "http://localhost:8083/api/mqtt/auth/provider/$SCRAM_PROVIDER_ID/enable" \
+  --header "X-Authorization: Bearer $ACCESS_TOKEN"
+```
+
 ## Create SCRAM credentials
+
+Each SCRAM client needs SCRAM credentials: a username, a password and a hash algorithm, plus the authorization rules
+the client gets after it connects.
+
+<Tabs>
+<TabItem label="UI">
 
 <Steps>
 
@@ -143,39 +221,88 @@ The provider has no settings beyond its status.
    **SCRAM**. Click **Next: Authentication and authorization**.
 
 3. Under **Authentication**, enter the **Username** and **Password**, and choose the
-   **Secure Hash Algorithm (SHA)**: `SHA-256` or `SHA-512`. The client must use the matching method,
-   `SCRAM-SHA-256` or `SCRAM-SHA-512`.
+   **Secure Hash Algorithm (SHA)**: `SHA-256` (the default) or `SHA-512`.
 
 4. Under **Authorization rules**, set the **Publish authorization rule patterns** and
    **Subscribe authorization rule patterns**, then click **Add**.
 
 </Steps>
 
-While the provider is disabled, the credentials table shows **SCRAM Auth is disabled** next to SCRAM credentials.
+</TabItem>
+<TabItem label="REST API">
 
-You can also create SCRAM credentials with the
-<DocLink product={props.product} path="mqtt-client-credentials-management" bold={false}>REST API</DocLink>. Set
-`credentialsType` to `SCRAM` and pass `userName`, `password`, `algorithm` (`SHA_256` or `SHA_512`) and `authRules` in
-`credentialsValue`.
+Post the credentials with a system administrator's token, as described in
+<DocLink product={props.product} path="mqtt-client-credentials-management" bold={false}>MQTT client credentials management</DocLink>:
+
+```bash
+curl --location --request POST 'http://localhost:8083/api/mqtt/client/credentials' \
+--header "X-Authorization: Bearer $ACCESS_TOKEN" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "name": "sensor-01 SCRAM",
+    "clientType": "DEVICE",
+    "credentialsType": "SCRAM",
+    "credentialsValue": "{ \"userName\": \"sensor-01\", \"password\": \"s3cret-Passw0rd\", \"algorithm\": \"SHA_256\", \"authRules\": { \"pubAuthRulePatterns\": [\"sensors\\/.*\"], \"subAuthRulePatterns\": [\"sensors\\/.*\"] } }"
+}'
+```
+
+| `credentialsValue` field | Description |
+|---|---|
+| `userName` | Required. The username the client sends in the client-first message |
+| `password` | The password. TBMQ derives the salt and keys from it and doesn't store it |
+| `algorithm` | `SHA_256` or `SHA_512` |
+| `authRules` | `pubAuthRulePatterns` and `subAuthRulePatterns`, lists of regular expressions |
+
+`clientType` is `DEVICE` (the default when omitted) or `APPLICATION`. The response returns the derived `salt`,
+`serverKey` and `storedKey`, never the password.
+
+</TabItem>
+</Tabs>
+
+**The algorithm must match the client.** Credentials saved with `SHA-256` work only for clients that send
+`SCRAM-SHA-256`, and `SHA-512` only for `SCRAM-SHA-512`. A client that uses the other method fails with `0x87`
+(Not authorized), the same as a wrong password. The keys depend on the algorithm, so when you change the algorithm
+of existing credentials, the UI clears the **Password** field and you must enter the password again.
+
+While the provider is disabled, the credentials table shows **SCRAM Auth is disabled** next to SCRAM credentials.
 
 ### Credentials ID
 
-TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|$USERNAME`, so each username can have
-one set of SCRAM credentials. The client ID isn't checked: any client ID can connect with the username and password.
+TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|$USERNAME`, so:
+
+- Each username can have one set of SCRAM credentials. Saving a second one fails with
+  `Specified credentials are already registered!`.
+- The client ID isn't checked. Any client ID can connect with the username and password.
+- The same username can also have Basic credentials (`username|$USERNAME`). The two don't conflict: a client that
+  sends a SCRAM **Authentication Method** is checked against the SCRAM credentials, any other client against the
+  Basic ones. This lets you move clients from Basic to SCRAM one at a time.
 
 ## Authorization
 
 After a successful handshake, the publish and subscribe rule patterns of the matched credentials control which topics
-the client can use. They work as for <DocLink product={props.product} path="security/authentication/basic#authorization" bold={false}>Basic credentials</DocLink>:
-regular expressions such as `sensors/.*`, where `.*` allows any topic and an empty list forbids all. The **Client type**
-of the credentials decides whether the client connects as a DEVICE or an APPLICATION client.
+the client can use. They work as for
+<DocLink product={props.product} path="security/authentication/basic#authorization" bold={false}>Basic credentials</DocLink>
+— see <DocLink product={props.product} path="security/overview#how-rules-are-evaluated" bold={false}>how rules are evaluated</DocLink>:
+
+- Each pattern is a regular expression that must match the whole topic. `sensors/.*` allows every topic under
+  `sensors/`, and `.*` (the default) allows any topic.
+- An empty list forbids every topic in that direction.
+- The `${clientId}` placeholder is not supported in SCRAM rules: saving credentials that contain it fails with
+  `Publish auth rule patterns should be a valid regexes!` (or the subscribe equivalent). To give each client its own
+  topics, create one set of SCRAM credentials per client with literal topic prefixes.
+
+The **Client type** of the credentials decides whether the client connects as a
+<DocLink product={props.product} path="user-guide/mqtt-client-type" bold={false}>DEVICE or APPLICATION</DocLink> client.
+
+Rules and client type are resolved when the handshake completes. Changes to the credentials apply on the client's next
+connection, or on its next [re-authentication](#re-authentication).
 
 ## Connect a client
 
 Many MQTT clients, including `mosquitto_pub` and `mosquitto_sub`, can't run an MQTT 5.0 `AUTH` exchange. The example
 below uses <a href="https://github.com/mqttjs/MQTT.js" target="_blank" rel="noopener noreferrer">MQTT.js</a> in Node.js,
-which can. It connects with SCRAM, verifies the
-server signature, then publishes to `sensors/temperature` and reads the message back.
+which can. It connects with SCRAM, verifies the server signature, then publishes to `sensors/temperature` and reads
+the message back.
 
 Install MQTT.js in an empty directory:
 
@@ -187,7 +314,7 @@ Save the client as `scram-client.js`:
 
 <Code code={scramClient} lang="js" title="scram-client.js" meta="maxLines=20 collapsible" />
 
-Run it with the username and password of your SCRAM credentials:
+Run it with the username and password of your SCRAM credentials and the method that matches their algorithm:
 
 ```bash
 node scram-client.js localhost YOUR_USERNAME YOUR_PASSWORD SCRAM-SHA-256
@@ -200,19 +327,73 @@ Connected and server verified
 Received 21.5 on sensors/temperature
 ```
 
-The example connects over plain TCP on port 1883. For MQTTS, change the URL to `mqtts://` and port 8883.
+The credentials' publish and subscribe rules must allow `sensors/temperature`, or the example connects but the
+round trip fails.
+
+The example connects over plain TCP on port 1883. For MQTTS, change the URL to `mqtts://` and the port to 8883; if
+the broker uses a self-signed certificate, also pass its CA certificate in the `ca` connection option.
+
+### Check the connection in TBMQ
+
+Open **Sessions** and select the client. In **Client info**, the client credentials field reads **Auth provider**
+`SCRAM`, and **Client type** shows the type set in the credentials.
+
+### Using another client library
+
+To connect from another MQTT 5.0 library, check that it lets you set the **Authentication Method** and
+**Authentication Data** in `CONNECT`, answer an incoming `AUTH` packet with your own, and read the
+**Authentication Data** of `CONNACK`. TBMQ expects standard SCRAM messages (RFC 5802), with these constraints:
+
+- The client-first message starts with the `n` channel-binding flag (`n,,`). A message that starts with `y` or `p=` is
+  refused: TBMQ doesn't support channel binding.
+- The authorization identity (`a=`) is optional; if present, it must equal the username.
+- The `tokenauth` extension is not supported.
+- `,` and `=` in the username are escaped as `=2C` and `=3D`.
+- The password isn't normalized with SASLprep. Clients that normalize non-ASCII passwords can derive different keys,
+  so prefer ASCII passwords for SCRAM credentials.
+
+The MQTT.js example above is a complete implementation of the client side to compare against.
+
+## Re-authentication
+
+A connected client can repeat the SCRAM exchange without disconnecting, for example to refresh its authorization after
+you change its credentials. Re-authentication uses only `AUTH` packets:
+
+1. The client sends `AUTH` with reason code `0x19` (Re-authenticate), the same **Authentication Method** it used in
+   `CONNECT`, and a new client-first message.
+2. TBMQ answers with `AUTH` `0x18` and a new server-first message, and the client sends `AUTH` `0x18` with its
+   client-final message.
+3. TBMQ answers with `AUTH` `0x00` (Success) and the server-final message, then applies the authorization rules and
+   client type that the credentials have now.
+
+The session stays connected throughout. If re-authentication fails — wrong password, a different authentication method,
+or the provider was disabled — TBMQ disconnects the client with `DISCONNECT` reason code `0x87` (Not authorized).
+Only a client that connected with SCRAM can re-authenticate.
 
 ## Troubleshooting
 
-When SCRAM authentication fails, TBMQ refuses the connection with one of these `CONNACK` reason codes. Failed attempts,
-except an unsupported method, also appear on the
+When SCRAM authentication fails during connection, TBMQ refuses it with one of these `CONNACK` reason codes. Failures
+that pass the method check also appear on the
 <DocLink product={props.product} path="user-guide/ui/unauthorized-clients" bold={false}>Unauthorized clients</DocLink>
 page with the reason shown below.
 
-| Reason code                     | Unauthorized clients reason                                         | Cause                                                                                    |
-| ------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `0x87` Not authorized           | Failed to verify the client's proof of password knowledge!          | Wrong password, or the method doesn't match the algorithm saved in the credentials       |
-| `0x87` Not authorized           | Failed to evaluate client first message!                            | No SCRAM credentials exist for the username                                              |
-| `0x87` Not authorized           | Enhanced authentication provider is disabled by broker configuration | The SCRAM provider is disabled                                                           |
-| `0x8C` Bad authentication method | —                                                                   | The **Authentication Method** isn't `SCRAM-SHA-256` or `SCRAM-SHA-512`                   |
-| `0x8A` Banned                   | Enhanced auth blocked client by …                                   | The client is on the <DocLink product={props.product} path="other/blocked-client" bold={false}>blocked clients</DocLink> list |
+| Reason code | Unauthorized clients reason | Cause |
+|---|---|---|
+| `0x87` Not authorized | Failed to verify the client's proof of password knowledge! | Wrong password, or the client's method doesn't match the algorithm saved in the credentials |
+| `0x87` Not authorized | Failed to evaluate client first message! | No SCRAM credentials exist for the username, or the client-first message is malformed or requests channel binding |
+| `0x87` Not authorized | Enhanced authentication provider is disabled by broker configuration | The SCRAM provider is disabled |
+| `0x8C` Bad authentication method | — | The `CONNECT` **Authentication Method** isn't `SCRAM-SHA-256` or `SCRAM-SHA-512` (case-sensitive) |
+| `0x8C` Bad authentication method | Received AUTH message while authentication method mismatch with value from the client session ctx! | The `AUTH` packet's **Authentication Method** differs from the one in `CONNECT` |
+| `0x80` Unspecified error | — | `CONNECT` has an **Authentication Method** but no **Authentication Data** |
+| `0x8A` Banned | Enhanced auth blocked client by … | The client ID or IP address is on the <DocLink product={props.product} path="other/blocked-client" bold={false}>blocked clients</DocLink> list |
+
+Other symptoms:
+
+- **The connection never completes after `CONNECT`.** TBMQ has sent the server-first message in an `AUTH` packet and
+  is waiting for the client-final message. The client library doesn't implement the `AUTH` exchange, or isn't set up
+  to answer it.
+- **The connection is accepted, but the client rejects the server signature.** On TBMQ 2.4.1 and earlier, `CONNACK`
+  carries no server-final message; skip the check for those versions. On later versions, check that the client
+  computes the signature with the same hash as the method it sent.
+- **The client connects but can't publish or subscribe.** The authorization rules of the SCRAM credentials don't
+  match the topic. Rule changes apply on the next connection or re-authentication.
