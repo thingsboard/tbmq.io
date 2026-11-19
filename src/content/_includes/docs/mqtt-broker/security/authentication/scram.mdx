@@ -142,9 +142,15 @@ SCRAM does not. The client chooses SCRAM itself, by setting the **Authentication
 <Aside type="caution" title="Keep another provider enabled">
   SCRAM doesn't count as an enabled provider for the execution order. If SCRAM is the only enabled provider, TBMQ
   treats every non-SCRAM connection as if all providers were disabled: a client that omits the **Authentication
-  Method** connects with no credentials, as a DEVICE client with no topic restrictions. To accept only SCRAM clients,
-  keep the Basic provider enabled and delete the Basic credentials you no longer need. TBMQ then refuses every client
-  that doesn't use SCRAM.
+  Method** connects with no credentials, as a DEVICE client with no topic restrictions.
+
+  To accept only SCRAM clients, keep the Basic provider enabled and remove every way in through Basic. Each Basic
+  credential that remains still lets a client connect without SCRAM, and one without a password accepts any
+  password. Every install has such a credential from the start: **TBMQ WebSockets MQTT Credentials**, username
+  `tbmq_websockets_username`, no password, access to all topics. The built-in WebSocket client also creates
+  password-less credentials whenever a connection uses **Auto-generated credentials**. For SCRAM-only access, delete
+  all Basic credentials, these included; TBMQ then refuses every client that doesn't use SCRAM. If you keep one, at
+  least set a password on it — anyone who knows that password can still connect without SCRAM.
 </Aside>
 
 ### The handshake
