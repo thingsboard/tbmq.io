@@ -144,13 +144,20 @@ SCRAM does not. The client chooses SCRAM itself, by setting the **Authentication
   treats every non-SCRAM connection as if all providers were disabled: a client that omits the **Authentication
   Method** connects with no credentials, as a DEVICE client with no topic restrictions.
 
-  To accept only SCRAM clients, keep the Basic provider enabled and remove every way in through Basic. Each Basic
-  credential that remains still lets a client connect without SCRAM, and one without a password accepts any
-  password. Every install has such a credential from the start: **TBMQ WebSockets MQTT Credentials**, username
-  `tbmq_websockets_username`, no password, access to all topics. The built-in WebSocket client also creates
-  password-less credentials whenever a connection uses **Auto-generated credentials**. For SCRAM-only access, delete
-  all Basic credentials, these included; TBMQ then refuses every client that doesn't use SCRAM. If you keep one, at
-  least set a password on it — anyone who knows that password can still connect without SCRAM.
+  To accept only SCRAM clients, disable the Basic provider and enable the
+  <DocLink product={props.product} path="security/authentication/x509" bold={false}>X.509 provider</DocLink> without
+  creating any X.509 credentials, with its **Client authentication** setting left at **Requested** (the default).
+  X.509 then skips every client, on plain ports because there is no TLS and over TLS because no certificate matches.
+  The execution order ends without a success, so TBMQ refuses every client that doesn't use SCRAM, while SCRAM
+  clients connect as before. The built-in WebSocket client authenticates with Basic credentials, so it can't connect
+  in this setup.
+
+  Keeping Basic enabled doesn't give SCRAM-only access. TBMQ always keeps one Basic credential that can't be deleted
+  or renamed: **TBMQ WebSockets MQTT Credentials**, username `tbmq_websockets_username`, no password and access to
+  all topics. A Basic credential without a password accepts any password, and the WebSocket client creates more of
+  them when a connection uses **Auto-generated credentials**. If you keep Basic enabled, set a strong password and
+  narrow authorization rules on the system credential, and delete or set passwords on the others. Anyone who knows a
+  remaining password can still connect without SCRAM.
 </Aside>
 
 ### The handshake
@@ -303,9 +310,8 @@ TBMQ finds SCRAM credentials by username alone. Their `credentialsId` is `scram|
 - The client ID isn't checked. Any client ID can connect with the username and password.
 - The same username can also have Basic credentials (`username|$USERNAME`). The two don't conflict: a client that
   sends a SCRAM **Authentication Method** is checked against the SCRAM credentials, any other client against the
-  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, delete the Basic
-  credentials but keep the Basic provider enabled — see
-  [Keep another provider enabled](#scram-bypasses-the-provider-execution-order).
+  Basic ones. This lets you move clients from Basic to SCRAM one at a time. When the move is done, lock out
+  non-SCRAM clients as described in [Keep another provider enabled](#scram-bypasses-the-provider-execution-order).
 
 ## Authorization
 
