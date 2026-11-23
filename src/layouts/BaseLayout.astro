@@ -4,7 +4,6 @@ import Footer from '../components/Landing/Footer.astro';
 import OpenContentLinksInNewTab from '../components/OpenContentLinksInNewTab.astro';
 import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
-import GtmNoscript from '../components/GtmNoscript.astro';
 import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
 import SeoMeta from '../components/SeoMeta.astro';
 import ThemeProvider from '../components/starlight/ThemeProvider.astro';
@@ -96,9 +95,6 @@ locals.bslForceLight = forceLightTheme;
 		<meta name="cf-2fa-verify" content="a08672380de15e9" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-		<!-- Establish TLS to GTM origin early; tags loaded via GTM (FB, LinkedIn, etc.) stay lazy by design. -->
-		<link rel="preconnect" href="https://www.googletagmanager.com" />
-
 		{preloadLcpImage && <link rel="preload" as="image" href={preloadLcpImage} fetchpriority="high" />}
 
 		<title>{pageTitle}</title>
@@ -133,8 +129,6 @@ locals.bslForceLight = forceLightTheme;
 	</head>
 
 	<body>
-		<GtmNoscript />
-
 		{
 			/* Theme-switcher icon palette (light/dark/auto) that `StarlightThemeProvider.updatePickers()`
 		    clones into the theme-select label icon. Rendered here at the top of <body> instead of

@@ -2,6 +2,7 @@
 import CookieBanner from '../components/CookieBanner.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
+import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
 import { formatMarketingTitle } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 import { marketingJsonLd } from '~/util/structuredData';
@@ -54,6 +55,7 @@ const structuredData =
 			jsonLd={structuredData}
 		/>
 		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
+		<ThirdPartyScripts />
 	</head>
 	<body>
 		<div class:list={['legal-page', { 'legal-page--markdown': isMarkdownPage }]}>

@@ -4,11 +4,12 @@ import GtmHead from './GtmHead.astro';
 ---
 
 <!--
-	Single entry point for all third-party browser scripts (GTM). Order matters:
-	DeferredLoadTrigger MUST come first so the global window.__deferOnInteraction
-	exists when the consumer scripts parse. Both BaseLayout and the Starlight Head
-	override mount this in <head>, so the docs site gets the same loaders as the
-	marketing site.
+	Single entry point for all third-party browser scripts. DeferredLoadTrigger
+	defines window.__deferOnInteraction for the scripts that defer on it
+	(GitHubButton); GtmHead parses the consent cookie and loads GTM only with
+	consent. BaseLayout, LegalLayout and the Starlight Head override all mount this
+	in <head>, so every page type gets the same loaders and the consent globals
+	CookieConsent needs.
 -->
 <DeferredLoadTrigger />
 <GtmHead />
