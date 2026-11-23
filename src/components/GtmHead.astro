@@ -55,6 +55,8 @@
 		const consent = window.tbConsent;
 		if (gtmLoaded || !consent || !(consent.analytics || consent.marketing)) return;
 		if (location.hostname !== 'tbmq.io' && !gtmDebug) return;
+		// Never inside a frame: demo.tbmq.io embeds the legal pages in its sign-up dialog, where no consent UI is shown.
+		if (window.self !== window.top) return;
 		gtmLoaded = true;
 		(function (w, d, s, l, i) {
 			w[l] = w[l] || [];
