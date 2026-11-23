@@ -1,4 +1,7 @@
 ---
+import FormPrivacyNote from './FormPrivacyNote.astro';
+import TrackingFields from './TrackingFields.astro';
+
 interface Props {
 	mode?: 'page' | 'popup';
 }
@@ -99,13 +102,7 @@ const { mode = 'page' } = Astro.props;
 						<p class="text-area-label">Message</p>
 					</label>
 				</div>
-				<input type="hidden" name="utm_source" id="utm_source" />
-				<input type="hidden" name="utm_medium" id="utm_medium" />
-				<input type="hidden" name="utm_campaign" id="utm_campaign" />
-				<input type="hidden" name="utm_term" id="utm_term" />
-				<input type="hidden" name="utm_content" id="utm_content" />
-				<input type="hidden" name="client_id" id="client_id" />
-				<input type="hidden" name="fpr" id="fpr" />
+				<TrackingFields />
 				<input type="hidden" name="tags" id="tags" value="product" />
 				<input type="hidden" name="form_id" id="form_id" value="contact_us" />
 				<input type="hidden" name="path" id="path" value="" />
@@ -113,8 +110,9 @@ const { mode = 'page' } = Astro.props;
 				<input type="text" name="_gotcha" style="display:none" />
 				<input type="hidden" class="form-rendered-at" value="" />
 			</div>
+			<FormPrivacyNote id="contact-privacy-note" />
 			<div class="submit-button-container">
-				<button type="submit" class="submit-btn gtm_button" id="ContactUs_Submit">Submit</button>
+				<button type="submit" class="submit-btn gtm_button" id="ContactUs_Submit" aria-describedby="contact-privacy-note">Submit</button>
 			</div>
 		</fieldset>
 	</form>
@@ -122,6 +120,8 @@ const { mode = 'page' } = Astro.props;
 
 <script>
 	import { FORMSPREE_CONTACT } from '~/data/formspree';
+	import { fillTrackingFields } from '@util/attribution';
+	import { onConsentChange } from '@util/consent';
 
 	// ── Floating label: mark empty selects ──────────────────────────────────
 	function updateSelectEmpty(select: HTMLSelectElement) {
@@ -213,53 +213,19 @@ const { mode = 'page' } = Astro.props;
 		return valid;
 	}
 
-	// ── UTM / tracking helpers ───────────────────────────────────────────────
-	function getURLParam(name: string) {
-		const match = new RegExp('[?&]' + name + '=([^&#]*)').exec(window.location.href);
-		return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
-	}
-
-	function populateTracking(form: HTMLFormElement) {
-		const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-		const utmData: Record<string, string> = {};
-
-		utmKeys.forEach((key) => {
-			let value = getURLParam(key);
-			if (value) {
-				localStorage.setItem(key, value);
-			} else {
-				value = localStorage.getItem(key);
-			}
-			if (value) {
-				utmData[key] = value;
-				const el = form.querySelector<HTMLInputElement>(`input[name="${key}"]`);
-				if (el) el.value = value;
-			}
-		});
-
+	// ── Tracking fields ──────────────────────────────────────────────────────
+	// Campaign/partner attribution (Marketing) and the GA client ID (Analytics), each only with its consent;
+	// `@util/attribution` decides. The `contact-us` event carries what is filled now and is not re-sent after a
+	// later Accept, which only fills the fields.
+	function initTracking(form: HTMLFormElement) {
 		const pathEl = form.querySelector<HTMLInputElement>('input[name="path"]');
 		if (pathEl) pathEl.value = window.location.pathname;
 
-		const gaCookie = document.cookie.split('; ').find((r) => r.startsWith('_ga='));
-		if (gaCookie) {
-			const parts = gaCookie.split('.');
-			if (parts.length >= 4) {
-				const clientId = parts[2] + '.' + parts[3];
-				utmData['client_id'] = clientId;
-				const el = form.querySelector<HTMLInputElement>('input[name="client_id"]');
-				if (el) el.value = clientId;
-			}
-		}
-
-		const fpr = localStorage.getItem('fpr');
-		if (fpr) {
-			utmData['fpr'] = fpr;
-			const el = form.querySelector<HTMLInputElement>('input[name="fpr"]');
-			if (el) el.value = fpr;
-		}
-
+		const data = fillTrackingFields(form);
 		window.dataLayer = window.dataLayer || [];
-		window.dataLayer.push({ event: 'contact-us', ...utmData });
+		window.dataLayer.push({ event: 'contact-us', ...data });
+
+		onConsentChange(() => fillTrackingFields(form));
 	}
 
 	// ── URL param prefill ────────────────────────────────────────────────────
@@ -331,6 +297,9 @@ const { mode = 'page' } = Astro.props;
 				return;
 			}
 
+			// Last fill right before posting, from this page's current consent.
+			fillTrackingFields(form);
+
 			const renderedAt = form.querySelector<HTMLInputElement>('.form-rendered-at');
 			if (renderedAt && renderedAt.value) {
 				const tooFast = Math.floor(Date.now() / 1000) - parseInt(renderedAt.value, 10) < 3;
@@ -341,7 +310,7 @@ const { mode = 'page' } = Astro.props;
 			}
 		});
 
-		populateTracking(form);
+		initTracking(form);
 		prefillFromURL(form);
 	});
 </script>
