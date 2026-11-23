@@ -2,7 +2,7 @@
 import Header from '../components/Landing/Header.astro';
 import Footer from '../components/Landing/Footer.astro';
 import OpenContentLinksInNewTab from '../components/OpenContentLinksInNewTab.astro';
-import CookieBanner from '../components/CookieBanner.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
 import SeoMeta from '../components/SeoMeta.astro';
@@ -155,7 +155,7 @@ locals.bslForceLight = forceLightTheme;
 				gitHubPlatform={gitHubPlatform}
 			/>
 		</div>
-		<CookieBanner />
+		<CookieConsent />
 		<UtmTracker />
 
 		<slot />

@@ -1,5 +1,5 @@
 ---
-import CookieBanner from '../components/CookieBanner.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
 import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
@@ -61,15 +61,16 @@ const structuredData =
 		<div class:list={['legal-page', { 'legal-page--markdown': isMarkdownPage }]}>
 			<slot />
 		</div>
-		<CookieBanner />
+		<CookieConsent />
 		<UtmTracker />
 		<script is:inline>
 			// The demo broker (demo.tbmq.io) embeds these pages in an <iframe> inside its
 			// sign-up dialog; the website-scope notice and the cookie banner are noise there.
-			// The banner is removed (not hidden) so its own script, which runs later, finds nothing to show.
+			// The banner's own reveal script already skips frames; removing its root also keeps its
+			// module script, which runs later, from binding anything.
 			if (window.self !== window.top) {
 				document.querySelectorAll('.scope').forEach((el) => (el.hidden = true));
-				document.getElementById('cookie-banner')?.remove();
+				document.getElementById('cc-main')?.remove();
 			}
 		</script>
 	</body>
@@ -81,10 +82,15 @@ const structuredData =
 		--sl-main-pad: 0;
 		--sl-line-height: 1.5;
 		// Standalone document — BaseLayout's global token sheet isn't loaded here,
-		// so every theme token this page (and the shared CookieBanner) reads must
+		// so every theme token this page (and the shared CookieConsent) reads must
 		// be pinned locally to its light value, or the var() resolves to nothing.
 		// The mixin is the same light palette :root gets in _theme.scss.
 		@include light-theme-tokens;
+	}
+
+	// The cookie banner sits outside .legal-page, and nothing else sets a font on this page.
+	#cc-main {
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	}
 
 	.legal-page {
