@@ -1,6 +1,8 @@
 // Deletes the first-party cookies and storage of every consent category not granted (GDPR Art. 7(3)).
 // Third-party cookies (google.com `NID`) belong to their own domain and cannot be deleted here.
 
+import { ATTRIBUTION_STORAGE_KEYS } from './tracking-fields.ts';
+
 interface CategoryStorage {
 	cookies: string[];
 	cookiePrefixes: string[];
@@ -18,7 +20,8 @@ const CATEGORY_STORAGE: Record<TbConsentCategory, CategoryStorage> = {
 		// Google Ads click storage. tbmq.io never grants `ad_storage`, so these come only from the old always-on GTM.
 		cookies: [],
 		cookiePrefixes: ['_gcl_', '_gac_'],
-		localStorage: ['_gcl_ls'],
+		// Plus our own campaign and partner attribution (`attribution.ts`).
+		localStorage: ['_gcl_ls', ...ATTRIBUTION_STORAGE_KEYS],
 	},
 	media: {
 		// Google site search writes AdSense for Search cookies on our host (`__gsas` seen); its google.com cookies

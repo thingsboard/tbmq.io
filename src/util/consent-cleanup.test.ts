@@ -99,6 +99,21 @@ test('refused media deletes __gsas', () => {
 	assert.deepEqual(jar.names(), ['_ga|tbmq.io']);
 });
 
+test('refused marketing deletes the stored campaign and partner attribution', () => {
+	const storage = mapStorage({
+		utm: '{"utm_source":"s"}',
+		fpr: 'p',
+		utm_source: 'legacy',
+		_gcl_ls: 'x',
+		'starlight-theme': 'dark',
+	});
+	setup({ v: 1, analytics: true, marketing: false, media: true }, storage);
+
+	clearRefusedCategories();
+
+	assert.deepEqual([...storage.map.keys()], ['starlight-theme']);
+});
+
 test('throwing localStorage does not throw', () => {
 	const jar = setup(null, throwingStorage);
 	jar.seed('_ga', 'tbmq.io');

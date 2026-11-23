@@ -1,17 +1,18 @@
 // Campaign (`utm_*`) and partner-referral (`fpr`) attribution and the GA client ID for sign-up links and
 // contact forms, each used only with its cookie-consent category.
 
-import { TRACKING_FIELDS, UTM_KEYS } from './tracking-fields.ts';
+import {
+	ATTRIBUTION_STORAGE_KEYS,
+	FPR_STORAGE_KEY,
+	TRACKING_FIELDS,
+	UTM_KEYS,
+	UTM_STORAGE_KEY,
+} from './tracking-fields.ts';
 
 interface Attribution {
 	utm: Record<string, string>;
 	fpr: string | null;
 }
-
-const UTM_STORAGE_KEY = 'utm';
-const FPR_STORAGE_KEY = 'fpr';
-// Older builds of the contact form stored each `utm_*` key separately; now only deleted.
-const ALL_STORAGE_KEYS = [UTM_STORAGE_KEY, FPR_STORAGE_KEY, ...UTM_KEYS];
 
 // true: use this page's URL values without consent, unstored. Off: EDPB Guidelines 2/2023 count passing a
 // tracking link on as access under ePrivacy Art. 5(3).
@@ -50,7 +51,7 @@ function readStored(): Attribution {
 export function syncAttributionStorage(): void {
 	try {
 		if (!hasMarketingConsent()) {
-			ALL_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+			ATTRIBUTION_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 			return;
 		}
 		// A new campaign replaces the stored one whole, so tags of two campaigns never mix.

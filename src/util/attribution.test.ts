@@ -86,6 +86,26 @@ test('marketing consent stores the URL campaign whole', async () => {
 	assert.deepEqual(JSON.parse(storage.map.get('utm')!), { utm_source: 'new', utm_medium: 'm' });
 });
 
+test('a returning visitor gets the stored campaign and partner code', async () => {
+	const { attributionQuery, fillTrackingFields } = await loadPage({
+		consent: { v: 1, marketing: true },
+		storage: mapStorage({ utm: '{"utm_source":"s","utm_medium":"m"}', fpr: 'p' }),
+	});
+
+	assert.equal(attributionQuery(), 'utm_source=s&utm_medium=m&fpr=p');
+	assert.deepEqual(fillTrackingFields(fakeForm()), { utm_source: 's', utm_medium: 'm', fpr: 'p' });
+});
+
+test("the page's campaign replaces the stored tags whole", async () => {
+	const { attributionQuery } = await loadPage({
+		search: '?utm_source=new',
+		consent: { v: 1, marketing: true },
+		storage: mapStorage({ utm: '{"utm_source":"old","utm_term":"t"}', fpr: 'p' }),
+	});
+
+	assert.equal(attributionQuery(), 'utm_source=new&fpr=p');
+});
+
 test('only the five utm keys and fpr pass', async () => {
 	const { attributionQuery } = await loadPage({
 		search: '?utm_source=a&utm_evil=x&fpr=p',
