@@ -1,6 +1,7 @@
 ---
 import { Icon } from '@astrojs/starlight/components';
 import CookieConsent from '~/components/CookieConsent.astro';
+import UtmTracker from '~/components/UtmTracker.astro';
 
 // Theme-switcher icon palette (light/dark/auto) that `updatePickers()` clones
 // into the `<starlight-theme-select>` label icon. Rendered here at the top of
@@ -14,6 +15,7 @@ const forceLight = locals.bsl === true && locals.bslForceLight === true;
 
 <a href="#_top">{Astro.locals.t('skipLink.label')}</a>
 <CookieConsent />
+<UtmTracker />
 {
 	!forceLight && (
 		<template id="theme-icons">

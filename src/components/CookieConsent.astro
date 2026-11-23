@@ -87,6 +87,7 @@ import {
 </div>
 
 <script>
+	import { syncAttributionStorage } from '@util/attribution';
 	import { notifyConsentChange } from '@util/consent';
 	import { clearRefusedCategories } from '@util/consent-cleanup';
 	import { bindModalDialog } from '@util/modal-dialog';
@@ -122,6 +123,7 @@ import {
 				media,
 			};
 			window.tbConsent = consent;
+			syncAttributionStorage();
 			clearRefusedCategories();
 			const secure = location.protocol === 'https:' ? '; Secure' : '';
 			document.cookie = `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(consent))}; max-age=${MAX_AGE_SECONDS}; path=/; SameSite=Lax${secure}`;
@@ -174,7 +176,8 @@ import {
 	const root = document.getElementById('cc-main');
 	if (root) initConsentUi(root);
 
-	// On every page, so a refused or lapsed consent clears the category's cookies and storage.
+	// On every page, so a refused or lapsed consent clears stored attribution and the category's cookies.
+	syncAttributionStorage();
 	clearRefusedCategories();
 
 	// Written by the old banner for a year at most. Remove after 2027-11-23.
