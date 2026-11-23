@@ -10,6 +10,8 @@ interface Window {
 	tbLoadGtm: () => void;
 	// Stored cookie-consent choice, parsed by `<GtmHead />`, updated by `<CookieConsent />`.
 	tbConsent: TbConsent | null;
+	// Consent Mode signals for a choice, defined by `<GtmHead />`.
+	tbConsentSignals: (consent: TbConsent | null) => Record<string, 'granted' | 'denied'>;
 }
 
 // Global Privacy Control, sent by Brave and Firefox; not in TypeScript's DOM types yet.

@@ -1,7 +1,7 @@
 ---
 // Cookie consent banner + preferences dialog, mounted once per page from `starlight/SkipLink.astro`,
 // `BaseLayout.astro` and `LegalLayout.astro`. `GtmHead.astro` parses the stored choice into `window.tbConsent`
-// before GTM loads: keep `CONSENT_COOKIE` / `CONSENT_VERSION` in step with it.
+// before GTM loads; the cookie's name and version live in `@util/consent`.
 import NButton from '@components/Landing/NButton.astro';
 import {
 	CONSENT_BANNER_TEXT,
@@ -88,17 +88,16 @@ import {
 
 <script>
 	import { syncAttributionStorage } from '@util/attribution';
-	import { notifyConsentChange } from '@util/consent';
+	import { CONSENT_COOKIE, CONSENT_VERSION, notifyConsentChange } from '@util/consent';
 	import { clearRefusedCategories } from '@util/consent-cleanup';
 	import { bindModalDialog } from '@util/modal-dialog';
 	import { isCseLoaded } from '@util/site-search';
 
-	const CONSENT_COOKIE = 'tb_consent';
-	const CONSENT_VERSION = 1;
 	const MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 
 	// The stored choice this page runs with: the one GtmHead parsed at load, or the last one saved here.
-	const readConsentCookie = () => document.cookie.match(/(?:^|; )tb_consent=([^;]*)/)?.[1] ?? '';
+	const consentCookiePattern = new RegExp(`(?:^|; )${CONSENT_COOKIE}=([^;]*)`);
+	const readConsentCookie = () => document.cookie.match(consentCookiePattern)?.[1] ?? '';
 	let pageConsentCookie = readConsentCookie();
 
 	// A page restored from the back/forward cache keeps its scripts and the consent it ran with. If the choice
@@ -140,13 +139,7 @@ import {
 			document.cookie = `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(consent))}; max-age=${MAX_AGE_SECONDS}; path=/; SameSite=Lax${secure}`;
 			pageConsentCookie = readConsentCookie();
 
-			window.gtag('consent', 'update', {
-				analytics_storage: analytics ? 'granted' : 'denied',
-				ad_user_data: marketing ? 'granted' : 'denied',
-				// Never granted on tbmq.io — see GtmHead.astro.
-				ad_storage: 'denied',
-				ad_personalization: 'denied',
-			});
+			window.gtag('consent', 'update', window.tbConsentSignals(consent));
 
 			// Withdrawal: GTM's tags and Google's search keep running on this page after the update above (GA goes on
 			// sending cookieless hits). Reload, so the page starts without them and the on-load cleanup runs again.

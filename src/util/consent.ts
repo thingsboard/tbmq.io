@@ -1,3 +1,9 @@
+// The stored choice. GtmHead.astro's inline script reads it before any module loads (it gets these through
+// `define:vars`); CookieConsent.astro writes it. Bump the version when the stored shape changes: older choices
+// then count as no choice and the banner asks again.
+export const CONSENT_COOKIE = 'tb_consent';
+export const CONSENT_VERSION = 1;
+
 // Fired by `CookieConsent.astro` after a choice is saved; `window.tbConsent` already holds it.
 const CONSENT_CHANGE_EVENT = 'tb:consent-change';
 
