@@ -40,6 +40,7 @@ const PREFIX_RULES: PrefixRule[] = [
 	{ prefix: '/pricing/', section: { sectionName: 'Pricing' } },
 	{ prefix: '/contact-us/', section: { sectionName: 'Contact' } },
 	{ prefix: '/cookie-policy/', section: { sectionName: 'Legal' } },
+	{ prefix: '/privacy-policy/', section: { sectionName: 'Legal' } },
 	{ prefix: '/installations/', section: { sectionName: 'Installations' } },
 	{ prefix: '/mqtt/', section: { sectionName: 'Learn' } },
 	{ prefix: '/performance/', section: { sectionName: 'Benchmark', tight: true } },

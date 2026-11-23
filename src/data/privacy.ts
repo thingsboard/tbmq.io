@@ -7,7 +7,7 @@ export const WEBSITE_PRIVACY_HREF = '/privacy-policy/';
 export const COOKIE_POLICY_HREF = '/cookie-policy/';
 
 // Form privacy line: `lead`, then the link, then a full stop. No "only": with Marketing consent the hashed email
-// and phone also reach Google Analytics.
+// also reaches Google Analytics.
 export const formPrivacyNote = (noun: 'message' | 'request') => ({
 	lead: `We use these details to answer your ${noun}. See our`,
 	linkLabel: 'Privacy Policy',
@@ -48,7 +48,7 @@ export const CONSENT_CATEGORIES: { id: TbConsentCategory; title: string; descrip
 		id: 'marketing',
 		title: 'Marketing',
 		description:
-			'Remember the campaign or partner link you arrived from, so we know which campaign or partner brought you when you sign up or contact us (partner program). When you send us a form, Google Analytics also receives the email address and phone number you entered, in hashed form, to measure which campaigns bring requests. We do not use them to build advertising profiles.',
+			'Remember the campaign or partner link you arrived from, so we know which campaign or partner brought you when you sign up or contact us (partner program). When you send us a form, Google Analytics also receives the email address you entered, in hashed form, to measure which campaigns bring requests. We do not use them to build advertising profiles.',
 	},
 	{
 		id: 'media',
@@ -59,5 +59,6 @@ export const CONSENT_CATEGORIES: { id: TbConsentCategory; title: string; descrip
 ];
 
 // On the search consent notice (`SearchConsentNotice.astro`); the note is followed by the Cookie settings button.
-export const SEARCH_CONSENT_TEXT = 'Site search is provided by Google, which sets cookies and shows ads in the results.';
+export const SEARCH_CONSENT_TEXT =
+	'Site search is provided by Google, which sets cookies and shows ads in the results.';
 export const SEARCH_CONSENT_NOTE = 'This allows External media for the whole site. You can change it anytime in';

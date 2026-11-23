@@ -1,5 +1,9 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import { PRIVACY_CHOICES_LABEL, WEBSITE_PRIVACY_HREF } from '@data/privacy';
+
+// Set on the day this page goes live, together with the banner texts.
+const LAST_UPDATED = 'November 23, 2026';
 
 const title = 'Cookie Policy: How the Website Uses Cookies';
 const description =
@@ -10,12 +14,17 @@ const description =
 	<div class="cookie-policy-page">
 		<div class="cookie-policy-content">
 			<h1>Cookie Policy</h1>
+			<p class="updated">Last updated: {LAST_UPDATED}</p>
 
 			<p>
-				Cookies and Local Storage are activated and used during your browsing on this site. Cookies
-				are small text files, usually numbers and letters, that do not create a security risk for
-				your computer, tablet, or smartphone. Local Storage is a similar mechanism used to store
-				data, such as UTM tags, directly in your browser.
+				Cookies and Local Storage are activated and used during your browsing on this site. Cookies are small text
+				files, usually numbers and letters, that do not create a security risk for your computer, tablet, or smartphone.
+				Local Storage is a similar mechanism used to store data, such as UTM tags, directly in your browser.
+			</p>
+			<p>
+				This Cookie Policy explains which cookies and similar technologies we use on tbmq.io, why, and how you can
+				control them. How we handle the personal data collected through them is described in our
+				<a href={WEBSITE_PRIVACY_HREF}>Privacy Policy</a>.
 			</p>
 
 			<p>Cookies allow us to:</p>
@@ -27,77 +36,210 @@ const description =
 					>;
 				</li>
 				<li>
-					Improve load-balancing and page load speed using <a href="https://www.cloudflare.com/"
-						>Cloudflare</a
-					>.
+					Remember the campaign parameters (UTM tags) or the partner reference (<a href="https://firstpromoter.com/"
+						>FirstPromoter</a
+					>) stored in your browser's Local Storage when you arrive from one of our campaigns or partner links; we pass
+					these parameters on to the ThingsBoard License Portal and our CRM together with your registration or contact
+					request, so we know which campaign or partner it came from;
+				</li>
+				<li>
+					Measure which of our campaigns bring contact requests: when you send us a form, Google Analytics receives the
+					email address you entered, in hashed form. This happens only if you allow Marketing cookies, and no cookie is
+					set for it. For this, Google Analytics also loads if you allow Marketing but not Analytics cookies; it then
+					sets no cookies and sends Google only cookieless measurement data;
+				</li>
+				<li>
+					Improve load-balancing and page load speed using <a href="https://www.cloudflare.com/">Cloudflare</a>;
+				</li>
+				<li>
+					Search the site using <a href="https://programmablesearchengine.google.com/"
+						>Google Programmable Search Engine</a
+					>. It loads only after you allow External media in the cookie banner or press "Load Google search" in the site
+					search; Google then sets its own cookies, including the NID advertising cookie, and may show ads in the
+					results.
 				</li>
 			</ul>
 
-			<p>These cookies are enabled by default on your web browser.</p>
 			<p>
-				However, you may configure your browser to alert you each time cookies are created. It is
-				also possible to prevent their installation. Here is the procedure to follow on the three
-				main browsers:
+				Only strictly necessary cookies are set by default. Analytics, marketing and external-media cookies are set only
+				after you allow them in the cookie banner, and you can change your choice at any time via
+				<button type="button" class="cookie-settings" data-cc="show-preferences">{PRIVACY_CHOICES_LABEL}</button>
+				in the site footer, or delete cookies in your browser settings as described below.
+			</p>
+			<p>
+				Your choice is stored for 180 days in the tb_consent cookie, together with the time you made it; after that, or
+				if you clear your cookies, the banner is shown again. Until you allow a category, the tools in that category are
+				not loaded at all: no script runs, no cookie is set and nothing is sent to the provider. The only exception is
+				Google Analytics, which also loads, without setting cookies, when you allow Marketing alone (see above). If you
+				reject a category or withdraw your consent later, the cookies and browser storage of that category on tbmq.io
+				are deleted at once; cookies set by Google on its own domains can only be removed in your browser settings or
+				your Google account. If your browser sends a Global Privacy Control signal, we treat it as a refusal of
+				Marketing cookies.
+			</p>
+			<p>
+				You may also configure your browser to alert you each time cookies are created. It is also possible to prevent
+				their installation or delete cookies already set. Here is the procedure to follow on the three main browsers:
 			</p>
 
 			<ul>
 				<li>
-					Chrome <a
-						href="https://support.google.com/chrome/answer/95647?hl=en&co=GENIE.Platform%3DDesktop"
+					Chrome <a href="https://support.google.com/chrome/answer/95647?hl=en&co=GENIE.Platform%3DDesktop"
 						>instructions</a
 					>;
 				</li>
 				<li>
-					Firefox <a
-						href="https://support.mozilla.org/en-US/kb/clear-cookies-and-site-data-firefox"
-						>instructions</a
-					>;
+					Firefox <a href="https://support.mozilla.org/en-US/kb/clear-cookies-and-site-data-firefox">instructions</a>;
 				</li>
 				<li>
-					Safari <a href="https://support.apple.com/guide/safari/manage-cookies-sfri11471/mac"
-						>instructions</a
-					>.
+					Safari <a href="https://support.apple.com/guide/safari/manage-cookies-sfri11471/mac">instructions</a>.
 				</li>
 			</ul>
 
 			<p>
-				Access to our site will not be denied if you disable cookies, but some features may not
-				work.
+				You can also opt out of Google Analytics on all websites with the <a
+					href="https://tools.google.com/dlpage/gaoptout">Google Analytics opt-out browser add-on</a
+				>.
 			</p>
 
+			<p>Access to our site will not be denied if you disable cookies, but some features may not work.</p>
+
+			<h3>Cookies and similar technologies we use</h3>
 			<p>
-				You may find below the additional information and resources regarding the above mentioned
-				services.
+				One row per provider. Each provider's own list is linked for cookies it may set on its own domain, which we do
+				not control.
 			</p>
 
-			<h3>Google Analytics</h3>
-			<p>
-				See Google Analytics privacy <a
-					href="https://policies.google.com/technologies/cookies?hl=en-US">page</a
-				> for more details.
-			</p>
+			<div class="cookie-table-wrap">
+				<table class="cookie-table">
+					<thead>
+						<tr>
+							<th>Provider</th>
+							<th>Category</th>
+							<th>What it stores and why</th>
+							<th>Name(s)</th>
+							<th>Duration</th>
+							<th>More</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>TBMQ (ThingsBoard)</td>
+							<td>Strictly necessary</td>
+							<td>
+								Your choice in the cookie banner and, in Local Storage, the color theme you picked. In Session Storage,
+								for the current tab only: the state of the documentation sidebar, that you already sent feedback on a
+								documentation page, that you have interacted with the site (so the GitHub star count in the header loads
+								without waiting), and that star count, so it is fetched from GitHub once per visit.
+							</td>
+							<td>
+								tb_consent; starlight-theme (Local Storage); sl-sidebar-state, feedback-submitted:&lt;page&gt;,
+								tb:user-engaged, gh_stars_&lt;repository&gt; (Session Storage)
+							</td>
+							<td>180 days; until you clear your browser data; Session Storage until you close the tab</td>
+							<td>-</td>
+						</tr>
+						<tr>
+							<td>Google Analytics</td>
+							<td>Analytics</td>
+							<td>
+								Distinguishes visitors and keeps the state of a visit, so we can count visits and page views. If you
+								allowed Analytics cookies, our contact form also sends the Google Analytics client ID with your message,
+								so that we can connect your request with how you found us.
+							</td>
+							<td>_ga; _ga_2H1PYS19HL</td>
+							<td>Up to 2 years (browsers may cap it at 400 days)</td>
+							<td>
+								<a href="https://policies.google.com/technologies/cookies">Google's cookie page</a>; <a
+									href="https://tools.google.com/dlpage/gaoptout">opt-out add-on</a
+								>
+							</td>
+						</tr>
+						<tr>
+							<td>Google Analytics (user-provided data)</td>
+							<td>Marketing</td>
+							<td>
+								When you send us a form, the email address you entered, in hashed form, so we can measure which
+								campaigns bring requests. We do not use it to build advertising profiles.
+							</td>
+							<td>No cookie</td>
+							<td>-</td>
+							<td>
+								<a href="https://support.google.com/analytics/answer/14077171">About user-provided data collection</a>
+							</td>
+						</tr>
+						<tr>
+							<td>TBMQ (campaign and partner parameters)</td>
+							<td>Marketing</td>
+							<td>
+								The UTM parameters of the campaign link, or the partner reference of the FirstPromoter affiliate link,
+								you arrived from, kept in Local Storage so a later contact or registration can be attributed to that
+								campaign or partner.
+							</td>
+							<td
+								>utm (one entry with utm_source, utm_medium, utm_campaign, utm_term, utm_content); fpr (Local Storage)</td
+							>
+							<td
+								>Until you withdraw your Marketing consent, it expires after 180 days, or you clear your browser data</td
+							>
+							<td>-</td>
+						</tr>
+						<tr>
+							<td>Google Programmable Search (site search)</td>
+							<td>External media</td>
+							<td>
+								Nothing is loaded until you allow External media or press "Load Google search" in the site search. Then,
+								as soon as you open the search, Google's search script and its advertising script load; what you type is
+								sent to Google as you type, to suggest queries; when you search, Google sets cookies on google.com for
+								search preferences and advertising, and its search code sets one advertising cookie on tbmq.io, which we
+								delete if you withdraw External media.
+							</td>
+							<td>NID; SEARCH_SAMESITE; __Secure-STRP (google.com); __gsas (tbmq.io)</td>
+							<td>6 months; __gsas 13 months</td>
+							<td><a href="https://policies.google.com/technologies/cookies">Google's cookie page</a></td>
+						</tr>
+						<tr>
+							<td>Cloudflare</td>
+							<td>Strictly necessary</td>
+							<td>
+								Our hosting and content delivery provider. It may set cookies to protect the site against automated
+								traffic and to balance load.
+							</td>
+							<td>See Cloudflare's list</td>
+							<td>See Cloudflare's list</td>
+							<td>
+								<a
+									href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/"
+									>Cloudflare cookies</a
+								>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
-			<h3>Cloudflare</h3>
-			<p>
-				See Cloudflare documentation <a
-					href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/"
-					>page</a
-				> for more details.
-			</p>
+			<p>You may find below the additional information and resources regarding the above mentioned services.</p>
 
-			<h3>Other Cookies</h3>
 			<ul>
 				<li>
-					<strong>cookie-notice-dismissed</strong> is used to store if the user clicked <code
-						>Accept</code
-					> button on the cookies banner or close (X) it. This cookie has a 365 days timeout.
+					Google Analytics - See <a href="https://policies.google.com/technologies/cookies"
+						>Google Analytics privacy page</a
+					> for more details.
+				</li>
+				<li>
+					Google Programmable Search Engine - See <a href="https://policies.google.com/technologies/cookies"
+						>Google privacy page</a
+					> for more details.
+				</li>
+				<li>
+					Cloudflare - See <a
+						href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/"
+						>Cloudflare documentation page</a
+					> for more details.
+				</li>
+				<li>
+					FirstPromoter - See <a href="https://firstpromoter.com/">FirstPromoter's privacy policy</a> for more details.
 				</li>
 			</ul>
-
-			<p>
-				Please note that by continuing to browse this site with the opened cookies banner, you
-				agree the use of cookies, in accordance with our cookie policy.
-			</p>
 		</div>
 	</div>
 </BaseLayout>
@@ -132,6 +274,12 @@ const description =
 		h1 {
 			font-size: 32px;
 			font-weight: 600;
+			margin-bottom: 8px;
+		}
+
+		.updated {
+			@include text-s;
+			color: var(--color-text-secondary);
 			margin-bottom: 24px;
 		}
 
@@ -167,12 +315,46 @@ const description =
 			}
 		}
 
-		a {
+		a,
+		.cookie-settings {
 			color: var(--color-primary);
 			text-decoration: none;
 
 			&:hover {
 				text-decoration: underline;
+			}
+		}
+
+		.cookie-settings {
+			padding: 0;
+			font: inherit;
+			background: none;
+			border: 0;
+			cursor: pointer;
+		}
+
+		// Wide table: scrolls sideways on phones instead of widening the page.
+		.cookie-table-wrap {
+			overflow-x: auto;
+			margin: 0 0 16px;
+		}
+
+		.cookie-table {
+			@include text-s;
+			width: 100%;
+			border-collapse: collapse;
+			text-align: left;
+
+			th,
+			td {
+				border: 1px solid var(--color-border-light);
+				padding: 8px 10px;
+				vertical-align: top;
+			}
+
+			th {
+				background: var(--color-bg-light);
+				font-weight: 600;
 			}
 		}
 
