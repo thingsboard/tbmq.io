@@ -91,10 +91,21 @@ import {
 	import { notifyConsentChange } from '@util/consent';
 	import { clearRefusedCategories } from '@util/consent-cleanup';
 	import { bindModalDialog } from '@util/modal-dialog';
+	import { isCseLoaded } from '@util/site-search';
 
 	const CONSENT_COOKIE = 'tb_consent';
 	const CONSENT_VERSION = 1;
 	const MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
+
+	// The stored choice this page runs with: the one GtmHead parsed at load, or the last one saved here.
+	const readConsentCookie = () => document.cookie.match(/(?:^|; )tb_consent=([^;]*)/)?.[1] ?? '';
+	let pageConsentCookie = readConsentCookie();
+
+	// A page restored from the back/forward cache keeps its scripts and the consent it ran with. If the choice
+	// changed on another page meanwhile, reload so this one runs with the new choice and its cleanup runs again.
+	addEventListener('pageshow', (e) => {
+		if (e.persisted && readConsentCookie() !== pageConsentCookie) location.reload();
+	});
 
 	function initConsentUi(root: HTMLElement) {
 		const banner = root.querySelector<HTMLElement>('.cm')!;
@@ -127,6 +138,7 @@ import {
 			clearRefusedCategories();
 			const secure = location.protocol === 'https:' ? '; Secure' : '';
 			document.cookie = `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(consent))}; max-age=${MAX_AGE_SECONDS}; path=/; SameSite=Lax${secure}`;
+			pageConsentCookie = readConsentCookie();
 
 			window.gtag('consent', 'update', {
 				analytics_storage: analytics ? 'granted' : 'denied',
@@ -135,6 +147,14 @@ import {
 				ad_storage: 'denied',
 				ad_personalization: 'denied',
 			});
+
+			// Withdrawal: GTM's tags and Google's search keep running on this page after the update above (GA goes on
+			// sending cookieless hits). Reload, so the page starts without them and the on-load cleanup runs again.
+			const gtmRunning = document.querySelector('script[src*="googletagmanager.com/gtm.js"]') !== null;
+			if ((gtmRunning && !analytics && !marketing) || (isCseLoaded() && !media)) {
+				location.reload();
+				return;
+			}
 			// After the update above, so the container starts from the granted state.
 			window.tbLoadGtm();
 

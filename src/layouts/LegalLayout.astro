@@ -1,5 +1,6 @@
 ---
 import CookieConsent from '../components/CookieConsent.astro';
+import LegalLinks from '../components/Landing/LegalLinks.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
 import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
@@ -61,15 +62,19 @@ const structuredData =
 		<div class:list={['legal-page', { 'legal-page--markdown': isMarkdownPage }]}>
 			<slot />
 		</div>
+		{/* These pages have no site footer: the legal links and Your Privacy Choices, so consent can be withdrawn here. */}
+		<footer class="legal-footer">
+			<LegalLinks />
+		</footer>
 		<CookieConsent />
 		<UtmTracker />
 		<script is:inline>
 			// The demo broker (demo.tbmq.io) embeds these pages in an <iframe> inside its
-			// sign-up dialog; the website-scope notice and the cookie banner are noise there.
+			// sign-up dialog; the website-scope notice, the footer and the cookie banner are noise there.
 			// The banner's own reveal script already skips frames; removing its root also keeps its
 			// module script, which runs later, from binding anything.
 			if (window.self !== window.top) {
-				document.querySelectorAll('.scope').forEach((el) => (el.hidden = true));
+				document.querySelectorAll('.scope, .legal-footer').forEach((el) => (el.hidden = true));
 				document.getElementById('cc-main')?.remove();
 			}
 		</script>
@@ -88,9 +93,23 @@ const structuredData =
 		@include light-theme-tokens;
 	}
 
-	// The cookie banner sits outside .legal-page, and nothing else sets a font on this page.
-	#cc-main {
+	// The cookie banner and the footer sit outside .legal-page, and nothing else sets a font on this page.
+	#cc-main,
+	.legal-footer {
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	.legal-footer {
+		max-width: 860px;
+		margin: 0 auto;
+		padding: 24px 24px 40px;
+		border-top: 1px solid var(--color-border-light);
+		--legal-color: var(--color-text-secondary);
+		--legal-hover-color: var(--color-text);
+
+		&[hidden] {
+			display: none;
+		}
 	}
 
 	.legal-page {
