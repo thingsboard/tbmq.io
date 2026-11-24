@@ -88,12 +88,12 @@ import {
 
 <script>
 	import { syncAttributionStorage } from '@util/attribution';
-	import { CONSENT_COOKIE, CONSENT_VERSION, notifyConsentChange } from '@util/consent';
+	import { CONSENT_COOKIE, CONSENT_MAX_AGE_DAYS, CONSENT_VERSION, notifyConsentChange } from '@util/consent';
 	import { clearRefusedCategories } from '@util/consent-cleanup';
 	import { bindModalDialog } from '@util/modal-dialog';
 	import { isCseLoaded } from '@util/site-search';
 
-	const MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
+	const MAX_AGE_SECONDS = CONSENT_MAX_AGE_DAYS * 24 * 60 * 60;
 
 	// The stored choice this page runs with: the one GtmHead parsed at load, or the last one saved here.
 	const consentCookiePattern = new RegExp(`(?:^|; )${CONSENT_COOKIE}=([^;]*)`);

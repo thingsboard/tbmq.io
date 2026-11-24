@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { PRIVACY_CHOICES_LABEL, WEBSITE_PRIVACY_HREF } from '@data/privacy';
+import { CONSENT_MAX_AGE_DAYS } from '@util/consent';
 
 // Set on the day this page goes live, together with the banner texts.
 const LAST_UPDATED = 'November 23, 2026';
@@ -67,14 +68,13 @@ const description =
 				in the site footer, or delete cookies in your browser settings as described below.
 			</p>
 			<p>
-				Your choice is stored for 180 days in the tb_consent cookie, together with the time you made it; after that, or
-				if you clear your cookies, the banner is shown again. Until you allow a category, the tools in that category are
-				not loaded at all: no script runs, no cookie is set and nothing is sent to the provider. The only exception is
-				Google Analytics, which also loads, without setting cookies, when you allow Marketing alone (see above). If you
-				reject a category or withdraw your consent later, the cookies and browser storage of that category on tbmq.io
-				are deleted at once; cookies set by Google on its own domains can only be removed in your browser settings or
-				your Google account. If your browser sends a Global Privacy Control signal, we treat it as a refusal of
-				Marketing cookies.
+				Your choice is stored for {CONSENT_MAX_AGE_DAYS} days in the tb_consent cookie, together with the time you made it;
+				after that, or if you clear your cookies, the banner is shown again. Until you allow a category, the tools in that
+				category are not loaded at all: no script runs, no cookie is set and nothing is sent to the provider. The only exception
+				is Google Analytics, which also loads, without setting cookies, when you allow Marketing alone (see above). If you
+				reject a category or withdraw your consent later, the cookies and browser storage of that category on tbmq.io are
+				deleted at once; cookies set by Google on its own domains can only be removed in your browser settings or your Google
+				account. If your browser sends a Global Privacy Control signal, we treat it as a refusal of Marketing cookies.
 			</p>
 			<p>
 				You may also configure your browser to alert you each time cookies are created. It is also possible to prevent
@@ -135,7 +135,9 @@ const description =
 								tb_consent; starlight-theme (Local Storage); sl-sidebar-state, feedback-submitted:&lt;page&gt;,
 								tb:user-engaged, gh_stars_&lt;repository&gt; (Session Storage)
 							</td>
-							<td>180 days; until you clear your browser data; Session Storage until you close the tab</td>
+							<td>
+								{CONSENT_MAX_AGE_DAYS} days; until you clear your browser data; Session Storage until you close the tab
+							</td>
 							<td>-</td>
 						</tr>
 						<tr>
@@ -179,7 +181,8 @@ const description =
 								>utm (one entry with utm_source, utm_medium, utm_campaign, utm_term, utm_content); fpr (Local Storage)</td
 							>
 							<td
-								>Until you withdraw your Marketing consent, it expires after 180 days, or you clear your browser data</td
+								>Until you withdraw your Marketing consent, it expires after {CONSENT_MAX_AGE_DAYS} days, or you clear your
+								browser data</td
 							>
 							<td>-</td>
 						</tr>

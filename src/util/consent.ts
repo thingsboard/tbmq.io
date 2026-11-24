@@ -3,6 +3,8 @@
 // then count as no choice and the banner asks again.
 export const CONSENT_COOKIE = 'tb_consent';
 export const CONSENT_VERSION = 1;
+// How long a choice is kept. The Cookie Policy and the Privacy Policy state it from here.
+export const CONSENT_MAX_AGE_DAYS = 180;
 
 // Fired by `CookieConsent.astro` after a choice is saved; `window.tbConsent` already holds it.
 const CONSENT_CHANGE_EVENT = 'tb:consent-change';

@@ -6,6 +6,7 @@ breadcrumb: 'Privacy Policy'
 ---
 
 import { PRIVACY_CHOICES_LABEL } from '@data/privacy';
+import { CONSENT_MAX_AGE_DAYS } from '@util/consent';
 
 # TBMQ Privacy Policy
 
@@ -97,8 +98,8 @@ The providers behind the Website are located in the United States (Google, Cloud
 
 - **Google Analytics:** event and user data is retained for 14 months.
 - **Contact form and documentation feedback** submissions held by our form provider are deleted after 12 months; the copy of a contact request kept by our sales team follows the [ThingsBoard Privacy Policy](https://thingsboard.io/legal/privacy-policy/).
-- **Campaign tags and partner code** in your browser: until you withdraw your Marketing consent, it expires after 180 days, or you clear your browser data.
-- **Your cookie choice:** 180 days.
+- **Campaign tags and partner code** in your browser: until you withdraw your Marketing consent, it expires after {CONSENT_MAX_AGE_DAYS} days, or you clear your browser data.
+- **Your cookie choice:** {CONSENT_MAX_AGE_DAYS} days.
 - **License check records:** for as long as the license, the deployment it is used in, or a related legal claim exists.
 
 ## 7. Data Security
