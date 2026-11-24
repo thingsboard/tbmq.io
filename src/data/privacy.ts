@@ -48,7 +48,7 @@ export const CONSENT_CATEGORIES: { id: TbConsentCategory; title: string; descrip
 		id: 'marketing',
 		title: 'Marketing',
 		description:
-			'Remember the campaign or partner link you arrived from, so we know which campaign or partner brought you when you sign up or contact us (partner program). When you send us a form, Google Analytics also receives the email address you entered, in hashed form, to measure which campaigns bring requests. We do not use them to build advertising profiles.',
+			'Remember the campaign or partner link you arrived from, so we know which campaign or partner brought you when you sign up or contact us (partner program). When you send us a form, Google Analytics also receives the email address you entered, in hashed form, to measure which campaigns bring requests. For this, Google Analytics loads even when Analytics is off; it then sets no cookies, but still receives the pages you view. We do not use them to build advertising profiles.',
 	},
 	{
 		id: 'media',

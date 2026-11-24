@@ -4,8 +4,11 @@ import { CONSENT_COOKIE, CONSENT_VERSION } from '@util/consent';
 
 {
 	/*
-	Basic Consent Mode: gtm.js loads only after Analytics or Marketing is granted. `tbLoadGtm` runs for a choice
-	stored on an earlier visit (after `load`, below) and for one made on this page (CookieConsent.astro).
+	gtm.js loads only after Analytics or Marketing is granted, so nothing reaches Google before a choice. With Marketing
+	alone, the GA4 tag runs with `analytics_storage` denied and sends cookieless pings (Advanced Consent Mode behaviour),
+	because GA4 user-provided data needs the tag; the Marketing description in `@data/privacy` and both policies say so.
+	`tbLoadGtm` runs for a choice stored on an earlier visit (after `load`, below) and for one made on this page
+	(CookieConsent.astro).
 	Global Privacy Control overrides a stored Marketing grant (CCPA regs §7025) for this page; the cookie is left as saved.
 */
 }
