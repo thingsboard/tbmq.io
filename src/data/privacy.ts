@@ -62,3 +62,7 @@ export const CONSENT_CATEGORIES: { id: TbConsentCategory; title: string; descrip
 export const SEARCH_CONSENT_TEXT =
 	'Site search is provided by Google, which sets cookies and shows ads in the results.';
 export const SEARCH_CONSENT_NOTE = 'This allows External media for the whole site. You can change it anytime in';
+// The notice's buttons. The Cookie Policy and the Privacy Policy quote the first one.
+export const SEARCH_CONSENT_LOAD_LABEL = 'Load Google search';
+export const SEARCH_CONSENT_GOOGLE_LABEL = 'Search on Google instead';
+export const SEARCH_CONSENT_SETTINGS_LABEL = 'Cookie settings';

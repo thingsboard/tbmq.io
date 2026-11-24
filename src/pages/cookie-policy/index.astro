@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { PRIVACY_CHOICES_LABEL, WEBSITE_PRIVACY_HREF } from '@data/privacy';
+import { PRIVACY_CHOICES_LABEL, SEARCH_CONSENT_LOAD_LABEL, WEBSITE_PRIVACY_HREF } from '@data/privacy';
 import { CONSENT_MAX_AGE_DAYS } from '@util/consent';
 
 // Set on the day this page goes live, together with the banner texts.
@@ -55,9 +55,9 @@ const description =
 				<li>
 					Search the site using <a href="https://programmablesearchengine.google.com/"
 						>Google Programmable Search Engine</a
-					>. It loads only after you allow External media in the cookie banner or press "Load Google search" in the site
-					search; Google then sets its own cookies, including the NID advertising cookie, and may show ads in the
-					results.
+					>. It loads only after you allow External media in the cookie banner or press "{SEARCH_CONSENT_LOAD_LABEL}" in
+					the site search; Google then sets its own cookies, including the NID advertising cookie, and may show ads in
+					the results.
 				</li>
 			</ul>
 
@@ -190,11 +190,11 @@ const description =
 							<td>Google Programmable Search (site search)</td>
 							<td>External media</td>
 							<td>
-								Nothing is loaded until you allow External media or press "Load Google search" in the site search. Then,
-								as soon as you open the search, Google's search script and its advertising script load; what you type is
-								sent to Google as you type, to suggest queries; when you search, Google sets cookies on google.com for
-								search preferences and advertising, and its search code sets one advertising cookie on tbmq.io, which we
-								delete if you withdraw External media.
+								Nothing is loaded until you allow External media or press "{SEARCH_CONSENT_LOAD_LABEL}" in the site
+								search. Then, as soon as you open the search, Google's search script and its advertising script load;
+								what you type is sent to Google as you type, to suggest queries; when you search, Google sets cookies on
+								google.com for search preferences and advertising, and its search code sets one advertising cookie on
+								tbmq.io, which we delete if you withdraw External media.
 							</td>
 							<td>NID; SEARCH_SAMESITE; __Secure-STRP (google.com); __gsas (tbmq.io)</td>
 							<td>6 months; __gsas 13 months</td>

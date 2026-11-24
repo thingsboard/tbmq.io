@@ -1,7 +1,13 @@
 ---
 // Stands in for Google search until the visitor allows External media; `@util/site-search` decides when.
 import NButton from '@components/Landing/NButton.astro';
-import { SEARCH_CONSENT_NOTE, SEARCH_CONSENT_TEXT } from '@data/privacy';
+import {
+	SEARCH_CONSENT_GOOGLE_LABEL,
+	SEARCH_CONSENT_LOAD_LABEL,
+	SEARCH_CONSENT_NOTE,
+	SEARCH_CONSENT_SETTINGS_LABEL,
+	SEARCH_CONSENT_TEXT,
+} from '@data/privacy';
 import { googleSiteSearchUrl } from '@util/site-search';
 
 interface Props {
@@ -16,14 +22,14 @@ const { descId } = Astro.props;
 <div class="search-consent" data-search-consent hidden>
 	<p id={descId} class="search-consent__text">{SEARCH_CONSENT_TEXT}</p>
 	<div class="search-consent__actions">
-		<NButton size="sm" data-cc="accept-media" aria-describedby={descId}>Load Google search</NButton>
+		<NButton size="sm" data-cc="accept-media" aria-describedby={descId}>{SEARCH_CONSENT_LOAD_LABEL}</NButton>
 		<a class="search-consent__google" href={googleSiteSearchUrl('')} target="_blank" rel="noopener noreferrer">
-			Search on Google instead
+			{SEARCH_CONSENT_GOOGLE_LABEL}
 		</a>
 	</div>
 	<p class="search-consent__note">
 		{SEARCH_CONSENT_NOTE}
-		<button type="button" class="cookie-settings" data-cc="show-preferences">Cookie settings</button>
+		<button type="button" class="cookie-settings" data-cc="show-preferences">{SEARCH_CONSENT_SETTINGS_LABEL}</button>
 	</p>
 </div>
 
