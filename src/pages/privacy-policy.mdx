@@ -1,23 +1,25 @@
 ---
 layout: '@layouts/LegalLayout.astro'
-title: 'TBMQ Website Privacy Policy'
-description: 'How ThingsBoard collects, uses and retains personal data on the TBMQ website, tbmq.io.'
+title: 'TBMQ Privacy Policy'
+description: 'How ThingsBoard collects, uses and retains personal data on the TBMQ website, tbmq.io, and in the license checks of TBMQ Professional Edition.'
 breadcrumb: 'Privacy Policy'
 ---
 
 import { PRIVACY_CHOICES_LABEL } from '@data/privacy';
 
-# TBMQ Website Privacy Policy
+# TBMQ Privacy Policy
 
 **Revision Date:** November 23, 2026
 
 ## 1. Introduction and Scope
 
-This Privacy Policy ("Policy") governs the collection, processing, use, disclosure, and protection of personal data by **ThingsBoard, Inc.** ("ThingsBoard," "we," "us," or "our") on the TBMQ website, [tbmq.io](/) (the "Website"), including its documentation, blog and MQTT guides.
+This Privacy Policy ("Policy") governs the collection, processing, use, disclosure, and protection of personal data by **ThingsBoard, Inc.** ("ThingsBoard," "we," "us," or "our") on the TBMQ website, [tbmq.io](/) (the "Website"), including its documentation, blog and MQTT guides, and in the license checks of TBMQ Professional Edition described in Section 2.3.
 
 ThingsBoard, Inc. acts as the **data controller** for the personal data described in this Policy under applicable global data protection laws, including the EU General Data Protection Regulation (GDPR) and applicable US state privacy legislation.
 
-This Policy covers the Website only. The services the Website links to have their own policies:
+TBMQ runs on your own infrastructure. Apart from the license checks described in Section 2.3, it sends us no data; the messages and data your MQTT clients exchange stay in your deployment.
+
+The services the Website links to have their own policies:
 
 - The ThingsBoard License Portal ([https://license.thingsboard.io](https://license.thingsboard.io/)), where TBMQ Professional Edition licenses are issued, is covered by the [ThingsBoard Privacy Policy](https://thingsboard.io/legal/privacy-policy/).
 - The public TBMQ demo broker at [demo.tbmq.io](https://demo.tbmq.io/) is covered by the [Demo Privacy Policy](/product/privacy-policy/).
@@ -26,7 +28,7 @@ The Website is intended for business and professional use and is not directed to
 
 ## 2. Information We Collect
 
-We collect information directly from you, automatically through your visit to the Website, and, with your consent, through the third-party tools described below.
+We collect information directly from you, automatically through your visit to the Website and from the license checks of TBMQ Professional Edition, and, with your consent, through the third-party tools described below.
 
 ### 2.1 Information Provided Directly by You
 
@@ -47,6 +49,17 @@ Site search is provided by Google Programmable Search Engine and loads only afte
 
 **Do Not Track and Global Privacy Control.** Our Website does not change its behaviour in response to browser "Do Not Track" signals. If your browser sends a Global Privacy Control signal, we treat it as a refusal of Marketing cookies. Analytics and Marketing cookies are set only with your consent in the cookie banner, and you can withdraw that consent at any time under “{PRIVACY_CHOICES_LABEL}” in the site footer. When you consent, Google may collect information about your activity on the Website over time and across other websites, as described in our Cookie Policy.
 
+### 2.3 TBMQ Professional Edition License Checks
+
+TBMQ Community Edition does not contact our servers. TBMQ Professional Edition contacts them to validate its license:
+
+- **Online license:** The first time a broker node starts, it activates with our license server (license.thingsboard.io), sending your license secret, the cluster ID of your deployment and the release date of the software. After that, each node checks its license every hour, sending its instance ID, the cluster ID, the release date, a token returned by the previous check and a retry counter. These checks are required for the license to work.
+- **Offline license:** The broker validates the license locally and does not contact the license server. Each node attempts a check-in with our update server (updates.thingsboard.io) at startup and then hourly, sending the customer name, customer ID and subscription ID recorded in the license, the packaging type, and the version of the licensing component. Without outbound connectivity these attempts fail silently and have no effect on the license.
+
+Our servers record the IP address each of these requests comes from, for license-compliance and abuse-protection purposes. Neither kind of license sends usage statistics, MQTT messages, or data about your MQTT clients or users.
+
+Separately, both editions check GitHub (api.github.com) every three hours for the latest TBMQ release, and the TBMQ web interface requests the repository's star count from GitHub directly from the user's browser; no TBMQ data is sent with these requests.
+
 ## 3. Legal Bases and Purposes of Processing
 
 We process personal data only where we have a valid legal basis under applicable law:
@@ -56,6 +69,7 @@ We process personal data only where we have a valid legal basis under applicable
 | **Website Operation and Security:** Serving the Website and protecting it against automated traffic. | IP address, request and browser data. | **Legitimate Interests** (Art. 6(1)(f) GDPR) in a secure and working website. |
 | **Website Analytics, Campaign Measurement and External Media:** Measuring how the Website is used and which campaigns or partner links bring visitors and requests, including linking a contact request to the campaign tags, partner code and Google Analytics identifier of your browser and sending Google Analytics the hashed email address you enter in a form, and providing site search through Google when you allow External media. | Online identifiers, pages viewed, device data, campaign tags, partner referral code, hashed email address, search queries. | **Consent** (Art. 6(1)(a) GDPR), given in the cookie banner and withdrawable at any time. |
 | **Website Forms:** Answering requests sent through the contact form, and collecting documentation feedback. | Form entries (name, business email address, company, subject, message), documentation feedback. | **Steps at your request prior to a contract** (Art. 6(1)(b) GDPR) and **Legitimate Interests** (Art. 6(1)(f) GDPR) in responding to enquiries and improving our documentation. |
+| **TBMQ Professional Edition License Checks:** Validating licenses, enforcing the licensed number of broker instances, and detecting license misuse. | License secret, instance and cluster IDs, software release date, IP address; for offline licenses, the customer name, customer ID and subscription ID recorded in the license. | **Performance of a Contract** (Art. 6(1)(b) GDPR) and **Legitimate Interests** (Art. 6(1)(f) GDPR) in enforcing license terms and preventing unauthorized use. |
 
 ## 4. Third-Party Data Sharing and Processing
 
@@ -85,12 +99,13 @@ The providers behind the Website are located in the United States (Google, Cloud
 - **Contact form and documentation feedback** submissions held by our form provider are deleted after 12 months; the copy of a contact request kept by our sales team follows the [ThingsBoard Privacy Policy](https://thingsboard.io/legal/privacy-policy/).
 - **Campaign tags and partner code** in your browser: until you withdraw your Marketing consent, it expires after 180 days, or you clear your browser data.
 - **Your cookie choice:** 180 days.
+- **License check records:** for as long as the license, the deployment it is used in, or a related legal claim exists.
 
 ## 7. Data Security
 
 ThingsBoard maintains appropriate administrative, physical, and technical safeguards designed to protect personal data against accidental, unauthorized, or unlawful destruction, loss, alteration, disclosure, or access.
 
-- **Encryption:** The Website and its forms are served only over industry-standard TLS/SSL encryption.
+- **Encryption:** The Website and its forms are served only over industry-standard TLS/SSL encryption, and the license checks are sent over it too.
 - **Access Control:** Access to personal data is restricted to authorized ThingsBoard personnel and contractors who require access to execute administrative, compliance, or support tasks under binding confidentiality agreements.
 
 ## 8. Your Data Subject Rights
