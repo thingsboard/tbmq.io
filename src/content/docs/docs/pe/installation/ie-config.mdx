@@ -452,6 +452,18 @@ sidebar:
     <p class="config-def-meta"><code class="config-def-env">INTEGRATIONS&#95;NETTY&#95;SHARED&#95;GROUP&#95;THREADS</code> · <span class="config-def-label">Default</span> <code>0</code></p>
     <p class="config-def-desc">Number of threads shared by every integration that talks to an external system over Netty. It sizes three  pools: the Netty event loop group used by the MQTT and HTTP integrations, and - for Redis integrations - both  the I/O and the computation thread pools of the shared Lettuce client resources, so the effective thread count  is roughly three times this value. Defaults to 0, which means each pool applies its own default:  availableProcessors &#42; 2 for the Netty group, max(availableProcessors, 2) for each Lettuce pool.</p>
   </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;HTTP&#95;CLIENT&#95;POOL&#95;MAX&#95;CONNECTIONS</code> · <span class="config-def-label">Default</span> <code>0</code></p>
+    <p class="config-def-desc">Maximum number of connections in the pool. Defaults to 0, which uses the Reactor Netty default:  twice the number of available processors, but at least 16.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;HTTP&#95;CLIENT&#95;POOL&#95;MAX&#95;IDLE&#95;TIME&#95;MS</code> · <span class="config-def-label">Default</span> <code>30000</code></p>
+    <p class="config-def-desc">Maximum time a connection may stay idle in the pool before it is closed (in ms). Keep it below the idle timeout  of the endpoint and of any load balancer or proxy in between. Defaults to 30000 (30 s). 0 disables the limit.</p>
+  </div>
+  <div class="config-def-item">
+    <p class="config-def-meta"><code class="config-def-env">TB&#95;IE&#95;HTTP&#95;CLIENT&#95;POOL&#95;MAX&#95;LIFE&#95;TIME&#95;MS</code> · <span class="config-def-label">Default</span> <code>300000</code></p>
+    <p class="config-def-desc">Maximum lifetime of a connection in the pool, regardless of activity (in ms). Defaults to 300000 (5 min).  0 disables the limit.</p>
+  </div>
 </div>
 
 ## Management parameters
