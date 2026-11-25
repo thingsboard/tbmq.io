@@ -7,13 +7,13 @@
  */
 
 /** TBMQ Broker */
-export const TBMQ_VER = '2.4.1';
+export const TBMQ_VER = '2.4.2';
 
 /** Previous TBMQ Broker release — the version an upgrade to TBMQ_VER starts from */
-export const TBMQ_PREV_VER = '2.4.0';
+export const TBMQ_PREV_VER = '2.4.1';
 
 /** TBMQ Broker Professional Edition */
-export const TBMQ_PE_VER = '2.4.1PE';
+export const TBMQ_PE_VER = '2.4.2PE';
 
 /** TBMQ Broker release branch (for installation scripts) */
-export const TBMQ_BRANCH = 'release-2.4.1';
+export const TBMQ_BRANCH = 'release-2.4.2';

@@ -4,6 +4,14 @@ import ShowFor from '~/components/ShowFor.astro';
 import { Products } from '~/models/site.models';
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="v242PE" showFor="mqtt-broker-pe">v2.4.2 (November 25, 2026)</ConditionalHeading>
+
+This release includes all improvements, bug fixes, and security fixes from [TBMQ v2.4.2](#v242-november-25-2026), along with the following Professional Edition exclusive updates:
+
+**Security**
+
+- **RabbitMQ integration client:** Upgraded the RabbitMQ AMQP client used by the RabbitMQ integration to 5.38.0 to fix CVE-2026-106121, CVE-2026-106122, and CVE-2026-106123.
+
 <ConditionalHeading level={2} id="v241PE" showFor="mqtt-broker-pe">v2.4.1 (October 8, 2026)</ConditionalHeading>
 
 This release includes all features, improvements, and bug fixes from [TBMQ v2.4.1](#v241-october-8-2026), along with the following Professional Edition exclusive updates:
@@ -76,6 +84,58 @@ This release includes all features, improvements, and bug fixes from [TBMQ v2.2.
 
 The following release notes cover all Community Edition versions included in TBMQ.
 </ShowFor>
+
+## v2.4.2 (November 25, 2026)
+
+Patch release with the following security fixes, improvements, and bug fixes.
+
+**Behavior changes:**
+
+- With SCRAM as the only enabled authentication provider, TBMQ now refuses clients that send no MQTT 5 Authentication Method, with `0x87` Not authorized (`0x05` on MQTT 3.x) ([#456](https://github.com/thingsboard/tbmq/pull/456)). Before, these clients connected without credentials as DEVICE clients with no topic restrictions. Move every client to SCRAM before upgrading.
+- With **Send only message payload** enabled, the Kafka integration now sends a payload that is not valid UTF-8 as its raw bytes instead of Base64 ([#408](https://github.com/thingsboard/tbmq/pull/408)). Consumers that decode that Base64 must stop. UTF-8 payloads are sent as before.
+- The Kafka integration now always sends record values as bytes, and the JSON body as UTF-8 ([#408](https://github.com/thingsboard/tbmq/pull/408)). A `value.serializer` in **Other properties** is now ignored for every Kafka integration, with a warning in the Integration Executor log, and `serializer.encoding` or `value.serializer.encoding` no longer changes how the value is encoded. `serializer.encoding` still applies to the record key.
+- After a successful SCRAM authentication, the CONNACK now carries the server-final message in **Authentication Data**, so the client can verify the broker ([#407](https://github.com/thingsboard/tbmq/pull/407)).
+- Pooled connections to the HTTP authentication service and to HTTP integration endpoints are now closed after 30 seconds idle and recycled after 5 minutes ([#426](https://github.com/thingsboard/tbmq/pull/426), [#428](https://github.com/thingsboard/tbmq/pull/428)), so the first request after a quiet period opens a new connection. Tune the pools with the `TB_HTTP_AUTH_CLIENT_POOL_*` and `TB_IE_HTTP_CLIENT_POOL_*` environment variables.
+
+**Improvements:**
+
+- Core:
+  - [#409](https://github.com/thingsboard/tbmq/pull/409) Replace Kafka's SCRAM SASL server with a TBMQ implementation that accepts usernames containing `,` or `=` by @dmytro-landiak;
+  - [#410](https://github.com/thingsboard/tbmq/pull/410) Remove Kafka types from the queue interfaces by @dmytro-landiak.
+- Deployment:
+  - [#437](https://github.com/thingsboard/tbmq/pull/437) Add scripts to stop and start only the TBMQ services of the Docker Compose cluster by @dmytro-landiak;
+  - [#446](https://github.com/thingsboard/tbmq/pull/446) Bump the EKS cluster for Helm to 1.37 and size the Redis node group for standalone Valkey by @dmytro-landiak;
+  - [#448](https://github.com/thingsboard/tbmq/pull/448) Bump the EKS cluster to 1.37, allow TLS 1.3 on the load balancers, and make the two-way TLS blocks uncommentable in the AWS scripts by @dmytro-landiak;
+  - [#449](https://github.com/thingsboard/tbmq/pull/449) Connect the GCP manifests to Managed Kafka and make the two-way TLS blocks uncommentable by @dmytro-landiak;
+  - [#453](https://github.com/thingsboard/tbmq/pull/453) Connect the Azure manifests to Azure Managed Redis and make the two-way TLS blocks uncommentable by @dmytro-landiak.
+
+**Bug fixes:**
+
+- Core:
+  - [#407](https://github.com/thingsboard/tbmq/pull/407) Return the SCRAM server-final message in the CONNACK by @dmytro-landiak;
+  - [#408](https://github.com/thingsboard/tbmq/pull/408) Send the raw MQTT payload as the Kafka record value by @dmytro-landiak;
+  - [#466](https://github.com/thingsboard/tbmq/pull/466) Store and deliver messages with a message expiry interval of 0 or of 2^31 and more by @dmytro-landiak;
+  - [#406](https://github.com/thingsboard/tbmq/pull/406) Count a client topic alias once when it is resent or remapped by @RaphaelFakhri;
+  - [#414](https://github.com/thingsboard/tbmq/pull/414) Stop HTTP authentication when no request slot is acquired by @abdelrahman-osama;
+  - [#415](https://github.com/thingsboard/tbmq/pull/415), [#426](https://github.com/thingsboard/tbmq/pull/426) Evict idle HTTP authentication provider connections and move the pool settings to the YAML by @abdelrahman-osama and @dmytro-landiak;
+  - [#420](https://github.com/thingsboard/tbmq/pull/420) Stop the HTTP integration request when no request slot is acquired by @dmytro-landiak;
+  - [#428](https://github.com/thingsboard/tbmq/pull/428) Bound the HTTP integration client pool connections and close them on destroy by @dmytro-landiak.
+- Deployment:
+  - [#429](https://github.com/thingsboard/tbmq/pull/429) Fix the standalone PostgreSQL backup and restore steps by @dmytro-landiak;
+  - [#431](https://github.com/thingsboard/tbmq/pull/431) Fix the cluster PostgreSQL backup and restore steps by @dmytro-landiak;
+  - [#442](https://github.com/thingsboard/tbmq/pull/442) Restore the Minikube backup into a recreated database by @dmytro-landiak.
+
+**Security:**
+
+- [#456](https://github.com/thingsboard/tbmq/pull/456) Refuse clients without SCRAM credentials when SCRAM is the only enabled authentication provider by @dmytro-landiak;
+- [#473](https://github.com/thingsboard/tbmq/pull/473) Bump Guava, lz4-java, snappy-java, org.json and FreeMarker to fix critical, high and medium CVEs in the TBMQ images by @dmytro-landiak.
+
+**We welcome our new contributors:**
+
+- @RaphaelFakhri made their first contribution in [#406](https://github.com/thingsboard/tbmq/pull/406);
+- @abdelrahman-osama made their first contribution in [#414](https://github.com/thingsboard/tbmq/pull/414).
+
+**Full changelog**: [v2.4.1...v2.4.2](https://github.com/thingsboard/tbmq/compare/v2.4.1...v2.4.2)
 
 ## v2.4.1 (October 8, 2026)
 

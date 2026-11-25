@@ -39,6 +39,11 @@ export type Props = Parameters<typeof StarlightBadge>[0];
 		font-size: 0.875rem;
 	}
 
+	/* Keeps a multi-word badge on one line, e.g. inside a narrow table cell. */
+	.nowrap-badge {
+		white-space: nowrap;
+	}
+
 	/* On active sidebar item the accent background makes the badge invisible — inherit text color instead */
 	a[aria-current='page'] .tb-badge {
 		color: inherit;

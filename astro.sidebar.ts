@@ -138,7 +138,6 @@ const tbmqGuideItems = (prefix: string): SidebarConfig => {
 const tbmqInstallItems = (prefix: string): SidebarConfig => {
 	const isPE = prefix.includes('/pe');
 	return [
-		{ label: 'Live demo', slug: `${prefix}/installation/live-demo` },
 		{
 			label: 'On-premises',
 			collapsed: true,
