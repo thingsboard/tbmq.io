@@ -798,6 +798,14 @@ Back up your PostgreSQL database before upgrading. Then review the
 for the notes on every version between yours and the target.
 
 <Aside type="note">
+  Review the behavior changes in the <DocLink product={props.product} path="releases/#v242-november-25-2026">2.4.2 release notes</DocLink> before upgrading to v2.4.2.
+  If SCRAM is the only enabled authentication provider, TBMQ now refuses clients that send no MQTT 5 Authentication Method instead of accepting them without credentials —
+  <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>move every client to SCRAM</DocLink> first.
+  If a Kafka integration has **Send only message payload** on, a payload that is not valid UTF-8 is now sent as raw bytes instead of Base64 —
+  <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>update the consumers</DocLink> that decode it.
+</Aside>
+
+<Aside type="note">
   Review the behavior changes in the <DocLink product={props.product} path="releases/#v241-october-8-2026">2.4.1 release notes</DocLink> before upgrading to v2.4.1.
   If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1 to keep the previous limit — the limit now counts topic segments instead of `/` delimiters.
 </Aside>

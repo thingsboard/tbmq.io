@@ -23,6 +23,7 @@ export const ceUpgradePath = [
   { version: '2.3.0', note: 'upgrading-to-230', level: 'action', downtime: 'stop' },
   { version: '2.4.0', note: 'upgrading-to-240', level: 'review', downtime: 'rolling' },
   { version: '2.4.1', note: 'upgrading-to-241', level: 'review', downtime: 'rolling' },
+  { version: '2.4.2', note: 'upgrading-to-242', level: 'review', downtime: 'rolling' },
 ];
 
 export const schemaVersionQuery = `SELECT schema_version FROM tb_schema_settings;`;
@@ -81,6 +82,8 @@ The table below lists all supported upgrade paths. Versions must be upgraded seq
 
 | Target version | Upgrade from    | Downtime                                           | Notes                                                                                                                                 |
 | -------------- | --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.4.2PE**    | 2.4.1PE         | <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> | See [what the 2.4.2PE upgrade does](#upgrading-to-242-pe) below                                                                       |
+| **2.4.2PE**    | TBMQ 2.4.2 (CE) | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                         |
 | **2.4.1PE**    | 2.4.0PE         | <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> | See [what the 2.4.1PE upgrade does](#upgrading-to-241-pe) below                                                                       |
 | **2.4.1PE**    | TBMQ 2.4.1 (CE) | <Badge text="Stop TBMQ" variant="danger" class="nowrap-badge" />        | See [CE-to-PE migration](#upgrade-from-tbmq-to-tbmq-pe) below                                                                         |
 | **2.4.0PE**    | 2.3.0PE         | <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> | See [what the 2.4.0PE upgrade does](#upgrading-to-240-pe) below                                                                       |
@@ -144,6 +147,28 @@ the notes on this page.
 <ConditionalHeading level={2} id="version-notes" exclude="mqtt-broker-pe">Version notes</ConditionalHeading>
 
 What each upgrade changes and what you must do, newest first.
+
+<ConditionalHeading level={3} id="upgrading-to-242" exclude="mqtt-broker-pe">Upgrading to 2.4.2</ConditionalHeading>
+
+**From 2.4.1.** The upgrade only records the new schema version — no table is created or altered, and no data is
+migrated.
+
+**Downtime:** <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> on deployments that [support it](#downtime).
+
+**Check before upgrading:**
+
+- **SCRAM-only authentication.** With SCRAM as the only enabled provider, TBMQ now refuses clients that send no MQTT 5
+  Authentication Method. 2.4.1 and earlier accepted them without credentials, as DEVICE clients with no topic
+  restrictions. Move every client to SCRAM before upgrading, as
+  <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>Accept only SCRAM clients</DocLink>
+  describes. During a rolling upgrade, nodes still on 2.4.1 keep accepting such clients until they are replaced.
+- **Kafka integration with Send only message payload.** A payload that is not valid UTF-8 is now sent as its raw bytes
+  instead of Base64, and a `value.serializer` in **Other properties** is ignored. Update consumers that decode the
+  Base64. During a rolling upgrade, an Integration Executor still on 2.4.1 keeps sending Base64. See the
+  <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>Kafka integration</DocLink> page.
+
+See the <DocLink product={props.product} path="releases/#v242-november-25-2026" bold={false}>2.4.2 release notes</DocLink> for the
+other changes.
 
 <ConditionalHeading level={3} id="upgrading-to-241" exclude="mqtt-broker-pe">Upgrading to 2.4.1</ConditionalHeading>
 
@@ -269,6 +294,27 @@ They need no other preparation, but you must pass the version you are upgrading 
 </ShowFor>
 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
+<ConditionalHeading level={2} id="upgrading-to-242-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.2PE</ConditionalHeading>
+
+The 2.4.2PE upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
+
+**Downtime:** <Badge text="Rolling upgrade" variant="success" class="nowrap-badge" /> on deployments that [support it](#downtime).
+
+**Check before upgrading:**
+
+- **SCRAM-only authentication.** With SCRAM as the only enabled provider, TBMQ now refuses clients that send no MQTT 5
+  Authentication Method. 2.4.1PE and earlier accepted them without credentials, as DEVICE clients with no topic
+  restrictions. Move every client to SCRAM before upgrading, as
+  <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>Accept only SCRAM clients</DocLink>
+  describes. During a rolling upgrade, nodes still on 2.4.1PE keep accepting such clients until they are replaced.
+- **Kafka integration with Send only message payload.** A payload that is not valid UTF-8 is now sent as its raw bytes
+  instead of Base64, and a `value.serializer` in **Other properties** is ignored. Update consumers that decode the
+  Base64. During a rolling upgrade, an Integration Executor still on 2.4.1PE keeps sending Base64. See the
+  <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>Kafka integration</DocLink> page.
+
+See the <DocLink product={props.product} path="releases/#v242-november-25-2026" bold={false}>2.4.2 release notes</DocLink> for the
+other changes.
+
 <ConditionalHeading level={2} id="upgrading-to-241-pe" showFor="mqtt-broker-pe">Upgrading to 2.4.1PE</ConditionalHeading>
 
 The 2.4.1PE upgrade only records the new schema version in the database — no table is created or altered, and no data is migrated.
