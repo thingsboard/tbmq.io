@@ -6,7 +6,11 @@ import { Products } from '~/models/site.models';
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 <ConditionalHeading level={2} id="v242PE" showFor="mqtt-broker-pe">v2.4.2 (November 25, 2026)</ConditionalHeading>
 
-This release includes all improvements, bug fixes, and security fixes from [TBMQ v2.4.2](#v242-november-25-2026). It has no Professional Edition exclusive updates.
+This release includes all improvements, bug fixes, and security fixes from [TBMQ v2.4.2](#v242-november-25-2026), along with the following Professional Edition exclusive updates:
+
+**Security**
+
+- **RabbitMQ integration client:** Upgraded the RabbitMQ AMQP client used by the RabbitMQ integration to 5.38.0 to fix CVE-2026-106121, CVE-2026-106122, and CVE-2026-106123.
 
 <ConditionalHeading level={2} id="v241PE" showFor="mqtt-broker-pe">v2.4.1 (October 8, 2026)</ConditionalHeading>
 
