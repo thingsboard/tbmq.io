@@ -74,7 +74,7 @@ The **Authentication Execution Order** setting defines the order in which the br
 
 **Key rules:**
 
-**When all providers are disabled**, the execution flow is bypassed entirely. All clients are authenticated automatically and assigned the DEVICE type with no topic restrictions. This is acceptable in isolated lab environments but must not be used in production.
+**When all providers are disabled**, the execution flow is bypassed entirely. All clients are authenticated automatically and assigned the DEVICE type with no topic restrictions. This is acceptable in isolated lab environments but must not be used in production. From TBMQ 2.4.2, SCRAM counts as an enabled provider here: with only SCRAM enabled, clients that don't use SCRAM are refused. In 2.4.1 and earlier, they are let in as if all providers were disabled — see <DocLink product={props.product} path="security/authentication/scram#accept-only-scram-clients" bold={false}>Accept only SCRAM clients</DocLink>.
 
 **When at least one provider is enabled**, each provider in the configured order is evaluated until the flow stops:
 

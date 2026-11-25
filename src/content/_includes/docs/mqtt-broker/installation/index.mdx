@@ -1,10 +1,9 @@
-import InstallationCardGrid from '~/components/InstallationCardGrid.astro';
-import Tabs    from '@components/Tabs.astro';
-import TabItem from '@components/TabItem.astro';
+import InstallOptionGrid from '~/components/Installations/InstallOptionGrid.astro';
+import InstallSectionNav from '~/components/Installations/InstallSectionNav.astro';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
 
-Every option below installs the same broker on top of Kafka, Redis and PostgreSQL; what differs is where it runs and
+Every option below installs the same broker on top of Kafka, Valkey and PostgreSQL; what differs is where it runs and
 how far it scales. A standalone container is enough to evaluate TBMQ or develop against it; production traffic runs on
 a cluster of broker nodes.
 
@@ -12,40 +11,83 @@ After the broker is up, the <DocLink product={props.product} path="installation/
 every parameter and its default, and the <DocLink product={props.product} path="installation/upgrade-instructions" bold={false}>upgrade instructions</DocLink> cover
 moving to a newer version.
 
-<Tabs defaultTab="on-premises" urlParam="installationType">
-  <TabItem label="Live Demo" id="live-demo" icon="tabler:device-analytics">
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'https://demo.tbmq.io/signup', title: 'Public Instance', icon: '/src/assets/images/installation/tbmq-ce.svg', accent: 'var(--sl-color-green)', target: '_blank', badge: 'Free', badgeVariant: 'tip' },
-    ]} />
-  </TabItem>
-  <TabItem label="On-premises" id="on-premises" icon="tabler:server-2">
-    <h2>Standalone</h2>
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/docker', title: 'Docker (Linux, macOS)', icon: '/src/assets/images/installation/docker-linux-mac.svg', accent: 'var(--sl-color-blue)', badge: 'Recommended', badgeVariant: 'tip' },
-      { path: 'installation/docker-windows', title: 'Docker (Windows)', icon: '/src/assets/images/installation/docker-windows.svg', accent: 'var(--sl-color-blue)', badge: 'Recommended', badgeVariant: 'tip' },
-      ...(props.product !== Products.TBMQ_PE ? [{ path: 'installation/building-from-source', title: 'Building from source', icon: '/src/assets/images/installation/sources.svg', accent: 'var(--sl-color-purple)' }] : []),
-    ]} />
-    <h2>Cluster</h2>
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/docker-compose-setup', title: 'Docker Compose', icon: '/src/assets/images/installation/docker-compose.svg', accent: 'var(--sl-color-blue)' },
-      { path: 'installation/cluster/minikube-cluster-setup', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)' },
-    ]} />
-  </TabItem>
-  <TabItem label="Cloud" id="cloud" icon="tabler:cloud">
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/aws-cluster-setup', title: 'AWS', icon: '/src/assets/images/installation/aws.svg', accent: 'var(--sl-color-orange)' },
-      { path: 'installation/cluster/azure-cluster-setup', title: 'Azure', icon: '/src/assets/images/installation/azure.svg', accent: 'var(--color-product-trendz)' },
-      { path: 'installation/cluster/gcp-cluster-setup', title: 'Google Cloud Platform', icon: '/src/assets/images/installation/gcp-platform.svg', accent: 'var(--sl-color-red)' },
-    ]} />
-  </TabItem>
-  <TabItem label="Helm" id="helm" icon="tabler:hexagon-letter-h">
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/helm-cluster-setup-minikube', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)' },
-      { path: 'installation/cluster/helm-cluster-setup-aws', title: 'AWS EKS', icon: '/src/assets/images/installation/eks.svg', accent: 'var(--sl-color-orange)' },
-    ]} />
-    <InstallationCardGrid product={props.product} items={[
-      { path: 'installation/cluster/helm-cluster-setup-azure', title: 'Azure AKS', icon: '/src/assets/images/installation/azure-kubernetes.svg', accent: 'var(--color-product-trendz)' },
-      { path: 'installation/cluster/helm-cluster-setup-gcp', title: 'GCP GKE', icon: '/src/assets/images/installation/gcp-kubernetes.svg', accent: 'var(--sl-color-red)' },
-    ]} />
-  </TabItem>
-</Tabs>
+<InstallSectionNav sections={[
+  { id: 'live-demo', label: 'Live demo', icon: 'tabler:device-analytics', text: 'Try it in the browser' },
+  { id: 'on-premises', label: 'On-premises', icon: 'tabler:server-2', text: 'Docker or Minikube on your machine' },
+  { id: 'cloud', label: 'Cloud', icon: 'tabler:cloud', text: 'Kubernetes scripts on AWS, Azure, GCP' },
+  { id: 'helm', label: 'Helm', icon: 'tabler:hexagon-letter-h', text: 'Official chart on any Kubernetes' },
+]} />
+
+## Live demo
+
+A public TBMQ broker at demo.tbmq.io. Nothing to install.
+
+<InstallOptionGrid product={props.product} items={[
+  { path: '/live-demo/', title: 'Public instance', icon: '/src/assets/images/installation/tbmq-ce.svg', accent: 'var(--sl-color-green)', badge: 'Free',
+    description: 'Connect any MQTT client to demo.tbmq.io, or sign up to explore the TBMQ UI.', chips: ['Hosted', 'No install'] },
+]} />
+
+## On-premises
+
+### Standalone
+
+One TBMQ node on one host, with its dependencies as containers next to it.
+
+<InstallOptionGrid product={props.product} columns={props.product === Products.TBMQ_PE ? 2 : 3} items={[
+  { path: 'installation/docker', title: 'Docker (Linux, macOS)', icon: '/src/assets/images/installation/docker-linux-mac.svg', accent: 'var(--sl-color-blue)', badge: 'Recommended',
+    description: 'The install script runs TBMQ, PostgreSQL, Kafka, Valkey and the Integration Executor in Docker.', chips: ['1 host', '1 broker node'] },
+  { path: 'installation/docker-windows', title: 'Docker (Windows)', icon: '/src/assets/images/installation/docker-windows.svg', accent: 'var(--sl-color-blue)', badge: 'Recommended',
+    description: 'The same containers, installed with a PowerShell script on Docker Desktop.', chips: ['1 host', '1 broker node'] },
+  ...(props.product !== Products.TBMQ_PE ? [{ path: 'installation/building-from-source', title: 'Building from source', icon: '/src/assets/images/installation/sources.svg', accent: 'var(--sl-color-purple)',
+    description: 'Build the installation packages and, optionally, the Docker images with Java 25 and Maven.', chips: ['Ubuntu', 'Java 25'] }] : []),
+]} />
+
+### Cluster
+
+Several TBMQ nodes on your own hardware, to try cluster mode before you move to the cloud.
+
+<InstallOptionGrid product={props.product} items={[
+  { path: 'installation/cluster/docker-compose-setup', title: 'Docker Compose', icon: '/src/assets/images/installation/docker-compose.svg', accent: 'var(--sl-color-blue)',
+    description: 'Two TBMQ nodes behind HAProxy, two Integration Executors, PostgreSQL, Kafka and Valkey on one host.', chips: ['1 host', '2 broker nodes', 'HAProxy'] },
+  { path: 'installation/cluster/minikube-cluster-setup', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)',
+    description: 'The TBMQ Kubernetes scripts on a local Minikube cluster, with PostgreSQL, Kafka and Valkey in the cluster.', chips: ['Kubernetes', '2 broker nodes'] },
+]} />
+
+## Cloud
+
+The TBMQ Kubernetes scripts on a managed Kubernetes service, with the cloud's managed databases where the guide uses them.
+
+<InstallOptionGrid product={props.product} columns={3} items={[
+  { path: 'installation/cluster/aws-cluster-setup', title: 'AWS', icon: '/src/assets/images/installation/aws.svg', accent: 'var(--sl-color-orange)',
+    description: 'EKS with Amazon RDS, Amazon MSK and Amazon ElastiCache, behind an ALB and an NLB.', chips: ['EKS', '2 broker nodes'] },
+  { path: 'installation/cluster/azure-cluster-setup', title: 'Azure', icon: '/src/assets/images/installation/azure.svg', accent: 'var(--color-product-trendz)',
+    description: 'AKS with Azure Database for PostgreSQL and Azure Managed Redis, and Kafka in the cluster, behind an Application Gateway and an Azure LB.', chips: ['AKS', '2 broker nodes'] },
+  { path: 'installation/cluster/gcp-cluster-setup', title: 'Google Cloud Platform', icon: '/src/assets/images/installation/gcp-platform.svg', accent: 'var(--sl-color-red)',
+    description: 'GKE with Cloud SQL, Managed Service for Apache Kafka and Memorystore for Valkey, behind an Application LB and a Network LB.', chips: ['GKE', '2 broker nodes'] },
+]} />
+
+## Helm
+
+The official Helm chart deploys TBMQ only: two broker nodes and two Integration Executors. PostgreSQL, Kafka and a
+Redis-compatible cache run separately, in the cluster or as managed services.
+
+<InstallOptionGrid product={props.product} items={[
+  { path: 'installation/cluster/helm-cluster-setup-minikube', title: 'Minikube', icon: '/src/assets/images/installation/minikube.svg', accent: 'var(--sl-color-green)',
+    description: 'The reference for self-managed Kubernetes without a cloud load balancer.', chips: ['Local', 'Helm chart'] },
+  { path: 'installation/cluster/helm-cluster-setup-aws', title: 'AWS EKS', icon: '/src/assets/images/installation/eks.svg', accent: 'var(--sl-color-orange)',
+    description: 'The chart on EKS, with web traffic through an ALB and MQTT through an NLB.', chips: ['EKS', 'Helm chart'] },
+  { path: 'installation/cluster/helm-cluster-setup-azure', title: 'Azure AKS', icon: '/src/assets/images/installation/azure-kubernetes.svg', accent: 'var(--color-product-trendz)',
+    description: 'The chart on AKS, with web traffic through an Application Gateway and MQTT through an Azure LB.', chips: ['AKS', 'Helm chart'] },
+  { path: 'installation/cluster/helm-cluster-setup-gcp', title: 'GCP GKE', icon: '/src/assets/images/installation/gcp-kubernetes.svg', accent: 'var(--sl-color-red)',
+    description: 'The chart on GKE, with web traffic through an Application LB and MQTT through a Network LB.', chips: ['GKE', 'Helm chart'] },
+]} />
+
+## Compare the options
+
+| Option                | Runs on                        | TBMQ nodes | PostgreSQL, Kafka, Valkey                                     | Good for                          |
+| --------------------- | ------------------------------ | ---------- | ------------------------------------------------------------- | --------------------------------- |
+| Docker standalone     | One host                       | 1          | Containers on the same host                                   | Evaluation and development        |
+| Docker Compose        | One host                       | 2          | Containers on the same host                                   | Trying cluster mode               |
+| Minikube scripts      | Local Kubernetes               | 2          | Pods in the cluster                                           | Trying Kubernetes deployment      |
+| Cloud scripts         | EKS, AKS or GKE                | 2          | Managed services where the guide uses them, the rest in the cluster | Production                 |
+| Helm chart            | Any Kubernetes                 | 2          | Your choice: in the cluster or managed services               | Production                        |

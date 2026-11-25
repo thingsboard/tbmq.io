@@ -1,0 +1,244 @@
+---
+/**
+ * UpgradePath — the supported upgrade chain as a row of version pills.
+ *
+ * Each step is one upgrade hop: the version you upgrade *to*. A step with `note` links to that version's
+ * notes on the same page; `level` marks how much attention the hop needs:
+ *   - 'action' — manual work is required before or during the upgrade (orange)
+ *   - 'review' — the upgrade runs as-is, but behavior or configuration changes are worth checking (blue)
+ * `downtime` marks whether the hop needs TBMQ stopped:
+ *   - 'stop'    — every TBMQ node must be stopped before the upgrade (square icon)
+ *   - 'rolling' — a cluster can be upgraded node by node while it keeps serving clients (circular arrows icon)
+ * The last step is highlighted as the latest release.
+ *
+ * Usage:
+ *   <UpgradePath steps={[
+ *     { version: '2.3.0', note: 'upgrading-to-230', level: 'action', downtime: 'stop' },
+ *     { version: '2.4.0', note: 'upgrading-to-240', level: 'review', downtime: 'rolling' },
+ *   ]} />
+ */
+export interface UpgradeStep {
+	version: string;
+	/** Heading id of this version's notes on the same page. */
+	note?: string;
+	level?: 'action' | 'review';
+	downtime?: 'stop' | 'rolling';
+}
+
+interface Props {
+	steps: UpgradeStep[];
+}
+
+const { steps } = Astro.props;
+const levelLabel = { action: 'manual action required', review: 'review changes' } as const;
+const downtimeLabel = { stop: 'stop TBMQ', rolling: 'rolling upgrade' } as const;
+const hasLevel = (level: UpgradeStep['level']) => steps.some((s) => s.level === level);
+const hasDowntime = (downtime: UpgradeStep['downtime']) => steps.some((s) => s.downtime === downtime);
+---
+
+<div class="upgrade-path not-content">
+	<ol aria-label="Supported upgrade path, oldest to newest">
+		{
+			steps.map((step, i) => {
+				const isLatest = i === steps.length - 1;
+				const extra = [
+					step.level && levelLabel[step.level],
+					step.downtime && downtimeLabel[step.downtime],
+					isLatest && 'latest',
+				]
+					.filter(Boolean)
+					.join(', ');
+				const classes = ['pill', step.level, isLatest && 'latest'];
+				const Tag = step.note ? 'a' : 'span';
+				return (
+					<li>
+						<Tag class:list={classes} href={step.note ? `#${step.note}` : undefined}>
+							{step.downtime === 'stop' && (
+								<svg class="icon stop" viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="5" y="5" width="14" height="14" rx="2" />
+								</svg>
+							)}
+							{step.downtime === 'rolling' && (
+								<svg class="icon rolling" viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+								</svg>
+							)}
+							{step.version}
+							{extra && <span class="sr-only">({extra})</span>}
+						</Tag>
+					</li>
+				);
+			})
+		}
+	</ol>
+	<div class="legend">
+		<p>
+			{
+				hasLevel('action') && (
+					<span>
+						<i class="dot action" /> Manual action required
+					</span>
+				)
+			}
+			{
+				hasLevel('review') && (
+					<span>
+						<i class="dot review" /> Review changes
+					</span>
+				)
+			}
+			<span>
+				<i class="dot plain"></i> Runs as-is
+			</span>
+		</p>
+		{
+			(hasDowntime('stop') || hasDowntime('rolling')) && (
+				<p>
+					{hasDowntime('stop') && (
+						<span>
+							<svg class="icon stop" viewBox="0 0 24 24" aria-hidden="true">
+								<rect x="5" y="5" width="14" height="14" rx="2" />
+							</svg>
+							Stop TBMQ to upgrade
+						</span>
+					)}
+					{hasDowntime('rolling') && (
+						<span>
+							<svg class="icon rolling" viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+							</svg>
+							Rolling upgrade, no cluster downtime
+						</span>
+					)}
+				</p>
+			)
+		}
+	</div>
+</div>
+
+<style>
+	.upgrade-path {
+		margin-block: 1.25rem;
+	}
+
+	ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 0;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	li {
+		display: flex;
+		align-items: center;
+	}
+
+	/* Connector between consecutive pills. */
+	li + li::before {
+		content: '';
+		width: 0.875rem;
+		height: 2px;
+		background: var(--sl-color-gray-5);
+	}
+
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 999px;
+		background: var(--sl-color-bg);
+		color: var(--sl-color-gray-2);
+		font-family: var(--sl-font-mono, var(--sl-font-system-mono));
+		font-size: var(--sl-text-xs);
+		line-height: 1.5;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	a.pill:hover,
+	a.pill:focus-visible {
+		border-color: var(--sl-color-text-accent);
+		color: var(--sl-color-white);
+	}
+
+	.pill.action {
+		border-color: var(--sl-color-orange);
+		background: var(--sl-color-orange-low);
+		color: var(--sl-color-orange-high);
+	}
+
+	.pill.review {
+		border-color: var(--sl-color-blue);
+		background: var(--sl-color-blue-low);
+		color: var(--sl-color-blue-high);
+	}
+
+	.pill.latest {
+		outline: 2px solid var(--color-brand);
+		outline-offset: 2px;
+		font-weight: 600;
+	}
+
+	.icon {
+		flex: none;
+		width: 0.85em;
+		height: 0.85em;
+	}
+
+	.icon.stop {
+		fill: var(--sl-color-red);
+	}
+
+	.icon.rolling {
+		fill: none;
+		stroke: var(--color-brand);
+		stroke-width: 2.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.legend {
+		margin-top: 0.75rem;
+		color: var(--sl-color-gray-3);
+		font-size: var(--sl-text-xs);
+	}
+
+	.legend p {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.25rem;
+		margin: 0;
+	}
+
+	.legend p + p {
+		margin-top: 0.35rem;
+	}
+
+	.legend span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.dot {
+		width: 0.625rem;
+		height: 0.625rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 50%;
+	}
+
+	.dot.action {
+		border-color: var(--sl-color-orange);
+		background: var(--sl-color-orange-low);
+	}
+
+	.dot.review {
+		border-color: var(--sl-color-blue);
+		background: var(--sl-color-blue-low);
+	}
+</style>

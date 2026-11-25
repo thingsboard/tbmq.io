@@ -133,7 +133,13 @@ tbmq/devices/gateway-01/status
 | **Forward user properties as headers** | off | Adds each MQTT 5 user property of a message as a header with the same name. See [Forwarding user properties](#forwarding-user-properties). |
 | **Metadata** | — | Custom key-value pairs attached to forwarded messages, exposed as `metadata` in the JSON body. |
 
-With **Send only message payload** enabled, the record value is the payload alone — as UTF-8 text if it is valid UTF-8, Base64-encoded otherwise.
+With **Send only message payload** enabled, the record value is the MQTT payload byte for byte — text or binary, never re-encoded and never Base64. With it disabled, the value is the JSON body described in [Send an uplink message](#send-an-uplink-message), encoded as UTF-8.
+
+<Aside type="caution" title="Upgrading from TBMQ 2.4.1 or earlier">
+  With **Send only message payload** on, a payload that was not valid UTF-8 used to be sent Base64-encoded, with nothing in the record to tell it apart from a text payload. It is now sent as its raw bytes, so a consumer that decodes that Base64 has to stop. UTF-8 payloads, and the JSON body with its Base64 `payload` field, reach Kafka exactly as before.
+
+  Record values are now always sent as bytes. A `value.serializer` in **Other properties** is ignored, with a warning in the Integration Executor log, and `serializer.encoding` or `value.serializer.encoding` there no longer changes how the value is encoded. During a rolling upgrade, an Integration Executor still on the old version keeps sending binary payloads as Base64.
+</Aside>
 
 ## Record key and headers
 

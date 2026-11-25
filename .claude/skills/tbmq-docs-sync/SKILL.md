@@ -1,133 +1,158 @@
 ---
 name: tbmq-docs-sync
-argument-hint: [work-ref: trello-url | gh-issue | PR | branch | "this session"] [--branch <base>]
-description: Bring the TBMQ documentation site (tbmq.io) in sync with work that was just done — create, update, fix, or remove docs after a feature lands, a bug is fixed, behavior/config changes, or something is removed. Use this whenever the user says the docs need to reflect finished work — e.g. "document this feature", "update the docs for what we just built", "the docs for X are outdated/wrong", "add a docs page for this Trello ticket", "we removed feature Y, clean up its docs", "write the documentation for this fix", "sync the docs with this PR/branch". The work may originate from a Trello card (TBMQ board), a GitHub issue, a PR, a branch diff, or the current session. Docs live in this Astro + Starlight repo (tbmq.io); the edition (CE / PE) is inferred from the code repo the work was done in (tbmq → CE, tbmq-pe → PE; tbmq-demo has NO docs). Documentation must be derived from the actual shipped code (cited file:symbol), never invented. Investigation is READ-ONLY and there is a hard review gate: show the proposed doc diffs and get approval before writing. NOT for changelog/release notes (that is tbmq-release-notes) and NOT for YAML config-parameter comments (that is tbmq-yaml-comment-style, which auto-triggers).
+description: Brings the TBMQ documentation site (tbmq.io) in line with work that already shipped — creating, updating, fixing, or removing /docs pages after a feature lands, a bug is fixed, config or behavior changes, or a feature is removed, with every statement derived from the shipped code. Use when the user says the docs need to reflect finished work, such as "document this feature", "update the docs for what we just built", "the docs for X are outdated", "add a docs page for this Trello ticket", "we removed feature Y, clean up its docs", or "sync the docs with this PR/branch". The work may come from a Trello card, GitHub issue, PR, branch diff, or the current session, in the tbmq (CE) or tbmq-pe (PE) repo. Not for changelog or release notes, and not for YAML config-parameter comments.
+argument-hint: "[work-ref: trello-url | gh-issue | PR | branch | this-session] [--branch <base>]"
 ---
 
 # TBMQ docs sync (shipped work → documentation)
 
-This skill brings the **TBMQ documentation site** in sync with work that has already been done — a new feature, a bug fix, a behavior/config change, or a removal. It decides what documentation needs to be **created, updated, fixed, or removed**, derives every word from the code that actually shipped, drafts the changes in the repo's real conventions, and only writes them after you approve the diffs.
+This skill brings the TBMQ documentation site in line with work that already shipped — a feature, a
+bug fix, a behavior or config change, or a removal. It decides which docs to **create, update, fix,
+or remove**, derives every statement from the code that shipped, drafts the changes in the repo's
+conventions, and writes them only after the user approves the diffs.
 
-It is an **orchestrator + repo specialist**: it gathers context from the code/spec/ticket, and it knows the concrete authoring conventions of the `tbmq.io` Astro + Starlight repo (the include/stub CE-PE pattern, `DocLink`/`ShowFor`, version constants, the redirects workflow, the CI checks). The detailed repo cheat-sheet lives in `references/tbmq-io-authoring.md` — **read it before drafting any content**.
+The failure it prevents is docs drifting from reality: describing behavior the code doesn't have,
+inventing config keys or defaults, duplicating CE/PE content instead of sharing it, leaking a PE
+feature into CE docs, or leaving dead links after a removal. **Docs are derived from code, not from
+memory.**
 
-The failure mode this skill exists to prevent is documentation that drifts from reality: describing behavior the code doesn't have, inventing config keys or defaults, duplicating CE/PE content instead of sharing it, or leaving dead links after a removal. **Docs are derived from code, not from memory.**
+## Hard stops
 
-## Usage
+1. **Investigation is read-only.** Steps 1–5 make no edits to any repo.
+2. **Review gate before writing.** Show the diffs and get an explicit yes for *this* change before creating, editing, or removing any doc file. An approval of an earlier change doesn't carry over.
+3. **Ask before any build** — "Run `pnpm build:fast` to verify, or skip?" That includes `pnpm lint:linkcheck`, which builds, and `pnpm lint:toc`, which needs a build.
+4. **No push or PR** without a separate go-ahead.
+5. **`tbmq-demo` has no docs.** Never produce any for it.
 
-```
-/tbmq-docs-sync [work-ref] [--branch <base>]
-```
+## Input
 
-| Argument / flag | Required | Meaning |
-|---|---|---|
-| `work-ref` | no | What the docs should reflect: a Trello card URL/id (TBMQ board), a GitHub issue, a PR, a branch/diff to compare, or "this session" for work just done here. If omitted, ask what work to document (and offer to derive it from the current session or the branch diff). |
-| `--branch <base>` | no | Base branch in this docs repo to branch from. Default: `develop` — the branch doc work integrates on, and the one prepared for the **next** release. Either way, create a new working branch off the base for the doc changes — never commit directly to the base, and never edit the versioned `release/X.Y` branch (that is what deploys to production). |
+Invoked as `/tbmq-docs-sync [work-ref] [--branch <base>]`. Arguments for this run: `$ARGUMENTS`
 
-The edition (CE / PE) is **not** a flag — it's inferred from the code repo the work was done in (see Edition & slugs).
+| Argument | Meaning |
+|---|---|
+| `work-ref` | What the docs should reflect: a Trello card (TBMQ board), a GitHub issue, a PR, a branch to diff, or "this session". If omitted — or if it doesn't resolve (no such PR, issue, or branch) — ask, and offer to derive it from the current session or the branch diff. |
+| `--branch <base>` | Base branch in this docs repo. Default `develop`, which carries the **next** release. Doc changes go on a new working branch off it; never commit to the base, and never edit a `release/X.Y` branch (that is what deploys to production). |
 
-## Where docs live
-
-All TBMQ documentation lives in **this repo** — the tbmq.io Astro + Starlight site (MDX). It is the ONLY place docs are edited; the TBMQ code repos (`tbmq`, `tbmq-pe`) carry no user-facing docs and are read-only sources of truth here.
-
-Create a new branch off the base (`--branch`, default `develop`) before editing. `references/tbmq-io-authoring.md` has the full layout, components, and commands; the essentials you must respect:
-
-- **Shared content** (the actual prose) lives in `src/content/_includes/docs/mqtt-broker/{path}/{page}.mdx`.
-- **CE stub** `src/content/docs/docs/{path}/{page}.mdx` imports the include and passes `Products.TBMQ`.
-- **PE stub** `src/content/docs/docs/pe/{path}/{page}.mdx` imports the include and passes `Products.TBMQ_PE`.
-
-The `mqtt-broker` segment exists **only** in the include path — it is filesystem-only, never routed. Stub paths and URLs never contain it.
-- Never hardcode version strings, never write bare Markdown links between doc pages, and never hand-edit generated redirect files — see the reference.
-
-## Edition & slugs (centralized docs)
-
-Docs are centralized and use the CE/PE stub pattern over a shared include, so **common content is written once** and PE-only content is gated with `<ShowFor …>`. Infer the edition from the code repo the work was done in:
+The edition is not a flag — it comes from the code repo the work was done in:
 
 | Code repo | Edition | Docs target |
 |---|---|---|
-| `tbmq` | CE (Community) | CE stub + shared include (common content). PE inherits it automatically via its stub. |
-| `tbmq-pe` | PE (Professional) | PE-only content — added to the shared include gated with `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>`, and/or the PE stub. Do **not** expose it to CE. |
-| `tbmq-demo` | demo | **No documentation.** TBMQ Demo has no docs — never produce any. |
+| `tbmq` | CE | Shared include (both stubs render it) |
+| `tbmq-pe` | PE | PE-only content: a `<ShowFor product={props.product} show={[Products.TBMQ_PE]}>` block in a shared include, or a PE-only page (include + PE stub, no CE stub) |
+| `tbmq-demo` | — | No documentation |
 
-If the change is a CE feature that both editions get, it belongs in the shared include (both stubs already render it). If it's PE-exclusive, gate it. When in doubt which edition a change belongs to, ask rather than guessing — leaking a PE feature into CE docs is a real error.
+When it isn't clear which edition a change belongs to, ask.
 
-### Source-of-truth branches (in the code repos)
+### Source-of-truth refs in the code repos
 
-Docs on `develop` describe the **upcoming** release, so verify against the release lines, not released tags:
+Docs on `develop` describe the upcoming release, so verify against the release lines, read with
+`git show <ref>:<path>` after a `git fetch` (the checkouts usually sit on feature branches):
 
-| Edition | Repo | Branch to read |
+| Edition | Repo | Ref |
 |---|---|---|
 | CE | `tbmq` | `origin/main` |
-| PE | `tbmq-pe` | `origin/license` — **not** `main`, and not `release/license/X.Y.Z` |
+| PE | `tbmq-pe` | `origin/license` — not `main`, not `release/license/X.Y.Z` |
 
-**"PE = CE plus extras" is false.** The PE `license` branch *substitutes* subsystems (it deletes CE classes and config blocks and replaces them with licensed equivalents), so PE behavior can never be inferred from CE code or from merge timing. A CE feature not yet merged into PE is normal — not a discrepancy to paper over in docs. Diff CE `main` against PE `license` to find the real PE-only deltas that deserve a `<ShowFor>` block.
+**PE is not "CE plus extras".** The `license` branch can delete CE classes and config blocks and
+replace them with licensed equivalents, and it can lag CE features, so PE behavior never follows
+from CE code or merge timing. A CE feature not yet merged into PE is normal, not a discrepancy to
+paper over. Diff CE `main` against PE `license` to find the real PE-only deltas.
 
-## Workflow — run in order
+**Work that isn't merged yet** (an open PR, a feature branch): read *what changed* from the PR or
+branch (`gh pr diff`, `git fetch origin pull/<n>/head`), and say in the impact summary that the
+release line doesn't have it yet. Ask whether to document it now or after the merge.
 
-### 1. Identify the work and gather context (READ-ONLY)
-Establish exactly *what changed* before touching any doc. Gather context in this priority order and keep the code as the source of truth:
+## Workflow
 
-1. **The shipped code / diff** — the authority. Read the actual change (`git diff`, `git log`, the PR, the merged files). Every behavior you document must trace to a `file:symbol` here. **Read the right branch** (see Source-of-truth branches above) — a checkout usually sits on a feature branch, so read with `git show <branch>:<path>` after a `git fetch` rather than trusting the working tree.
-2. **The Superpowers spec/plan** for the work, if one exists (`docs/superpowers/plans/…`) — captures intent and acceptance criteria.
-3. **The originating Trello card / GitHub issue** — the "why" and the definition of done. For a Trello card, set the active board to "TBMQ" first (`mcp__trello__set_active_board`), then `get_card` / `get_acceptance_criteria` / `get_card_comments`. For a GH issue, `gh issue view`.
-4. **The current session** — if the work was just done here, the conversation history is valid context.
+Read `references/tbmq-io-authoring.md` before drafting anything — it holds the repo's layout,
+components, edition shapes, removal checklist and check set.
 
-For a non-trivial code surface, delegate the investigation to **`tbmq-code-audit`** — it enforces read-only, source-built, `file:symbol`-cited findings.
+### 1. Identify the work and gather context (read-only)
+
+Establish exactly what changed, keeping the code as the authority:
+
+1. **The shipped code or diff.** Read the actual change (`git diff`, `git log`, the PR, the merged files) on the right ref. Every behavior you document must trace to a `file:symbol` here.
+2. **The plan or spec**, if one exists — `docs/superpowers/{plans,specs}/` in the code checkout (often untracked or only on the feature branch). It captures intent and acceptance criteria.
+3. **The originating ticket.** GitHub issue: `gh issue view`. Trello card: if a Trello MCP server is connected, set the active board to "TBMQ" first, then read the card, its acceptance criteria and comments; if none is connected, ask the user to paste the card.
+4. **The current session**, if the work was just done here.
+
+For a large code surface, delegate the investigation to a read-only subagent and hold it to the same
+contract: no edits, findings cited as `file:symbol`.
 
 ### 2. Determine the doc impact
-From what changed, decide the action for each affected doc:
-- **Create** — a genuinely new capability with no existing page.
-- **Update** — changed behavior, new option/config, new UI on an existing page.
-- **Fix** — the docs are now wrong or incomplete (this is also the bug-fix case: does the fix change documented behavior?). **Change only the statements that are factually wrong.** Leave correct prose byte-identical — add a sentence rather than re-flowing a paragraph, replace the wrong token rather than rewriting the line. Re-wording a verified claim silently un-verifies it.
-- **Remove** — a feature was removed; its page and all references must go (see the removal checklist in the reference).
 
-**Config parameters are a special case.** `src/content/docs/docs/installation/config.mdx` and `.../installation/ie-config.mdx` (and their `pe/` twins) are **generated** by `scripts/generate_config_pages.py <tbmq|tbmq-pe> <branch>` from the broker / integration-executor YAML. Never hand-edit those four pages — a hand edit is overwritten by the next run. When a change adds or alters a config key, update the *prose* pages that explain it (e.g. `_includes/docs/mqtt-broker/architecture.mdx`, `.../integrations.mdx`) and **flag a generator run** as a separate step, noting it will also sweep in unrelated YAML drift since the last run.
+For each affected doc, pick an action:
 
-**"No user-facing docs needed" is a valid, expected outcome.** Internal refactors, private-API changes, and many bug fixes have no documentation surface. Say so plainly and stop — do not manufacture content to look busy.
+- **Create** — a genuinely new capability with no page.
+- **Update** — changed behavior, a new option or config, new UI on an existing page.
+- **Fix** — the docs are now wrong or incomplete (the bug-fix case: does the fix change documented behavior?). **Change only the statements that are factually wrong.** Leave correct prose byte-identical: add a sentence rather than re-flow a paragraph, replace the wrong token rather than rewrite the line. Re-wording a verified claim silently un-verifies it.
+- **Remove** — a feature was removed: its pages and every reference go (removal checklist in the reference).
 
-### 3. Scope the docs (ask me)
-Ask which documentation to touch — user guide, getting-started, reference/API, architecture, installation, etc. I may answer directly, or ask you to **identify the scope from the docs that already exist** for this area (search the include tree, `src/content/_includes/docs/mqtt-broker/`, for the feature's current coverage and propose the set). Don't silently pick a scope for a non-obvious change.
+**"No user-facing docs needed" is a valid outcome.** Internal refactors, private-API changes and
+many bug fixes have no documentation surface. Say so plainly and stop.
 
-### 4. Locate the docs
-Find everything the change touches:
-- The include + CE/PE stubs for each affected page.
-- **Navigation** — `astro.sidebar.ts` for new/removed pages. The **Guides / Installation / Reference** groups come from the prefix-parameterized helpers `tbmqGuideItems` / `tbmqInstallItems` / `tbmqReferenceItems` (one edit covers both editions); the **Getting Started** and **Releases** groups are spelled out literally in `tbmqSidebar` *and* `tbmqPeSidebar`, so a page there needs the entry added twice. See the reference.
-- **Cross-links** — other pages that `<DocLink>` to the affected page.
-- **Redirects** — for renames/removals, `src/data/redirects.ts` (then `pnpm generate:redirects`). Details in the reference.
+**Config parameters:** `installation/config.mdx` and `installation/ie-config.mdx` (CE and `pe/`)
+are generated from the broker / integration-executor YAML — never hand-edit them. Update the
+*prose* page that explains the key, and flag a generator run as a separate step (reference §8).
+
+### 3. Scope the docs — ask the user
+
+Ask which documentation to touch (user guide, getting started, reference/API, architecture,
+installation…). The user may answer directly or ask you to derive the scope from existing coverage:
+search `src/content/_includes/docs/mqtt-broker/` for the feature and propose the set. Don't silently
+pick a scope for a non-obvious change.
+
+### 4. Locate everything the change touches
+
+- The include and stubs of each affected page — open the stub and read its `@includes/…` import; the include path often differs from the slug.
+- Navigation in `astro.sidebar.ts` for new or removed pages (reference §5).
+- Inbound links: `<DocLink path="…">` in includes, **and** hardcoded `/docs/…` or `/docs/pe/…` URLs anywhere in `src/` (pages, components). A link to a renamed or removed URL is in scope wherever it lives — it fails `lint:linkcheck` — so include the fix in your diffs.
+- Redirects for renames and removals (reference §6).
+- Prose mentions outside `/docs` — a `/mqtt/` learn page, a marketing page — are out of scope: list them in the impact summary for the user rather than rewording them.
 
 ### 5. Draft the changes
-Write the diffs in the repo's real conventions (full details in `references/tbmq-io-authoring.md`): shared include for common content, `<ShowFor>` for PE-only, `<DocLink>` for internal links, version constants from `~/data/versions`, `<DocImage>`/`ImageGallery` for images, correct frontmatter/schema. Match the surrounding pages' voice, structure, and terminology. Add version context ("since version …") where the page convention uses it. Reference the originating Trello card / GH issue in the branch/commit, not in the prose.
 
-### 6. Review gate (docs are outward-facing) — hard stop
-Present the proposed doc changes **as diffs** and an impact summary, then **stop for explicit approval before writing/committing anything**. Docs ship to the public site; nothing lands without a yes. See Guardrails.
+Write the diffs in the repo's conventions (reference): shared include for common content,
+`<ShowFor>` for PE-only parts, `<DocLink>` for internal links, version constants from
+`~/data/versions`, correct frontmatter. Match the voice, structure and terminology of the
+surrounding pages, and add "since version …" context where the page convention uses it. Reference
+the originating ticket in the branch or commit, not in the prose.
 
-### 7. Apply & verify
-After approval, make the changes and validate using the **repo's own instructions** — `CLAUDE.md` at the repo root is the authority, with `CONTRIBUTING.md` as the contributor-facing summary. Where any of them disagree with the actual tree, the tree wins. Do not duplicate or invent commands here; they can change. The reference lists the current check set. **Build policy: the repo requires asking before any build** — ask "Run `pnpm build:fast` to verify, or skip?" rather than building unprompted. Run link/slug checks when you added, renamed, or removed pages or links. If you checked a TOC/anchor in `pnpm dev` after editing an `_includes` file, **restart the dev server first** — injected include headings stay stale until the stub recompiles, and the missing TOC entries look like a content bug. Commit with **Conventional Commits** (`docs:` for pure docs). Do not push or open a PR without a separate go-ahead.
+### 6. Review gate — hard stop
 
-## Guardrails (hard stops)
+Present the impact summary and the proposed changes **as diffs**, then stop for explicit approval.
 
-1. **Investigation is READ-ONLY.** Steps 1–4 make no edits to the docs repo. Reading code, searching, and drafting the impact summary are fine; writing MDX is not — until the review gate is passed.
-2. **Review gate before writing.** Show the diffs and get an explicit yes before creating/editing/removing any doc file. "Explicit" means the user approved this change — not an earlier one.
-3. **Never touch `tbmq-demo` docs** — they don't exist.
+### 7. Apply and verify
+
+After approval: create the working branch off the base, apply the changes, and validate using the
+repo's own instructions — root `CLAUDE.md` is the authority (`CONTRIBUTING.md` summarizes it), and
+where either disagrees with the actual tree, the tree wins. The reference lists the current check
+set. Run link and slug checks when pages or links were added, renamed or removed (asking before the
+build). If you check a TOC in `pnpm dev` after editing an include, restart the dev server first.
+Commit with Conventional Commits (`docs:` for pure docs).
 
 ## Correctness contract
 
-Every statement about product behavior must trace to a **`file:symbol`** in the shipped code (class / method / field / config key). No invented config keys, defaults, flags, endpoints, or behavior. If the code doesn't answer a question the docs need, **flag it** and ask — a documented guess is worse than an acknowledged gap.
+Every statement about product behavior traces to a `file:symbol` in the shipped code (class, method,
+field, or config key). No invented config keys, defaults, flags, endpoints or behavior. When the code
+doesn't answer a question the docs need, flag it and ask — a documented guess is worse than an
+acknowledged gap.
 
-## What needs a human (flag, don't fake)
+## Flag for a human, don't fake
 
-- **Screenshots / UI images / GIFs** — a new or changed UI usually needs new visuals. You cannot produce these reliably; flag exactly which images are needed and where, and note that I'll generate them separately (e.g. with Claude Design). Reference them with `<DocImage>`/`ImageGallery` once they exist.
-- **Ambiguous behavior** the code/spec doesn't settle.
-- **Editorial calls** — whether a change is even user-facing, or which edition it belongs to, when it isn't clear-cut.
+- **Screenshots and UI images.** Default to none: describe the exact UI labels in `<Steps>`. If a visual is genuinely necessary, say exactly which image and where; the user produces it separately.
+- **Ambiguous behavior** the code or spec doesn't settle.
+- **Editorial calls** — whether a change is user-facing at all, or which edition it belongs to.
 
-## Do not duplicate other skills
+## Neighbouring work
 
-- **Authoring or auditing a `/docs/` page itself** → `tbmq-docs-page` (lives in this repo). This skill decides *what* the shipped work changes in the docs and drives the gate; `tbmq-docs-page` is the authority on writing and verifying an individual reference page. Hand off rather than re-deriving its rules.
-- **The `/mqtt` learn hub** → `mqtt-learn-topic` (lives in this repo). Marketing guides at `/mqtt/<slug>/` are never in scope here.
-- **Changelog / release notes** → `tbmq-release-notes`. This skill documents behavior on doc pages; it does not write the changelog.
-- **YAML config-parameter comments/descriptions** → `tbmq-yaml-comment-style` (auto-triggers). If the work adds a config key, that skill handles the YAML comment; this skill handles the config's user-facing *doc page*.
+- **Authoring or auditing a `/docs/` page on its own merits** → the `tbmq-docs-page` skill. This skill decides *what* the shipped work changes and drives the gate; `tbmq-docs-page` is the authority on writing and verifying an individual page.
+- **The `/mqtt` learn hub** → the `mqtt-learn-topic` skill.
+- **Changelog / release notes** — out of scope. Release notes are hand-written in `src/content/_includes/docs/mqtt-broker/releases.mdx`; use the `tbmq-release-notes` skill if it is installed, otherwise leave them to the user.
+- **YAML config-parameter comments** in the broker repo — out of scope (the `tbmq-yaml-comment-style` skill if installed). This skill handles the key's user-facing doc page.
 
-## Output / reporting
+## Output
 
-1. An **impact summary** before writing: what changed (cited), which docs are affected, and the create/update/fix/remove action for each — with the edition/slug noted, and any "no docs needed" conclusion stated plainly.
-2. The **drafted doc diffs** for review (gate).
-3. After apply: a **final summary** — files changed, checks run and their result, images/other items flagged for a human, and whether anything was deferred.
+1. **Impact summary** before any writing: what changed (cited), which docs are affected and the create / update / fix / remove action for each with edition and slug, out-of-scope mentions to flag, and any "no docs needed" conclusion stated plainly.
+2. **The drafted diffs** for review (the gate).
+3. **Final summary** after applying: files changed, checks run and their results, items flagged for a human, anything deferred.

@@ -25,7 +25,7 @@ serves the web UI and REST API), and it can be configured to include detailed st
 
 The parameters below control what the health endpoint exposes and which Actuator endpoints are reachable over HTTP.
 
-```yaml collapsible
+```yaml maxLines=10 collapsible
 management:
   health:
     diskspace:
@@ -76,7 +76,7 @@ When `show-details` is not `never`, the response also includes the status of eac
 
 **Healthy response:**
 
-```json collapsible
+```json maxLines=10 collapsible
 {
   "status": "UP",
   "components": {
@@ -100,7 +100,7 @@ When `show-details` is not `never`, the response also includes the status of eac
 
 **Unhealthy response:**
 
-```json collapsible
+```json maxLines=10 collapsible
 {
   "status": "DOWN",
   "components": {
@@ -151,7 +151,7 @@ If any component reports `DOWN`, the overall status becomes `DOWN` and the HTTP 
 Health checks verify connectivity to Kafka, Redis, and PostgreSQL by executing commands against each service.
 Each command has a configurable timeout — if the command does not complete within that time, the connectivity check is considered failed.
 
-```yaml collapsible
+```yaml maxLines=10 collapsible
 queue:
   kafka:
     admin:
@@ -182,7 +182,7 @@ component appears.
 
 **Healthy response:**
 
-```json collapsible
+```json
 {
   "status": "UP",
   "components": {
@@ -214,7 +214,7 @@ The reference TBMQ manifests probe the **MQTT port** rather than the health endp
 the broker is accepting MQTT connections and does not restart the pod when a shared dependency such as Kafka or Redis has
 a hiccup:
 
-```yaml collapsible
+```yaml maxLines=10 collapsible
 readinessProbe:
   tcpSocket:
     port: 1883
@@ -237,7 +237,7 @@ livenessProbe:
 Use `/actuator/health` for **readiness** when you want a node to be pulled out of the load balancer while its
 dependencies are unreachable:
 
-```yaml collapsible
+```yaml
 readinessProbe:
   httpGet:
     path: /actuator/health

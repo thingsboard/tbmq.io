@@ -1,34 +1,147 @@
+import { Aside } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 
-This guide explains how to change TBMQ configuration parameters.
-We **recommend** configuring TBMQ using environment variables. The list of available configuration parameters and their
-default values is located in the <DocLink product={props.product} path="installation/config">TBMQ configuration reference</DocLink>
-and <DocLink product={props.product} path="installation/ie-config">Integration Executor configuration reference</DocLink>.
+TBMQ reads its settings from environment variables. This page shows where to set them in each deployment and how to
+apply a change. The parameters and their defaults are listed in the
+<DocLink product={props.product} path="installation/config" bold={false}>TBMQ configuration reference</DocLink> and the
+<DocLink product={props.product} path="installation/ie-config" bold={false}>Integration Executor configuration reference</DocLink>.
 
 ## Configuration file format
 
-The `thingsboard-mqtt-broker.yml` (MQTT broker) and `tbmq-integration-executor.yml` (Integration Executor) configuration files are written in YAML.
-Each parameter has an environment variable name and a default value:
+The broker reads `thingsboard-mqtt-broker.yml` and the Integration Executor reads `tbmq-integration-executor.yml`. Each
+parameter names an environment variable and a default:
 
 ```yaml
-server:
-  address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
+stats:
+  # Print interval for statistics (in ms). Defaults to 1 minute.
+  print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
 ```
 
-Here `HTTP_BIND_ADDRESS` is the environment variable name and `0.0.0.0` is the default. To override a value, set the corresponding environment variable:
+Here `STATS_PRINT_INTERVAL_MS` is the environment variable and `60000` is the default. To override the value, set the
+variable in your deployment, for example `STATS_PRINT_INTERVAL_MS=15000`.
+
+The configuration is read at startup, so a change takes effect only after the TBMQ containers or pods restart. Each
+section below shows how to restart them.
+
+<Aside>
+MQTT authentication providers are managed on the **Authentication Providers** page of the TBMQ UI, not with
+environment variables. See <DocLink product={props.product} path="security/authentication/basic" bold={false}>Basic authentication</DocLink>.
+</Aside>
+
+## Docker
+
+The <DocLink product={props.product} path="installation/docker" bold={false}>Docker</DocLink> and
+<DocLink product={props.product} path="installation/docker-windows" bold={false}>Docker on Windows</DocLink> installations
+keep their settings in `docker-compose.yml`. Add the variable to the `environment` section of the `tbmq` service, or of
+the `tbmq-integration-executor` service for Integration Executor settings:
+
+```yaml title="docker-compose.yml"
+  tbmq:
+    environment:
+      STATS_PRINT_INTERVAL_MS: "15000"
+```
+
+Apply the change from the directory that contains `docker-compose.yml`. Docker Compose recreates only the containers
+whose configuration changed; the data stays in the Docker volumes:
 
 ```bash
-HTTP_BIND_PORT=8084
+docker compose up -d
 ```
 
-## How to change configuration parameters?
+## Docker Compose cluster
 
-### Docker-based deployment
+The <DocLink product={props.product} path="installation/cluster/docker-compose-setup" bold={false}>Docker Compose cluster</DocLink>
+splits its settings across several files in the directory that holds its `docker-compose.yml`:
 
-If TBMQ is installed in a Docker Compose environment, set environment variables in the `docker-compose.yml` or `.env` file.
-See the <DocLink product={props.product} path="installation/docker">Docker installation guide</DocLink> for more details.
+| File                                                                        | Settings                                                                            |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `tbmq.env`                                                                  | Broker settings, shared by both TBMQ nodes                                          |
+| `tbmq-integration-executor.env`                                             | Integration Executor settings                                                       |
+| `cache-valkey.env`, `cache-valkey-cluster.env` or `cache-valkey-sentinel.env` | Valkey connection, for the cache mode that `CACHE` in `.env` selects              |
+| `.env`                                                                      | Image version, container names, the cache mode, and `JAVA_OPTS`                     |
 
-### Kubernetes-based deployment
+`JAVA_OPTS` in `.env` reaches the containers only through the `JAVA_OPTS: "${JAVA_OPTS}"` line in the `environment`
+section of each TBMQ and Integration Executor service in `docker-compose.yml`, which ships commented out. Uncomment it
+in every service that should use the value.
 
-If TBMQ is installed in a Kubernetes environment, set environment variables in Helm values or the Deployment/StatefulSet manifests.
-See the <DocLink product={props.product} path="installation/?installationType=cloud">installation options</DocLink> for more details.
+Restart the TBMQ nodes and Integration Executors. The script recreates the containers whose image or settings changed
+and leaves PostgreSQL, Kafka, Valkey and HAProxy running:
+
+```bash
+./scripts/docker-start-tbmq.sh
+```
+
+## Kubernetes scripts
+
+The <DocLink product={props.product} path="installation/cluster/minikube-cluster-setup" bold={false}>Minikube</DocLink>,
+<DocLink product={props.product} path="installation/cluster/aws-cluster-setup" bold={false}>AWS</DocLink>,
+<DocLink product={props.product} path="installation/cluster/azure-cluster-setup" bold={false}>Azure</DocLink> and
+<DocLink product={props.product} path="installation/cluster/gcp-cluster-setup" bold={false}>GCP</DocLink> guides run
+TBMQ as the `tbmq` StatefulSet and the Integration Executor as the `tbmq-integration-executor` StatefulSet, in the
+`thingsboard-mqtt-broker` namespace. Set a variable in one of these places:
+
+- The `env` list of the `tbmq` container in `tbmq.yml`, or of the Integration Executor container in `tbmq-ie.yml`.
+- The ConfigMaps that the broker reads with `envFrom`: `tbmq-db-configmap.yml` for PostgreSQL (on Minikube, the
+  `tbmq-db-config` ConfigMap in `tbmq-configmap.yml`), `tbmq-cache-configmap.yml` for the cache on AWS, Azure and GCP,
+  and the Kafka topic settings in `kafka/managed/tbmq-kafka-topics-configmap.yml` on GCP.
+- `JAVA_OPTS` in the `conf` key of `tbmq-configmap.yml` or `tbmq-ie-configmap.yml`.
+
+A change to `tbmq.yml` or `tbmq-ie.yml` restarts the pods by itself. Apply the file, then wait for the rollout, which
+replaces the pods one at a time:
+
+```bash
+kubectl apply -f tbmq.yml
+kubectl rollout status statefulset/tbmq -n thingsboard-mqtt-broker --timeout=600s
+```
+
+A ConfigMap change doesn't restart the pods. Apply the ConfigMap, then restart the StatefulSet that reads it:
+
+```bash
+kubectl apply -f tbmq-db-configmap.yml
+kubectl rollout restart statefulset/tbmq -n thingsboard-mqtt-broker
+kubectl rollout status statefulset/tbmq -n thingsboard-mqtt-broker --timeout=600s
+```
+
+For the Integration Executor, use `tbmq-ie.yml`, `tbmq-ie-configmap.yml` and `statefulset/tbmq-integration-executor`.
+
+## Helm chart
+
+The <DocLink product={props.product} path="installation#helm" bold={false}>Helm guides</DocLink> set
+broker variables in `tbmq.customEnv` and Integration Executor variables in `tbmq-ie.customEnv` of your `values.yaml`:
+
+```yaml title="values.yaml"
+tbmq:
+  customEnv:
+    STATS_PRINT_INTERVAL_MS: "15000"
+```
+
+If you point `existingConfigMap` or `existingJavaOptsConfigMap` at your own ConfigMap, a variable that its `conf` key
+exports overrides the same variable in `customEnv`.
+
+Upgrade the release with the same values file. The chart restarts the pods whose configuration changed, one at a time:
+
+```bash
+helm upgrade my-tbmq-cluster tbmq-helm-chart/tbmq-cluster -n tbmq -f values.yaml
+kubectl rollout status statefulset/my-tbmq-cluster-tbmq-node -n tbmq --timeout=600s
+```
+
+## Logging configuration
+
+Log levels live in `logback.xml`, not in environment variables. TBMQ re-reads the file every 10 seconds, so when an
+edit applies depends on how the file reaches the container:
+
+- **Docker Compose cluster:** within 10 seconds after `./scripts/docker-refresh-config.sh` copies it into the volume.
+- **Kubernetes scripts:** after Kubernetes syncs the applied ConfigMap into the pods, which can take a minute or more.
+- **Helm chart:** you can't change the default logging configuration through chart values. Use your own ConfigMap
+  instead:
+  1. Create a ConfigMap with a `logback` key that holds your `logback.xml`.
+  2. Set `existingLogbackConfigMap` to its name under `tbmq` (broker) or `tbmq-ie` (Integration Executor), and run
+     `helm upgrade`.
+  3. To change log levels later, edit the ConfigMap and run `kubectl apply`. The pods pick up the change after
+     Kubernetes syncs it, as with the Kubernetes scripts.
+
+  Step 3 needs chart 2.3.2 or later. With an older chart, also restart the pods:
+  `kubectl rollout restart statefulset/my-tbmq-cluster-tbmq-node statefulset/my-tbmq-cluster-tbmq-ie -n tbmq`.
+
+See <DocLink product={props.product} path="troubleshooting#enabling-component-logs" bold={false}>Enabling component logs</DocLink>
+for where each deployment keeps the file.
