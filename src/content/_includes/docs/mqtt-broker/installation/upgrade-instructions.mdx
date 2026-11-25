@@ -163,8 +163,11 @@ migrated.
   <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>Accept only SCRAM clients</DocLink>
   describes. During a rolling upgrade, nodes still on 2.4.1 keep accepting such clients until they are replaced.
 - **Kafka integration with Send only message payload.** A payload that is not valid UTF-8 is now sent as its raw bytes
-  instead of Base64, and a `value.serializer` in **Other properties** is ignored. Update consumers that decode the
-  Base64. During a rolling upgrade, an Integration Executor still on 2.4.1 keeps sending Base64. See the
+  instead of Base64. Update consumers that decode the Base64. During a rolling upgrade, an Integration Executor still
+  on 2.4.1 keeps sending Base64.
+- **Kafka integration value serializer.** Record values are now always sent as bytes, and the JSON body as UTF-8. A
+  `value.serializer`, `serializer.encoding`, or `value.serializer.encoding` set in **Other properties** is ignored for
+  every Kafka integration, with a warning in the Integration Executor log. See the
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>Kafka integration</DocLink> page.
 
 See the <DocLink product={props.product} path="releases/#v242-november-25-2026" bold={false}>2.4.2 release notes</DocLink> for the
@@ -308,8 +311,11 @@ The 2.4.2PE upgrade only records the new schema version in the database — no t
   <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>Accept only SCRAM clients</DocLink>
   describes. During a rolling upgrade, nodes still on 2.4.1PE keep accepting such clients until they are replaced.
 - **Kafka integration with Send only message payload.** A payload that is not valid UTF-8 is now sent as its raw bytes
-  instead of Base64, and a `value.serializer` in **Other properties** is ignored. Update consumers that decode the
-  Base64. During a rolling upgrade, an Integration Executor still on 2.4.1PE keeps sending Base64. See the
+  instead of Base64. Update consumers that decode the Base64. During a rolling upgrade, an Integration Executor still
+  on 2.4.1PE keeps sending Base64.
+- **Kafka integration value serializer.** Record values are now always sent as bytes, and the JSON body as UTF-8. A
+  `value.serializer`, `serializer.encoding`, or `value.serializer.encoding` set in **Other properties** is ignored for
+  every Kafka integration, with a warning in the Integration Executor log. See the
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>Kafka integration</DocLink> page.
 
 See the <DocLink product={props.product} path="releases/#v242-november-25-2026" bold={false}>2.4.2 release notes</DocLink> for the

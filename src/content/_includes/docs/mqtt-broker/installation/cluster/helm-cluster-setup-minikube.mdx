@@ -515,6 +515,7 @@ for the notes on every version between yours and the target.
   <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>move every client to SCRAM</DocLink> first.
   If a Kafka integration has **Send only message payload** on, a payload that is not valid UTF-8 is now sent as raw bytes instead of Base64 —
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>update the consumers</DocLink> that decode it.
+  A `value.serializer` set in **Other properties** is now ignored for every Kafka integration: record values are always sent as bytes.
 </Aside>
 
 <Aside type="note">

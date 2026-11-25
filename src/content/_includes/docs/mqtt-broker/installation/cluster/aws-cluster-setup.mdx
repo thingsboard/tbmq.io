@@ -694,7 +694,7 @@ What each upgrade needs before you run the upgrade — select a version for its 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
 | Upgrade to                 | Before running the upgrade                                                           |
 | -------------------------- | ------------------------------------------------------------------------------------ |
-| [2.4.2](#upgrade-to-2-4-2) | Nothing. Check SCRAM-only authentication and Kafka integrations that send only the payload |
+| [2.4.2](#upgrade-to-2-4-2) | Nothing. Check SCRAM-only authentication and Kafka integrations |
 | [2.4.1](#upgrade-to-2-4-1) | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                    |
 | [2.4.0](#upgrade-to-2-4-0) | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics     |
 | [2.3.0](#upgrade-to-2-3-0) | [Delete the TBMQ pods first](#run-upgrade). Plan the third-party component migration  |
@@ -704,7 +704,7 @@ What each upgrade needs before you run the upgrade — select a version for its 
 <ShowFor product={props.product} show={[Products.TBMQ_PE]}>
 | Upgrade to                                | Before running the upgrade                                                        |
 | ----------------------------------------- | --------------------------------------------------------------------------------- |
-| [2.4.2](#upgrade-to-2-4-2-pe)             | Nothing. Check SCRAM-only authentication and Kafka integrations that send only the payload |
+| [2.4.2](#upgrade-to-2-4-2-pe)             | Nothing. Check SCRAM-only authentication and Kafka integrations |
 | [2.4.1](#upgrade-to-2-4-1-pe)             | Nothing. If you set `MQTT_TOPIC_MAX_SEGMENTS_COUNT`, raise it by 1                 |
 | [2.4.0](#upgrade-to-2-4-0-pe)             | Nothing. If you scrape metrics, update queries for the renamed Prometheus metrics  |
 | [2.3.0](#upgrade-to-2-3-0-pe)             | [Delete the TBMQ pods first](#run-upgrade)                                        |
@@ -728,6 +728,7 @@ new schema version — no table is created or altered and no data is migrated.
   <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>move every client to SCRAM</DocLink> first.
   If a Kafka integration has **Send only message payload** on, a payload that is not valid UTF-8 is now sent as raw bytes instead of Base64 —
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>update the consumers</DocLink> that decode it.
+  A `value.serializer` set in **Other properties** is now ignored for every Kafka integration: record values are always sent as bytes.
 </Aside>
 
 Proceed with the [upgrade](#run-upgrade).
@@ -809,6 +810,7 @@ new schema version — no table is created or altered and no data is migrated.
   <DocLink product={props.product} path="security/authentication/scram/#accept-only-scram-clients" bold={false}>move every client to SCRAM</DocLink> first.
   If a Kafka integration has **Send only message payload** on, a payload that is not valid UTF-8 is now sent as raw bytes instead of Base64 —
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>update the consumers</DocLink> that decode it.
+  A `value.serializer` set in **Other properties** is now ignored for every Kafka integration: record values are always sent as bytes.
 </Aside>
 
 Then proceed with the [upgrade](#run-upgrade).
