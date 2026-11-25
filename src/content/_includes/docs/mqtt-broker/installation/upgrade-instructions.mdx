@@ -166,8 +166,9 @@ migrated.
   instead of Base64. Update consumers that decode the Base64. During a rolling upgrade, an Integration Executor still
   on 2.4.1 keeps sending Base64.
 - **Kafka integration value serializer.** Record values are now always sent as bytes, and the JSON body as UTF-8. A
-  `value.serializer`, `serializer.encoding`, or `value.serializer.encoding` set in **Other properties** is ignored for
-  every Kafka integration, with a warning in the Integration Executor log. See the
+  `value.serializer` in **Other properties** is ignored for every Kafka integration, with a warning in the Integration
+  Executor log, and `serializer.encoding` or `value.serializer.encoding` no longer changes how the value is encoded.
+  `serializer.encoding` still applies to the record key. See the
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>Kafka integration</DocLink> page.
 
 See the <DocLink product={props.product} path="releases/#v242-november-25-2026" bold={false}>2.4.2 release notes</DocLink> for the
@@ -314,8 +315,9 @@ The 2.4.2PE upgrade only records the new schema version in the database — no t
   instead of Base64. Update consumers that decode the Base64. During a rolling upgrade, an Integration Executor still
   on 2.4.1PE keeps sending Base64.
 - **Kafka integration value serializer.** Record values are now always sent as bytes, and the JSON body as UTF-8. A
-  `value.serializer`, `serializer.encoding`, or `value.serializer.encoding` set in **Other properties** is ignored for
-  every Kafka integration, with a warning in the Integration Executor log. See the
+  `value.serializer` in **Other properties** is ignored for every Kafka integration, with a warning in the Integration
+  Executor log, and `serializer.encoding` or `value.serializer.encoding` no longer changes how the value is encoded.
+  `serializer.encoding` still applies to the record key. See the
   <DocLink product={props.product} path="integrations/kafka/#configuration" bold={false}>Kafka integration</DocLink> page.
 
 See the <DocLink product={props.product} path="releases/#v242-november-25-2026" bold={false}>2.4.2 release notes</DocLink> for the
