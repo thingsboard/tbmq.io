@@ -1,0 +1,121 @@
+---
+import { Icon } from 'astro-icon/components';
+---
+
+<section id="lite-cta">
+	<div class="inner">
+		<h2 class="reveal">Start with one command</h2>
+		<p class="reveal" style="--reveal-delay: 90ms">
+			Run the container, sign in on port 8083 and set the administrator password. TBMQ Lite is in public beta:
+			configuration keys and defaults may still change before the first release.
+		</p>
+		<div class="buttons reveal" style="--reveal-delay: 180ms">
+			<a class="btn btn-white" href="/docs/lite/installation/">
+				Install TBMQ Lite
+				<Icon name="tabler:arrow-up-right" class="lite-cta-icon" />
+			</a>
+			<a class="btn btn-outline" href="https://github.com/thingsboard/tbmq" target="_blank" rel="noopener noreferrer">
+				<Icon name="tabler:brand-github" class="lite-cta-icon" />
+				Star on GitHub
+			</a>
+		</div>
+		<p class="feedback reveal" style="--reveal-delay: 270ms">
+			Found a problem? Report it as a
+			<a
+				href="https://github.com/thingsboard/tbmq/issues?q=is%3Aissue%20label%3ALite"
+				target="_blank"
+				rel="noopener noreferrer">GitHub issue</a
+			> and add the <code>Lite</code> label.
+		</p>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	// Dark in both themes, like ProductCta.
+	#lite-cta {
+		background-color: #00240f;
+		padding: 120px $spacing-6;
+	}
+
+	.inner {
+		@include container;
+		max-width: 900px;
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+
+		h2 {
+			@include section-title;
+			color: $color-white;
+			margin: 0 0 24px;
+		}
+
+		p {
+			@include body-text;
+			color: rgba(255, 255, 255, 0.8);
+			margin: 0 0 40px;
+			max-width: 640px;
+		}
+
+		.feedback {
+			@include text-s;
+			color: rgba(255, 255, 255, 0.72);
+			margin: 32px 0 0;
+
+			a {
+				color: $color-white;
+				text-decoration: underline;
+			}
+
+			code {
+				font-family: $font-family-mono;
+				color: $color-white;
+				background: rgba(255, 255, 255, 0.1);
+				padding: 1px 6px;
+				border-radius: $radius-sm;
+			}
+		}
+	}
+
+	.buttons {
+		display: flex;
+		gap: 20px;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.btn {
+		@include button-base;
+		gap: 6px;
+		padding: 14px 28px;
+		border-radius: $radius-lg;
+
+		&.btn-white {
+			background-color: $color-white;
+			color: $color-pe-link;
+
+			&:hover {
+				background-color: #e8e8e8;
+			}
+		}
+
+		&.btn-outline {
+			border: 1px solid rgba(255, 255, 255, 0.6);
+			color: $color-white;
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+				border-color: $color-white;
+			}
+		}
+	}
+
+	:global(.lite-cta-icon) {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+</style>

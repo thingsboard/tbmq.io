@@ -1,0 +1,297 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import { Icon } from 'astro-icon/components';
+
+// Wording follows docs/lite/guarantees-and-limits; where that page hedges, so does this one.
+const guarantees = [
+	{
+		icon: 'tabler:checks',
+		title: 'Acknowledged means stored',
+		text: 'A QoS 1 or QoS 2 publish is acknowledged once it has been handed to every online subscriber without a persistent session and written to the store’s write-ahead log for every subscriber with one.',
+	},
+	{
+		icon: 'tabler:refresh-alert',
+		title: 'A process crash loses nothing acknowledged',
+		text: 'An out-of-memory exit or a docker kill loses no acknowledged message. A message in flight at that moment can reach persistent subscribers twice, as in clustered TBMQ.',
+	},
+	{
+		icon: 'tabler:plug-x',
+		title: 'A power cut can lose up to one second',
+		text: 'The write-ahead log reaches the disk at most one second apart by default, so a power cut or host crash can lose up to that interval of acknowledged messages. Syncing on every write closes the window and costs write throughput.',
+	},
+];
+
+const capacity = [
+	{
+		container: '2 CPUs, 2 GB',
+		note: 'reference',
+		rate: '7,500 msg/s',
+		latency: 'Ack p99 17 ms median, 52 ms worst 10-second window',
+	},
+	{ container: '1 CPU, 2 GB', note: 'best effort', rate: '3,750 msg/s', latency: '—' },
+];
+
+const limits = [
+	{ title: 'One node', text: 'No clustering, no failover. Several TBMQ Lite containers are independent brokers.' },
+	{
+		title: 'DEVICE clients only',
+		text: 'APPLICATION clients, and their shared subscriptions, exist only in clustered TBMQ.',
+	},
+	{ title: 'No integrations', text: 'No HTTP, MQTT or Kafka integrations and no MQTT bridge.' },
+];
+---
+
+<section id="lite-guarantees">
+	<div class="inner">
+		<SectionHeader
+			class="reveal"
+			title="What it guarantees"
+			subtitle="When TBMQ Lite acknowledges a message, and what a crash or a power cut can lose."
+		/>
+		<div class="cards">
+			{
+				guarantees.map((g, i) => (
+					<div class="guarantee reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<Icon name={g.icon} class="lite-guarantee-icon" />
+						<h3 class="guarantee-title">{g.title}</h3>
+						<p class="guarantee-text">{g.text}</p>
+					</div>
+				))
+			}
+		</div>
+		<a class="more reveal" href="/docs/lite/guarantees-and-limits/">
+			Guarantees and limits
+			<Icon name="tabler:arrow-right" class="lite-more-icon" />
+		</a>
+
+		<div id="lite-capacity" class="capacity">
+			<h2 class="sub-title reveal">Measured capacity</h2>
+			<div class="table-wrap reveal">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Container</th>
+							<th scope="col">Highest sustained rate</th>
+							<th scope="col">Acknowledgment latency</th>
+						</tr>
+					</thead>
+					<tbody>
+						{
+							capacity.map((row) => (
+								<tr>
+									<th scope="row">
+										{row.container} <span class="note">({row.note})</span>
+									</th>
+									<td class="rate">{row.rate}</td>
+									<td>{row.latency}</td>
+								</tr>
+							))
+						}
+					</tbody>
+				</table>
+			</div>
+			<p class="workload reveal">
+				Measured with 9,000 publishers and 1,000 persistent subscribers, QoS 1 both ways, 402-byte messages, on a volume
+				throttled to the baseline of an AWS gp3 volume, 10 minutes per rate.
+				<a href="/docs/lite/guarantees-and-limits/#capacity">How it was measured</a>.
+			</p>
+
+			<h3 class="limits-title reveal">Where it stops</h3>
+			<ul class="limits">
+				{
+					limits.map((l, i) => (
+						<li class="reveal" style={`--reveal-delay: ${i * 90}ms`}>
+							<strong>{l.title}.</strong> {l.text}
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#lite-guarantees {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-surface);
+		scroll-margin-top: var(--header-height);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-6;
+		width: 100%;
+
+		@include media-up(lg) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	.guarantee {
+		border-left: 3px solid var(--color-brand);
+		padding-left: $spacing-6;
+	}
+
+	:global(.lite-guarantee-icon) {
+		width: 26px;
+		height: 26px;
+		color: var(--color-brand);
+		margin-bottom: $spacing-3;
+	}
+
+	.guarantee-title {
+		@include card-title-sm;
+		color: var(--color-text);
+		margin: 0 0 $spacing-2;
+	}
+
+	.guarantee-text {
+		@include text-card-sm;
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.more {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: $spacing-10;
+		@include action-link;
+		color: var(--color-brand);
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.lite-more-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+
+	.capacity {
+		width: 100%;
+		max-width: 960px;
+		margin-top: $spacing-20;
+		scroll-margin-top: calc(var(--header-height) + #{$spacing-6});
+	}
+
+	.sub-title {
+		@include subsection-title;
+		color: var(--color-text);
+		text-align: center;
+		margin: 0 0 $spacing-8;
+	}
+
+	.table-wrap {
+		overflow-x: auto;
+		border: 1px solid var(--color-border);
+		border-radius: $radius-xl;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		min-width: 560px;
+	}
+
+	th,
+	td {
+		padding: $spacing-4 $spacing-5;
+		text-align: left;
+		border-bottom: 1px solid var(--color-border);
+		@include text-table-cell;
+		color: var(--color-text);
+	}
+
+	thead th {
+		@include text-s;
+		font-weight: $font-weight-semibold;
+		color: var(--color-text-secondary);
+		background-color: var(--color-bg-light);
+	}
+
+	tbody tr:last-child th,
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	tbody th {
+		font-weight: $font-weight-semibold;
+	}
+
+	.note {
+		font-weight: $font-weight-normal;
+		color: var(--color-text-secondary);
+	}
+
+	.rate {
+		font-weight: $font-weight-semibold;
+		color: var(--color-brand);
+		white-space: nowrap;
+	}
+
+	.workload {
+		@include text-s;
+		color: var(--color-text-secondary);
+		margin: $spacing-4 0 0;
+
+		a {
+			color: var(--color-brand);
+			font-weight: $font-weight-medium;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+
+	.limits-title {
+		@include card-title-sm;
+		color: var(--color-text);
+		margin: $spacing-12 0 $spacing-4;
+	}
+
+	.limits {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-4;
+
+		@include media-up(md) {
+			grid-template-columns: repeat(3, 1fr);
+			gap: $spacing-6;
+		}
+
+		li {
+			@include text-card-sm;
+			color: var(--color-text-secondary);
+			padding: $spacing-5;
+			border: 1px solid var(--color-border);
+			border-radius: $radius-xl;
+		}
+
+		strong {
+			display: block;
+			color: var(--color-text);
+			font-weight: $font-weight-semibold;
+			margin-bottom: $spacing-1;
+		}
+	}
+</style>

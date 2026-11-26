@@ -1,0 +1,45 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import LiteHero from '@components/ProductLite/LiteHero.astro';
+import LiteFeatures from '@components/ProductLite/LiteFeatures.astro';
+import LiteBuild from '@components/ProductLite/LiteBuild.astro';
+import LiteGuarantees from '@components/ProductLite/LiteGuarantees.astro';
+import LiteCompare from '@components/ProductLite/LiteCompare.astro';
+import LiteCta from '@components/ProductLite/LiteCta.astro';
+import ScrollReveal from '@components/ScrollReveal.astro';
+import { Products } from '@models/site.models';
+
+const title = 'TBMQ Lite — Single-Container MQTT Broker (Beta)';
+const description =
+	'TBMQ Lite runs the TBMQ MQTT broker in one container: MQTT 5, persistent sessions and retained messages with no Kafka or PostgreSQL. Now in public beta.';
+---
+
+<BaseLayout
+	forceLightTheme
+	title={title}
+	description={description}
+	pageId="product"
+	gitHubPlatform={Products.TBMQ}
+	breadcrumb="TBMQ Lite"
+	ogImageAlt="TBMQ Lite, the single-container edition of the TBMQ MQTT broker"
+	openContentLinksInNewTab
+>
+	<main>
+		<LiteHero />
+		<LiteFeatures />
+		<LiteBuild />
+		<LiteGuarantees />
+		<LiteCompare />
+		<LiteCta />
+	</main>
+	<ScrollReveal />
+</BaseLayout>
+
+<style lang="scss">
+	@use '../../../styles/variables' as *;
+
+	:global(#product) {
+		--tb-main-color: #{$color-pe};
+		--tb-main-color-hover: #{$color-pe-dark};
+	}
+</style>

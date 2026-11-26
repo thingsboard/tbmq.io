@@ -1,0 +1,201 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+import ProductTile from '@components/ProductTile.astro';
+import { Icon } from 'astro-icon/components';
+
+// A cut of the table on docs/lite/lite-vs-tbmq, values copied from it.
+const rows: { label: string; lite: string; tbmq: string }[] = [
+	{
+		label: 'Deployment',
+		lite: 'One container, thingsboard/tbmq-lite',
+		tbmq: 'Kafka, PostgreSQL and Valkey beside one or more broker nodes',
+	},
+	{ label: 'Scaling and failover', lite: 'One node', tbmq: 'Horizontal scaling across nodes' },
+	{ label: 'Client types', lite: 'DEVICE', tbmq: 'DEVICE and APPLICATION' },
+	{ label: 'Integrations', lite: 'None', tbmq: 'HTTP, MQTT, Kafka' },
+	{ label: 'Measured capacity', lite: '7,500 msg/s on 2 CPUs and 2 GB', tbmq: 'Millions of msg/s' },
+	{ label: 'License', lite: 'Apache 2.0', tbmq: 'Apache 2.0 (Community Edition)' },
+];
+
+const picks = [
+	{
+		name: 'TBMQ Lite',
+		text: 'when one machine carries the load, the clients are devices, and you want one container to run and back up.',
+	},
+	{
+		name: 'A single TBMQ node',
+		text: '(with Kafka, PostgreSQL and Valkey) when you need APPLICATION clients, integrations, or a backend subscriber that must buffer more than a DEVICE queue holds while it is offline.',
+	},
+	{ name: 'A TBMQ cluster', text: 'for high availability or more traffic than one node carries.' },
+];
+---
+
+<section id="lite-compare">
+	<div class="inner">
+		<SectionHeader
+			class="reveal"
+			title="TBMQ Lite or TBMQ?"
+			subtitle="Both are built from the same code. TBMQ Lite is the single-node broker; clustered TBMQ is the broker for high availability and scale."
+		/>
+		<div class="table-wrap reveal">
+			<table>
+				<thead>
+					<tr>
+						<td></td>
+						<th scope="col">
+							<span class="product"><ProductTile product="tbmq-lite" size={28} />TBMQ Lite</span>
+						</th>
+						<th scope="col">
+							<span class="product"><ProductTile product="tbmq" size={28} />TBMQ</span>
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					{
+						rows.map((r) => (
+							<tr>
+								<th scope="row">{r.label}</th>
+								<td>{r.lite}</td>
+								<td>{r.tbmq}</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<h3 class="picks-title reveal">Which one to pick</h3>
+		<ul class="picks">
+			{
+				picks.map((p, i) => (
+					<li class="reveal" style={`--reveal-delay: ${i * 90}ms`}>
+						<strong>{p.name}</strong> {p.text}
+					</li>
+				))
+			}
+		</ul>
+
+		<a class="more reveal" href="/docs/lite/lite-vs-tbmq/">
+			Full comparison
+			<Icon name="tabler:arrow-right" class="lite-compare-icon" />
+		</a>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#lite-compare {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-brand-tint);
+		scroll-margin-top: var(--header-height);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1000px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.table-wrap {
+		width: 100%;
+		overflow-x: auto;
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: $radius-xl;
+	}
+
+	table {
+		width: 100%;
+		min-width: 600px;
+		border-collapse: collapse;
+		table-layout: fixed;
+	}
+
+	th,
+	td {
+		padding: $spacing-4 $spacing-5;
+		text-align: left;
+		vertical-align: top;
+		border-bottom: 1px solid var(--color-border);
+		@include text-table-cell;
+		color: var(--color-text);
+	}
+
+	thead th {
+		@include text-table-header;
+		background-color: var(--color-bg-light);
+	}
+
+	thead td {
+		width: 26%;
+		background-color: var(--color-bg-light);
+	}
+
+	tbody th {
+		@include text-s;
+		font-weight: $font-weight-semibold;
+		color: var(--color-text-secondary);
+	}
+
+	tbody tr:last-child th,
+	tbody tr:last-child td {
+		border-bottom: 0;
+	}
+
+	.product {
+		display: inline-flex;
+		align-items: center;
+		gap: $spacing-3;
+	}
+
+	.picks-title {
+		@include card-title-sm;
+		color: var(--color-text);
+		align-self: flex-start;
+		margin: $spacing-12 0 $spacing-4;
+	}
+
+	.picks {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		display: grid;
+		gap: $spacing-3;
+
+		li {
+			@include text-m;
+			color: var(--color-text-secondary);
+			padding-left: $spacing-5;
+			border-left: 3px solid var(--color-brand);
+		}
+
+		strong {
+			color: var(--color-text);
+			font-weight: $font-weight-semibold;
+		}
+	}
+
+	.more {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: $spacing-10;
+		@include action-link;
+		color: var(--color-brand);
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	:global(.lite-compare-icon) {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+</style>
