@@ -99,6 +99,7 @@ const pathname = Astro.url.pathname;
 
 		// Hover (mouse only): open after the pointer rests, close a moment after it leaves.
 		const OPEN_DELAY = 120;
+		const SWITCH_DELAY = 100;
 		const CLOSE_DELAY = 200;
 		let openTimer = 0;
 		let closeTimer = 0;
@@ -108,25 +109,61 @@ const pathname = Astro.url.pathname;
 			clearTimeout(closeTimer);
 		};
 
+		// Every panel's content starts at the row's left edge, so the straight line from an
+		// item to its own links runs across the items to its left. While the pointer is still
+		// in the bar and heading down toward the open panel, neither switch nor close: wait
+		// until it stops, turns along the row, or arrives.
+		let pointerX = 0;
+		let pointerY = 0;
+		document.addEventListener(
+			'pointermove',
+			(e) => {
+				pointerX = e.clientX;
+				pointerY = e.clientY;
+			},
+			{ passive: true }
+		);
+		const whenNotAiming = (action: () => void, delay: number): number => {
+			const fromX = pointerX;
+			const fromY = pointerY;
+			return window.setTimeout(() => {
+				const down = pointerY - fromY;
+				const across = Math.abs(pointerX - fromX);
+				const inBar = !!header && pointerY <= header.getBoundingClientRect().bottom;
+				const aiming = items.some(isOpen) && inBar && down > 2 && down > across * 0.15;
+				if (aiming) {
+					const timer = whenNotAiming(action, delay);
+					if (action === closeAll) closeTimer = timer;
+					else openTimer = timer;
+				} else {
+					action();
+				}
+			}, delay);
+		};
+
 		items.forEach((li) => {
+			const openByHover = () => {
+				hoverOpenedAt = performance.now();
+				openOnly(li);
+			};
 			// The panel is a descendant, so the pointer stays "inside" the item while it is on the panel.
 			li.addEventListener('pointerenter', (e) => {
 				if (!desktop.matches || e.pointerType !== 'mouse') return;
 				cancelTimers();
 				if (isOpen(li)) return;
-				openTimer = window.setTimeout(
-					() => {
-						hoverOpenedAt = performance.now();
-						openOnly(li);
-					},
-					// Another panel is already showing: switch at once.
-					items.some(isOpen) ? 0 : OPEN_DELAY
-				);
+				pointerX = e.clientX;
+				pointerY = e.clientY;
+				openTimer = items.some(isOpen)
+					? // Another panel is showing: switch, unless the pointer is only passing through.
+						whenNotAiming(openByHover, SWITCH_DELAY)
+					: window.setTimeout(openByHover, OPEN_DELAY);
 			});
 			li.addEventListener('pointerleave', (e) => {
 				if (!desktop.matches || e.pointerType !== 'mouse') return;
 				cancelTimers();
-				closeTimer = window.setTimeout(closeAll, CLOSE_DELAY);
+				pointerX = e.clientX;
+				pointerY = e.clientY;
+				closeTimer = whenNotAiming(closeAll, CLOSE_DELAY);
 			});
 
 			// Click, tap, Enter and Space all arrive here.
