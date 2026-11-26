@@ -1,0 +1,208 @@
+---
+title: TBMQ Lite configuration
+description: "The TBMQ Lite settings that matter: the store, the disk watermark, the message pipeline, memory and JAVA_OPTS, listeners, health, the metrics token, and the Lite metrics."
+sidebar:
+  label: Configuration
+  badge:
+    text: Beta
+    variant: caution
+wrapTableCode: true
+---
+
+import { Aside, Code } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+import { Products } from '~/models/site.models';
+import { TBMQ_LITE_VER } from '~/data/versions';
+
+export const runWithEnv = `docker run -d --name tbmq-lite --restart unless-stopped \\
+  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
+  -e STORE_WAL_SYNC=always \\
+  -e TBMQ_METRICS_TOKEN='a-long-random-token' \\
+  -v tbmq-lite:/data thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+
+export const runWithLogback = `docker run -d --name tbmq-lite --restart unless-stopped \\
+  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
+  -v tbmq-lite:/data \\
+  -v "$PWD/logback.xml:/config/logback.xml:ro" \\
+  thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+
+TBMQ Lite reads its settings from environment variables. Set them with `-e NAME=value` on `docker run`, or under
+`environment:` in Compose, and recreate the container to apply a change (the data stays on the volume):
+
+<Code code={runWithEnv} lang="bash" />
+
+This page lists the settings that matter for TBMQ Lite. The MQTT, security and rate-limit settings of the
+<DocLink product={Products.TBMQ} path="installation/config">MQTT broker configuration</DocLink> apply too. Settings
+of Kafka, Valkey/Redis, PostgreSQL, APPLICATION clients and integrations do nothing in TBMQ Lite.
+
+## Store
+
+The embedded store keeps sessions, DEVICE message queues, retained messages, credentials, users, settings and
+statistics on the data volume.
+
+| Variable | Default | Description |
+|---|---|---|
+| `STORE_PATH` | `/data/db` | Directory of the store. |
+| `STORE_WAL_SYNC` | `periodic` | How the write-ahead log reaches the disk: `periodic` syncs it every `STORE_WAL_SYNC_INTERVAL_MS`, `always` on every write. See <DocLink product={Products.TBMQ} path="installation/lite/guarantees-and-limits">Guarantees and limits</DocLink>. |
+| `STORE_WAL_SYNC_INTERVAL_MS` | `1000` | Interval between WAL syncs (ms), with `periodic`. A power cut can lose up to this interval. |
+| `STORE_MEMORY_BLOCK_CACHE_BYTES` | `0` | Block cache size (bytes). `0` derives it from the container memory: 10%, at least 16 MB and at most 512 MB. |
+| `STORE_MEMORY_WRITE_BUFFER_BYTES` | `0` | Memory budget of the memtables (bytes). `0` means 25% of the block cache. |
+| `STORE_BACKUPS_PATH` | `/data/backups` | Directory of the checkpoints taken before a store upgrade. Keep it on the same volume as the store. |
+| `STORE_BACKUPS_KEEP` | `3` | Number of pre-upgrade checkpoints kept. |
+| `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT` | `10000` | Maximum number of messages kept for each persistent DEVICE client, at most 65,535. |
+| `MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL` | `604800` | Time a stored DEVICE message is kept (s); one week. |
+
+### Disk watermark
+
+The broker checks the free space of the store's volume. Below the watermark it refuses new data (new persistent
+sessions, persisted and retained messages, management changes) while updates and deletes go on, and the health
+endpoint reports the store as `degraded`. A publish refused this way gets reason code `0x97` (Quota exceeded) on MQTT 5;
+an MQTT 3.x connection is closed. Writes resume once space is freed.
+
+| Variable | Default | Description |
+|---|---|---|
+| `STORE_DISK_MIN_FREE_PERCENT` | `5` | Watermark as a percentage of the volume size. The watermark is the larger of this and `STORE_DISK_MIN_FREE_BYTES`. |
+| `STORE_DISK_MIN_FREE_BYTES` | `268435456` | Minimum free space (bytes); 256 MB. |
+| `STORE_DISK_CHECK_INTERVAL_MS` | `10000` | Interval between free-space checks (ms). |
+
+### Clock
+
+The host needs a correct clock (NTP). The broker records the wall-clock time in the store; if it starts with a clock
+behind that time, it logs a warning and postpones the age-based cleanups (expired client sessions, retained messages, blocked
+and unauthorized clients, statistics, DEVICE queue messages) until the clock catches up, for at most `STORE_CLOCK_MAX_POSTPONE_MS` (24 hours).
+
+## Message pipeline
+
+Accepted publishes pass through dispatch workers, which deliver them to online subscribers, and persist workers, which
+write them to the queues of persistent subscribers.
+
+| Variable | Default | Description |
+|---|---|---|
+| `STANDALONE_DISPATCH_PARTITIONS` | `0` | Number of dispatch workers. `0` means the number of CPUs, at least 2. Publishes to one topic keep their order. |
+| `STANDALONE_PERSIST_PARTITIONS` | `0` | Number of persist workers. `0` means the number of CPUs, at least 2. |
+| `STANDALONE_PIPELINE_MAX_MESSAGES` | `100000` | Maximum number of publishes in the pipeline. Beyond it, publishes are refused: QoS 0 is dropped, QoS 1 and 2 get `0x97` (Quota exceeded) on MQTT 5, an MQTT 3.x connection is closed, a REST publish gets `429`. |
+| `STANDALONE_PIPELINE_MAX_BYTES` | `0` | Maximum total payload in the pipeline (bytes), refused the same way. `0` means 10% of the maximum heap. |
+| `STANDALONE_PIPELINE_PAUSE_PERCENT` | `80` | Share of either maximum at which the broker stops reading from publishing connections. |
+| `STANDALONE_PIPELINE_RESUME_PERCENT` | `50` | Share the pipeline must fall to before reading resumes. |
+| `STANDALONE_PERSIST_MAX_CONCURRENT_REPLAYS` | `16` | Persistent DEVICE clients that replay their stored messages at the same time after connecting; others wait for a slot. |
+| `STANDALONE_SHUTDOWN_DRAIN_TIMEOUT_MS` | `4000` | Time the shutdown waits, in total, for the publishes in flight. QoS 1 and 2 publishes still queued after it were never acknowledged, so their clients send them again. |
+| `STANDALONE_SERVICE_ID` | `tbmq-lite` | ID of the node. Keep it stable: sessions stored under another ID belong to another node. |
+| `STANDALONE_UNAUTHORIZED_CLIENTS_MAX` | `10000` | Maximum number of unauthorized clients kept; the oldest are removed first. |
+
+## Memory and JAVA_OPTS
+
+The image's start script reads the container's memory and CPU limits (cgroup v1 or v2) and sets the JVM flags from them:
+
+| Setting | Value |
+|---|---|
+| Garbage collector | Serial below 2 CPUs or below 2 GiB of memory, G1 otherwise |
+| Maximum heap | 45% of the container memory (`-XX:MaxRAMPercentage=45`) |
+| Maximum direct memory | 10% of the container memory, at least 64 MiB |
+| Out of memory | The JVM exits (`-XX:+ExitOnOutOfMemoryError`), and Docker restarts it under `--restart unless-stopped`. No heap dump is written. |
+| Memory allocator | jemalloc. If it cannot be loaded on the host, the default allocator with `MALLOC_ARENA_MAX=2`, and a warning in the log |
+
+Without a memory limit the script uses the host's memory. Limit the container with `--memory` (and `--cpus`) so the
+broker sizes itself for its share. It logs what it read and chose as the first line of the container's log.
+
+Add JVM flags with `JAVA_OPTS`. They come after the script's flags, so a flag in `JAVA_OPTS` wins, for example
+`-e JAVA_OPTS="-XX:MaxRAMPercentage=60"`. A garbage-collector flag (`-XX:+Use…GC`) in `JAVA_OPTS`, `JDK_JAVA_OPTIONS`,
+`JAVA_TOOL_OPTIONS` or `_JAVA_OPTIONS` replaces the script's choice of collector. Put memory flags in `JAVA_OPTS`: the
+script's flags override `JDK_JAVA_OPTIONS` and `JAVA_TOOL_OPTIONS`, while `_JAVA_OPTIONS` overrides everything.
+
+### Logging
+
+The broker logs to standard output at `INFO`. To change logging, mount your own Logback file at `/config/logback.xml`.
+It replaces the bundled configuration entirely, so keep a console appender in it if you want `docker logs` to show the
+log:
+
+<Code code={runWithLogback} lang="bash" />
+
+## Listeners
+
+| Variable | Default | Description |
+|---|---|---|
+| `LISTENER_TCP_ENABLED` / `LISTENER_TCP_BIND_PORT` | `true` / `1883` | MQTT over TCP. |
+| `LISTENER_WS_ENABLED` / `LISTENER_WS_BIND_PORT` | `true` / `8084` | MQTT over WebSocket. The UI's WebSocket client uses it. |
+| `LISTENER_SSL_ENABLED` / `LISTENER_SSL_BIND_PORT` | `false` / `8883` | MQTT over TLS. See <DocLink product={Products.TBMQ} path="security/mqtts">MQTT over SSL/TLS</DocLink> for the certificate settings. |
+| `LISTENER_WSS_ENABLED` / `LISTENER_WSS_BIND_PORT` | `false` / `8085` | MQTT over secure WebSocket. |
+| `HTTP_BIND_PORT` | `8083` | HTTP port of the UI, the REST API and the actuator endpoints. |
+| `SSL_ENABLED` | `false` | HTTPS on the HTTP port. |
+
+Publish every port you enable or move with `-p`, and mount the certificate files into the container.
+
+## Health
+
+`/actuator/health` on the HTTP port is open without authentication and, in TBMQ Lite, shows details by default
+(`HEALTH_SHOW_DETAILS=always`; set `never` or `when-authorized` to hide them). The `standaloneStore` component reports
+`store: ok`, or `store: degraded` with a `reason` while the disk is below the watermark. The overall status stays `UP`
+in that case, so the container stays healthy.
+
+## Release check and signing key
+
+| Variable | Default | Description |
+|---|---|---|
+| `TBMQ_VERSION_CHECK_ENABLED` | `true` | Checks GitHub (`api.github.com`) for the newest TBMQ release every 3 hours. A failed check is retried later and logged at `DEBUG` only, so an offline broker needs no change; set `false` to stop the requests. |
+| `JWT_TOKEN_SIGNING_KEY` | generated | Key that signs the UI and REST API tokens. TBMQ Lite generates one on the first start and keeps it in the store; set it only to use a key of your own. |
+
+## Metrics token
+
+In TBMQ Lite every actuator endpoint except `/actuator/health` and the links page `/actuator` needs a token. Without
+`TBMQ_METRICS_TOKEN`, `/actuator/info` and `/actuator/prometheus` answer `401` whatever `METRICS_ENDPOINTS_EXPOSE` lists.
+
+- Set `TBMQ_METRICS_TOKEN` to a random string of visible ASCII characters (no spaces); any other value stops the broker
+  at start.
+- Send it as `Authorization: Bearer <token>`. The scheme is case-sensitive: `bearer` is refused.
+
+```bash
+curl -H "Authorization: Bearer $TBMQ_METRICS_TOKEN" http://localhost:8083/actuator/prometheus
+```
+
+Prometheus sends the token with `authorization:` (the type defaults to `Bearer`):
+
+```yaml
+scrape_configs:
+  - job_name: tbmq-lite
+    metrics_path: /actuator/prometheus
+    authorization:
+      credentials: a-long-random-token
+    static_configs:
+      - targets: ['tbmq-lite-host:8083']
+```
+
+## Metrics
+
+TBMQ Lite exposes the series of the <DocLink product={Products.TBMQ} path="prometheus-metrics">Prometheus metrics</DocLink>
+reference, except the series of Kafka producers and consumers, SQL write queues, APPLICATION clients and
+integrations. `clientSubscriptionsConsumer_total`, `retainedMsgConsumer_total` and `throughputQuotaDegraded_total` are
+registered but stay at zero. Differences:
+
+- **`incomingPublishMsg_consumed_total`** counts the publishes of the dispatch stage, one series set per dispatch worker
+  (`consumerId` = `dispatch-0`, `dispatch-1`, …), with `statsName` = `totalMsgs`, `successfulMsgs` and `failedMsgs`.
+  `failedMsgs` counts publishes the dispatch stage gave up on; the publisher got an error reason code. The cluster's
+  `timeoutMsgs`, `tmpTimeout`, `tmpFailed`, `successfulIterations` and `failedIterations` are absent, and so is the
+  periodic stats line in the log.
+- **`incomingPublishMsg_consumed_processing_time_seconds`** times each publish per dispatch worker.
+  `incomingPublishMsg_consumed_pack_processing_time_seconds` is absent: there are no batches to time.
+
+Series of TBMQ Lite only:
+
+| Series | Type | Notes |
+|---|---|---|
+| `trimmedDeviceMsgs_total` | counter | Stored DEVICE messages removed because a client's queue reached its limit (oldest first). |
+| `expiredDeviceMsgs_total` | counter | Stored DEVICE messages removed by message expiry or the queue TTL. |
+| `undecodableDeviceMsgs_total` | counter | Stored DEVICE messages that could not be read back and were removed from their queue. |
+| `applicationClientsMappedToDevice_total` | counter | Clients that a JWT claim or an HTTP provider response made APPLICATION, connected as DEVICE. |
+| `publishPauses_total` | counter | Publishing connections paused because the pipeline reached `STANDALONE_PIPELINE_PAUSE_PERCENT`, one count per pause. |
+| `pausedConnections` | gauge | Publishing connections not read at the moment. |
+| `standalonePipelineQueuedMessages`, `standalonePipelineQueuedBytes` | gauge | Publishes, and their payload bytes, in the pipeline. |
+| `standaloneDispatchQueued`, `standalonePersistQueued` | gauge | Publishes waiting for a dispatch worker, and messages waiting for a persist worker. |
+| `diskFullSkippedStatsWrites_total` | counter | Statistics writes skipped while the disk is below the watermark. |
+| `storeBlockCacheUsage` | gauge | Bytes in the store's block cache. |
+| `storeBlockCachePinnedUsage` | gauge | Bytes pinned in the block cache. |
+| `storeMemtablesSize` | gauge | Bytes in the store's memtables. |
+| `storeTableReadersMem` | gauge | Bytes used by table readers outside the block cache. |
+
+<Aside type="caution">
+  The four store gauges overlap: the block-cache figures include the memtables' reservation and the cached index and
+  filter blocks. Do not add them up.
+</Aside>

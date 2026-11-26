@@ -17,3 +17,6 @@ export const TBMQ_PE_VER = '2.4.2PE';
 
 /** TBMQ Broker release branch (for installation scripts) */
 export const TBMQ_BRANCH = 'release-2.4.2';
+
+/** TBMQ Lite Docker image tag (thingsboard/tbmq-lite) */
+export const TBMQ_LITE_VER = '2.5.0-beta';

@@ -140,7 +140,7 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-The file holds exactly four constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`. The other products' constants have been removed.
+The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/installation/lite/`). The other products' constants have been removed.
 
 ### Custom Plugins
 
