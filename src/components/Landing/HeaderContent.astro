@@ -216,6 +216,18 @@ const { gitHubPlatform } = Astro.props;
 				@media screen and (min-width: 1281px) {
 					display: block;
 				}
+
+				// Laptop widths — after the tighter gaps, the star count is the first
+				// thing to go: the blog's bar (marketing type plus the search and theme
+				// icons) does not fit beside it at 1281px with a scrollbar.
+				@media screen and (min-width: 1281px) and (max-width: 1399px) {
+					width: auto;
+
+					.gh-sep,
+					.gh-count {
+						display: none;
+					}
+				}
 			}
 
 			.n-button {
