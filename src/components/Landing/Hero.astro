@@ -50,14 +50,6 @@ interface Props {
 	 */
 	backgroundImage?: string;
 	/**
-	 * Video background config (for desktop)
-	 */
-	videoBackground?: {
-		mp4?: string;
-		webm?: string;
-		poster?: string;
-	};
-	/**
 	 * Custom achievement override (if not using default)
 	 */
 	achievement?: Achievement | null;
@@ -74,7 +66,6 @@ const {
 	showArrow = true,
 	anchorLink = '#intro',
 	backgroundImage = '/images/hero/tb-cover.webp',
-	videoBackground,
 	achievement,
 	className = '',
 } = Astro.props;
@@ -82,17 +73,17 @@ const {
 // Achievement badge renders only when an explicit achievement is provided.
 const achievementData = achievement ?? null;
 const titles = Array.isArray(title) ? title : [title];
+// A `background` slot supplies its own dark artwork: it replaces the image
+// cover and needs no dimming overlay on top.
+const hasArt = Astro.slots.has('background');
 ---
 
-<section id="hero" class:list={['light-text', className]}>
+<section id="hero" class:list={['light-text', className, hasArt && 'has-art']}>
 	<!-- arrow-hidden sentinel: IntersectionObserver-driven, replaces a forced-reflow scroll listener -->
 	<div class="hero-scroll-sentinel" aria-hidden="true"></div>
-	<div
-		class="video-cover"
-		style={`background-image: url(${backgroundImage})`}
-		data-video-mp4={videoBackground?.mp4}
-		data-video-webm={videoBackground?.webm}
-	></div>
+	<div class="hero-cover" style={hasArt ? undefined : `background-image: url(${backgroundImage})`}>
+		<slot name="background" />
+	</div>
 
 	{
 		achievementData && (
@@ -173,7 +164,7 @@ const titles = Array.isArray(title) ? title : [title];
 			visibility: hidden;
 		}
 
-		.video-cover {
+		.hero-cover {
 			position: absolute;
 			z-index: -2;
 			top: 0;
@@ -185,18 +176,6 @@ const titles = Array.isArray(title) ? title : [title];
 			background-color: #000;
 			background-repeat: no-repeat;
 			background-position: 50% 50%;
-
-			:global(video) {
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				min-width: 100%;
-				min-height: 100%;
-				width: auto;
-				height: auto;
-				transform: translate(-50%, -50%);
-				object-fit: cover;
-			}
 		}
 
 		.achievement {
@@ -288,7 +267,8 @@ const titles = Array.isArray(title) ? title : [title];
 
 				&:hover {
 					background-color: white;
-					color: var(--tb-main-color);
+					// Same on-light green as the `.white` button below, for the same contrast reason.
+					color: $color-pe-link;
 					text-shadow: none;
 				}
 
@@ -374,6 +354,10 @@ const titles = Array.isArray(title) ? title : [title];
 				display: none;
 			}
 		}
+
+		&.has-art #hero-content {
+			background-color: transparent;
+		}
 	}
 
 	// Animation
@@ -451,47 +435,5 @@ const titles = Array.isArray(title) ? title : [title];
 				{ threshold: 0 }
 			).observe(sentinel);
 		}
-	});
-
-	// Deferred video background — desktop only, fast connection only
-	window.addEventListener('load', () => {
-		const isMobile =
-			window.innerWidth < 768 ||
-			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-		if (isMobile) return;
-
-		const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } })
-			.connection;
-		if (conn?.saveData) return;
-		if (conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') return;
-
-		const cover = document.querySelector<HTMLElement>('#hero .video-cover');
-		if (!cover) return;
-
-		const mp4 = cover.dataset.videoMp4;
-		const webm = cover.dataset.videoWebm;
-		if (!mp4 && !webm) return;
-
-		const video = document.createElement('video');
-		video.autoplay = true;
-		video.loop = true;
-		video.muted = true;
-		video.playsInline = true;
-		video.setAttribute('aria-hidden', 'true');
-
-		if (webm) {
-			const src = document.createElement('source');
-			src.src = webm;
-			src.type = 'video/webm';
-			video.appendChild(src);
-		}
-		if (mp4) {
-			const src = document.createElement('source');
-			src.src = mp4;
-			src.type = 'video/mp4';
-			video.appendChild(src);
-		}
-
-		cover.appendChild(video);
 	});
 </script>

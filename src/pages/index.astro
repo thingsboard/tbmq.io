@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Landing/Hero.astro';
+import HeroFlowBackground from '../components/MqttBroker/HeroFlowBackground.astro';
 import TopFeaturesSection from '../components/MqttBroker/TopFeaturesSection.astro';
 import ScenariosSection from '../components/MqttBroker/ScenariosSection.astro';
 import InstallationOptionsSection from '../components/MqttBroker/InstallationOptionsSection.astro';
@@ -195,7 +196,6 @@ const tbmqGroups = [
 	description={description}
 	pageId="mqtt-broker"
 	gitHubPlatform={Products.TBMQ}
-	preloadLcpImage="/hero/tbmq-cover.webp"
 	openContentLinksInNewTab
 	jsonLd={jsonLd}
 >
@@ -209,13 +209,10 @@ const tbmqGroups = [
 				{ text: 'Learn more', href: '/mqtt/', variant: 'outline', srOnlySuffix: ' about MQTT' },
 			]}
 			anchorLink="#content"
-			backgroundImage="/hero/tbmq-cover.webp"
-			videoBackground={{
-				webm: 'https://video.thingsboard.io/tbmq-cover-v2.webm',
-				mp4: 'https://video.thingsboard.io/tbmq-cover-v2.mp4',
-			}}
 			achievement={null}
-		/>
+		>
+			<HeroFlowBackground slot="background" />
+		</Hero>
 
 		<div id="content">
 			<TopFeaturesSection />
