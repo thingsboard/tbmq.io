@@ -352,10 +352,20 @@ const pathname = Astro.url.pathname;
 		// Nothing between the header and a panel may be positioned: the panel is laid out
 		// against the bar itself (the fixed header on docs, the sticky top unit elsewhere).
 		.sm {
+			// Side padding of a row item; the panel's content is offset by the same amount.
+			--sm-pad: 10px;
+
 			flex: 1 1 auto;
 			min-width: 0;
 			height: 100%;
 			margin-inline-start: $spacing-5;
+
+			// Laptop widths: the bar is at its fullest, so the row closes up a little.
+			@media (max-width: 1439px) {
+				--sm-pad: 7px;
+
+				margin-inline-start: $spacing-3;
+			}
 		}
 
 		.sm__row {
@@ -371,13 +381,13 @@ const pathname = Astro.url.pathname;
 		}
 
 		.sm__top {
-			padding: $spacing-2 10px;
+			padding: $spacing-2 var(--sm-pad);
 
 			// The underline: hover, the open item, and the current page or section.
 			&::after {
 				content: '';
 				position: absolute;
-				inset: auto 10px 2px;
+				inset: auto var(--sm-pad) 2px;
 				height: 2px;
 				border-radius: 2px;
 				background: currentColor;
@@ -419,7 +429,7 @@ const pathname = Astro.url.pathname;
 			width: fit-content;
 			min-width: min(560px, 100%);
 			max-width: calc(100% - var(--sm-row-left, 200px) - #{$spacing-5});
-			margin-inline-start: calc(var(--sm-row-left, 200px) + 10px - #{$spacing-2});
+			margin-inline-start: calc(var(--sm-row-left, 200px) + var(--sm-pad) - #{$spacing-2});
 		}
 
 		.sm__group + .sm__group {

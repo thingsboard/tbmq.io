@@ -4,9 +4,9 @@ import GitHubButton from './GitHubButton.astro';
 import NButton from './NButton.astro';
 import SearchButton from '../SearchButton.astro';
 import ThemeToggle from '../ThemeToggle.astro';
-import SmartImage from '@components/SmartImage.astro';
 import { Icon } from 'astro-icon/components';
 import { Products } from '@models/site.models';
+import { DEMO_SIGNIN, DEMO_SIGNUP } from '@data/cta-destinations';
 
 interface Props {
 	platformQuery?: string;
@@ -17,14 +17,6 @@ const { gitHubPlatform } = Astro.props;
 ---
 
 <div class="logo-burger">
-	<a href="https://u24.gov.ua/" target="_blank" class="support-ukraine">
-		<SmartImage
-			src="/src/assets/images/support-ukraine-banner.webp"
-			alt="Stand with Ukraine flag"
-			width="48"
-			height="31"
-		/>
-	</a>
 	<a href="/" class="logo" aria-label="Link to homepage"></a>
 	<div class="burger-group">
 		<div class="icon-buttons">
@@ -37,6 +29,8 @@ const { gitHubPlatform } = Astro.props;
 			<Icon name="tabler:x" class="icon-close" />
 		</button>
 	</div>
+	<!-- Burger mode (up to 1280px): the star button sits beside the logo. On the
+	     desktop bar the copy in .head-buttons shows instead. -->
 	<GitHubButton platform={gitHubPlatform} />
 </div>
 
@@ -50,9 +44,10 @@ const { gitHubPlatform } = Astro.props;
 		<ThemeToggle />
 		<SearchButton />
 	</div>
-	<div class="divider"></div>
-	<NButton id="Menu_TryItNow" href="/installations/" variant="filled" class="try gtm_button"
-		>Try it now</NButton
+	<GitHubButton platform={gitHubPlatform} />
+	<NButton id="Menu_SignIn" href={DEMO_SIGNIN} target="_blank" variant="outlined" class="signin">Sign in</NButton>
+	<NButton id="Menu_TryItNow" href={DEMO_SIGNUP} target="_blank" variant="filled" class="try gtm_button"
+		>Try for free</NButton
 	>
 </div>
 
@@ -201,54 +196,56 @@ const { gitHubPlatform } = Astro.props;
 			align-items: center;
 			gap: 0.875rem;
 
+			// Laptop widths — the bar is at its fullest here (eight menu items, the
+			// docs icons, three buttons): tighter gaps before anything gets dropped.
+			@media screen and (min-width: 1281px) and (max-width: 1439px) {
+				gap: 0.5rem;
+			}
+
 			.icon-buttons {
 				display: flex;
 				align-items: center;
 				gap: 0;
 			}
 
-			.divider {
-				width: 1px;
-				height: 32px;
-				background-color: var(--sl-color-hairline-light);
-				flex-shrink: 0;
+			// The star button is rendered twice (see the markup): this copy is the
+			// desktop bar's, the one beside the logo is burger mode's.
+			.gh-wrap {
+				display: none;
 
-				@media screen and (min-width: 1281px) and (max-width: 1499px) {
-					display: none;
+				@media screen and (min-width: 1281px) {
+					display: block;
 				}
 			}
 
 			.n-button {
-				width: 90px;
-				padding: 0;
+				width: auto;
+				min-width: 90px;
+				padding-block: 0;
+				padding-inline: 16px;
 				display: flex;
 				align-items: center;
 				justify-content: center;
+				white-space: nowrap;
 
-				@media screen and (min-width: 1500px) {
-					width: 110px;
-				}
+				// Outlined in the bar's own ink, so one rule serves every page state:
+				// the states only re-set `--hd-ink` and `--hd-rule`.
+				&.signin {
+					color: var(--hd-ink);
+					border: 1px solid var(--hd-rule);
+					background-color: transparent;
 
-				&.price {
-					color: var(--sl-color-white);
-					border: 1px solid transparent;
+					&:hover {
+						border-color: var(--hd-ink);
+						text-decoration: none;
+					}
 				}
 			}
 		}
 
-		.support-ukraine {
-			display: flex;
-			align-items: center;
-			img {
-				height: 31px;
-				width: auto;
-			}
-
-			// Laptop widths — shrink the flag so the nav row doesn't wrap.
-			@media screen and (min-width: 1281px) and (max-width: 1599px) {
-				img {
-					height: 20px;
-				}
+		.logo-burger .gh-wrap {
+			@media screen and (min-width: 1281px) {
+				display: none;
 			}
 		}
 
@@ -406,14 +403,10 @@ const { gitHubPlatform } = Astro.props;
 						display: none;
 					}
 
-					.divider {
-						display: none;
-					}
-
 					.n-button {
 						display: flex;
 						margin: 0;
-						width: 110px;
+						min-width: 110px;
 					}
 				}
 			}
@@ -459,10 +452,6 @@ const { gitHubPlatform } = Astro.props;
 			background-color: transparent;
 			box-shadow: none;
 
-			.support-ukraine p {
-				color: $color-white;
-			}
-
 			.logo,
 			.burger {
 				filter: invert(100%) sepia(68%) saturate(0%) hue-rotate(350deg) brightness(113%)
@@ -473,26 +462,7 @@ const { gitHubPlatform } = Astro.props;
 				color: $color-black;
 			}
 
-			.divider {
-				display: none;
-			}
-
 			.n-button {
-				width: 110px;
-
-				&.price {
-					color: $color-white;
-					transition-duration: 0s;
-					border: none;
-					background-color: rgba(255, 255, 255, 0.05);
-
-					&:hover {
-						text-decoration: none;
-						color: var(--color-text);
-						background-color: var(--color-bg-surface);
-					}
-				}
-
 				&.try {
 					background-color: var(--color-brand);
 					color: var(--color-brand-contrast);
@@ -507,7 +477,7 @@ const { gitHubPlatform } = Astro.props;
 		}
 	}
 
-	// Non-transparent header — hide the divider and style the buttons.
+	// Non-transparent header — style the filled button.
 	#contact-us,
 	#installations,
 	#performance,
@@ -515,21 +485,7 @@ const { gitHubPlatform } = Astro.props;
 	#product,
 	#mqtt-learn {
 		header.header {
-			.divider {
-				display: none;
-			}
-
 			.n-button {
-				&.price {
-					border: 1px solid var(--color-border);
-					color: var(--color-text);
-					background-color: transparent;
-
-					&:hover {
-						border: 2px solid var(--color-text);
-					}
-				}
-
 				&.try {
 					background-color: var(--color-brand);
 					color: var(--color-brand-contrast);
@@ -606,21 +562,7 @@ const { gitHubPlatform } = Astro.props;
 			background-color: var(--color-bg-surface);
 			box-shadow: var(--shadow-header);
 
-			.support-ukraine p {
-				color: $color-black;
-			}
-
 			.n-button {
-				&.price {
-					border: 1px solid var(--color-border);
-					color: var(--color-text);
-					background-color: transparent;
-
-					&:hover {
-						border: 2px solid var(--color-text);
-					}
-				}
-
 				&.try {
 					background-color: var(--color-brand);
 					color: var(--color-brand-contrast);
@@ -660,26 +602,12 @@ const { gitHubPlatform } = Astro.props;
 			background-color: var(--color-bg-light);
 			box-shadow: var(--shadow-header);
 
-			.support-ukraine p {
-				color: $color-black;
-			}
-
 			.logo,
 			.burger {
 				filter: none;
 			}
 
 			.n-button {
-				&.price {
-					border: 1px solid var(--color-border);
-					color: var(--color-text);
-					background-color: transparent;
-
-					&:hover {
-						border: 2px solid var(--color-text);
-					}
-				}
-
 				&.try {
 					background-color: var(--color-brand);
 					color: var(--color-brand-contrast);
@@ -706,15 +634,6 @@ const { gitHubPlatform } = Astro.props;
 		search-button,
 		theme-toggle {
 			display: none;
-		}
-	}
-
-	// Hide divider on pages where theme toggle is hidden but not already handled above
-	#pricing {
-		header.header {
-			.divider {
-				display: none;
-			}
 		}
 	}
 
