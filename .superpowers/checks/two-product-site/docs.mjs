@@ -1,0 +1,159 @@
+/* eslint-disable no-undef -- Node and browser globals: these scripts run outside the site code the lint config describes */
+// node docs.mjs — the docs picker (edition pills + product row), sidebars and pagination.
+// env SHOT=<dir> also saves the open popover in the dark theme.
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { check, done, go, sleep, withPage } from './lib.mjs';
+
+const SELF = Symbol('self');
+// [page, Community pill, Professional pill, TBMQ option, TBMQ Lite option]
+const MATRIX = [
+	['/docs/lite/', '/docs/', '/docs/pe/', '/docs/', '/docs/lite/'],
+	['/docs/lite/getting-started/', '/docs/getting-started/', '/docs/pe/getting-started/', '/docs/getting-started/', SELF],
+	['/docs/lite/guarantees-and-limits/', '/docs/', '/docs/pe/', '/docs/', SELF],
+	['/docs/lite/lite-vs-tbmq/', '/docs/', '/docs/pe/', '/docs/', SELF],
+	['/docs/lite/installation/', '/docs/installation/', '/docs/pe/installation/', '/docs/installation/', SELF],
+	[
+		'/docs/lite/installation/config/',
+		'/docs/installation/config/',
+		'/docs/pe/installation/config/',
+		'/docs/installation/config/',
+		SELF,
+	],
+	['/docs/lite/installation/backup-and-restore/', '/docs/', '/docs/pe/', '/docs/', SELF],
+	['/docs/getting-started/', SELF, '/docs/pe/getting-started/', SELF, '/docs/lite/getting-started/'],
+	['/docs/installation/', SELF, '/docs/pe/installation/', SELF, '/docs/lite/installation/'],
+	['/docs/installation/config/', SELF, '/docs/pe/installation/config/', SELF, '/docs/lite/installation/config/'],
+	['/docs/user-guide/qos/', SELF, '/docs/pe/user-guide/qos/', SELF, '/docs/lite/'],
+];
+
+/** Everything the assertions need, read in one evaluate. The popover may have been moved to <body>. */
+const readPicker = () => {
+	const pill = (label) =>
+		[...document.querySelectorAll('.ps-pill')].find((a) => a.textContent.trim() === label) ?? null;
+	const option = (label) =>
+		[...document.querySelectorAll('#ps-variants [role="option"]')].find(
+			(a) => a.querySelector('.ps-item-name')?.firstChild?.textContent.trim() === label
+		) ?? null;
+	const attr = (el, name) => (el ? el.getAttribute(name) : null);
+	const region = document.querySelector('button.ps-region');
+	return {
+		community: attr(pill('Community'), 'href'),
+		communityActive: pill('Community')?.classList.contains('is-active') ?? false,
+		communityCurrent: attr(pill('Community'), 'aria-current'),
+		professional: attr(pill('Professional'), 'href'),
+		tbmq: attr(option('TBMQ'), 'href'),
+		lite: attr(option('TBMQ Lite'), 'href'),
+		hasRegion: !!region,
+		regionLabel: region?.querySelector('.ps-region-label')?.textContent.trim() ?? null,
+		tabs: [...document.querySelectorAll('.tab-item a')].map((a) => a.textContent.trim()),
+		// The picker sits inside the sidebar and links to the other products by design: not navigation.
+		sidebarDocs: [...document.querySelectorAll('#starlight__sidebar a[href^="/docs/"]')]
+			.filter((a) => !a.closest('product-selector'))
+			.map((a) => a.getAttribute('href')),
+		pagination: [...document.querySelectorAll('.pagination-links a')].map((a) => a.getAttribute('href')),
+	};
+};
+
+await withPage({ width: 1440 }, async (page) => {
+	for (const [path, community, professional, tbmq, lite] of MATRIX) {
+		await go(page, path);
+		const r = await page.evaluate(readPicker);
+		const want = (v) => (v === SELF ? path : v);
+		const isLite = path.startsWith('/docs/lite/');
+		check(`picker ${path} Community pill`, r.community === want(community), `got ${r.community}`);
+		check(`picker ${path} Professional pill`, r.professional === want(professional), `got ${r.professional}`);
+		check(`picker ${path} TBMQ option`, r.tbmq === want(tbmq), `got ${r.tbmq}`);
+		check(`picker ${path} TBMQ Lite option`, r.lite === want(lite), `got ${r.lite}`);
+		check(`picker ${path} Community pill is active`, r.communityActive);
+		check(
+			`picker ${path} product row`,
+			r.hasRegion && r.regionLabel === (isLite ? 'TBMQ Lite' : 'TBMQ'),
+			`row=${r.hasRegion} label=${r.regionLabel}`
+		);
+		check(
+			`picker ${path} aria-current`,
+			r.communityCurrent === (isLite ? 'true' : 'page'),
+			`got ${r.communityCurrent}`
+		);
+		if (isLite) {
+			check(`sidebar ${path} tabs`, r.tabs.join(', ') === 'Getting Started, Installation', r.tabs.join(', '));
+			const foreign = r.sidebarDocs.filter((h) => !h.startsWith('/docs/lite/'));
+			check(`sidebar ${path} only Lite links`, r.sidebarDocs.length > 0 && foreign.length === 0, foreign.join(' '));
+			if (path !== '/docs/lite/') {
+				const out = r.pagination.filter((h) => !h.startsWith('/docs/lite/'));
+				check(`pagination ${path} stays in Lite`, r.pagination.length > 0 && out.length === 0, r.pagination.join(' '));
+			}
+		}
+	}
+
+	// Professional: no product row, and its pills still switch edition.
+	await go(page, '/docs/pe/getting-started/');
+	const pe = await page.evaluate(readPicker);
+	check('picker PE has no product row', !pe.hasRegion);
+	check('picker PE Community pill', pe.community === '/docs/getting-started/', `got ${pe.community}`);
+
+	// Community and PE sidebars carry no Lite entry.
+	for (const path of ['/docs/installation/', '/docs/pe/installation/']) {
+		await go(page, path);
+		const n = await page.evaluate(
+			() =>
+				[...document.querySelectorAll('#starlight__sidebar a[href^="/docs/lite/"]')].filter(
+					(a) => !a.closest('product-selector')
+				).length
+		);
+		check(`sidebar ${path} has no Lite link`, n === 0, `${n} found`);
+	}
+
+	// Keyboard.
+	await go(page, '/docs/lite/installation/');
+	const state = () =>
+		page.evaluate(() => {
+			const pop = document.getElementById('ps-variants');
+			const options = pop ? [...pop.querySelectorAll('[role="option"]')] : [];
+			return {
+				open: !!pop && !pop.hidden,
+				focusedOption: options.indexOf(document.activeElement),
+				onButton: document.activeElement === document.querySelector('button.ps-region'),
+				expanded: document.querySelector('button.ps-region')?.getAttribute('aria-expanded'),
+			};
+		});
+	const hasRow = await page.$('button.ps-region');
+	if (!hasRow) {
+		check('keyboard', false, 'no button.ps-region');
+	} else {
+		await page.focus('button.ps-region');
+		await page.keyboard.press('Enter');
+		let s = await state();
+		check('keyboard Enter opens and focuses the first option', s.open && s.focusedOption === 0, JSON.stringify(s));
+		await page.keyboard.press('ArrowDown');
+		s = await state();
+		check('keyboard ArrowDown moves to the second option', s.focusedOption === 1, JSON.stringify(s));
+		await page.keyboard.press('Escape');
+		s = await state();
+		check('keyboard Escape closes and returns focus', !s.open && s.onButton && s.expanded === 'false', JSON.stringify(s));
+
+		await page.click('button.ps-region');
+		s = await state();
+		check('click opens', s.open && s.expanded === 'true', JSON.stringify(s));
+		await page.mouse.click(900, 500);
+		s = await state();
+		check('click outside closes', !s.open, JSON.stringify(s));
+	}
+});
+
+if (process.env.SHOT) {
+	mkdirSync(process.env.SHOT, { recursive: true });
+	for (const dark of [true, false]) {
+		await withPage({ width: 1440, dark }, async (page) => {
+			await go(page, '/docs/lite/installation/', 'networkidle2');
+			if (await page.$('button.ps-region')) await page.click('button.ps-region');
+			await sleep(300);
+			const file = join(process.env.SHOT, `picker-open${dark ? '+dark' : ''}@1440.png`);
+			await page.screenshot({ path: file, clip: { x: 0, y: 0, width: 760, height: 520 } });
+			console.log(file);
+		});
+	}
+}
+
+done();
