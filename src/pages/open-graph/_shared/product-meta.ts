@@ -17,6 +17,7 @@ export interface DocsProductMeta {
 const META_BY_PRODUCT: Record<Products, DocsProductMeta> = {
 	[Products.TBMQ]:    { slabClass: 'tbmq' },
 	[Products.TBMQ_PE]: { slabClass: 'tbmq', secondaryLabel: 'Professional' },
+	[Products.TBMQ_LITE]: { slabClass: 'tbmq', secondaryLabel: 'Lite' },
 };
 
 /** Resolve docs slug (e.g. 'docs/pe/getting-started/quickstart') to product meta. */

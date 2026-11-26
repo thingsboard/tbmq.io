@@ -27,12 +27,14 @@ const { images, product, cardMode = false } = Astro.props;
 const productSuffix: Record<Products, string> = {
 	[Products.TBMQ]: 'tbmq',
 	[Products.TBMQ_PE]: 'tbmq-pe',
+	[Products.TBMQ_LITE]: 'tbmq',
 };
 
 // Fallback chain when a product-specific image is missing.
 // e.g. TBMQ_PE → TBMQ → base.
 const productFallback: Partial<Record<Products, Products[]>> = {
 	[Products.TBMQ_PE]: [Products.TBMQ],
+	[Products.TBMQ_LITE]: [Products.TBMQ],
 };
 
 const assetModules = import.meta.glob<{ default: ImageMetadata }>(

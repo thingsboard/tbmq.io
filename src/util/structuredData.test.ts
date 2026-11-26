@@ -240,3 +240,12 @@ test('pricing states the free floor and the plan count, and no individual offers
 	assert.equal(graph(jsonLd).filter((n) => n['@type'] === 'Offer').length, 0);
 	assert.deepEqual(product['brand'], { '@id': node(jsonLd, 'Organization')['@id'] });
 });
+
+test('Lite docs get their own docs root crumb', () => {
+	const trail = docsBreadcrumbs(
+		'/docs/lite/installation/',
+		new Map([['/docs/lite/installation/', 'Install with Docker']])
+	);
+	assert.deepEqual(trail[1], crumb('TBMQ Lite Docs', `${PROD_ORIGIN}/docs/lite/`));
+	assert.equal(trail.length, 3);
+});

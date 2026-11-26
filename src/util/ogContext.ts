@@ -44,6 +44,7 @@ export function getSectionLabel(slug: string): string {
 	if (path.startsWith('uk/')) path = path.slice(3);
 	if (path.startsWith('docs/')) path = path.slice(5);
 	if (path.startsWith('pe/')) path = path.slice(3);
+	else if (path.startsWith('lite/')) path = path.slice(5);
 	const firstSegment = path.split('/')[0] ?? '';
 	if (!firstSegment) return '';
 	return prettifySegment(firstSegment);

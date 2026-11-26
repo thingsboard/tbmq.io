@@ -10,6 +10,7 @@ const { platform = Products.TBMQ } = Astro.props;
 const repoMap: Record<Products, string> = {
 	[Products.TBMQ]: 'thingsboard/tbmq',
 	[Products.TBMQ_PE]: 'thingsboard/tbmq',
+	[Products.TBMQ_LITE]: 'thingsboard/tbmq',
 };
 
 const repo = repoMap[platform];
