@@ -171,7 +171,7 @@ Publishes succeed and subscribers eventually get them, but end-to-end latency is
 | `clientActor_msgInQueueTime_seconds`, `deviceActor_msgInQueueTime_seconds` | How long a message waited in an actor's mailbox before being picked up. |
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
-TBMQ Lite has no Kafka lag and no pack timer: watch `standaloneDispatchQueued`, `standalonePipelineQueuedMessages` and `incomingPublishMsg_consumed_processing_time_seconds` instead, see <DocLink product={props.product} path="installation/lite/configuration#metrics">TBMQ Lite metrics</DocLink>.
+TBMQ Lite has no Kafka lag and no pack timer: watch `standaloneDispatchQueued`, `standalonePipelineQueuedMessages` and `incomingPublishMsg_consumed_processing_time_seconds` instead, see <DocLink product={Products.TBMQ_LITE} path="installation/config#metrics">TBMQ Lite metrics</DocLink>.
 </ShowFor>
 
 **Interpret**

@@ -1,5 +1,5 @@
 ---
-title: Install TBMQ Lite
+title: Install with Docker
 description: "Run TBMQ Lite, the single-node edition of TBMQ, with one Docker command: ports, the data volume, supported hosts, the first sign-in, health checks and upgrades."
 sidebar:
   label: Install
@@ -61,7 +61,7 @@ TBMQ Lite is the single-node edition of TBMQ: one container and one data volume,
 beside it. It keeps TBMQ's MQTT 3.1, 3.1.1 and 5 handling, persistent sessions with durable offline queues, retained
 messages, all five authentication providers, the REST API and the web UI, and stores everything in an embedded
 database on the volume. It supports **DEVICE** clients only. To see how it differs from clustered TBMQ, read
-<DocLink product={Products.TBMQ} path="installation/lite/lite-vs-tbmq">Lite compared with TBMQ</DocLink>.
+<DocLink product={Products.TBMQ_LITE} path="lite-vs-tbmq">Lite compared with TBMQ</DocLink>.
 
 ## Supported hosts
 
@@ -71,7 +71,7 @@ database on the volume. It supports **DEVICE** clients only. To see how it diffe
   These hosts are not tested in the beta.
 
 The broker is sized for a container with 2 CPUs and 2 GB of memory; it also starts in less. See
-<DocLink product={Products.TBMQ} path="installation/lite/guarantees-and-limits">Guarantees and limits</DocLink> for the
+<DocLink product={Products.TBMQ_LITE} path="guarantees-and-limits">Guarantees and limits</DocLink> for the
 measured capacity.
 
 ## Install
@@ -87,7 +87,7 @@ Run one command:
 | `8084` | MQTT over WebSocket, used by the web UI's **WebSocket Client** page |
 
 The TLS listeners (MQTTS on `8883`, WSS on `8085`) are off until you enable them, see
-<DocLink product={Products.TBMQ} path="installation/lite/configuration">Configuration</DocLink>.
+<DocLink product={Products.TBMQ_LITE} path="installation/config">Configuration</DocLink>.
 
 ### The data volume
 
@@ -136,7 +136,7 @@ Administrators you add later on the **Users** page with the default password are
 sign-in.
 
 After signing in, continue with
-<DocLink product={Products.TBMQ} path="installation/lite/getting-started">Getting started</DocLink>.
+<DocLink product={Products.TBMQ_LITE} path="getting-started">Getting started</DocLink>.
 
 ## Logs, health and stopping
 
@@ -170,7 +170,7 @@ Upgrade by recreating the container with the new image and the same volume:
 
 1. **Back up the store.**
 
-   Download a backup first, see <DocLink product={Products.TBMQ} path="installation/lite/backup-and-restore">Backup and restore</DocLink>.
+   Download a backup first, see <DocLink product={Products.TBMQ_LITE} path="installation/backup-and-restore">Backup and restore</DocLink>.
 
 2. **Recreate the container.**
 

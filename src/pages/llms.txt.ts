@@ -113,6 +113,17 @@ const DOC_PAGES: LinkEntry[] = [
 		title: 'TBMQ Community Edition documentation',
 		description: 'Same documentation tree scoped to the open-source edition; PE-only pages are absent here.',
 	},
+	{
+		path: 'docs/lite',
+		title: 'TBMQ Lite documentation (Beta)',
+		description:
+			'The single-container edition of TBMQ: install with one Docker command, configuration, guarantees and limits, backup and restore.',
+	},
+	{
+		path: 'docs/lite/installation',
+		title: 'Install TBMQ Lite',
+		description: 'The docker run command, ports, the data volume, first sign-in, health checks and upgrades.',
+	},
 ];
 
 const PRODUCT_PAGES: LinkEntry[] = [

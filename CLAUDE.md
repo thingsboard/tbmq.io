@@ -53,12 +53,13 @@ TBMQ documentation lives in `src/content/docs/docs/` as `.mdx` files with YAML f
 
 - `src/content/docs/docs/` → TBMQ Community Edition pages
 - `src/content/docs/docs/pe/` → TBMQ Professional Edition pages
+- `src/content/docs/docs/lite/` → TBMQ Lite pages. These are standalone `.mdx` files with their own content, not stubs over a shared `_includes` file: nothing else renders them.
 
 Content uses Astro's Content Collections with type-safe Zod schemas defined in `src/content.config.ts`.
 
 **Schema:** there is one docs schema, `baseSchema` (`src/content.config.ts`), and its `type` field is `z.literal('base')` with a default — no page needs to declare it. The upstream `deploy`/`backend`/`cms`/`media`/`integration`/`migration`/`tutorial`/`recipe` types and the component trees they switched on are gone; don't reintroduce a `type:` in frontmatter.
 
-**Sidebar** is configured in `astro.sidebar.ts`. This file has been trimmed to the TBMQ sidebars only — `tbmqSidebar` / `tbmqPeSidebar` and their tab-links (the unused upstream product sidebars were removed). The site consumes the combined `sidebar` export (filtered per edition by route middleware) plus `sidebarTabLinksByPrefix`.
+**Sidebar** is configured in `astro.sidebar.ts`. This file has been trimmed to the TBMQ sidebars only — `tbmqSidebar` / `tbmqPeSidebar` / `tbmqLiteSidebar` and their tab-links (the unused upstream product sidebars were removed). The site consumes the combined `sidebar` export (filtered per product by route middleware) plus `sidebarTabLinksByPrefix`.
 
 ### Route Middleware
 
@@ -100,16 +101,17 @@ Props and usage live in each component file under `src/components/`. Commonly us
 
 ### Product System
 
-All product identifiers live in `src/models/site.models.ts` as the `Products` enum, which now has exactly two members:
+All product identifiers live in `src/models/site.models.ts` as the `Products` enum, which now has exactly three members:
 
 | Enum value | URL prefix | Content directory |
 |------------|------------|-------------------|
 | `TBMQ` | `''` (empty) | `src/content/docs/docs/` |
 | `TBMQ_PE` | `pe/` | `src/content/docs/docs/pe/` |
+| `TBMQ_LITE` | `lite/` | `src/content/docs/docs/lite/` |
 
 Adding a member to the enum means touching every exhaustive `Record<Products, …>` that hangs off it — `productDocsPrefix` (`site.models.ts`), `productVersions` (`util/path-utils.ts`), `productSuffix` (`ImageGallery.astro`), `repoMap` (`Landing/GitHubButton.astro`), `META_BY_PRODUCT` (`open-graph/_shared/product-meta.ts`). `astro check` fails loudly on each, which is the intended safety net. Don't add non-TBMQ product content — this is a TBMQ-only site.
 
-**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/getting-started/` (CE), `/docs/pe/...` (PE).
+**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/getting-started/` (CE), `/docs/pe/...` (PE), `/docs/lite/...` (TBMQ Lite).
 
 ### Shared Content via _includes
 
@@ -140,7 +142,7 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/installation/lite/`). The other products' constants have been removed.
+The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/lite/`). The other products' constants have been removed.
 
 ### Custom Plugins
 

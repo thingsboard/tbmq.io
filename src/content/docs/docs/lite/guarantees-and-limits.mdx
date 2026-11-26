@@ -1,5 +1,5 @@
 ---
-title: TBMQ Lite guarantees and limits
+title: Guarantees and limits
 description: "When TBMQ Lite acknowledges a message, what a crash or a power cut can lose, the DEVICE-only rule, the per-client queue limit, measured capacity and memory notes."
 sidebar:
   label: Guarantees and limits
@@ -23,7 +23,7 @@ TBMQ Lite sends PUBACK (QoS 1) or PUBREC (QoS 2) once the message has been
 PUBCOMP follows PUBREL at once.
 
 If a persistent copy or a retained update cannot be written, because the disk is below the
-<DocLink product={Products.TBMQ} path="installation/lite/configuration#disk-watermark">watermark</DocLink> or the store
+<DocLink product={Products.TBMQ_LITE} path="installation/config#disk-watermark">watermark</DocLink> or the store
 fails, the publish fails: an MQTT 5 publisher gets an error reason code (`0x97`, Quota exceeded, for the disk), an
 MQTT 3.x publisher is disconnected.
 
@@ -37,7 +37,7 @@ MQTT 3.x publisher is disconnected.
   dies can reach persistent subscribers twice: its copies may already be stored while the publisher, which never got
   its acknowledgment, sends it again. Clustered TBMQ has the same window.
 - **Copying `/data` of a running broker** does not give a usable backup. Use the
-  <DocLink product={Products.TBMQ} path="installation/lite/backup-and-restore">backup</DocLink> instead.
+  <DocLink product={Products.TBMQ_LITE} path="installation/backup-and-restore">backup</DocLink> instead.
 
 ## DEVICE clients only
 
@@ -64,7 +64,7 @@ store. The limits are the same as in clustered TBMQ:
 
 A backend that subscribes to the traffic of many devices fills its queue quickly: at 1,000 msg/s the default limit
 covers 10 seconds offline. A backend that must ride out longer outages at high rates belongs on clustered TBMQ with
-APPLICATION clients, see <DocLink product={Products.TBMQ} path="installation/lite/lite-vs-tbmq">Lite compared with TBMQ</DocLink>.
+APPLICATION clients, see <DocLink product={Products.TBMQ_LITE} path="lite-vs-tbmq">Lite compared with TBMQ</DocLink>.
 
 ## Capacity
 
@@ -88,7 +88,7 @@ that each receive the topics of 9 publishers, QoS 1 both ways, 402-byte messages
 ## Memory
 
 - The start script sizes the JVM from the container's memory limit, see
-  <DocLink product={Products.TBMQ} path="installation/lite/configuration#memory-and-java_opts">Memory and JAVA_OPTS</DocLink>.
+  <DocLink product={Products.TBMQ_LITE} path="installation/config#memory-and-java_opts">Memory and JAVA_OPTS</DocLink>.
   Set `--memory` on the container.
 - The store's block cache defaults to 10% of the container memory. Below about 1.3 GB that is under 128 MiB, which
   measured 15–43% more device writes in the store's benchmarks. On a small container that can spare the memory, keep
@@ -100,10 +100,10 @@ that each receive the topics of 9 publishers, QoS 1 both ways, 402-byte messages
 - **No integrations** (HTTP, MQTT, Kafka) and no MQTT bridge.
 - **Metrics:** the series of Kafka, SQL write queues, APPLICATION clients and integrations are absent, and
   `incomingPublishMsg` has fewer counters, see
-  <DocLink product={Products.TBMQ} path="installation/lite/configuration#metrics">Metrics</DocLink>.
+  <DocLink product={Products.TBMQ_LITE} path="installation/config#metrics">Metrics</DocLink>.
 - **Network:** JWT authentication with JWKS and the HTTP authentication provider need the network. So does the release
   check (`TBMQ_VERSION_CHECK_ENABLED`); offline, it fails quietly.
-- **Clock:** the host needs NTP, see <DocLink product={Products.TBMQ} path="installation/lite/configuration#clock">Clock</DocLink>.
+- **Clock:** the host needs NTP, see <DocLink product={Products.TBMQ_LITE} path="installation/config#clock">Clock</DocLink>.
 
 <Aside type="note">
   Found a limit that is not listed here? Open a <a href="https://github.com/thingsboard/tbmq/issues" target="_blank" rel="noopener noreferrer">GitHub issue</a>

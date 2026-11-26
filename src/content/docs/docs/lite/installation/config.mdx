@@ -1,5 +1,5 @@
 ---
-title: TBMQ Lite configuration
+title: Configuration
 description: "The TBMQ Lite settings that matter: the store, the disk watermark, the message pipeline, memory and JAVA_OPTS, listeners, health, the metrics token, and the Lite metrics."
 sidebar:
   label: Configuration
@@ -43,7 +43,7 @@ statistics on the data volume.
 | Variable | Default | Description |
 |---|---|---|
 | `STORE_PATH` | `/data/db` | Directory of the store. |
-| `STORE_WAL_SYNC` | `periodic` | How the write-ahead log reaches the disk: `periodic` syncs it every `STORE_WAL_SYNC_INTERVAL_MS`, `always` on every write. See <DocLink product={Products.TBMQ} path="installation/lite/guarantees-and-limits">Guarantees and limits</DocLink>. |
+| `STORE_WAL_SYNC` | `periodic` | How the write-ahead log reaches the disk: `periodic` syncs it every `STORE_WAL_SYNC_INTERVAL_MS`, `always` on every write. See <DocLink product={Products.TBMQ_LITE} path="guarantees-and-limits">Guarantees and limits</DocLink>. |
 | `STORE_WAL_SYNC_INTERVAL_MS` | `1000` | Interval between WAL syncs (ms), with `periodic`. A power cut can lose up to this interval. |
 | `STORE_MEMORY_BLOCK_CACHE_BYTES` | `0` | Block cache size (bytes). `0` derives it from the container memory: 10%, at least 16 MB and at most 512 MB. |
 | `STORE_MEMORY_WRITE_BUFFER_BYTES` | `0` | Memory budget of the memtables (bytes). `0` means 25% of the block cache. |

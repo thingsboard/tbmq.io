@@ -1,5 +1,5 @@
 ---
-title: Getting started with TBMQ Lite
+title: Getting started
 description: "Create MQTT client credentials in TBMQ Lite, publish and subscribe from the web UI and from the command line, and see a persistent session keep messages for an offline client."
 sidebar:
   label: Getting started
@@ -12,7 +12,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
 
-This guide assumes a broker started as in <DocLink product={Products.TBMQ} path="installation/lite">Install TBMQ Lite</DocLink>,
+This guide assumes a broker started as in <DocLink product={Products.TBMQ_LITE} path="installation">Install TBMQ Lite</DocLink>,
 on `localhost`, and that you have signed in and set the administrator's password.
 
 ## Create client credentials
@@ -112,7 +112,7 @@ the broker.
 </Steps>
 
 Each persistent client keeps at most 10,000 messages by default; see
-<DocLink product={Products.TBMQ} path="installation/lite/guarantees-and-limits">Guarantees and limits</DocLink>.
+<DocLink product={Products.TBMQ_LITE} path="guarantees-and-limits">Guarantees and limits</DocLink>.
 
 <Aside type="tip">
   If a client cannot connect, open **Authentication** → **Unauthorized clients**: the broker records each refused
@@ -121,8 +121,8 @@ Each persistent client keeps at most 10,000 messages by default; see
 
 ## Next steps
 
-- <DocLink product={Products.TBMQ} path="installation/lite/configuration">Configuration</DocLink>: the settings that matter for
+- <DocLink product={Products.TBMQ_LITE} path="installation/config">Configuration</DocLink>: the settings that matter for
   TBMQ Lite, and its metrics.
-- <DocLink product={Products.TBMQ} path="installation/lite/backup-and-restore">Backup and restore</DocLink>.
+- <DocLink product={Products.TBMQ_LITE} path="installation/backup-and-restore">Backup and restore</DocLink>.
 - <DocLink product={Products.TBMQ} path="user-guide">User guide</DocLink>: TBMQ's features and UI pages. Pages about
   APPLICATION clients, integrations and clusters do not apply to TBMQ Lite.
