@@ -60,10 +60,7 @@ test('switching product keeps the page when the target has it', () => {
 		switchVersionWithFallback('/docs/lite/installation/config/', Products.TBMQ, IDS),
 		'/docs/installation/config/'
 	);
-	assert.equal(
-		switchVersionWithFallback('/docs/lite/installation/', Products.TBMQ_PE, IDS),
-		'/docs/pe/installation/'
-	);
+	assert.equal(switchVersionWithFallback('/docs/lite/installation/', Products.TBMQ_PE, IDS), '/docs/pe/installation/');
 });
 
 test('switching product falls back to the docs home', () => {
@@ -84,10 +81,7 @@ test('sidebar links are split by product', () => {
 });
 
 test('Lite docs links, base URL and title name', () => {
-	assert.equal(
-		docsLink(Products.TBMQ_LITE, 'installation/config#metrics'),
-		'/docs/lite/installation/config/#metrics'
-	);
+	assert.equal(docsLink(Products.TBMQ_LITE, 'installation/config#metrics'), '/docs/lite/installation/config/#metrics');
 	assert.equal(getVersionBaseURL(Products.TBMQ_LITE), '/docs/lite/');
 	assert.equal(getProductTitleName(Products.TBMQ_LITE), 'TBMQ Lite');
 });
