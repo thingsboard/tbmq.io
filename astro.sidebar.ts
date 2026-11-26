@@ -180,6 +180,23 @@ const tbmqInstallItems = (prefix: string): SidebarConfig => {
 				{ label: 'GCP GKE', slug: `${prefix}/installation/cluster/helm-cluster-setup-gcp` },
 			],
 		},
+		...(!isPE
+			? [
+					{
+						label: 'TBMQ Lite',
+						badge: { text: 'Beta', variant: 'caution' as const },
+						collapsed: true,
+						items: [
+							{ label: 'Install', slug: `${prefix}/installation/lite` },
+							{ label: 'Getting started', slug: `${prefix}/installation/lite/getting-started` },
+							{ label: 'Configuration', slug: `${prefix}/installation/lite/configuration` },
+							{ label: 'Guarantees and limits', slug: `${prefix}/installation/lite/guarantees-and-limits` },
+							{ label: 'Backup and restore', slug: `${prefix}/installation/lite/backup-and-restore` },
+							{ label: 'Lite compared with TBMQ', slug: `${prefix}/installation/lite/lite-vs-tbmq` },
+						],
+					},
+				]
+			: []),
 		{ label: 'Upgrade instructions', slug: `${prefix}/installation/upgrade-instructions` },
 	];
 };

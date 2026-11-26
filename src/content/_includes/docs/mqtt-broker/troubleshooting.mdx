@@ -170,6 +170,10 @@ Publishes succeed and subscribers eventually get them, but end-to-end latency is
 | `delivery_seconds` | Time to hand a PUBLISH to the network layer — the last leg of the delivery path. |
 | `clientActor_msgInQueueTime_seconds`, `deviceActor_msgInQueueTime_seconds` | How long a message waited in an actor's mailbox before being picked up. |
 
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+TBMQ Lite has no Kafka lag and no pack timer: watch `standaloneDispatchQueued`, `standalonePipelineQueuedMessages` and `incomingPublishMsg_consumed_processing_time_seconds` instead, see <DocLink product={props.product} path="installation/lite/configuration#metrics">TBMQ Lite metrics</DocLink>.
+</ShowFor>
+
 **Interpret**
 
 Growing lag on `msg-all-consumer-group` means the broker is ingesting PUBLISH messages faster than the consumer pool behind it can process them — usually the first sign of trouble, ahead of anything that implies loss. Rising `msgInQueueTime` on either actor family means the actor thread pool doing that work is behind, not just the Kafka consumers feeding it. Rising `kafkaProducer_send_seconds` points at Kafka itself — broker load, network, or replication — rather than at TBMQ's own processing. Timeouts on the app processor (`tmpTimeoutPublish` climbing) mean persistent APPLICATION clients are not acknowledging fast enough to keep the pipeline draining.
