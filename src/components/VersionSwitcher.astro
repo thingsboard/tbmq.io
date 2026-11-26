@@ -1,6 +1,7 @@
 ---
 import { Products } from '@models/site.models.ts';
 import { allPages } from '~/content';
+import ProductTile from '~/components/ProductTile.astro';
 import { getVersionFromURL, switchVersionWithFallback } from '~/util/path-utils';
 
 // Inline SVGs as raw strings so their `currentColor` flows from the parent's CSS `color`.
@@ -15,9 +16,20 @@ const getIcon = (name: string) => iconSources[`/src/assets/images/docs/product-s
 // FAMILIES — single source of truth for what the selector renders.
 // Add or edit one entry to add/edit a product in the selector.
 // ────────────────────────────────────────────────────────────────────────────
+/** A product offered under one edition: the second row of the picker switches between them. */
+interface Variant {
+	product: Products;
+	label: string;
+	subtitle: string;
+	tile: 'tbmq' | 'tbmq-lite';
+	badge?: string;
+}
 interface Edition {
 	product: Products;
 	label: string;
+	/** Heading of the variants popover. */
+	variantsLabel?: string;
+	variants?: Variant[];
 }
 interface Family {
 	name: string;
@@ -30,7 +42,21 @@ const FAMILIES: Family[] = [
 		name: 'MQTT Broker',
 		iconId: 'tbmq',
 		editions: [
-			{ product: Products.TBMQ, label: 'Community' },
+			{
+				product: Products.TBMQ,
+				label: 'Community',
+				variantsLabel: 'Community edition',
+				variants: [
+					{ product: Products.TBMQ, label: 'TBMQ', subtitle: 'Clustered broker', tile: 'tbmq' },
+					{
+						product: Products.TBMQ_LITE,
+						label: 'TBMQ Lite',
+						subtitle: 'Single container',
+						tile: 'tbmq-lite',
+						badge: 'Beta',
+					},
+				],
+			},
 			{ product: Products.TBMQ_PE, label: 'Professional' },
 		],
 	},
@@ -40,9 +66,15 @@ const FAMILIES: Family[] = [
 // State derivation
 // ────────────────────────────────────────────────────────────────────────────
 const currentProduct = getVersionFromURL(Astro.url.pathname);
+
+// An edition is active when its own product is current or one of its variants is:
+// a TBMQ Lite page keeps the Community pill lit.
+const isEditionActive = (e: Edition): boolean =>
+	e.product === currentProduct || !!e.variants?.some((v) => v.product === currentProduct);
+
 const currentFamily =
-	FAMILIES.find((f) => f.editions.some((e) => e.product === currentProduct)) ??
-	// Single-product site: root utility pages (search, newsletter-thanks) carry no
+	FAMILIES.find((f) => f.editions.some(isEditionActive)) ??
+	// Single-family site: root utility pages (search, newsletter-thanks) carry no
 	// product prefix in the URL, so no family matches — fall back to the sole family
 	// instead of crashing on `currentFamily.iconId`.
 	FAMILIES[0];
@@ -51,12 +83,14 @@ const existingPageIds = new Set(allPages.map((p) => p.id));
 
 const href = (target: Products) => switchVersionWithFallback(Astro.url.pathname, target, existingPageIds);
 
-const isEditionActive = (e: Edition): boolean => e.product === currentProduct;
+const activeEdition = currentFamily.editions.find(isEditionActive);
+const variants = activeEdition?.variants;
+const activeVariant = variants?.find((v) => v.product === currentProduct);
 ---
 
 <product-selector>
 	<div class="ps-card">
-		<!-- Static product label — single-product site, no product switching -->
+		<!-- Static product label: one product family, so nothing to switch here -->
 		<div class="ps-header">
 			<span class="ps-icon-box ps-icon-box--header">
 				<span class="ps-icon" set:html={getIcon(currentFamily.iconId)} />
@@ -75,7 +109,7 @@ const isEditionActive = (e: Edition): boolean => e.product === currentProduct;
 						<a
 							class:list={['ps-pill', { 'is-active': isEditionActive(e) }]}
 							href={href(e.product)}
-							aria-pressed={isEditionActive(e)}
+							aria-current={e.product === currentProduct ? 'page' : isEditionActive(e) ? 'true' : undefined}
 						>
 							{e.label}
 						</a>
@@ -83,8 +117,217 @@ const isEditionActive = (e: Edition): boolean => e.product === currentProduct;
 				</div>
 			)
 		}
+
+		<!-- Product row: rendered only while the active edition offers more than one product -->
+		{
+			variants && activeVariant && (
+				<button
+					type="button"
+					class="ps-region"
+					aria-haspopup="listbox"
+					aria-expanded="false"
+					aria-controls="ps-variants"
+				>
+					<ProductTile product={activeVariant.tile} size={20} />
+					<span class="ps-region-label">{activeVariant.label}</span>
+					<svg class="ps-caret-down" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+						<path
+							d="M4 6L8 10L12 6"
+							stroke="currentColor"
+							stroke-width="1.33"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							fill="none"
+						/>
+					</svg>
+				</button>
+			)
+		}
 	</div>
+
+	<!-- Product popover: the products of the active edition -->
+	{
+		variants && activeVariant && (
+			<div class="ps-popover print:hidden" id="ps-variants" role="listbox" aria-label="Product" hidden>
+				<div class="ps-section-label">{activeEdition?.variantsLabel}</div>
+				{variants.map((v) => (
+					<a
+						role="option"
+						class:list={['ps-item', { 'is-active': v.product === currentProduct }]}
+						href={href(v.product)}
+						aria-selected={v.product === currentProduct}
+					>
+						<ProductTile product={v.tile} size={32} />
+						<span class="ps-item-text">
+							<span class="ps-item-name">
+								{v.label}
+								{v.badge && <span class="ps-badge">{v.badge}</span>}
+							</span>
+							<span class="ps-item-tagline">{v.subtitle}</span>
+						</span>
+						{v.product === currentProduct && (
+							<svg class="ps-check" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+								<path
+									d="M4.5 10.5L8 14L15.5 6.5"
+									stroke="currentColor"
+									stroke-width="1.67"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									fill="none"
+								/>
+							</svg>
+						)}
+					</a>
+				))}
+			</div>
+		)
+	}
 </product-selector>
+
+<script>
+	class ProductSelector extends HTMLElement {
+		constructor() {
+			super();
+
+			const triggers = Array.from(this.querySelectorAll<HTMLButtonElement>('[aria-haspopup="listbox"]'));
+
+			// After first open() the popovers are portalled to <body>, so use
+			// document.getElementById rather than this.querySelector.
+			const findPopover = (id: string) => document.getElementById(id);
+
+			const closeAll = () => {
+				triggers.forEach((t) => {
+					t.setAttribute('aria-expanded', 'false');
+					const popoverId = t.getAttribute('aria-controls');
+					if (popoverId) {
+						const pop = findPopover(popoverId);
+						if (pop) pop.hidden = true;
+					}
+				});
+			};
+
+			const positionPopover = (trigger: HTMLElement, popover: HTMLElement) => {
+				const rect = trigger.getBoundingClientRect();
+				const minWidth = 320;
+				const width = Math.max(rect.width, minWidth);
+				// Breathing space kept between the popover and the viewport edges.
+				const viewportPad = 8;
+				// Space between the trigger's bottom edge and the popover's top
+				// edge. Deliberately separate from `viewportPad` despite the equal
+				// value — it feeds both the top offset and the height cap, so the
+				// two aren't interchangeable.
+				const triggerGap = 8;
+				// Anchor to trigger.left, but keep popover inside viewport on the right.
+				const maxLeft = window.innerWidth - width - viewportPad;
+				const left = Math.min(rect.left, Math.max(viewportPad, maxLeft));
+				const top = rect.bottom + triggerGap;
+				popover.style.top = `${top}px`;
+				popover.style.left = `${left}px`;
+				popover.style.width = `${width}px`;
+				// Cap the popover to the room under the trigger so an over-tall
+				// list scrolls (see `overflow-y` on `.ps-popover`) instead of
+				// running off-screen on short viewports.
+				//
+				// The `Math.max(0, …)` floor is load-bearing rather than defensive:
+				// a negative `max-height` is invalid CSS, and an invalid value
+				// assigned through the CSSOM is dropped silently, which would leave
+				// whatever cap the previous call set — or none at all on a first
+				// open, i.e. exactly the overflow this is fixing.
+				popover.style.maxHeight = `${Math.max(0, window.innerHeight - top - viewportPad)}px`;
+			};
+
+			triggers.forEach((trigger) => {
+				const popoverId = trigger.getAttribute('aria-controls');
+				if (!popoverId) return;
+				const popover = this.querySelector<HTMLElement>(`#${popoverId}`);
+				if (!popover) return;
+
+				const items = Array.from(popover.querySelectorAll<HTMLAnchorElement>('[role="option"]'));
+				items.forEach((item) => item.setAttribute('tabindex', '-1'));
+
+				const isOpen = () => trigger.getAttribute('aria-expanded') === 'true';
+				const open = () => {
+					closeAll();
+					// Portal to <body> so we escape any ancestor stacking context or
+					// overflow clipping (Safari in particular paints the docs main
+					// content over a `position: fixed` popover that's nested under
+					// the sidebar's stacking context). Idempotent — runs once.
+					if (popover.parentElement !== document.body) {
+						document.body.appendChild(popover);
+					}
+					positionPopover(trigger, popover);
+					trigger.setAttribute('aria-expanded', 'true');
+					popover.hidden = false;
+				};
+				const close = () => {
+					trigger.setAttribute('aria-expanded', 'false');
+					popover.hidden = true;
+				};
+
+				trigger.addEventListener('click', (e) => {
+					e.preventDefault();
+					if (isOpen()) close();
+					else open();
+				});
+
+				trigger.addEventListener('keydown', (e) => {
+					if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						open();
+						items[0]?.focus();
+					}
+					if (e.key === 'Escape') close();
+				});
+
+				popover.addEventListener('keydown', (e) => {
+					const focused = document.activeElement as HTMLElement;
+					const idx = items.indexOf(focused as HTMLAnchorElement);
+					if (e.key === 'ArrowDown') {
+						e.preventDefault();
+						(items[idx + 1] ?? items[0])?.focus();
+					}
+					if (e.key === 'ArrowUp') {
+						e.preventDefault();
+						(items[idx - 1] ?? items[items.length - 1])?.focus();
+					}
+					if (e.key === 'Escape') {
+						close();
+						trigger.focus();
+					}
+				});
+			});
+
+			document.addEventListener('click', (e) => {
+				const target = e.target as Node;
+				// Click inside the trigger / wrapper: handled by per-trigger listeners.
+				if (this.contains(target)) return;
+				// Click inside a portalled popover: keep it open.
+				const popoverIds = triggers.map((t) => t.getAttribute('aria-controls')).filter((id): id is string => !!id);
+				for (const id of popoverIds) {
+					const pop = findPopover(id);
+					if (pop && pop.contains(target)) return;
+				}
+				closeAll();
+			});
+
+			// Reposition / close on viewport changes
+			const repositionOpen = () => {
+				triggers.forEach((t) => {
+					if (t.getAttribute('aria-expanded') !== 'true') return;
+					const popoverId = t.getAttribute('aria-controls');
+					if (!popoverId) return;
+					const pop = findPopover(popoverId);
+					if (pop) positionPopover(t, pop);
+				});
+			};
+			window.addEventListener('resize', repositionOpen, { passive: true });
+			// Sidebar-pane scrolls; close popovers when it does.
+			const sidebarPane = this.closest('.sidebar-pane');
+			sidebarPane?.addEventListener('scroll', () => closeAll(), { passive: true });
+		}
+	}
+	customElements.define('product-selector', ProductSelector);
+</script>
 
 <style lang="scss">
 	@use '../styles/variables' as *;
@@ -216,5 +459,151 @@ const isEditionActive = (e: Edition): boolean => e.product === currentProduct;
 			color: var(--sl-color-white);
 			font-weight: 600;
 		}
+	}
+
+	// ─── Product row ─────────────────────────────────────────────────────────
+	.ps-region {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		min-height: 36px;
+		padding: 6px 12px;
+		background: transparent;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 8px;
+		cursor: pointer;
+		text-align: left;
+		color: var(--sl-color-white);
+		transition: background-color 0.15s ease;
+
+		&:hover {
+			background: var(--sl-color-gray-7);
+		}
+	}
+
+	.ps-region-label {
+		flex: 1;
+		min-width: 0;
+		font-size: 16px;
+		font-weight: 600;
+		line-height: 1.2;
+		color: var(--sl-color-white);
+	}
+
+	.ps-caret-down {
+		flex-shrink: 0;
+		color: var(--sl-color-gray-3);
+		transition: transform 0.15s ease;
+	}
+
+	.ps-region[aria-expanded='true'] .ps-caret-down {
+		transform: rotate(180deg);
+	}
+
+	// ─── Popover ─────────────────────────────────────────────────────────────
+	.ps-popover {
+		position: fixed;
+		// top / left / width / max-height are set by JS (see `positionPopover`)
+		// so the popover can extend past the sidebar boundary into the content
+		// area while staying inside the viewport.
+		z-index: 1000;
+		// Plain block flow: rows take their natural height, so a capped
+		// popover overflows into scroll instead of compressing them.
+		display: block;
+		padding: 4px;
+		background: var(--sl-color-bg-sidebar, var(--sl-color-bg));
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 12px;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.08),
+			0 1px 3px rgba(0, 0, 0, 0.06);
+		// JS caps max-height to the space below the trigger; scroll the rest
+		// instead of clipping it off-screen on short viewports.
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		// Reserve the scrollbar gutter up front so rows don't reflow and the
+		// right-aligned check icon doesn't get crowded when the cap engages.
+		scrollbar-gutter: stable;
+
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	.ps-section-label {
+		padding: 12px 8px 4px;
+		font-size: 11px;
+		font-weight: 600;
+		line-height: 1.2;
+		text-transform: uppercase;
+		color: var(--sl-color-gray-3);
+		letter-spacing: 0.02em;
+	}
+
+	.ps-item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 47px;
+		padding: 8px;
+		border-radius: 8px;
+		text-decoration: none;
+		color: var(--sl-color-white);
+		transition: background-color 0.15s ease;
+
+		&:hover {
+			background: var(--sl-color-gray-6);
+		}
+
+		&.is-active {
+			background: var(--sl-color-gray-6);
+
+			.ps-item-name {
+				color: var(--color-brand);
+			}
+		}
+	}
+
+	.ps-item-text {
+		display: flex;
+		flex: 1;
+		min-width: 0;
+		flex-direction: column;
+		justify-content: center;
+		line-height: 1.2;
+		gap: 2px;
+	}
+
+	.ps-item-name {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--sl-color-white);
+	}
+
+	// Reads like the sidebar's `caution` badge on the Lite pages.
+	.ps-badge {
+		padding: 1px 6px;
+		font-size: 10px;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--sl-color-orange-high);
+		background: var(--sl-color-orange-low);
+		border: 1px solid var(--sl-color-orange);
+		border-radius: 4px;
+	}
+
+	.ps-item-tagline {
+		font-size: 12px;
+		font-weight: 400;
+		color: var(--sl-color-gray-3);
+	}
+
+	.ps-check {
+		flex-shrink: 0;
+		color: var(--color-brand);
 	}
 </style>
