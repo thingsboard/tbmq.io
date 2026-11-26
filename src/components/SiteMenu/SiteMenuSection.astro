@@ -1,0 +1,63 @@
+---
+/**
+ * The content of one menu section: its groups of links, then the promo row.
+ * `SiteMenu` wraps it in the section's panel; the same markup serves the desktop
+ * band and the phone drawer.
+ */
+import { Icon } from 'astro-icon/components';
+import NavIcon from '@components/Landing/NavIcon.astro';
+import ProductTile from '@components/ProductTile.astro';
+import type { SubMenu } from '@data/site-menu';
+
+interface Props {
+	submenu: SubMenu;
+}
+
+const { submenu } = Astro.props;
+---
+
+<div class="sm__panel-inner">
+	{
+		submenu.groups.map((group) => (
+			<div class="sm__group">
+				{group.name && <p class="sm__group-name">{group.name}</p>}
+				<ul class="sm__links">
+					{group.items.map((item) => (
+						<li>
+							<a
+								class:list={['sm__link', item.linkClass]}
+								href={item.href}
+								id={item.id}
+								target={item.target}
+								rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
+							>
+								{item.tile && <ProductTile product={item.tile} />}
+								{!item.tile && item.icon && <NavIcon src={item.icon} size={24} />}
+								<span class="sm__link-text">
+									<span class="sm__link-heading">
+										{item.heading}
+										{item.badge && <span class="sm__badge">{item.badge}</span>}
+									</span>
+									{item.description && <span class="sm__link-desc">{item.description}</span>}
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</div>
+		))
+	}
+	{
+		submenu.promos && (
+			<div class="sm__promos">
+				{submenu.promos.map((promo) => (
+					<a class:list={['sm__promo', promo.featured && 'sm__promo--feat']} href={promo.href}>
+						<Icon name={promo.icon} aria-hidden="true" />
+						{promo.label}
+						{promo.featured && <Icon name="tabler:chevron-right" class="sm__promo-go" aria-hidden="true" />}
+					</a>
+				))}
+			</div>
+		)
+	}
+</div>

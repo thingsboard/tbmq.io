@@ -1,0 +1,541 @@
+---
+/**
+ * The site header's menu, rendered from `MENU_ENTRIES` (src/data/site-menu.ts).
+ *
+ * One markup, two presentations decided by the 1281px breakpoint the header already
+ * uses: a row with full-width panels under the bar, or the burger drawer's list with
+ * sections that expand in place.
+ *
+ * Colours come from the `--hd-*` properties that `HeaderContent.astro` sets on
+ * `header.header` per page state; nothing here knows which page it is on.
+ */
+import { Icon } from 'astro-icon/components';
+import SiteMenuSection from './SiteMenuSection.astro';
+import { MENU_ENTRIES, inSection, isHere } from './menu-model';
+
+const pathname = Astro.url.pathname;
+---
+
+<nav class="sm" aria-label="Site menu">
+	<ul class="sm__row">
+		{
+			MENU_ENTRIES.map(({ item, sub }) =>
+				sub ? (
+					<li class="sm__item" data-sm-item={sub.id}>
+						<button
+							type="button"
+							class="sm__top"
+							aria-expanded="false"
+							aria-controls={`sm-panel-${sub.id}`}
+							data-current={inSection(pathname, sub) ? '' : undefined}
+						>
+							{item.label}
+							<Icon name="tabler:chevron-down" class="sm__chev" aria-hidden="true" />
+						</button>
+						<div class="sm__panel" id={`sm-panel-${sub.id}`} hidden>
+							<SiteMenuSection submenu={sub} />
+						</div>
+					</li>
+				) : (
+					<li class="sm__item">
+						<a
+							class:list={['sm__top', item.linkClass]}
+							href={item.href}
+							id={item.id}
+							aria-current={isHere(pathname, item.href) ? 'page' : undefined}
+						>
+							{item.label}
+						</a>
+					</li>
+				)
+			)
+		}
+	</ul>
+</nav>
+
+<!-- Without JavaScript the panels still open on hover and on keyboard focus. -->
+<noscript>
+	<style>
+		@media (min-width: 1281px) {
+			.sm__item:hover > .sm__panel[hidden],
+			.sm__item:focus-within > .sm__panel[hidden] {
+				display: block;
+			}
+		}
+	</style>
+</noscript>
+
+<script>
+	const nav = document.querySelector<HTMLElement>('nav.sm');
+	if (nav) {
+		const header = nav.closest<HTMLElement>('header.header');
+		const row = nav.querySelector<HTMLElement>('.sm__row')!;
+		const items = [...nav.querySelectorAll<HTMLElement>('.sm__item[data-sm-item]')];
+		const desktop = matchMedia('(min-width: 1281px)');
+
+		const top = (li: HTMLElement) => li.querySelector<HTMLButtonElement>(':scope > .sm__top')!;
+		const panel = (li: HTMLElement) => li.querySelector<HTMLElement>(':scope > .sm__panel')!;
+		const isOpen = (li: HTMLElement) => li.hasAttribute('data-open');
+
+		const setOpen = (li: HTMLElement, open: boolean) => {
+			li.toggleAttribute('data-open', open);
+			top(li).setAttribute('aria-expanded', String(open));
+			panel(li).hidden = !open;
+		};
+		// The bar reads this to turn solid over a hero while a panel is showing.
+		const sync = () => header?.toggleAttribute('data-sm-open', desktop.matches && items.some(isOpen));
+		const closeAll = () => {
+			items.forEach((li) => setOpen(li, false));
+			sync();
+		};
+		/** Desktop: show one panel and no other. Its content starts under the row's left edge. */
+		const openOnly = (li: HTMLElement) => {
+			nav.style.setProperty('--sm-row-left', `${row.getBoundingClientRect().left}px`);
+			// Going from one panel to another must not replay the fade: that reads as a flicker.
+			nav.toggleAttribute('data-sm-switch', items.some(isOpen));
+			items.forEach((other) => setOpen(other, other === li));
+			sync();
+		};
+
+		// Hover (mouse only): open after the pointer rests, close a moment after it leaves.
+		const OPEN_DELAY = 120;
+		const CLOSE_DELAY = 200;
+		let openTimer = 0;
+		let closeTimer = 0;
+		let hoverOpenedAt = -Infinity;
+		const cancelTimers = () => {
+			clearTimeout(openTimer);
+			clearTimeout(closeTimer);
+		};
+
+		items.forEach((li) => {
+			// The panel is a descendant, so the pointer stays "inside" the item while it is on the panel.
+			li.addEventListener('pointerenter', (e) => {
+				if (!desktop.matches || e.pointerType !== 'mouse') return;
+				cancelTimers();
+				if (isOpen(li)) return;
+				openTimer = window.setTimeout(
+					() => {
+						hoverOpenedAt = performance.now();
+						openOnly(li);
+					},
+					// Another panel is already showing: switch at once.
+					items.some(isOpen) ? 0 : OPEN_DELAY
+				);
+			});
+			li.addEventListener('pointerleave', (e) => {
+				if (!desktop.matches || e.pointerType !== 'mouse') return;
+				cancelTimers();
+				closeTimer = window.setTimeout(closeAll, CLOSE_DELAY);
+			});
+
+			// Click, tap, Enter and Space all arrive here.
+			top(li).addEventListener('click', (e) => {
+				cancelTimers();
+				if (!desktop.matches) {
+					// Drawer: each section expands in place; several may be open.
+					setOpen(li, !isOpen(li));
+					return;
+				}
+				if (!isOpen(li)) {
+					openOnly(li);
+					return;
+				}
+				// A mouse click that lands just after hover opened the panel means "open", not "close".
+				const afterHover = (e as PointerEvent).pointerType === 'mouse' && performance.now() - hoverOpenedAt < 400;
+				if (!afterHover) closeAll();
+			});
+		});
+
+		document.addEventListener('keydown', (e) => {
+			if (e.key !== 'Escape') return;
+			const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.sm__item[data-open]');
+			if (!desktop.matches) {
+				// Drawer: collapse the section being read; the drawer itself stays.
+				if (focused) {
+					setOpen(focused, false);
+					top(focused).focus();
+				}
+				return;
+			}
+			if (!items.some(isOpen)) return;
+			cancelTimers();
+			closeAll();
+			if (focused) top(focused).focus();
+		});
+
+		// Desktop: focus moving out of an open section closes it, so focus never sits behind a closed panel.
+		nav.addEventListener('focusout', (e) => {
+			if (!desktop.matches) return;
+			const li = (e.target as HTMLElement).closest<HTMLElement>('.sm__item[data-open]');
+			const next = e.relatedTarget as Node | null;
+			if (li && next && !li.contains(next)) {
+				setOpen(li, false);
+				sync();
+			}
+		});
+
+		document.addEventListener('click', (e) => {
+			if (desktop.matches && items.some(isOpen) && !nav.contains(e.target as Node)) closeAll();
+		});
+
+		// Crossing the breakpoint: nothing stays open, and a drawer left open is closed.
+		desktop.addEventListener('change', () => {
+			cancelTimers();
+			closeAll();
+			if (desktop.matches && header?.classList.contains('opened-burger')) {
+				(window as unknown as { Burger?: () => void }).Burger?.();
+			}
+		});
+
+		// Whoever closes the drawer (the burger, a swipe), its sections collapse with it.
+		if (header) {
+			new MutationObserver(() => {
+				if (!header.classList.contains('opened-burger') && !desktop.matches) closeAll();
+			}).observe(header, { attributes: true, attributeFilter: ['class'] });
+		}
+	}
+</script>
+
+<style lang="scss" is:global>
+	@use '../../styles/variables' as *;
+
+	$sm-desktop: 1281px;
+	$sm-drawer: 1280px;
+
+	.sm__row,
+	.sm__links {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.sm__top {
+		@include text-m;
+
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		margin: 0;
+		border: 0;
+		background: none;
+		font-family: inherit;
+		color: var(--hd-ink);
+		text-decoration: none;
+		white-space: nowrap;
+		cursor: pointer;
+
+		&:focus-visible {
+			outline: 2px solid currentColor;
+			outline-offset: 2px;
+			border-radius: $radius-sm;
+		}
+	}
+
+	.sm__chev {
+		flex: none;
+		width: 16px;
+		height: 16px;
+		opacity: 0.7;
+		transition: transform $transition-fast;
+
+		.sm__item[data-open] > .sm__top > & {
+			transform: rotate(180deg);
+		}
+	}
+
+	.sm__group-name {
+		@include text-xs;
+
+		margin: 0 0 $spacing-3;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.sm__link {
+		display: flex;
+		align-items: center;
+		gap: $spacing-3;
+		padding: $spacing-2;
+		border-radius: $radius-lg;
+		color: var(--color-text);
+		text-decoration: none;
+
+		&:hover {
+			background: var(--color-bg-light);
+
+			.sm__link-heading {
+				color: var(--color-brand);
+			}
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--color-brand);
+			outline-offset: 2px;
+		}
+
+		svg.nav-icon {
+			flex: none;
+			color: var(--menu-icon-color);
+		}
+	}
+
+	.sm__link-text {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.sm__link-heading {
+		@include text-m;
+
+		display: inline-flex;
+		align-items: center;
+		gap: $spacing-2;
+		line-height: 22px;
+		font-weight: $font-weight-medium;
+		color: var(--color-text);
+	}
+
+	.sm__link-desc {
+		@include text-s;
+
+		line-height: 20px;
+		color: var(--color-text-secondary);
+	}
+
+	.sm__badge {
+		@include text-xs;
+
+		padding: 0 $spacing-2;
+		border: 1px solid color-mix(in srgb, var(--color-brand) 40%, transparent);
+		border-radius: $radius-full;
+		background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+		color: var(--color-brand);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.sm__promo {
+		@include text-m;
+
+		display: inline-flex;
+		align-items: center;
+		gap: $spacing-2;
+		padding: $spacing-2;
+		border-radius: $radius-lg;
+		font-weight: $font-weight-medium;
+		color: var(--color-text);
+		text-decoration: none;
+
+		svg {
+			flex: none;
+			width: 20px;
+			height: 20px;
+			color: var(--color-brand);
+		}
+
+		&:hover {
+			color: var(--color-brand);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--color-brand);
+			outline-offset: 2px;
+		}
+	}
+
+	// ─── Desktop: a row in the bar, full-width panels under it ──────────────────
+	@media screen and (min-width: $sm-desktop) {
+		// Nothing between the header and a panel may be positioned: the panel is laid out
+		// against the bar itself (the fixed header on docs, the sticky top unit elsewhere).
+		.sm {
+			flex: 1 1 auto;
+			min-width: 0;
+			height: 100%;
+			margin-inline-start: $spacing-5;
+		}
+
+		.sm__row {
+			display: flex;
+			align-items: stretch;
+			height: 100%;
+		}
+
+		// Full bar height, so the pointer never leaves the item on its way down to the panel.
+		.sm__item {
+			display: flex;
+			align-items: center;
+		}
+
+		.sm__top {
+			padding: $spacing-2 10px;
+
+			// The underline: hover, the open item, and the current page or section.
+			&::after {
+				content: '';
+				position: absolute;
+				inset: auto 10px 2px;
+				height: 2px;
+				border-radius: 2px;
+				background: currentColor;
+				transform: scaleX(0);
+				transition: transform $transition-fast;
+			}
+
+			&:hover,
+			&[data-current],
+			&[aria-current='page'],
+			.sm__item[data-open] > & {
+				color: var(--hd-ink-hover);
+
+				&::after {
+					transform: scaleX(1);
+				}
+			}
+		}
+
+		.sm__panel {
+			position: absolute;
+			top: 100%;
+			inset-inline: 0;
+			padding: $spacing-6 0 $spacing-5;
+			background: var(--hd-surface);
+			border-top: 1px solid var(--hd-rule);
+			box-shadow: var(--shadow-header);
+			// The shadow falls on the page, not back onto the bar.
+			clip-path: inset(0 0 -80px 0);
+
+			&[hidden] {
+				display: none;
+			}
+		}
+
+		// `--sm-row-left` is the row's left edge, set when a panel opens; the link padding
+		// is taken back so the text, not the hover box, lines up with the row's labels.
+		.sm__panel-inner {
+			width: fit-content;
+			min-width: min(560px, 100%);
+			max-width: calc(100% - var(--sm-row-left, 200px) - #{$spacing-5});
+			margin-inline-start: calc(var(--sm-row-left, 200px) + 10px - #{$spacing-2});
+		}
+
+		.sm__group + .sm__group {
+			margin-top: $spacing-5;
+		}
+
+		.sm__group-name {
+			padding-inline: $spacing-2;
+		}
+
+		.sm__links {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(200px, max-content));
+			gap: $spacing-1 $spacing-8;
+		}
+
+		.sm .sm__link .product-tile {
+			width: 40px;
+			height: 40px;
+		}
+
+		.sm__promos {
+			display: flex;
+			align-items: center;
+			gap: $spacing-5;
+			margin-top: $spacing-5;
+			padding-top: $spacing-4;
+			border-top: 1px solid var(--color-border);
+		}
+
+		.sm__promo--feat {
+			margin-inline-start: auto;
+			padding: $spacing-2 $spacing-4;
+			border: 1px solid var(--color-border);
+			color: var(--color-brand);
+
+			&:hover {
+				border-color: var(--color-brand);
+			}
+
+			.sm__promo-go {
+				width: 16px;
+				height: 16px;
+			}
+		}
+
+		@media (prefers-reduced-motion: no-preference) {
+			.sm:not([data-sm-switch]) .sm__panel {
+				animation: sm-panel-in 0.16s ease-out;
+			}
+		}
+	}
+
+	@keyframes sm-panel-in {
+		from {
+			opacity: 0;
+			transform: translateY(-4px);
+		}
+	}
+
+	// ─── Phone and tablet: the burger drawer ────────────────────────────────────
+	@media screen and (max-width: $sm-drawer) {
+		.sm {
+			display: none;
+		}
+
+		header.header.opened-burger .sm {
+			display: block;
+			flex: 1;
+			min-height: 0;
+			padding: $spacing-4 $spacing-5 0;
+			overflow-y: auto;
+			// The drawer is the only scrollable region while it is open; its scrollbar is noise.
+			scrollbar-width: none;
+
+			&::-webkit-scrollbar {
+				display: none;
+			}
+		}
+
+		.sm__top {
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			padding: $spacing-3 0;
+			text-align: start;
+
+			&:hover,
+			&[data-current],
+			&[aria-current='page'] {
+				color: var(--hd-ink-hover);
+			}
+		}
+
+		.sm__panel {
+			padding: 0 0 $spacing-3;
+		}
+
+		.sm__group + .sm__group {
+			margin-top: $spacing-3;
+		}
+
+		.sm__group-name {
+			margin-bottom: $spacing-1;
+			padding-inline: $spacing-2;
+		}
+
+		.sm__promos {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			margin-top: $spacing-1;
+		}
+
+		.sm__promo-go {
+			display: none;
+		}
+	}
+</style>
