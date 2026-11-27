@@ -1,3 +1,6 @@
+// A relative specifier with its extension: `ogContext.test.ts` loads this module under `node --test`.
+import { getPageSlugFromSlug } from './path-utils.ts';
+
 /** Slug words whose display form is not a plainly capitalized word (acronyms, brand casing). */
 const ACRONYMS = new Map([
 	['mqtt', 'MQTT'],
@@ -40,12 +43,8 @@ export function prettifySegment(seg: string): string {
  * Returns empty string for product-root pages.
  */
 export function getSectionLabel(slug: string): string {
-	let path = slug;
-	if (path.startsWith('uk/')) path = path.slice(3);
-	if (path.startsWith('docs/')) path = path.slice(5);
-	if (path.startsWith('pe/')) path = path.slice(3);
-	else if (path.startsWith('lite/')) path = path.slice(5);
-	const firstSegment = path.split('/')[0] ?? '';
+	// The product prefixes come from `path-utils`, so a product added to `Products` needs no change here.
+	const firstSegment = getPageSlugFromSlug(slug).split('/')[0] ?? '';
 	if (!firstSegment) return '';
 	return prettifySegment(firstSegment);
 }

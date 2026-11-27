@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Products, docsLink } from '../models/site.models.ts';
 import {
+	getPageSlugFromSlug,
 	getPageSlugFromURL,
 	getProductTitleName,
 	getVersionBaseURL,
@@ -49,6 +50,14 @@ test('the page slug drops the product prefix', () => {
 	assert.equal(getPageSlugFromURL('/docs/lite/'), '');
 	assert.equal(getPageSlugFromURL('/docs/pe/installation/'), 'installation');
 	assert.equal(getPageSlugFromURL('/docs/installation/'), 'installation');
+});
+
+test('the page slug of a content entry drops the product prefix too', () => {
+	assert.equal(getPageSlugFromSlug('docs/lite/installation/config'), 'installation/config');
+	assert.equal(getPageSlugFromSlug('docs/pe/installation/docker'), 'installation/docker');
+	assert.equal(getPageSlugFromSlug('docs/installation'), 'installation');
+	assert.equal(getPageSlugFromSlug('uk/docs/pe/installation'), 'installation');
+	for (const home of ['docs', 'docs/pe', 'docs/lite']) assert.equal(getPageSlugFromSlug(home), '', home);
 });
 
 test('switching product keeps the page when the target has it', () => {

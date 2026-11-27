@@ -109,6 +109,18 @@ export function getVersionFromSlug(slug: string): Products {
 }
 
 /**
+ * A page's path inside its product's docs, from a content entry slug: language, `docs/` and the
+ * product prefix removed. 'docs/pe/installation/docker' → 'installation/docker'; a product's docs
+ * home ('docs', 'docs/pe', 'docs/lite') → ''. The slug-side twin of `getPageSlugFromURL`.
+ */
+export function getPageSlugFromSlug(slug: string): string {
+	let path = stripLanguagePrefix(slug).replace(/^docs(\/|$)/, '');
+	const owner = prefixedProductOf(path);
+	if (owner) path = path.slice(owner.prefix.length);
+	return path;
+}
+
+/**
  * Whether a sidebar or pagination link belongs to a product's docs: a prefixed product
  * owns the links under its prefix, Community owns the links under no product's prefix.
  */
