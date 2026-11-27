@@ -24,8 +24,9 @@ const CATEGORY_STORAGE: Record<TbConsentCategory, CategoryStorage> = {
 		localStorage: ['_gcl_ls', ...ATTRIBUTION_STORAGE_KEYS],
 	},
 	media: {
-		// Google site search writes AdSense for Search cookies on our host (`__gsas` seen); its google.com cookies
-		// are third-party, disclosed in the Cookie Policy.
+		// Google site search writes AdSense for Search cookies on our host. Only `__gsas` has been seen on tbmq.io (and
+		// is the one the Cookie Policy lists); `__gads`, `__gpi` and `__eoi` are a safety net. Its google.com cookies are
+		// third-party, disclosed in the Cookie Policy.
 		cookies: ['__gsas', '__gads', '__gpi', '__eoi'],
 		cookiePrefixes: [],
 		localStorage: [],
