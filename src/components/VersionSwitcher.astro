@@ -145,10 +145,19 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 		}
 	</div>
 
-	<!-- Product popover: the products of the active edition -->
+	<!-- Product popover: the products of the active edition. `data-dropdown` tells `layerOver()` that
+	     this popover is a list beside its button, not a layer over the page. -->
 	{
 		variants && activeVariant && (
-			<div class="ps-popover print:hidden" id="ps-variants" role="listbox" aria-label="Product" popover="manual" hidden>
+			<div
+				class="ps-popover print:hidden"
+				id="ps-variants"
+				role="listbox"
+				aria-label="Product"
+				popover="manual"
+				data-dropdown
+				hidden
+			>
 				<div class="ps-section-label">{activeEdition?.variantsLabel}</div>
 				{variants.map((v) => (
 					<a
@@ -343,6 +352,11 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 			// Sidebar-pane scrolls; close popovers when it does.
 			const sidebarPane = this.closest('.sidebar-pane');
 			sidebarPane?.addEventListener('scroll', () => closeAll(), { passive: true });
+			// On phones the pane is a popover itself, and the browser does not close a manual popover
+			// with the popover around it. A swipe, or Escape pressed elsewhere in the sidebar, closes the
+			// pane without a click, so the list would stay open with nothing left to show it. `toggle`
+			// reports the pane opening and closing, and a list has no business being open across either.
+			sidebarPane?.addEventListener('toggle', () => closeAll());
 		}
 	}
 	customElements.define('product-selector', ProductSelector);

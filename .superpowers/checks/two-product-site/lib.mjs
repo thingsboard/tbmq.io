@@ -67,3 +67,25 @@ export function done() {
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * A horizontal swipe, as synthetic touch events on the document: a real drag would also tap whatever
+ * lies under its end.
+ */
+export async function swipe(page, fromX, toX) {
+	await page.evaluate(
+		(fromX, toX) => {
+			const touch = (x) => new Touch({ identifier: 1, target: document.body, clientX: x, clientY: 500 });
+			const fire = (type, x, down) =>
+				document.dispatchEvent(
+					new TouchEvent(type, { bubbles: true, touches: down ? [touch(x)] : [], changedTouches: [touch(x)] })
+				);
+			fire('touchstart', fromX, true);
+			fire('touchmove', (fromX + toX) / 2, true);
+			fire('touchend', toX, false);
+		},
+		fromX,
+		toX
+	);
+	await sleep(450);
+}

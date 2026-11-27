@@ -3,7 +3,7 @@
 // env SHOT=<dir> also saves the open popover in the dark theme.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { check, done, go, sleep, withPage } from './lib.mjs';
+import { check, done, go, sleep, swipe, withPage } from './lib.mjs';
 
 const SELF = Symbol('self');
 // [page, Community pill, Professional pill, TBMQ option, TBMQ Lite option]
@@ -175,6 +175,89 @@ await withPage({ width: 390, height: 844, touch: true }, async (page) => {
 		page.evaluate(() => document.querySelector('#ps-variants [role="option"]:not(.is-active)').click()),
 	]);
 	check('phone: choosing TBMQ Lite opens its docs', new URL(page.url()).pathname.startsWith('/docs/lite/'), page.url());
+});
+
+// The list is a manual popover, which the browser does not close with the sidebar it sits in. A list
+// left open would also read as a layer over the page and switch the edge swipes off.
+await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+	await go(page, '/docs/getting-started/');
+	const state = () =>
+		page.evaluate(() => {
+			const pop = document.getElementById('ps-variants');
+			return {
+				listOpen: !pop.hidden || pop.matches(':popover-open'),
+				expanded: document.querySelector('button.ps-region').getAttribute('aria-expanded'),
+				sidebar: document.getElementById('starlight__sidebar').matches(':popover-open'),
+				sheet: document.querySelector('header.header').hasAttribute('data-sm-open'),
+			};
+		});
+	// Opens the sidebar itself when a failed step left it closed, so each check below stands on its own.
+	const openList = async () => {
+		await page.evaluate(() => {
+			const sidebar = document.getElementById('starlight__sidebar');
+			if (!sidebar.matches(':popover-open')) sidebar.showPopover();
+		});
+		await sleep(300);
+		// A list left open by a failed step stays as it is: a click would close it.
+		const expanded = await page.evaluate(
+			() => document.querySelector('button.ps-region').getAttribute('aria-expanded') === 'true'
+		);
+		if (!expanded) await page.click('button.ps-region');
+		await page.focus('button.ps-region');
+		await sleep(200);
+	};
+	await openList();
+	let s = await state();
+	check('phone: the list is open in the open sidebar', s.listOpen && s.sidebar, JSON.stringify(s));
+	await swipe(page, 300, 100);
+	s = await state();
+	check(
+		'phone: a swipe that closes the sidebar closes the list with it',
+		!s.sidebar && !s.listOpen && s.expanded === 'false',
+		JSON.stringify(s)
+	);
+	await swipe(page, 5, 200);
+	s = await state();
+	check('phone: a swipe from the left edge then opens the sidebar again', s.sidebar && !s.listOpen, JSON.stringify(s));
+
+	// Escape with focus outside the list and its button goes to the browser, which closes the sidebar.
+	await openList();
+	await page.keyboard.press('Tab');
+	await page.keyboard.press('Escape');
+	await sleep(300);
+	s = await state();
+	check(
+		'phone: Escape from elsewhere in the sidebar closes the list with it',
+		!s.sidebar && !s.listOpen && s.expanded === 'false',
+		JSON.stringify(s)
+	);
+	await swipe(page, 385, 200);
+	s = await state();
+	check('phone: a swipe from the right edge then opens the menu sheet', s.sheet, JSON.stringify(s));
+});
+
+// On desktop the open list is a dropdown beside its button, not a layer over the page: the search
+// shortcut still works with it open.
+await withPage({ width: 1440 }, async (page) => {
+	await page.setRequestInterception(true);
+	page.on('request', (r) => (/cse\.google\.com/.test(r.url()) ? r.abort() : r.continue()));
+	await go(page, '/docs/getting-started/');
+	await page.click('button.ps-region');
+	await sleep(200);
+	const listOpen = () => page.evaluate(() => !document.getElementById('ps-variants').hidden);
+	check('desktop: the list is open', await listOpen());
+	const prevented = await page.evaluate(() => {
+		const e = new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', ctrlKey: true, bubbles: true, cancelable: true });
+		document.activeElement.dispatchEvent(e);
+		return e.defaultPrevented;
+	});
+	await sleep(300);
+	const searchOpen = await page.evaluate(() => !!document.querySelector('#tb-search-modal.open'));
+	check(
+		'desktop: Ctrl K with the list open opens search and closes the list',
+		prevented && searchOpen && !(await listOpen()),
+		JSON.stringify({ prevented, searchOpen })
+	);
 });
 
 if (process.env.SHOT) {

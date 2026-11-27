@@ -4,7 +4,7 @@
 // env SHOT=<dir> also saves the open Products and Learn panels, the sheet and the dialog.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { check, done, go, sleep, withPage } from './lib.mjs';
+import { check, done, go, sleep, swipe as swipeOn, withPage } from './lib.mjs';
 
 const parts = process.argv.slice(2);
 const want = (name) => parts.length === 0 || parts.includes(name);
@@ -392,24 +392,7 @@ if (want('bar')) {
 		page.on('request', (r) => (/cse\.google\.com/.test(r.url()) ? r.abort() : r.continue()));
 		await go(page, '/docs/pe/getting-started/');
 		await quiet(page);
-		// Synthetic touch events on the document: a real drag would also tap whatever lies under its end.
-		const swipe = async (fromX, toX) => {
-			await page.evaluate(
-				(fromX, toX) => {
-					const touch = (x) => new Touch({ identifier: 1, target: document.body, clientX: x, clientY: 500 });
-					const fire = (type, x, down) =>
-						document.dispatchEvent(
-							new TouchEvent(type, { bubbles: true, touches: down ? [touch(x)] : [], changedTouches: [touch(x)] })
-						);
-					fire('touchstart', fromX, true);
-					fire('touchmove', (fromX + toX) / 2, true);
-					fire('touchend', toX, false);
-				},
-				fromX,
-				toX
-			);
-			await sleep(450);
-		};
+		const swipe = (fromX, toX) => swipeOn(page, fromX, toX);
 		const state = () =>
 			page.evaluate(() => ({
 				search: !!document.querySelector('#tb-search-modal.open'),

@@ -8,6 +8,10 @@ const supportsPopover = () => typeof HTMLElement.prototype.hidePopover === 'func
 // The IoT Hub filter drawer hangs below the header, so layers may open over it.
 const UNDER_HEADER = ['iot-hub-filter'];
 
+// TBMQ's own: a popover marked `data-dropdown` is a list beside its button (the docs product list). It
+// is in the top layer only to be drawn over the phone sidebar, and covers no more than a dropdown does.
+const COVERING_POPOVER = ':popover-open:not([data-dropdown])';
+
 /**
  * Whether another layer already covers the page and the header: an open `<dialog>`, an open popover
  * or a layer holding the scroll lock. `mine` lists the caller's own scroll-lock owners, which don't
@@ -15,7 +19,7 @@ const UNDER_HEADER = ['iot-hub-filter'];
  */
 export function layerOver(...mine: string[]): boolean {
 	if (lockedByOther(...mine, ...UNDER_HEADER) || document.querySelector('dialog[open]')) return true;
-	return supportsPopover() && document.querySelector(':popover-open') !== null;
+	return supportsPopover() && document.querySelector(COVERING_POPOVER) !== null;
 }
 
 /**
