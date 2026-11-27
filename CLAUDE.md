@@ -93,10 +93,11 @@ The header is the upstream ThingsBoard site's (`SiteMenu/`, `Landing/HeaderConte
 - **Product tiles** — a section's `badge` is drawn by `ProductTile`, the same tile the docs picker and the installations hub use, not upstream's badge sprites. Upstream's customer-logo links are not here either.
 - **`Landing/DemoDialog.astro`** — what "Try for free" opens: the demo sign-up, or the installation docs. Any link with `data-demo-dialog` opens it; "Sign in" deliberately does not (one destination, nothing to choose).
 - **Search and the theme switch** — `SearchButton.astro` keeps this site's own Google search dialog behind upstream's button; `ThemeToggle.astro` stays in the bar because the footer here has no theme choice. The dialog is a plain `div`, so it holds the shared scroll lock as the `search` owner: that is the only way `layerOver()` (edge swipes, the shortcut) knows it covers the page.
+- **`data-dropdown`** — `layerOver()` counts every open popover as a layer over the page, except one marked `data-dropdown`. The docs product list (`VersionSwitcher.astro`) is the one such popover: it is in the top layer only to be drawn over the phone sidebar. That exception is the one line of `util/layers.ts` that is not upstream's.
 
 **Two layouts render it.** Docs pages get the header from Starlight (`starlight/Header.astro`); marketing pages are standalone documents here, not `<StarlightPage>` as upstream, so `BaseLayout` renders `Landing/Header.astro` itself. Both must put `HeaderContent` directly inside `header.header`: its styles key on `header.header:has(> [data-header-look])`. A page's header comes from `BaseLayout` props, resolved by `util/header-config.ts`: `hero="dark" | "light"` makes the bar see-through over a hero (the dark one needs the hero to be `#hero`), `search` adds the search button (docs pages have it by default), and `forceLightTheme` removes the theme switch. `pageId` is only a hook for a page's own CSS now; the header no longer reads it.
 
-Breakpoints live in `_variables.scss` (`$menu-row-from`, `$bar-roomy-from`, `$menu-split-from`, `$bar-compact-below`) and are mirrored as custom properties in `_theme.scss` for `SiteMenu/menu-query.ts` — change them in the first and the second follows. `$menu-row-from` is wider than upstream's because eight menu items need the room; re-check the bar on a docs page at that width, and at `$bar-roomy-from` (where the search field widens and the star count returns), after adding an item.
+Breakpoints live in `_variables.scss`. Those a script reads (`$menu-row-from`, `$menu-split-from`, `$menu-split-min-height`, `$bar-compact-below`) are mirrored as custom properties in `_theme.scss` for `SiteMenu/menu-query.ts` — change them in the first and the second follows. `$bar-roomy-from` is used by styles only and has no mirror: a script that needs it has to add the `--bar-roomy-from` line to `_theme.scss` first, or `rootCssVar()` returns an empty string and the media query never matches. `$menu-row-from` is wider than upstream's because eight menu items need the room; re-check the bar on a docs page at that width, and at `$bar-roomy-from` (where the search field widens and the star count returns), after adding an item.
 
 Analytics ids on links that exist twice (bar and phone sheet) are kept on whichever copy shows: mark both copies with `data-analytics-id` and `SiteMenu`'s script moves the `id`. GTM hooks on these ids and nothing in this repo does, so check GTM before renaming one.
 
@@ -162,7 +163,12 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/lite/`). The other products' constants have been removed.
 
-`src/data/lite.ts` holds what the TBMQ Lite product page and the Lite docs both show: the `docker run` command (`LITE_RUN_CMD`) and the measured capacity (`LITE_CAPACITY`). Change a figure or the command there, not in a page — the hero, the guarantees and comparison sections and the two docs tables all read it.
+`src/data/lite.ts` holds what the TBMQ Lite product page and the Lite docs both show:
+
+- **The command that starts the broker.** `liteRunCmd()` builds every `docker run` variant (the lead command `LITE_RUN_CMD`, which the hero also offers, and the password, bind-mount, upgrade, settings and logback variants under `docs/lite/installation/`), and `liteComposeFile()` the Compose file. Change a port, the volume or the image there, and add a new variant through the builder rather than as a literal; `lite.test.ts` pins the text.
+- **The measured capacity**, `LITE_CAPACITY`: read by the hero, the guarantees and comparison sections, the two docs tables and the install guide's sizing sentence.
+
+Still written by hand, so a rename has to search for them: the container and volume name in fenced commands and prose (`docker logs -f tbmq-lite`, `docker volume rm tbmq-lite`), the port table of the install guide, the one-off `docker run` commands of `backup-and-restore.mdx`, and the figures of the other capacity runs in `guarantees-and-limits.mdx`.
 
 ### Custom Plugins
 
