@@ -88,8 +88,14 @@ const { gitHubPlatform } = Astro.props;
 		let startY = 0;
 		let tracking: 'sidebar' | 'burger' | null = null;
 
+		// Starlight drops the sidebar's `popover` attribute on desktop viewports, where the sidebar
+		// is always shown; `togglePopover()` throws on an element without it.
+		function isSidebarDrawer() {
+			return !!document.getElementById('starlight__sidebar')?.popover;
+		}
+
 		function isSidebarOpen() {
-			return document.body.hasAttribute('data-mobile-menu-expanded');
+			return !!document.getElementById('starlight__sidebar')?.matches(':popover-open');
 		}
 
 		function isBurgerOpen() {
@@ -97,7 +103,7 @@ const { gitHubPlatform } = Astro.props;
 		}
 
 		function triggerSidebar() {
-			(document.querySelector('starlight-menu-button button') as HTMLElement)?.click();
+			document.getElementById('starlight__sidebar')?.togglePopover();
 		}
 
 		function triggerBurger() {
@@ -113,7 +119,7 @@ const { gitHubPlatform } = Astro.props;
 
 				if (isSidebarOpen()) tracking = 'sidebar';
 				else if (isBurgerOpen()) tracking = 'burger';
-				else if (startX <= OPEN_EDGE) tracking = 'sidebar';
+				else if (startX <= OPEN_EDGE && isSidebarDrawer()) tracking = 'sidebar';
 				else if (startX >= window.innerWidth - OPEN_EDGE) tracking = 'burger';
 				else tracking = null;
 			},
@@ -671,23 +677,23 @@ const { gitHubPlatform } = Astro.props;
 			width: 90%;
 		}
 
-		starlight-menu-button button {
+		.sl-menu-button {
 			inset-inline-end: auto;
 			inset-inline-start: var(--sl-nav-pad-x);
 			// Just below the header bottom (= --promo-cur + header height); tracks the banner up as it hides.
 			top: calc(var(--promo-cur, var(--promo-h, 0px)) + var(--header-height) + 0.75rem);
 		}
 
-		starlight-menu-button[aria-expanded='true'] button {
+		.sl-menu-button:has(~ :popover-open) {
 			inset-inline-start: 90%;
 		}
 
 		// On pages with a TOC, the sidebar toggle is embedded inside the TOC bar
-		html[data-has-toc] starlight-menu-button button {
+		html[data-has-toc] .sl-menu-button {
 			display: none;
 		}
 		// But when the sidebar is open it covers the TOC bar, so restore the close button
-		html[data-has-toc] starlight-menu-button[aria-expanded='true'] button {
+		html[data-has-toc] .sl-menu-button:has(~ :popover-open) {
 			display: flex;
 		}
 	}

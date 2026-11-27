@@ -65,6 +65,15 @@ export function getLanguagePrefix(lang: SupportedLanguage): string {
 	return supportedLanguages[lang].prefix;
 }
 
+/**
+ * Strip one leading and one trailing slash, matching Starlight's own
+ * `stripLeadingAndTrailingSlashes`. Kept here so sidebar comparisons do not have to reach
+ * into `@astrojs/starlight/dist/utils/path`, which is not a public export and moved in 0.42.
+ */
+export function stripLeadingAndTrailingSlashes(href: string): string {
+	return href.replace(/^\/|\/$/g, '');
+}
+
 /** Strip language prefix from path. */
 export function stripLanguagePrefix(path: string): string {
 	if (path.startsWith('uk/')) return path.slice(3);

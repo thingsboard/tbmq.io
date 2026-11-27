@@ -43,7 +43,7 @@ pnpm generate:nav-sprite     # Rebuild public/nav-sprite.svg + its manifest
 
 **Build policy:** Before running any build, always ask the user: "Run `pnpm build:fast` to verify, or skip?"
 
-**Comparing two builds** (the reliable way to prove a deletion or refactor changed nothing): two differences are expected and are *not* your change — Starlight `<Tabs>` `tab-panel-N` ids are assigned in page-render order and shuffle between runs, and sitemap `<lastmod>` comes from git commit dates, so it moves as soon as you commit. Anything else that differs is a real output change.
+**Comparing two builds** (the reliable way to prove a deletion or refactor changed nothing): two builds of the same tree are byte-identical (tab ids are counted per page since Starlight 0.42), so the one difference that is *not* your change is sitemap `<lastmod>` — it comes from git commit dates and moves as soon as you commit. Anything else that differs is a real output change.
 
 ## Architecture
 
@@ -162,7 +162,12 @@ Plugin and visitor types come from the `satteri` package (an explicit devDepende
 
 Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-slug` and `remark-smartypants`); `smartPunctuation.dashes` stays off so `--` is left alone in CLI snippets.
 
-`@astrojs/markdown-satteri` is pinned to an **exact** version on purpose: `astro` depends on one exact version of it too, and pnpm cannot dedupe a range against an exact pin — a mismatch installs a second copy of the package *and* a second `satteri` native binary, both loaded in the same process. Keep our pin equal to `astro`'s (`node -e "console.log(require('./node_modules/astro/package.json').dependencies['@astrojs/markdown-satteri'])"`) and re-pin when Astro bumps it.
+Versions follow the upstream ThingsBoard site (Astro 7.4, Starlight 0.43), so shell code cherry-picks cleanly. Two things to keep in step when bumping:
+
+- `@astrojs/markdown-satteri` and our own `satteri` devDependency must resolve to the copies `astro` uses, or our plugins are typed against one `satteri` and run by another. `astro` declares a range now, so ours is the same range (`node -e "console.log(require('./node_modules/astro/package.json').dependencies['@astrojs/markdown-satteri'])"`); check with `pnpm why @astrojs/markdown-satteri`.
+- `pnpm why satteri` lists **two** versions and that is expected: Starlight 0.43 depends on `satteri` 0.10 for its own tab/steps/file-tree processors, while the Markdown pipeline runs 0.11. Don't force them together with an override.
+
+Starlight ships compiled files under `dist/` since 0.42 and exports only a few paths. The places that reach inside it anyway are `@starlight/tabs-processor` (alias in `astro.config.ts`), `@starlight/icons` (`tsconfig.json`), the `TableOfContentsList` import in the two TOC overrides, `dist/style/props.css` in `BaseLayout`, and the `starlight-icon-override` Vite plugin — the last one fails silently when a path moves, which is why `assertIconOverrideApplied` fails the build if the swap never ran.
 
 **Authoring rule the Rust parser imposes:** never start a line with `>`. A JSX opening tag whose closing bracket sits at the start of its own line —
 
