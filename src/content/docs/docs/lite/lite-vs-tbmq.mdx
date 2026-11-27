@@ -1,0 +1,66 @@
+---
+title: Lite compared with TBMQ
+description: "How TBMQ Lite, the single-node edition, differs from clustered TBMQ: client types, storage, scaling, integrations, security defaults and capacity, and how to move credentials between them."
+sidebar:
+  label: Lite compared with TBMQ
+  badge:
+    text: Beta
+    variant: caution
+---
+
+import DocLink from '@components/DocLink.astro';
+import { Products } from '~/models/site.models';
+import { LITE_CAPACITY } from '~/data/lite';
+
+TBMQ Lite and TBMQ are built from the same code and share the MQTT handling, the authentication providers, the REST
+API and the web UI. TBMQ Lite is the single-node broker for production sites that fit one machine, for the edge, labs
+and laptops. Clustered TBMQ is the broker for high availability and scale.
+
+| | TBMQ Lite | TBMQ |
+|---|---|---|
+| Deployment | One container, `thingsboard/tbmq-lite` | Kafka, PostgreSQL and Valkey beside one or more broker nodes |
+| Scaling and failover | One node | Horizontal scaling across nodes |
+| Storage | Embedded store on one volume | Kafka, PostgreSQL, Valkey |
+| Client types | DEVICE | DEVICE and APPLICATION |
+| Offline queues | Per DEVICE client, 10,000 messages by default | DEVICE as in Lite; APPLICATION clients get a Kafka topic each |
+| Shared subscriptions | DEVICE | DEVICE and APPLICATION |
+| MQTT versions | 3.1, 3.1.1, 5 | 3.1, 3.1.1, 5 |
+| Authentication | Basic, X.509, JWT, SCRAM, HTTP | Basic, X.509, JWT, SCRAM, HTTP |
+| Integrations | None | HTTP, MQTT, Kafka |
+| Administrator password | Changed at the first sign-in, or set by `TBMQ_ADMIN_PASSWORD` | Default until changed |
+| Prometheus and actuator info | Behind `TBMQ_METRICS_TOKEN` | Open |
+| Backup | Built in: UI, REST API, command line | Backups of PostgreSQL and the other services |
+| Platforms | `linux/amd64`, `linux/arm64` | `linux/amd64`, `linux/arm64` |
+| Measured capacity | {LITE_CAPACITY.reference.rate} msg/s on {LITE_CAPACITY.reference.containerInText} | Millions of msg/s, see the <DocLink product={Products.TBMQ} path="reference/1m-throughput-p2p-performance-test" bold={false}>performance tests</DocLink> |
+| License | Apache 2.0 | Apache 2.0 (Community Edition) |
+
+## Which one to pick
+
+- **TBMQ Lite** when one machine carries the load, the clients are devices, and you want one container to run and back
+  up.
+- **A single TBMQ node** (with Kafka, PostgreSQL and Valkey) when you need APPLICATION clients, integrations, or a
+  backend subscriber that must buffer more than a DEVICE queue holds while it is offline.
+- **A TBMQ cluster** for high availability or more traffic than one node carries.
+
+See <DocLink product={Products.TBMQ_LITE} path="guarantees-and-limits">Guarantees and limits</DocLink>
+for the details of TBMQ Lite.
+
+## Moving credentials to TBMQ
+
+The **Export to CSV** action on the **Authentication** → **Credentials** page of TBMQ Lite writes the Basic credentials,
+with their BCrypt password hashes, in the format that the CSV import of TBMQ 2.5.0 and later reads. Clients keep their
+passwords. X.509 and SCRAM credentials are not exported: move them with the
+<DocLink product={Products.TBMQ} path="rest-api">REST API</DocLink> as JSON.
+
+- With **Include password hashes** on, the file holds secrets: download it over HTTPS, store it like a backup, and
+  delete it after use.
+- With it off, credentials that have a password are written with `EXCLUDED` as the hash: the import keeps the existing
+  password of such a credential, and refuses the row when the credential does not exist yet.
+- Importing the file into the broker it came from refuses the rows of credentials that already have a password. To
+  re-import there, turn **Include password hashes** off, or delete those credentials first.
+- Line breaks in descriptions are written as spaces.
+- The export refuses (and names the credential) when a value would not import back unchanged, for example an
+  authorization rule pattern that contains the rule delimiter. Edit that credential, or pick another delimiter, and
+  export again.
+
+The import of TBMQ Lite refuses APPLICATION rows from a TBMQ export; change their client type to `DEVICE` first.

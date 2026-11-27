@@ -27,12 +27,14 @@ const { images, product, cardMode = false } = Astro.props;
 const productSuffix: Record<Products, string> = {
 	[Products.TBMQ]: 'tbmq',
 	[Products.TBMQ_PE]: 'tbmq-pe',
+	[Products.TBMQ_LITE]: 'tbmq',
 };
 
 // Fallback chain when a product-specific image is missing.
 // e.g. TBMQ_PE → TBMQ → base.
 const productFallback: Partial<Record<Products, Products[]>> = {
 	[Products.TBMQ_PE]: [Products.TBMQ],
+	[Products.TBMQ_LITE]: [Products.TBMQ],
 };
 
 const assetModules = import.meta.glob<{ default: ImageMetadata }>(
@@ -624,7 +626,7 @@ const useCardMode = cardMode && isSingle;
 		let pswp: PhotoSwipe | undefined;
 		let themeObserver: MutationObserver | null = null;
 
-		lb.on('beforeOpen', lockScroll);
+		lb.on('beforeOpen', () => lockScroll('lightbox'));
 
 		lb.on('afterInit', () => {
 			pswp = lb.pswp;
@@ -671,7 +673,7 @@ const useCardMode = cardMode && isSingle;
 		});
 
 		lb.on('destroy', () => {
-			unlockScroll();
+			unlockScroll('lightbox');
 			themeObserver?.disconnect();
 			themeObserver = null;
 			pswp = undefined;

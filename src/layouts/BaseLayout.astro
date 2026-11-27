@@ -12,20 +12,22 @@ import { Icon } from '@astrojs/starlight/components';
 import { formatMarketingTitle } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 import { marketingJsonLd } from '~/util/structuredData';
+import { resolveHeaderConfig, type HeaderHero } from '~/util/header-config';
 import '../styles/global.scss';
-import 'node_modules/@astrojs/starlight/style/props.css';
+import 'node_modules/@astrojs/starlight/dist/style/props.css';
 
 interface Props {
 	title: string;
 	description?: string;
 	pageId?: string;
 	customTitle?: boolean;
-	githubLink?: string;
-	githubLabel?: string;
-	platformQuery?: string;
 	noCanonical?: boolean;
 	gitHubPlatform?: import('../models/site.models').Products;
 	forceLightTheme?: boolean;
+	/** The page starts with a hero banner, and the header is see-through over it (`dark` gives it white text). */
+	hero?: HeaderHero;
+	/** Search in the header. Off by default on marketing pages; the blog turns it on. */
+	search?: boolean;
 	ogImage?: string;
 	ogType?: string;
 	ogImageAlt?: string;
@@ -55,12 +57,11 @@ const {
 	description,
 	pageId = 'common',
 	customTitle = false,
-	githubLink = 'https://github.com/thingsboard/thingsboard',
-	githubLabel = 'Star thingsboard/thingsboard on GitHub',
-	platformQuery = '',
 	noCanonical = false,
 	gitHubPlatform,
 	forceLightTheme = false,
+	hero,
+	search,
 	ogImage: ogImageProp,
 	ogType,
 	ogImageAlt,
@@ -87,6 +88,9 @@ const structuredData =
 const locals = Astro.locals as unknown as Record<string, unknown>;
 locals.bsl = true;
 locals.bslForceLight = forceLightTheme;
+
+// The header's settings. A page pinned to the light theme has no theme switch.
+const headerConfig = resolveHeaderConfig({ look: 'marketing', hero, search, themeToggle: !forceLightTheme });
 ---
 
 <!doctype html>
@@ -152,15 +156,7 @@ locals.bslForceLight = forceLightTheme;
 			)
 		}
 
-		{/* Sticky unit: header pins on scroll. See `.tb-topbar` in HeaderContent. */}
-		<div class="tb-topbar">
-			<Header
-				githubLink={githubLink}
-				githubLabel={githubLabel}
-				platformQuery={platformQuery}
-				gitHubPlatform={gitHubPlatform}
-			/>
-		</div>
+		<Header gitHubPlatform={gitHubPlatform} headerConfig={headerConfig} />
 		<CookieBanner />
 		<UtmTracker />
 
@@ -169,37 +165,5 @@ locals.bslForceLight = forceLightTheme;
 		{openContentLinksInNewTab && <OpenContentLinksInNewTab />}
 
 		<Footer />
-
-		<!-- flip-nav sentinel: toggles `flip-nav` at ~10px scroll so transparent-header
-		     pages turn opaque early. (The banner hides via CSS in the .tb-topbar unit.) -->
-		<div id="flip-nav-sentinel" aria-hidden="true"></div>
-		<style is:inline>
-			#flip-nav-sentinel {
-				position: absolute;
-				top: 10px;
-				left: 0;
-				width: 1px;
-				height: 1px;
-				pointer-events: none;
-				visibility: hidden;
-			}
-		</style>
-		<script is:inline>
-			(function () {
-				const html = document.documentElement;
-				const pagesWithTransparentHeader = ['mqtt-broker', 'pricing'];
-				if (!pagesWithTransparentHeader.includes(html.id)) return;
-
-				const sentinel = document.getElementById('flip-nav-sentinel');
-				if (!sentinel) return;
-
-				new IntersectionObserver(
-					function (entries) {
-						html.classList.toggle('flip-nav', !entries[0].isIntersecting);
-					},
-					{ threshold: 0 }
-				).observe(sentinel);
-			})();
-		</script>
 	</body>
 </html>

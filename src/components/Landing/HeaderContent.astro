@@ -1,93 +1,80 @@
 ---
-import Navigation from './Navigation.astro';
-import GitHubButton from './GitHubButton.astro';
-import NButton from './NButton.astro';
-import SearchButton from '../SearchButton.astro';
-import ThemeToggle from '../ThemeToggle.astro';
-import SmartImage from '@components/SmartImage.astro';
+import SiteMenu from '@components/SiteMenu/SiteMenu.astro';
+import HeaderScrollWatch from '@components/Landing/HeaderScrollWatch.astro';
+import HeaderHeroWatch from '@components/Landing/HeaderHeroWatch.astro';
+import SearchButton from '@components/SearchButton.astro';
+import ThemeToggle from '@components/ThemeToggle.astro';
+import GitHubButton from '@components/Landing/GitHubButton.astro';
+import DemoDialog from '@components/Landing/DemoDialog.astro';
 import { Icon } from 'astro-icon/components';
 import { Products } from '@models/site.models';
+import { SIGN_IN, TRY_FREE } from '@data/cta-destinations';
+import type { HeaderConfig } from '@util/header-config';
 
 interface Props {
-	platformQuery?: string;
 	gitHubPlatform?: Products;
+	headerConfig: HeaderConfig;
 }
 
-const { platformQuery = '', gitHubPlatform } = Astro.props;
+const { gitHubPlatform, headerConfig } = Astro.props;
+const { look, hero, themeToggle } = headerConfig;
+
+// The docs search page has its own search box, so the header leaves out its search button there.
+const { pathname } = Astro.url;
+const isDocsSearchPage = pathname.startsWith('/docs/') && pathname.endsWith('/search/');
+const showSearch = headerConfig.search && !isDocsSearchPage;
 ---
 
-<div class="logo-burger">
-	<a href="https://u24.gov.ua/" target="_blank" class="support-ukraine">
-		<SmartImage
-			src="/src/assets/images/support-ukraine-banner.webp"
-			alt="Stand with Ukraine flag"
-			width="48"
-			height="31"
-		/>
-	</a>
+<div class="logo-burger" data-header-look={look} data-header-hero={hero}>
 	<a href="/" class="logo" aria-label="Link to homepage"></a>
-	<div class="burger-group">
-		<div class="icon-buttons">
-			<ThemeToggle />
-			<SearchButton />
-		</div>
-		<div class="divider"></div>
-		<button onclick="Burger()" class="burger" aria-label="Burger menu">
-			<Icon name="tabler:menu-2" class="icon-open" />
-			<Icon name="tabler:x" class="icon-close" />
-		</button>
-	</div>
+</div>
+
+{/* Before the buttons in the markup, so Tab reaches the menu items first. */}
+<SiteMenu />
+
+<div class="head-buttons print:hidden">
+	{themeToggle && <ThemeToggle />}
+	{showSearch && <SearchButton />}
 	<GitHubButton platform={gitHubPlatform} />
+	<a id="Menu_SignIn" class="signin" data-analytics-id="Menu_SignIn" href={SIGN_IN.href} {...SIGN_IN.attrs}>
+		Sign in
+	</a>
+	{/* Opens `DemoDialog`; the href is the fallback when scripts are off. */}
+	<a
+		id="Menu_TryItNow"
+		class="try gtm_button"
+		data-analytics-id="Menu_TryItNow"
+		href={TRY_FREE.href}
+		{...TRY_FREE.attrs}
+	>
+		Try for free
+	</a>
+	<button type="button" data-sm-toggle aria-controls="sm-sheet" class="burger" aria-expanded="false">
+		<Icon name="tabler:menu-2" class="icon-open" aria-hidden="true" />
+		<Icon name="tabler:x" class="icon-close" aria-hidden="true" />
+		<span class="burger__label">
+			<span class="label-open">Menu</span>
+			<span class="label-close">Close</span>
+		</span>
+	</button>
+	<a href="#sm-sheet" class="burger sm__nojs">
+		<Icon name="tabler:menu-2" aria-hidden="true" />
+		<span>Menu</span>
+	</a>
 </div>
 
-<!-- head-buttons is rendered BEFORE Navigation in the source so it parses
-     and paints quickly. <Navigation> ships ~125 KiB of inline submenu
-     markup; with that between <nav> and the right-side buttons, slow CPUs
-     paint the centred nav before head-buttons exists, which made flexbox
-     `space-between` pin the nav to the right edge and shift it left once
-     head-buttons finally arrived (≈0.012 CLS). Visual order is restored
-     with `order` in the header layout below. -->
-<div class="head-buttons">
-	<div class="icon-buttons">
-		<ThemeToggle />
-		<SearchButton />
-	</div>
-	<div class="divider"></div>
-	<NButton id="Menu_Pricing" href="/pricing/" variant="text" class="price gtm_button"
-		>Pricing</NButton
-	>
-	<NButton id="Menu_TryItNow" href="/installations/" variant="filled" class="try gtm_button"
-		>Try it now</NButton
-	>
-</div>
+<DemoDialog />
 
-<Navigation platformQuery={platformQuery} />
+{look === 'marketing' && <HeaderScrollWatch />}
+{hero === 'dark' && <HeaderHeroWatch />}
 
 <script>
-	// Burger menu toggle
-	function Burger() {
-		const header = document.querySelector('header.header');
-		const body = document.body;
-
-		if (header?.classList.contains('opened-burger')) {
-			header.classList.remove('opened-burger');
-			const subMenus = document.querySelectorAll(
-				'nav.head-menu > ul > li > div.centered-sub > ul.sub-menu'
-			);
-			subMenus.forEach((menu) => menu.classList.remove('open-sub'));
-			body.style.overflow = '';
-		} else {
-			header?.classList.add('opened-burger');
-			body.style.overflow = 'hidden';
-		}
-	}
-
-	// Make function available globally
-	(window as any).Burger = Burger;
+	import { menuRowQuery } from '@components/SiteMenu/menu-query';
+	import { layerOver } from '@util/layers';
 
 	// Swipe to open/close mobile menus:
 	//   Starlight sidebar — swipe RIGHT from left edge to open, swipe LEFT to close
-	//   Burger menu      — swipe LEFT from right edge to open, swipe RIGHT to close
+	//   Mobile menu sheet — swipe LEFT from right edge to open, swipe RIGHT to go back a level or close
 	(function () {
 		const OPEN_EDGE = 30; // px from screen edge that starts an open gesture
 		const MIN_DIST = 60; // minimum horizontal travel to trigger
@@ -95,22 +82,36 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 		let startX = 0;
 		let startY = 0;
-		let tracking: 'sidebar' | 'burger' | null = null;
+		let tracking: 'sidebar' | 'menu' | null = null;
 
-		function isSidebarOpen() {
-			return document.body.hasAttribute('data-mobile-menu-expanded');
+		// Starlight drops the sidebar's `popover` attribute on desktop viewports, where the sidebar
+		// is always shown; `togglePopover()` throws on an element without it.
+		function isSidebarDrawer() {
+			return !!document.getElementById('starlight__sidebar')?.popover;
 		}
 
-		function isBurgerOpen() {
-			return document.querySelector('header.header')?.classList.contains('opened-burger') ?? false;
+		function isSidebarOpen() {
+			return !!document.getElementById('starlight__sidebar')?.matches(':popover-open');
+		}
+
+		function isMenuOpen() {
+			return document.querySelector('header.header')?.hasAttribute('data-sm-open') ?? false;
 		}
 
 		function triggerSidebar() {
-			(document.querySelector('starlight-menu-button button') as HTMLElement)?.click();
+			document.getElementById('starlight__sidebar')?.togglePopover();
 		}
 
-		function triggerBurger() {
-			(window as any).Burger?.();
+		// Clicks the Menu button instead of opening the sheet directly, so opening (and moving focus)
+		// is handled in one place.
+		function openMenu() {
+			document.querySelector<HTMLButtonElement>('header.header [data-sm-toggle]')?.click();
+		}
+
+		// Swiping back first leaves an open section, then closes the sheet. `SiteMenu` handles `sm-back`
+		// and decides which.
+		function stepBack() {
+			document.querySelector('[data-sm-sheet]')?.dispatchEvent(new CustomEvent('sm-back'));
 		}
 
 		document.addEventListener(
@@ -120,10 +121,19 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				startX = t.clientX;
 				startY = t.clientY;
 
+				// An open sidebar takes the swipe and closes. Any other layer over the page keeps the swipe: a
+				// lightbox uses swipes to change images, and a menu opened under it would be hidden.
 				if (isSidebarOpen()) tracking = 'sidebar';
-				else if (isBurgerOpen()) tracking = 'burger';
-				else if (startX <= OPEN_EDGE) tracking = 'sidebar';
-				else if (startX >= window.innerWidth - OPEN_EDGE) tracking = 'burger';
+				else if (layerOver('menu')) tracking = null;
+				else if (isMenuOpen()) tracking = 'menu';
+				else if (startX <= OPEN_EDGE && isSidebarDrawer()) tracking = 'sidebar';
+				// No right-edge swipe where the desktop menu row shows.
+				else if (
+					startX >= window.innerWidth - OPEN_EDGE &&
+					!matchMedia(menuRowQuery()).matches &&
+					document.querySelector('header.header [data-sm-toggle]')
+				)
+					tracking = 'menu';
 				else tracking = null;
 			},
 			{ passive: true }
@@ -146,11 +156,13 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 				if (angle > MAX_ANGLE) return;
 
 				if (which === 'sidebar') {
-					if (!isSidebarOpen() && dx > 0) triggerSidebar(); // swipe right → open
+					if (!isSidebarOpen() && dx > 0)
+						triggerSidebar(); // swipe right → open
 					else if (isSidebarOpen() && dx < 0) triggerSidebar(); // swipe left → close
 				} else {
-					if (!isBurgerOpen() && dx < 0) triggerBurger(); // swipe left from right edge → open
-					else if (isBurgerOpen() && dx > 0) triggerBurger(); // swipe right → close
+					if (!isMenuOpen() && dx < 0)
+						openMenu(); // swipe left from right edge → open
+					else if (isMenuOpen() && dx > 0) stepBack(); // swipe right → go back a level or close
 				}
 			},
 			{ passive: true }
@@ -160,26 +172,58 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 
 <style lang="scss" is:global>
 	@use '../../styles/variables' as *;
+	@use '../../styles/button' as *;
+	@use '../../styles/logo' as *;
+	@use '../../styles/ui' as *;
+
+	@mixin menu-square {
+		.burger {
+			width: 40px;
+			padding: 0;
+
+			// Still the button's accessible name, so hidden visually rather than with `display: none`.
+			.burger__label {
+				@include visually-hidden;
+			}
+		}
+	}
+
+	// The menu hangs from the bar's bottom edge by `--sl-nav-height`. Docs pages set it for the whole
+	// page (`_starlight-overrides.scss`), and their bar must keep reading that one value, the same the
+	// sidebar and the table of contents read. Marketing pages are not Starlight pages on this site and
+	// would leave the menu Starlight's 3.5rem default, so only their bar states its height here.
+	header.header:has(> [data-header-look='marketing']) {
+		--sl-nav-height: calc(#{$header-height} + var(--promo-cur, var(--promo-h, 0px)));
+	}
 
 	header.header {
+		--tb-bar-inset: #{$bar-inset};
 		position: fixed;
-		top: var(--promo-cur, var(--promo-h, 0px)); // tracks the banner via the var; don't transition `top` (would desync)
+		// Below the promo banner, following it up as it slides away on scroll.
+		top: var(--promo-cur, var(--promo-h, 0px));
 		left: 0;
-		// No `filter` here: the header itself never gets one (only .logo/.burger do),
-		// and a filter on the header would make it the containing block for the fixed
-		// promo banner inside it, breaking the banner's viewport anchoring on docs.
-		transition: background-color 0.12s ease, box-shadow 0.12s ease, color 0.12s ease,
-			border-color 0.12s ease;
+		// Fade time for the header's colors; `SiteMenu` uses it too.
+		--tb-bar-swap: 0.2s;
+		// Text and icons switch color in one jump partway through that fade: fading them reads gray on gray.
+		--tb-ink-at: 0.06s;
+		--tb-bar-dark: var(--tb-hero-ground, rgb(8 9 14));
+		// No `filter`: it would become the containing block for the fixed promo banner.
+		transition:
+			background-color var(--tb-bar-swap) ease,
+			border-color var(--tb-bar-swap) ease,
+			box-shadow var(--tb-bar-swap) ease;
 		width: 100%;
 		height: $header-height;
 		z-index: 8888;
+		// Removes Starlight's default border; the looks below set their own.
 		border-bottom: none;
+		// Set here so the header doesn't take the page's line-height, which is taller on docs pages.
+		line-height: $line-height-base;
 		background-color: var(--sl-color-bg-sidebar);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 0 20px;
-
 
 		.logo-burger {
 			position: relative;
@@ -187,533 +231,226 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 			height: 100%;
 			align-items: center;
 			gap: 0.875rem;
+			padding-left: calc(var(--tb-bar-inset) - 20px);
 		}
 
 		.head-buttons {
-			// head-buttons is placed before <Navigation /> in DOM order to avoid
-			// the centred-nav layout shift on slow CPUs. `order: 1` keeps it
-			// visually after the nav (which keeps the default order: 0).
+			// Last in the header: `SiteSearch`'s element follows it in the DOM.
 			order: 1;
+			flex-shrink: 0;
+			padding-right: calc(var(--tb-bar-inset) - 20px);
 			display: flex;
 			flex-direction: row;
 			align-items: center;
-			gap: 0.875rem;
+			gap: 8px;
 
-			.icon-buttons {
-				display: flex;
-				align-items: center;
-				gap: 0;
-			}
-
-			.divider {
-				width: 1px;
-				height: 32px;
-				background-color: var(--sl-color-hairline-light);
-				flex-shrink: 0;
-
-				@media screen and (min-width: 1281px) and (max-width: 1499px) {
-					display: none;
-				}
-			}
-
-			.n-button {
-				width: 90px;
-				padding: 0;
-				display: flex;
-				align-items: center;
-				justify-content: center;
+			.try {
+				--btn-min-w: 90px;
 
 				@media screen and (min-width: 1500px) {
-					width: 110px;
-				}
-
-				&.price {
-					color: var(--sl-color-white);
-					border: 1px solid transparent;
+					--btn-min-w: 110px;
 				}
 			}
-		}
 
-		.support-ukraine {
-			display: flex;
-			align-items: center;
-			img {
-				height: 31px;
-				width: auto;
-			}
-
-			// Laptop widths — shrink the flag so the nav row doesn't wrap.
-			@media screen and (min-width: 1281px) and (max-width: 1599px) {
-				img {
-					height: 20px;
-				}
+			// Text and border switch with the rest of the header; the hover background still fades.
+			:is(.signin, .try, .burger, .search-toggle-btn, .theme-toggle-btn, .gh-button) {
+				transition:
+					color 0s linear var(--tb-ink-at),
+					border-color 0s linear var(--tb-ink-at),
+					background-color 0.15s ease;
 			}
 		}
 
 		.logo {
 			position: relative;
 			display: block;
+			// `contain`: the width sets the size until the box is wider than the 50px height allows.
 			width: 140px;
-			height: 60px;
-			background-image: url(../../assets/images/landings/tbmq-logo.svg);
-			background-size: contain;
-			background-position: center center;
-			background-repeat: no-repeat;
+			height: 50px;
+			@include logo-shift;
+			@include logo-image;
+			@include focus-ring;
+
+			&::before {
+				transition: background-color 0s linear var(--tb-ink-at);
+			}
 
 			[data-theme='dark'] & {
-				filter: invert(100%) sepia(68%) saturate(0%) hue-rotate(350deg) brightness(113%)
-					contrast(101%);
+				@include logo-white;
 			}
 
 			@media screen and (min-width: 1025px) {
-				width: 180px;
+				width: 160px;
 			}
 
-			// Laptop widths — smaller logo to keep the nav row from wrapping.
-			@media screen and (min-width: 1281px) and (max-width: 1599px) {
-				width: 120px;
+			// Laptop widths: a smaller logo leaves the menu row its room.
+			@include width-from($menu-row-from) {
+				@include width-below(1600px) {
+					width: 132px;
+				}
 			}
 
-			// Small phones — shrink so the wordmark doesn't collide with the icons.
 			@media screen and (max-width: 480px) {
-				width: 110px;
+				width: 124px;
+				height: 44px;
 			}
 		}
 	}
 
-	.burger-group {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		right: 0;
-		display: none;
-		align-items: center;
-		gap: 0.875rem;
-
-		.icon-buttons {
-			display: flex;
-			align-items: center;
-			gap: 0;
-		}
-
-		.divider {
-			width: 1px;
-			height: 32px;
-			background-color: var(--sl-color-hairline-light);
-			flex-shrink: 0;
-		}
+	// Each button's own rules nest under `.head-buttons` or the sheet's footer, so they win in any order.
+	:is(.signin, .try, .burger, .search-toggle-btn, .theme-toggle-btn, .gh-button, .sm__foot-signin, .sm__foot-try) {
+		@include ui-button-base;
 	}
 
-	.burger {
-		display: none;
-		border: none;
-		background: none;
-		padding: 0;
-		cursor: pointer;
-		color: inherit;
-		width: 32px;
-		height: 32px;
-		align-items: center;
-		justify-content: center;
+	:is(.signin, .burger, .search-toggle-btn, .theme-toggle-btn, .gh-button, .sm__foot-signin) {
+		@include ui-button-secondary;
+	}
 
-		svg {
-			width: 28px;
-			height: 28px;
+	:is(.try, .sm__foot-try) {
+		@include ui-button-primary;
+	}
+
+	:is(.signin, .try, .burger, .search-toggle-btn, .theme-toggle-btn, .gh-button) {
+		@include ui-button-size(sm);
+	}
+
+	:is(.sm__foot-signin, .sm__foot-try) {
+		@include ui-button-size(md);
+	}
+
+	:is(.signin, .try, .burger, .search-toggle-btn, .theme-toggle-btn, .gh-button, .sm__foot-signin, .sm__foot-try) {
+		@include ui-button-forced-colors;
+	}
+
+	.head-buttons {
+		.signin {
+			font-weight: $font-weight-normal;
 		}
 
-		.icon-close {
+		.burger {
+			--btn-px: 14px;
+
 			display: none;
+			font-weight: $font-weight-normal;
+
+			svg {
+				width: 20px;
+				height: 20px;
+			}
+
+			.icon-close {
+				display: none;
+			}
+
+			// Both labels share one grid cell, so the button keeps the longer word's width in both states.
+			.burger__label {
+				display: grid;
+
+				> * {
+					grid-area: 1 / 1;
+				}
+			}
+
+			.label-close {
+				visibility: hidden;
+			}
 		}
-
-		&:focus {
-			outline: none;
-		}
 	}
 
-	.opened-burger .burger {
-		.icon-open {
-			display: none;
-		}
-
-		.icon-close {
-			display: block;
-		}
-	}
-
-	// Marketing: banner + header are one sticky unit (wrapper in BaseLayout). It
-	// scrolls until the banner is off-screen, then the header pins; the negative
-	// margin-bottom keeps existing per-page $header-height offsets valid.
-	// (Docs has no .tb-topbar — there the banner hides via scroll-driven --promo-cur.)
-	.tb-topbar {
-		position: sticky;
-		top: calc(-1 * var(--promo-h, 0px));
-		z-index: 8889;
-		margin-bottom: calc(-1 * #{$header-height});
-	}
-
-	// Open mobile menu: lift the sticky unit above the cookie banner (9999).
-	.tb-topbar:has(header.header.opened-burger) {
-		z-index: 10000;
-	}
-
-	.tb-topbar header.header {
-		position: static; // sticky unit handles positioning
-	}
-
-	// Open mobile menu breaks out of the sticky unit to a full-viewport overlay,
-	// instantly (no transition/slide from its in-flow spot).
-	.tb-topbar header.header.opened-burger {
-		position: fixed !important;
-		inset: 0 !important;
-		z-index: 10000;
-		transition: none !important;
-		animation: none !important;
-	}
-
-	// Responsive styles
-	@media screen and (max-width: 1280px) {
+	@include width-below($menu-row-from) {
 		header.header {
-			display: block; // explicit (was `unset`): the header is no longer fixed here, so `unset` → inline would break it
-			height: unset !important;
-			transition-property: height; // `top` follows --promo-cur; don't transition it here
-
 			.logo-burger {
-				height: $header-height;
-			}
-
-			&.opened-burger {
-				top: 0; // full-screen mobile menu covers the promo banner too
-				height: 100% !important;
-				z-index: 10000;
-				display: flex !important;
-				flex-direction: column;
-				align-items: stretch;
-
-				.logo-burger {
-					box-shadow: 0 1px 0 rgba(48, 86, 128, 0.07);
-					flex-shrink: 0;
-				}
-
-				.head-buttons {
-					display: flex;
-					flex-shrink: 0;
-					gap: 0.875rem;
-					padding: 20px 0;
-
-					.icon-buttons {
-						display: none;
-					}
-
-					.divider {
-						display: none;
-					}
-
-					.n-button {
-						display: flex;
-						margin: 0;
-						width: 110px;
-					}
-				}
-			}
-
-			.burger-group {
-				display: flex;
+				flex: 1;
 			}
 
 			.burger {
 				display: flex;
 			}
+		}
+	}
 
-			.head-buttons {
-				display: none;
-			}
-
-			.n-button {
+	// This breakpoint and the two below were measured with the system font; re-check them if it changes.
+	@include width-below($bar-compact-below) {
+		header.header .head-buttons {
+			.signin,
+			.try {
 				display: none;
 			}
 		}
 	}
 
-	// ============================================
-	// PAGE-SPECIFIC HEADER STYLES
-	// ============================================
+	// The Menu label fits down to 360px wide with one icon button beside it (search or the theme switch), down
+	// to 320px with none, and needs 420px with both (docs pages).
+	@include width-below(420px) {
+		header.header:has(> .head-buttons > search-button):has(> .head-buttons > theme-toggle) {
+			@include menu-square;
+		}
+	}
 
-	// Marketing pages with an always-solid header — persistent box-shadow.
-	#blog,
-	#contact-us,
-	#installations,
-	#performance,
-	#live-demo,
-	#product,
-	#mqtt-learn {
+	@include width-below(360px) {
+		header.header:has(> .head-buttons > :is(search-button, theme-toggle)) {
+			@include menu-square;
+		}
+	}
+
+	@include width-below(320px) {
 		header.header {
-			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.1);
+			@include menu-square;
 		}
 	}
 
-	// Landing pages with transparent header
-	#mqtt-broker {
-		header.header {
-			background-color: transparent;
-			box-shadow: none;
+	// `.logo-burger` carries `data-header-look` and `data-header-hero`; it must stay a direct child of the header.
 
-			.support-ukraine p {
-				color: $color-white;
-			}
+	header.header:has(> [data-header-look='docs']) {
+		border-bottom: 1px solid var(--sl-color-hairline-shade);
+	}
 
-			.logo,
-			.burger {
-				filter: invert(100%) sepia(68%) saturate(0%) hue-rotate(350deg) brightness(113%)
-					contrast(101%);
-			}
+	header.header:has(> [data-header-look='marketing']) {
+		background-color: var(--color-bg-surface);
+		border-bottom: 1px solid var(--color-border);
 
-			.burger {
-				color: $color-black;
-			}
-
-			.divider {
-				display: none;
-			}
-
-			.n-button {
-				width: 110px;
-
-				&.price {
-					color: $color-white;
-					transition-duration: 0s;
-					border: none;
-					background-color: rgba(255, 255, 255, 0.05);
-
-					&:hover {
-						text-decoration: none;
-						color: var(--color-text);
-						background-color: var(--color-bg-surface);
-					}
-				}
-
-				&.try {
-					background-color: var(--color-brand);
-					color: var(--color-brand-contrast);
-
-					&:hover {
-						color: var(--color-brand);
-						box-shadow: none;
-						background-color: var(--color-bg-surface);
-					}
-				}
-			}
+		// A page's own sticky bar under the header sets `--tb-bar-shadow: none` to carry the shadow itself.
+		&[data-header-scrolled] {
+			border-bottom-color: transparent;
+			box-shadow: var(--tb-bar-shadow, var(--shadow-header));
 		}
 	}
 
-	// Non-transparent header — hide the divider and style the buttons.
-	#contact-us,
-	#installations,
-	#performance,
-	#live-demo,
-	#product,
-	#mqtt-learn {
-		header.header {
-			.divider {
-				display: none;
-			}
-
-			.n-button {
-				&.price {
-					border: 1px solid var(--color-border);
-					color: var(--color-text);
-					background-color: transparent;
-
-					&:hover {
-						border: 2px solid var(--color-text);
-					}
-				}
-
-				&.try {
-					background-color: var(--color-brand);
-					color: var(--color-brand-contrast);
-
-					&:hover {
-						color: var(--color-brand);
-						box-shadow: none;
-						// Theme-aware: in light mode this resolves to white, in
-						// dark mode to the dark surface — avoids a glaring
-						// white pill on a dark header bg. On no-dark pages the
-						// `:where(...)` re-emit forces the light value, so the
-						// hover keeps its original look.
-						background-color: var(--color-bg-surface);
-					}
-				}
-			}
-		}
-	}
-
-	// Pricing page: transparent header by default, opaque on hover and scroll
-	#pricing header.header {
+	header.header:not([data-sm-open]):not([data-header-scrolled]):has(> [data-header-hero]) {
 		background-color: transparent;
-		// Snappier opaque flip — the slow 0.3s fade looked laggy under the banner.
-		transition: background-color 0.15s ease, box-shadow 0.15s ease;
-
-		&:hover {
-			background-color: var(--color-bg-surface);
-		}
+		border-bottom-color: transparent;
+		box-shadow: none;
 	}
 
-	#mqtt-broker {
-		&.flip-nav header.header {
-			.logo,
-			.burger {
-				filter: none;
+	// The dark look comes from the header's state, not from a `data-surface` attribute, so the white logo, the
+	// dark focus ring and the button style are set here directly.
+	@include bar-over-dark-hero {
+		.logo {
+			--focus-ring: var(--focus-ring-dark);
+			@include logo-white;
+		}
+
+		.head-buttons {
+			--focus-ring: var(--focus-ring-dark);
+
+			:is(.signin, .burger, .search-toggle-btn, .theme-toggle-btn, .gh-button) {
+				@include ui-button-secondary-dark;
 			}
 		}
 	}
 
-	// Scrolled header state (flip-nav)
-	#mqtt-broker,
-	#pricing {
-		&.flip-nav header.header {
-			transition: all 0.12s ease; // snappier transparent → opaque flip, synced with banner
-			background-color: var(--color-bg-surface);
-			box-shadow: var(--shadow-header);
+	header.header:not([data-sm-open])[data-header-scrolled][data-header-over-hero]:has(> [data-header-hero='dark']) {
+		background-color: var(--tb-bar-dark);
+		border-bottom-color: rgba(255, 255, 255, 0.08);
+		box-shadow: none;
 
-			.support-ukraine p {
-				color: $color-black;
-			}
-
-			.n-button {
-				&.price {
-					border: 1px solid var(--color-border);
-					color: var(--color-text);
-					background-color: transparent;
-
-					&:hover {
-						border: 2px solid var(--color-text);
-					}
-				}
-
-				&.try {
-					background-color: var(--color-brand);
-					color: var(--color-brand-contrast);
-
-					&:hover {
-						background-color: var(--color-brand);
-						color: var(--color-brand-contrast);
-						box-shadow: var(--shadow-primary);
-					}
-				}
-			}
+		&[data-sm-desktop-open] {
+			border-bottom-color: transparent;
 		}
 	}
 
-	// Dark-mode opened burger background — covers pages whose <html> id isn't
-	// enumerated in the landing-page list below (the docs tree renders with no
-	// id at all). Without this they fall back to Starlight's
-	// `--sl-color-bg-sidebar` (`hsl(224 14% 16%)` ≈ `#23262f`) and the drawer
-	// reads as the same dark shade as page-level cards. Use the brightest
-	// project surface token so the drawer is visibly elevated above both the
-	// page bg (`#141517`) and card surfaces (`--color-bg-surface` `#1e1f23`).
-	html[data-theme='dark'] header.header.opened-burger {
-		background-color: var(--color-bg-light);
-	}
-
-	// Mobile burger opened state for landing pages
-	#common,
-	#mqtt-broker,
-	#contact-us,
-	#installations,
-	#performance,
-	#live-demo,
-	#product,
-	#mqtt-learn {
-		header.header.opened-burger {
-			transition: all $transition-base;
-			background-color: var(--color-bg-light);
-			box-shadow: var(--shadow-header);
-
-			.support-ukraine p {
-				color: $color-black;
-			}
-
-			.logo,
-			.burger {
-				filter: none;
-			}
-
-			.head-menu ul {
-				a,
-				a:not([href]),
-				span.main-menu-link {
-					color: var(--color-text);
-				}
-
-				li:hover a,
-				li:hover span.main-menu-link {
-					color: var(--color-brand);
-				}
-			}
-
-			.n-button {
-				&.price {
-					border: 1px solid var(--color-border);
-					color: var(--color-text);
-					background-color: transparent;
-
-					&:hover {
-						border: 2px solid var(--color-text);
-					}
-				}
-
-				&.try {
-					background-color: var(--color-brand);
-					color: var(--color-brand-contrast);
-
-					&:hover {
-						background-color: var(--color-brand);
-						color: var(--color-brand-contrast);
-						box-shadow: var(--shadow-primary);
-					}
-				}
-			}
-		}
-	}
-
-	// Hide search and theme toggle on landing pages
-	#mqtt-broker,
-	#pricing,
-	#common,
-	#installations,
-	#performance,
-	#live-demo,
-	#product,
-	#mqtt-learn {
-		search-button,
-		theme-toggle {
-			display: none;
-		}
-	}
-
-	// Hide divider on pages where theme toggle is hidden but not already handled above
-	#pricing {
-		header.header {
-			.divider {
-				display: none;
-			}
-		}
-	}
-
-	// Show theme toggle on 404 and pricing pages
-	#common,
-	#pricing {
-		theme-toggle {
-			display: flex;
-		}
-	}
-
-	// Show header border only on docs and 404 pages
-	html:not([id]),
-	#common {
-		header.header {
-			border-bottom: 1px solid var(--sl-color-hairline-shade);
-		}
+	header.header:has(> [data-header-hero]) .try {
+		--btn-min-w: 110px;
 	}
 
 	// Starlight mobile sidebar: 90% width, toggle button left when closed / right edge when open
@@ -722,111 +459,24 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 			width: 90%;
 		}
 
-		starlight-menu-button button {
+		.sl-menu-button {
 			inset-inline-end: auto;
 			inset-inline-start: var(--sl-nav-pad-x);
 			// Just below the header bottom (= --promo-cur + header height); tracks the banner up as it hides.
 			top: calc(var(--promo-cur, var(--promo-h, 0px)) + var(--header-height) + 0.75rem);
 		}
 
-		starlight-menu-button[aria-expanded='true'] button {
+		.sl-menu-button:has(~ :popover-open) {
 			inset-inline-start: 90%;
 		}
 
 		// On pages with a TOC, the sidebar toggle is embedded inside the TOC bar
-		html[data-has-toc] starlight-menu-button button {
+		html[data-has-toc] .sl-menu-button {
 			display: none;
 		}
 		// But when the sidebar is open it covers the TOC bar, so restore the close button
-		html[data-has-toc] starlight-menu-button[aria-expanded='true'] button {
+		html[data-has-toc] .sl-menu-button:has(~ :popover-open) {
 			display: flex;
-		}
-	}
-
-	// Pages that don't support dark theme, excluded from the dark-tinting scope
-	// below via :not(:where(...)). No force-light token override exists for them
-	// — none is reachable: every page with one of these ids is rendered with
-	// BaseLayout's `forceLightTheme` (SSR `data-theme="light"`, re-pinned before
-	// paint by ThemeProvider's force-light branch, theme toggle not rendered),
-	// so `html[data-theme='dark']` can never co-occur with these ids.
-	$no-dark-pages: '#mqtt-broker, #installations, #performance, #live-demo, #product, #mqtt-learn';
-
-	// Dark-theme tinting for the menu's dropdown content. Only applies on
-	// pages that support dark theme — pages in $no-dark-pages above are
-	// excluded via :not(:where(...)) so they keep their light-mode menu look.
-	// `!important` is used on the .group-name / hover / indicator rules below
-	// to defeat the higher-specificity brand-colour rules in Navigation.astro
-	// (`a.com-lnk:hover .item-heading`, `.group-name`, etc.) without rewriting
-	// them — light theme keeps its brand colours, only dark theme is
-	// overridden. The icon sub-block at the end of this rule is the exception:
-	// it scopes under `header.header` to win specificity naturally, so it
-	// does NOT use `!important`.
-	html[data-theme='dark']:not(:where(#{$no-dark-pages})) {
-		// Group label inside dropdowns (e.g. "SCADA", "IoT platforms")
-		.head-menu .sub-menu .group-name {
-			color: var(--color-brand) !important;
-		}
-
-		// Item heading at rest — keep the regular text colour so the hover
-		// state stays visible. Only the hover transitions to primary.
-
-		// Item heading on hover — overrides every product/use-case brand colour
-		// set by Navigation.astro's per-link rules, so the hover state keeps
-		// using the dark-mode primary.
-		.head-menu .sub-menu a:hover .sub-text h1,
-		.head-menu .sub-menu a:hover .sub-text span.item-heading {
-			color: var(--color-brand) !important;
-		}
-
-		// Top-level main menu link hover (Products / Services / Use Cases / …)
-		.head-menu ul li:hover a,
-		.head-menu ul li:hover span.main-menu-link,
-		.head-menu ul li a:not([href]):hover,
-		.head-menu ul li span.main-menu-link:hover {
-			color: var(--color-brand) !important;
-		}
-
-		// Active-tab indicator (the underline + arrow under the hovered top item)
-		.head-menu .indicator .head-arrow {
-			border-bottom-color: var(--color-brand) !important;
-		}
-		.head-menu .indicator .line {
-			background-color: var(--color-brand) !important;
-		}
-
-		// Recolour the dropdown product/use-case icons for dark theme.
-		// The icon SVGs are inlined and use `currentColor` for their fills,
-		// so we retint via CSS `color`. Each brand class gets a lighter
-		// variant of its light-mode hue so the per-product identity is
-		// preserved while remaining readable on the dark dropdown bg.
-		// Scoped under `header.header` so specificity beats Navigation.astro's
-		// per-brand rules (`a.com-lnk svg.nav-icon` …) without `!important`.
-		header.header .head-menu .sub-menu a {
-			// Default fallback (links without a brand class)
-			svg.nav-icon {
-				color: var(--menu-icon-color);
-			}
-			&.com-lnk svg.nav-icon,
-			&.mobile-lnk svg.nav-icon {
-				color: #7da9d8;
-			}
-			&.cloud-lnk svg.nav-icon {
-				color: #7dd3fc;
-			}
-			&.prof-lnk svg.nav-icon,
-			&.mobile-pe-lnk svg.nav-icon,
-			&.mqtt-broker-lnk svg.nav-icon {
-				color: #4ade80;
-			}
-			&.edge-lnk svg.nav-icon {
-				color: #2dd4bf;
-			}
-			&.gateway-lnk svg.nav-icon {
-				color: #a78bfa;
-			}
-			&.trendz-lnk svg.nav-icon {
-				color: #60a5fa;
-			}
 		}
 	}
 </style>

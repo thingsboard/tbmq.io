@@ -1,0 +1,55 @@
+---
+/**
+ * The mark both products share, on a rounded square: TBMQ on solid brand green with a
+ * white mark, TBMQ Lite on a pale green square with a green mark. One tile serves the
+ * header menu, the installations hub and the docs picker, so the two products look the
+ * same wherever they are named.
+ *
+ * Decorative: the product name always sits beside it, so the tile is hidden from
+ * assistive technology.
+ */
+import mark from '~/assets/images/docs/product-selector/tbmq.svg?raw';
+
+interface Props {
+	product: 'tbmq' | 'tbmq-lite';
+	/** Edge length in px. */
+	size?: number;
+}
+
+const { product, size = 32 } = Astro.props;
+---
+
+<span
+	class:list={['product-tile', `product-tile--${product}`]}
+	style={`--tile-size:${size}px`}
+	aria-hidden="true"
+	set:html={mark}
+/>
+
+<style lang="scss">
+	.product-tile {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: var(--tile-size);
+		height: var(--tile-size);
+		border-radius: 25%;
+
+		:global(svg) {
+			width: 62%;
+			height: 62%;
+		}
+	}
+
+	.product-tile--tbmq {
+		background: var(--color-brand);
+		// White in the light theme; dark in the dark theme, where the brand green is a pale mint.
+		color: var(--color-brand-contrast);
+	}
+
+	.product-tile--tbmq-lite {
+		background: color-mix(in srgb, var(--color-brand) 14%, var(--color-bg-surface));
+		color: var(--color-brand);
+	}
+</style>

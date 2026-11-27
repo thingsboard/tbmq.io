@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { PROD_ORIGIN } from '~/consts';
 import { mqttCategoryGroups, mqttTopics, topicHref } from '~/data/mqttLearn';
+import { Products } from '~/models/site.models';
+import { getVersionFromSlug } from '~/util/path-utils';
 
 export const prerender = true;
 
@@ -30,7 +32,7 @@ const EXCLUDE_PATTERNS = [
 // The PE tree is a superset of the CE tree — both editions render the same
 // shared `_includes` content, so cataloguing both would duplicate nearly every
 // entry. PE is canonical here; only CE pages with no PE counterpart are kept.
-const PE_PREFIX = 'docs/pe';
+// Every other product (TBMQ Lite) has pages no other tree renders, so all of them are kept.
 const CE_ONLY_PAGES = ['docs/installation/building-from-source'];
 
 // Entry points first, so a consumer reading top-down meets the overview pages
@@ -46,6 +48,7 @@ const PROMOTE = [
 	'docs/pe/integrations',
 	'docs/pe/rest-api',
 	'docs/pe/reference',
+	'docs/lite',
 ];
 
 function globToRegExp(glob: string): RegExp {
@@ -71,13 +74,10 @@ function isExcluded(slug: string): boolean {
 	return EXCLUDE_REGEXPS.some((re) => re.test(slug));
 }
 
-function isProfessionalEdition(slug: string): boolean {
-	return slug === PE_PREFIX || slug.startsWith(`${PE_PREFIX}/`);
-}
-
+// Decided by the product prefix table in `path-utils`, not by a list kept here: a product added to
+// `Products` is then catalogued in full instead of being taken for Community and dropped.
 function isCommunityEdition(slug: string): boolean {
-	if (isProfessionalEdition(slug)) return false;
-	return slug === 'docs' || slug.startsWith('docs/');
+	return (slug === 'docs' || slug.startsWith('docs/')) && getVersionFromSlug(slug) === Products.TBMQ;
 }
 
 function slugToUrl(slug: string): string {
@@ -146,7 +146,7 @@ export const GET: APIRoute = async () => {
 
 # TBMQ — content catalog
 
-> ${docLines.length} documentation pages plus ${mqttTopics.length} MQTT protocol guides. Documentation URLs point at the Professional Edition tree, which is a superset of Community Edition; the same page exists for CE at the identical path without the \`/pe\` segment.`;
+> ${docLines.length} documentation pages plus ${mqttTopics.length} MQTT protocol guides. TBMQ documentation URLs point at the Professional Edition tree, which is a superset of Community Edition; the same page exists for CE at the identical path without the \`/pe\` segment. URLs under \`/docs/lite/\` belong to TBMQ Lite (Beta), the single-node edition: a separate product with its own guarantees and limits, to which the \`/pe\` rule and the statements about clustered TBMQ do not apply.`;
 
 	const body = [
 		header,

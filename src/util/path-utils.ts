@@ -26,7 +26,27 @@ export const productVersions: Record<Products, { label: string; prefix: string; 
 		prefix: 'pe/',
 		titleName: 'TBMQ PE',
 	},
+	[Products.TBMQ_LITE]: {
+		label: 'TBMQ Lite',
+		prefix: 'lite/',
+		titleName: 'TBMQ Lite',
+	},
 };
+
+/** The products whose docs live under a prefix of their own (`pe/`, `lite/`); Community has none. */
+const prefixedProducts = (Object.keys(productVersions) as Products[])
+	.map((product) => ({ product, prefix: productVersions[product].prefix }))
+	.filter(({ prefix }) => prefix !== '');
+
+/**
+ * The prefixed product a docs-relative path belongs to (`pe/installation` → PE), or
+ * `undefined` for a Community path. Matches the whole prefix with its slash, so an
+ * index path (`pe`, `lite`) counts and a look-alike segment (`literal/`) does not.
+ */
+function prefixedProductOf(docsRelativePath: string): { product: Products; prefix: string } | undefined {
+	const p = docsRelativePath.endsWith('/') ? docsRelativePath : docsRelativePath + '/';
+	return prefixedProducts.find(({ prefix }) => p.startsWith(prefix));
+}
 
 /** Detect language from a URL pathname. */
 export function getLanguageFromURL(pathname: string): SupportedLanguage {
@@ -45,6 +65,15 @@ export function getLanguagePrefix(lang: SupportedLanguage): string {
 	return supportedLanguages[lang].prefix;
 }
 
+/**
+ * Strip one leading and one trailing slash, matching Starlight's own
+ * `stripLeadingAndTrailingSlashes`. Kept here so sidebar comparisons do not have to reach
+ * into `@astrojs/starlight/dist/utils/path`, which is not a public export and moved in 0.42.
+ */
+export function stripLeadingAndTrailingSlashes(href: string): string {
+	return href.replace(/^\/|\/$/g, '');
+}
+
 /** Strip language prefix from path. */
 export function stripLanguagePrefix(path: string): string {
 	if (path.startsWith('uk/')) return path.slice(3);
@@ -61,11 +90,8 @@ export function getVersionFromURL(pathname: string): Products {
 	if (path.startsWith('/uk/')) path = path.slice(3);
 	// Remove /docs/ prefix
 	path = path.replace(/^\/docs\/?/, '');
-	// Normalize: ensure trailing slash so index paths like "pe" match the "pe/" prefix
-	const p = path.endsWith('/') ? path : path + '/';
 
-	if (p.startsWith('pe/')) return Products.TBMQ_PE;
-	return Products.TBMQ;
+	return prefixedProductOf(path)?.product ?? Products.TBMQ;
 }
 
 /**
@@ -78,11 +104,32 @@ export function getVersionFromSlug(slug: string): Products {
 	path = stripLanguagePrefix(path);
 	// Remove docs/ prefix
 	if (path.startsWith('docs/')) path = path.slice(5);
-	// Normalize: ensure trailing slash so index slugs like "pe" match the "pe/" prefix
-	const p = path.endsWith('/') ? path : path + '/';
 
-	if (p.startsWith('pe/')) return Products.TBMQ_PE;
-	return Products.TBMQ;
+	return prefixedProductOf(path)?.product ?? Products.TBMQ;
+}
+
+/**
+ * A page's path inside its product's docs, from a content entry slug: language, `docs/` and the
+ * product prefix removed. 'docs/pe/installation/docker' → 'installation/docker'; a product's docs
+ * home ('docs', 'docs/pe', 'docs/lite') → ''. The slug-side twin of `getPageSlugFromURL`.
+ */
+export function getPageSlugFromSlug(slug: string): string {
+	let path = stripLanguagePrefix(slug).replace(/^docs(\/|$)/, '');
+	const owner = prefixedProductOf(path);
+	if (owner) path = path.slice(owner.prefix.length);
+	return path;
+}
+
+/**
+ * Whether a sidebar or pagination link belongs to a product's docs: a prefixed product
+ * owns the links under its prefix, Community owns the links under no product's prefix.
+ */
+export function linkMatchesVersion(href: string, version: Products): boolean {
+	let path = href;
+	if (path.startsWith('/uk/')) path = path.slice(3);
+	path = path.replace(/^\/docs\/?/, '');
+
+	return (prefixedProductOf(path)?.product ?? Products.TBMQ) === version;
 }
 
 /** Get the URL prefix for a product version. */
@@ -123,7 +170,8 @@ export function getPageSlugFromURL(pathname: string): string {
 	// Remove /docs/ prefix
 	path = path.replace(/^\/docs\/?/, '');
 	// Strip version prefix
-	if (path.startsWith('pe/')) path = path.slice(3);
+	const owner = prefixedProductOf(path);
+	if (owner) path = path.slice(owner.prefix.length);
 	return path.replace(/^\/|\/$/g, '');
 }
 

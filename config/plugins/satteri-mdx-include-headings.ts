@@ -198,7 +198,7 @@ function withIncludeHeadings(base: HeadingInfo[], insertions: IncludeState['inse
  * and whoever reads the list at the end of the compile gets it with the include
  * headings spliced in at the positions recorded during our pass.
  *
- * The full `hastPlugins` order, as of Starlight 0.41.7 / markdown-satteri 0.3.6:
+ * The full `hastPlugins` order, as of Starlight 0.43.2 / markdown-satteri 0.4.10:
  * syntax highlighting → **our two plugins** → Starlight's (`satteriRtlCodeSupportPlugin`,
  * then `satteriHeadingIdsPlugin` and `satteriAutolinkHeadingsPlugin`, appended by
  * `applyStarlightMarkdownPlugins`) → Astro's image marker → Astro's `heading-ids`.

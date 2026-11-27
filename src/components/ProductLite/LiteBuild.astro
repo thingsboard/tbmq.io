@@ -1,0 +1,177 @@
+---
+import SectionHeader from '@components/Landing/SectionHeader.astro';
+---
+
+<section id="lite-build">
+	<div class="inner">
+		<SectionHeader class="reveal" title="One process, one volume" />
+		<div class="layout">
+			<div class="copy reveal">
+				<p>
+					Clustered TBMQ runs on Kafka, Valkey and PostgreSQL beside one or more broker nodes. TBMQ Lite replaces all
+					three with an embedded store inside the broker's own process.
+				</p>
+				<p>
+					Everything the broker keeps lives on one data volume mounted at <code>/data</code>: the store, and the
+					checkpoints taken before an upgrade. Remove the container and the data stays on the volume; upgrade by
+					recreating the container with the new image and the same volume.
+				</p>
+			</div>
+
+			<svg
+				class="diagram reveal"
+				viewBox="0 0 640 300"
+				role="img"
+				aria-label="Publishers send messages to the MQTT broker in the TBMQ Lite container, and the broker delivers them to subscribers. The broker writes to an embedded store in the same process, which keeps its data on one volume mounted at /data."
+			>
+				<defs>
+					<marker id="lite-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+						<path d="M0 0L10 5L0 10z" class="arrowhead"></path>
+					</marker>
+				</defs>
+
+				<!-- Clients -->
+				<g class="node">
+					<rect x="8" y="64" width="132" height="72" rx="10"></rect>
+					<text x="74" y="105" text-anchor="middle">Publishers</text>
+				</g>
+				<g class="node">
+					<rect x="8" y="164" width="132" height="72" rx="10"></rect>
+					<text x="74" y="205" text-anchor="middle">Subscribers</text>
+				</g>
+				<text class="caption" x="74" y="22" text-anchor="middle">MQTT clients</text>
+
+				{/* Both client wires end at the broker: it delivers to online subscribers itself, and only
+				    what a persistent session needs goes to the store (docs/lite/installation/config,
+				    "Message pipeline"). A wire from the store to Subscribers would say every message is
+				    stored before it is delivered. */}
+				<path class="wire" d="M140 88H244" marker-end="url(#lite-arrow)"></path>
+				<path class="wire" d="M248 114H192V200H144" marker-end="url(#lite-arrow)"></path>
+
+				<!-- Container -->
+				<rect class="lite-box" x="224" y="36" width="240" height="228" rx="14"></rect>
+				<text class="caption" x="344" y="22" text-anchor="middle">TBMQ Lite container</text>
+				<g class="node node--brand">
+					<rect x="248" y="64" width="192" height="72" rx="10"></rect>
+					<text x="344" y="97" text-anchor="middle">MQTT broker</text>
+					<text class="sub" x="344" y="118" text-anchor="middle">3.1, 3.1.1, 5</text>
+				</g>
+				<path class="wire" d="M344 136V160" marker-end="url(#lite-arrow)"></path>
+				<g class="node node--brand">
+					<rect x="248" y="164" width="192" height="72" rx="10"></rect>
+					<text x="344" y="197" text-anchor="middle">Embedded store</text>
+					<text class="sub" x="344" y="218" text-anchor="middle">same process</text>
+				</g>
+
+				<path class="wire" d="M464 200H500" marker-end="url(#lite-arrow)"></path>
+
+				<!-- Volume -->
+				<g class="node">
+					<rect x="504" y="164" width="128" height="72" rx="10"></rect>
+					<text x="568" y="197" text-anchor="middle">Data volume</text>
+					<text class="sub mono" x="568" y="218" text-anchor="middle">/data</text>
+				</g>
+			</svg>
+		</div>
+	</div>
+</section>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	#lite-build {
+		padding: $spacing-20 $spacing-6;
+		background-color: var(--color-bg-brand-tint);
+		scroll-margin-top: var(--header-height);
+	}
+
+	.inner {
+		@include container;
+		max-width: 1200px;
+	}
+
+	.layout {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: $spacing-10;
+		align-items: center;
+
+		@include media-up(lg) {
+			grid-template-columns: 5fr 7fr;
+			gap: $spacing-16;
+		}
+	}
+
+	.copy {
+		p {
+			@include text-m;
+			color: var(--color-text-secondary);
+			margin: 0 0 $spacing-5;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+
+		code {
+			font-family: $font-family-mono;
+			color: var(--color-text);
+		}
+	}
+
+	.diagram {
+		width: 100%;
+		height: auto;
+		max-width: 640px;
+		justify-self: center;
+
+		text {
+			@include text-s;
+			font-weight: $font-weight-semibold;
+			fill: var(--color-text);
+		}
+
+		.sub {
+			font-weight: $font-weight-normal;
+			fill: var(--color-text-secondary);
+		}
+
+		.mono {
+			font-family: $font-family-mono;
+		}
+
+		.caption {
+			@include text-xs;
+			fill: var(--color-text-muted);
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+
+		.node rect {
+			fill: var(--color-bg-surface);
+			stroke: var(--color-border-light);
+			stroke-width: 1.5;
+		}
+
+		.node--brand rect {
+			stroke: var(--color-brand);
+		}
+
+		.lite-box {
+			fill: rgba(var(--color-brand-rgb), 0.06);
+			stroke: var(--color-brand);
+			stroke-width: 1.5;
+			stroke-dasharray: 6 5;
+		}
+
+		.wire {
+			fill: none;
+			stroke: var(--color-text-muted);
+			stroke-width: 1.5;
+		}
+
+		.arrowhead {
+			fill: var(--color-text-muted);
+		}
+	}
+</style>

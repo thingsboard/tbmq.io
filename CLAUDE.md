@@ -37,13 +37,14 @@ pnpm lint:redirects   # Detect redirect chains
 pnpm format           # Format with Prettier
 pnpm generate:redirects      # Regenerate public/_redirects + public/redirects.json
 pnpm generate:nav-sprite     # Rebuild public/nav-sprite.svg + its manifest
+pnpm update:stars            # Refresh the GitHub star count in src/data/github-stars.json
 ```
 
 `generate:nav-sprite` already runs as part of `build` and `build:fast`. Run it by hand after adding or editing an icon in `src/assets/images/landings/nav/` — otherwise `NavIcon` finds no manifest entry and renders nothing (it warns in the dev/build log).
 
 **Build policy:** Before running any build, always ask the user: "Run `pnpm build:fast` to verify, or skip?"
 
-**Comparing two builds** (the reliable way to prove a deletion or refactor changed nothing): two differences are expected and are *not* your change — Starlight `<Tabs>` `tab-panel-N` ids are assigned in page-render order and shuffle between runs, and sitemap `<lastmod>` comes from git commit dates, so it moves as soon as you commit. Anything else that differs is a real output change.
+**Comparing two builds** (the reliable way to prove a deletion or refactor changed nothing): two builds of the same tree are byte-identical (tab ids are counted per page since Starlight 0.42), so the one difference that is *not* your change is sitemap `<lastmod>` — it comes from git commit dates and moves as soon as you commit. Anything else that differs is a real output change.
 
 ## Architecture
 
@@ -53,12 +54,13 @@ TBMQ documentation lives in `src/content/docs/docs/` as `.mdx` files with YAML f
 
 - `src/content/docs/docs/` → TBMQ Community Edition pages
 - `src/content/docs/docs/pe/` → TBMQ Professional Edition pages
+- `src/content/docs/docs/lite/` → TBMQ Lite pages. These are standalone `.mdx` files with their own content, not stubs over a shared `_includes` file: nothing else renders them.
 
 Content uses Astro's Content Collections with type-safe Zod schemas defined in `src/content.config.ts`.
 
 **Schema:** there is one docs schema, `baseSchema` (`src/content.config.ts`), and its `type` field is `z.literal('base')` with a default — no page needs to declare it. The upstream `deploy`/`backend`/`cms`/`media`/`integration`/`migration`/`tutorial`/`recipe` types and the component trees they switched on are gone; don't reintroduce a `type:` in frontmatter.
 
-**Sidebar** is configured in `astro.sidebar.ts`. This file has been trimmed to the TBMQ sidebars only — `tbmqSidebar` / `tbmqPeSidebar` and their tab-links (the unused upstream product sidebars were removed). The site consumes the combined `sidebar` export (filtered per edition by route middleware) plus `sidebarTabLinksByPrefix`.
+**Sidebar** is configured in `astro.sidebar.ts`. This file has been trimmed to the TBMQ sidebars only — `tbmqSidebar` / `tbmqPeSidebar` / `tbmqLiteSidebar` and their tab-links (the unused upstream product sidebars were removed). The site consumes the combined `sidebar` export (filtered per product by route middleware) plus `sidebarTabLinksByPrefix`.
 
 ### Route Middleware
 
@@ -83,6 +85,24 @@ Custom component overrides live in `src/components/starlight/` — these replace
 
 Landing/marketing components live under `src/components/` (notably `Landing/`, `MqttBroker/`, `Company/`, `Installations/`).
 
+### Site Header
+
+The header is the upstream ThingsBoard site's (`SiteMenu/`, `Landing/HeaderContent.astro`, the two `Header*Watch` components, `util/modal-dialog.ts`, `util/layers.ts`, `util/scroll-lock.ts`, `styles/_button.scss`), taken as is so its fixes cherry-pick. What is TBMQ's own:
+
+- **Data** — `src/data/navigation.ts` (the menu row and its sections, in upstream's shape), `menu-featured.ts` (the promo row under a section), `cta-destinations.ts` (where Sign in and Try for free lead). `SiteMenu/menu-model.test.ts` pins the row, the section ownership and the analytics ids.
+- **Product tiles** — a section's `badge` is drawn by `ProductTile`, the same tile the docs picker and the installations hub use, not upstream's badge sprites. Upstream's customer-logo links are not here either.
+- **`Landing/DemoDialog.astro`** — what "Try for free" opens: the demo sign-up, or the installation docs. Any link with `data-demo-dialog` opens it; "Sign in" deliberately does not (one destination, nothing to choose).
+- **Search and the theme switch** — `SearchButton.astro` keeps this site's own Google search dialog behind upstream's button; `ThemeToggle.astro` stays in the bar because the footer here has no theme choice. The dialog is a plain `div`, so it holds the shared scroll lock as the `search` owner: that is the only way `layerOver()` (edge swipes, the shortcut) knows it covers the page.
+- **`data-dropdown`** — `layerOver()` counts every open popover as a layer over the page, except one marked `data-dropdown`. The docs product list (`VersionSwitcher.astro`) is the one such popover: it is in the top layer only to be drawn over the phone sidebar. That exception is the one line of `util/layers.ts` that is not upstream's.
+
+**Two layouts render it.** Docs pages get the header from Starlight (`starlight/Header.astro`); marketing pages are standalone documents here, not `<StarlightPage>` as upstream, so `BaseLayout` renders `Landing/Header.astro` itself. Both must put `HeaderContent` directly inside `header.header`: its styles key on `header.header:has(> [data-header-look])`. A page's header comes from `BaseLayout` props, resolved by `util/header-config.ts`: `hero="dark" | "light"` makes the bar see-through over a hero (the dark one needs the hero to be `#hero`), `search` adds the search button (docs pages have it by default), and `forceLightTheme` removes the theme switch. `pageId` is only a hook for a page's own CSS now; the header no longer reads it.
+
+Breakpoints live in `_variables.scss`. Those a script reads (`$menu-row-from`, `$menu-split-from`, `$menu-split-min-height`, `$bar-compact-below`) are mirrored as custom properties in `_theme.scss` for `SiteMenu/menu-query.ts` — change them in the first and the second follows. `$bar-roomy-from` is used by styles only and has no mirror: a script that needs it has to add the `--bar-roomy-from` line to `_theme.scss` first, or `rootCssVar()` returns an empty string and the media query never matches. `$menu-row-from` is wider than upstream's because eight menu items need the room; re-check the bar on a docs page at that width, and at `$bar-roomy-from` (where the search field widens and the star count returns), after adding an item.
+
+Analytics ids on links that exist twice (bar and phone sheet) are kept on whichever copy shows: mark both copies with `data-analytics-id` and `SiteMenu`'s script moves the `id`. GTM hooks on these ids and nothing in this repo does, so check GTM before renaming one.
+
+The GitHub button renders the count in `src/data/github-stars.json` and replaces it with the live one after load, so the bar never changes width; `pnpm update:stars` refreshes the file.
+
 ### Available Components
 
 Props and usage live in each component file under `src/components/`. Commonly used in docs:
@@ -96,20 +116,21 @@ Props and usage live in each component file under `src/components/`. Commonly us
 - **LearnLink** — links from the docs into the `/mqtt/` learn hub; takes the topic `slug`, not a path, and fails the build on an unknown one (always use instead of bare `[…](/mqtt/…/)` links)
 - **Code blocks** — `maxLines`, `collapsible`, `wrap`, `download='file.ext'` meta options; `<Code>` component for dynamic code
 
-**Asset references fail silently, not loudly.** `ImageGallery` swaps in a CDN URL (`https://img.thingsboard.io/…`) when a local asset is missing, and `InstallOptionGrid` / `GuideLinkPanels` render no icon at all (`svgModules[item.icon] ?? null`). A deleted or renamed image therefore passes both `astro check` and the build. To verify an asset change, grep the built site for `img.thingsboard.io` — the one legitimate hit is `support-ukraine-banner.webp`, which has lived on the CDN since it was removed upstream.
+**Asset references fail silently, not loudly.** `ImageGallery` swaps in a CDN URL (`https://img.thingsboard.io/…`) when a local asset is missing, and `InstallOptionGrid` / `GuideLinkPanels` render no icon at all (`svgModules[item.icon] ?? null`). A deleted or renamed image therefore passes both `astro check` and the build. To verify an asset change, grep the built site for `img.thingsboard.io` — there is no legitimate hit, so any match is a missing local asset.
 
 ### Product System
 
-All product identifiers live in `src/models/site.models.ts` as the `Products` enum, which now has exactly two members:
+All product identifiers live in `src/models/site.models.ts` as the `Products` enum, which now has exactly three members:
 
 | Enum value | URL prefix | Content directory |
 |------------|------------|-------------------|
 | `TBMQ` | `''` (empty) | `src/content/docs/docs/` |
 | `TBMQ_PE` | `pe/` | `src/content/docs/docs/pe/` |
+| `TBMQ_LITE` | `lite/` | `src/content/docs/docs/lite/` |
 
 Adding a member to the enum means touching every exhaustive `Record<Products, …>` that hangs off it — `productDocsPrefix` (`site.models.ts`), `productVersions` (`util/path-utils.ts`), `productSuffix` (`ImageGallery.astro`), `repoMap` (`Landing/GitHubButton.astro`), `META_BY_PRODUCT` (`open-graph/_shared/product-meta.ts`). `astro check` fails loudly on each, which is the intended safety net. Don't add non-TBMQ product content — this is a TBMQ-only site.
 
-**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/getting-started/` (CE), `/docs/pe/...` (PE).
+**URL pattern:** `/docs/[product-prefix][page-slug]/` → e.g. `/docs/getting-started/` (CE), `/docs/pe/...` (PE), `/docs/lite/...` (TBMQ Lite).
 
 ### Shared Content via _includes
 
@@ -140,7 +161,20 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
-The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/installation/lite/`). The other products' constants have been removed.
+The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/lite/`). The other products' constants have been removed.
+
+`src/data/lite.ts` holds what the TBMQ Lite product page and the Lite docs both show:
+
+- **The command that starts the broker.** `liteRunCmd()` builds every `docker run` variant (the lead command `LITE_RUN_CMD`, which the hero also offers, and the password, bind-mount, settings and logback variants under `docs/lite/installation/`), `liteComposeFile()` the Compose file, and `liteUpgradeCmd()` the whole upgrade block (pull, stop, remove, run). Change a port, the volume or the image there, and add a new variant through the builder rather than as a literal; `lite.test.ts` pins the text.
+- **The measured capacity**, `LITE_CAPACITY`: read by the hero, the guarantees and comparison sections, the two docs tables and the install guide's sizing sentence.
+
+Still written by hand, so a rename has to search for them:
+
+- the image name `thingsboard/tbmq-lite` as plain text: the Deployment row of `lite-vs-tbmq.mdx` and its copy in `ProductLite/LiteCompare.astro`;
+- the image and the volume in the one-off `docker run` commands of `backup-and-restore.mdx` (other entrypoints, no ports, so the builder does not fit them);
+- the container and volume name in fenced commands and prose (`docker logs -f tbmq-lite`, `docker volume rm tbmq-lite`);
+- the port table of the install guide;
+- the figures of the other capacity runs in `guarantees-and-limits.mdx`.
 
 ### Custom Plugins
 
@@ -160,7 +194,12 @@ Plugin and visitor types come from the `satteri` package (an explicit devDepende
 
 Heading ids and smart punctuation are Sätteri built-ins (they replaced `rehype-slug` and `remark-smartypants`); `smartPunctuation.dashes` stays off so `--` is left alone in CLI snippets.
 
-`@astrojs/markdown-satteri` is pinned to an **exact** version on purpose: `astro` depends on one exact version of it too, and pnpm cannot dedupe a range against an exact pin — a mismatch installs a second copy of the package *and* a second `satteri` native binary, both loaded in the same process. Keep our pin equal to `astro`'s (`node -e "console.log(require('./node_modules/astro/package.json').dependencies['@astrojs/markdown-satteri'])"`) and re-pin when Astro bumps it.
+Versions follow the upstream ThingsBoard site (Astro 7.4, Starlight 0.43), so shell code cherry-picks cleanly. Two things to keep in step when bumping:
+
+- `@astrojs/markdown-satteri` and our own `satteri` devDependency must resolve to the copies `astro` uses, or our plugins are typed against one `satteri` and run by another. `astro` declares a range now, so ours is the same range (`node -e "console.log(require('./node_modules/astro/package.json').dependencies['@astrojs/markdown-satteri'])"`); check with `pnpm why @astrojs/markdown-satteri`.
+- `pnpm why satteri` lists **two** versions and that is expected: Starlight 0.43 depends on `satteri` 0.10 for its own tab/steps/file-tree processors, while the Markdown pipeline runs 0.11. Don't force them together with an override.
+
+Starlight ships compiled files under `dist/` since 0.42 and exports only a few paths. The places that reach inside it anyway are `@starlight/tabs-processor` (alias in `astro.config.ts`), `@starlight/icons` (`tsconfig.json`), the `TableOfContentsList` import in the two TOC overrides, `dist/style/props.css` in `BaseLayout`, and the `starlight-icon-override` Vite plugin — the last one fails silently when a path moves, which is why `assertIconOverrideApplied` fails the build if the swap never ran.
 
 **Authoring rule the Rust parser imposes:** never start a line with `>`. A JSX opening tag whose closing bracket sits at the start of its own line —
 

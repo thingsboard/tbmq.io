@@ -1,12 +1,14 @@
 export enum Products {
 	TBMQ = 'TBMQ',
 	TBMQ_PE = 'TBMQ_PE',
+	TBMQ_LITE = 'TBMQ_LITE',
 }
 
 /** Maps each product to its docs URL prefix (the segment after /docs/). */
 export const productDocsPrefix: Record<Products, string> = {
 	[Products.TBMQ]: '',
 	[Products.TBMQ_PE]: 'pe/',
+	[Products.TBMQ_LITE]: 'lite/',
 };
 
 /** Returns the docs prefix for the given product (e.g. 'pe/' for PE, '' for CE). */

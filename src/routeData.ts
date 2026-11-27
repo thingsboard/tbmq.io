@@ -12,6 +12,7 @@ import {
 	getVersionPrefix,
 	getLanguagePrefix,
 	getProductTitleName,
+	linkMatchesVersion,
 	type SupportedLanguage,
 } from '~/util/path-utils';
 import { getCanonicalPathname } from '~/util/canonical';
@@ -183,15 +184,6 @@ function sidebarEntryMatchesVersionAndLanguage(
 		return entry.entries.length > 0;
 	}
 	return true;
-}
-
-function linkMatchesVersion(href: string, version: Products): boolean {
-	let path = href;
-	if (path.startsWith('/uk/')) path = path.slice(4);
-	path = path.replace(/^\/docs\/?/, '');
-
-	if (version === Products.TBMQ_PE) return path.startsWith('pe/');
-	return !path.startsWith('pe/');
 }
 
 /**

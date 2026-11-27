@@ -70,7 +70,7 @@ normal use of the API and answers `202`, so on a deployment that does it routine
 one-for-one without anything being lost.
 
 <ShowFor product={props.product} show={[Products.TBMQ]}>
-TBMQ Lite has no Kafka: its `incomingPublishMsg_consumed_total` carries only `totalMsgs`, `successfulMsgs` and `failedMsgs` per dispatch worker, and the pack timer is absent. See <DocLink product={props.product} path="installation/lite/configuration#metrics">TBMQ Lite metrics</DocLink>.
+TBMQ Lite has no Kafka: its `incomingPublishMsg_consumed_total` carries only `totalMsgs`, `successfulMsgs` and `failedMsgs` per dispatch worker, and the pack timer is absent. See <DocLink product={Products.TBMQ_LITE} path="installation/config#metrics">TBMQ Lite metrics</DocLink>.
 </ShowFor>
 
 ## Persistent DEVICE clients

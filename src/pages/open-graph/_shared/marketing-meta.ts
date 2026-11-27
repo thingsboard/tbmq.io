@@ -23,6 +23,8 @@ export interface MarketingOverride {
 const PRODUCT_OVERRIDES: Record<string, MarketingOverride> = {
 	'/product/privacy-policy/': { eyebrow: 'TBMQ', title: 'Privacy Policy' },
 	'/product/terms-of-use/': { eyebrow: 'TBMQ', title: 'Terms of Use' },
+	// The page title derived from the path is the bare word "Lite".
+	'/product/lite/': { eyebrow: 'TBMQ Lite', title: 'Single-Container MQTT Broker' },
 };
 
 export function getMarketingOverride(pathname: string): MarketingOverride | null {

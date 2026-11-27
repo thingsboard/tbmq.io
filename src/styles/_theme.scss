@@ -25,6 +25,10 @@
 	// Colors - Neutral
 	--color-white: #{$color-white};
 	--color-black: #{$color-black};
+	--color-dark: #{$color-dark};
+
+	// The focus ring over a dark background: the dark theme, and the header over a dark hero.
+	--focus-ring-dark: #ffd43b;
 
 	// Colors - Semantic
 	--color-success: #{$color-success};
@@ -63,6 +67,11 @@
 
 	// Layout
 	--header-height: #{$header-height};
+	// The header breakpoints from `_variables.scss`, for `SiteMenu/menu-query.ts`.
+	--menu-row-from: #{$menu-row-from};
+	--menu-split-from: #{$menu-split-from};
+	--menu-split-min-height: #{$menu-split-min-height};
+	--bar-compact-below: #{$bar-compact-below};
 	--container-max-width: #{$container-max-width};
 
 	// Legacy support (for old code)
@@ -96,6 +105,8 @@
 
 	// Colors - Products (dark mode)
 	--color-product-trendz: #8888ff;
+
+	--focus-ring: var(--focus-ring-dark);
 
 	// Brand green (dark) — light mint fill + navy text ($color-primary-darker,
 	// 9.4:1 on the mint), matching the pricing "Get started" buttons. -rgb is

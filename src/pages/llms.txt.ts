@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { BLOG_DESCRIPTION, PROD_ORIGIN } from '~/consts';
 import { learnNavTopics, mqttTopics, topicHref } from '~/data/mqttLearn';
-import { TBMQ_PE_VER, TBMQ_VER } from '~/data/versions';
+import { TBMQ_LITE_VER, TBMQ_PE_VER, TBMQ_VER } from '~/data/versions';
 
 export const prerender = true;
 
@@ -18,7 +18,8 @@ const HEADER = `# TBMQ
 - Clients are modelled as DEVICE (many low-throughput connections) or APPLICATION (backend consumers with dedicated Kafka topics); the type decides how persistent messages are stored and delivered.
 - Authentication providers: Basic, SCRAM (MQTT 5.0), X.509 certificate chain, JWT, and external HTTP — combined with topic-level authorization rules (ACL).
 - Integrations forward MQTT traffic to external HTTP endpoints, MQTT brokers, and Kafka topics, executed by a separate Integration Executor service.
-- Two editions share one documentation tree: Community Edition (open source) and Professional Edition, which adds SSO/OAuth 2.0, RBAC, audit logs, white-labeling, and a managed private cloud option.`;
+- TBMQ's two editions share one documentation tree: Community Edition (open source) and Professional Edition, which adds SSO/OAuth 2.0, RBAC, audit logs, white-labeling, and a managed private cloud option.
+- TBMQ Lite (Beta) is a separate product, the single-node edition of TBMQ, documented under \`/docs/lite/\`. The statements above describe clustered TBMQ and do not carry over to it: TBMQ Lite is one container with an embedded store in place of Kafka, Valkey and PostgreSQL, has no clustering or failover, supports DEVICE clients only, has no integrations, and acknowledges and stores messages by its own rules (see its guarantees and limits page).`;
 
 interface LinkEntry {
 	/** Docs-collection slug ("docs/…") or a site-absolute path ("/pricing/"). */
@@ -113,6 +114,23 @@ const DOC_PAGES: LinkEntry[] = [
 		title: 'TBMQ Community Edition documentation',
 		description: 'Same documentation tree scoped to the open-source edition; PE-only pages are absent here.',
 	},
+	{
+		path: 'docs/lite',
+		title: 'TBMQ Lite documentation (Beta)',
+		description:
+			'The single-container edition of TBMQ: install with one Docker command, configuration, guarantees and limits, backup and restore.',
+	},
+	{
+		path: 'docs/lite/installation',
+		title: 'Install TBMQ Lite',
+		description: 'The docker run command, ports, the data volume, first sign-in, health checks and upgrades.',
+	},
+	{
+		path: 'docs/lite/guarantees-and-limits',
+		title: 'TBMQ Lite guarantees and limits',
+		description:
+			'When TBMQ Lite acknowledges a message, what a crash or a power cut can lose, the DEVICE-only rule and measured capacity. These differ from clustered TBMQ.',
+	},
 ];
 
 const PRODUCT_PAGES: LinkEntry[] = [
@@ -126,6 +144,12 @@ const PRODUCT_PAGES: LinkEntry[] = [
 		title: 'Distributed MQTT broker architecture',
 		description:
 			'How the masterless cluster, Kafka-backed durability, and in-memory subscription matching fit together.',
+	},
+	{
+		path: '/product/lite/',
+		title: 'TBMQ Lite — single-container MQTT broker (Beta)',
+		description:
+			'What TBMQ Lite is, how it is built, what it guarantees, its measured capacity, and how it compares with clustered TBMQ.',
 	},
 	{
 		path: '/performance/',
@@ -215,9 +239,10 @@ export const GET: APIRoute = () => {
 	const docSets = `- [Documentation catalog](${SITE_URL}/llms-small.txt): every documentation page and MQTT guide — title, description, canonical URL. Fetch a page URL directly to read its body.`;
 
 	const notes = [
-		`- Current releases: TBMQ Community Edition ${TBMQ_VER}, TBMQ Professional Edition ${TBMQ_PE_VER}.`,
-		'- Documentation links point at the Professional Edition tree. It is a superset of Community Edition and both editions share the same source content, so any CE page exists at the same path without the `/pe` segment (`/docs/pe/getting-started/` → `/docs/getting-started/`).',
-		'- Pages under `/docs/` are reference documentation for running TBMQ; pages under `/mqtt/` explain the MQTT protocol itself and are product-neutral.',
+		`- Current releases: TBMQ Community Edition ${TBMQ_VER}, TBMQ Professional Edition ${TBMQ_PE_VER}, TBMQ Lite ${TBMQ_LITE_VER}.`,
+		'- TBMQ documentation links point at the Professional Edition tree. It is a superset of Community Edition and both editions share the same source content, so any CE page exists at the same path without the `/pe` segment (`/docs/pe/getting-started/` → `/docs/getting-started/`).',
+		'- The TBMQ Lite pages under `/docs/lite/` are a documentation set of their own, not a copy of the TBMQ tree, and the `/pe` rule does not apply to them.',
+		'- Pages under `/docs/` are reference documentation for running TBMQ or TBMQ Lite; pages under `/mqtt/` explain the MQTT protocol itself and are product-neutral.',
 		'- This file and the catalog are generated at build time from the same sources as the site.',
 	].join('\n');
 

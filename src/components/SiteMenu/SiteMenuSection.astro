@@ -1,0 +1,78 @@
+---
+import { Icon } from 'astro-icon/components';
+import NavIcon from '@components/Landing/NavIcon.astro';
+import ProductTile from '@components/ProductTile.astro';
+import { BADGE_TILE } from '@data/product-badges';
+import { submenuIconSize, type SubMenu, type SubMenuGroup } from '@data/navigation';
+import { externalLinkAttrs, isExternalHref, newTabLinkLabel } from '@util/external-links';
+
+/**
+ * One menu section's link groups. Each group's links are one `<ul>`, even when the CSS splits them into
+ * columns, so a screen reader announces one list instead of several.
+ */
+interface Props {
+	submenu: SubMenu;
+	sectionName: string;
+}
+
+const { submenu, sectionName } = Astro.props;
+const iconSize = submenuIconSize(submenu);
+const repeatsSectionName = (groupName: string) => groupName.toLowerCase() === sectionName.toLowerCase();
+
+const MAX_COLUMNS = 3;
+// Rows per column: `perColumn`, raised when needed so a list never takes more than `MAX_COLUMNS` columns.
+const rowsPerColumn = ({ items, perColumn }: SubMenuGroup) =>
+	Math.max(perColumn ?? items.length, Math.ceil(items.length / MAX_COLUMNS));
+---
+
+<div class="sm__groups">
+	{submenu.groups.map((group) => (
+		<div>
+			{group.name && (
+				<p class="sm__group-name" data-sm-same={repeatsSectionName(group.name) || undefined}>
+					{group.name}
+				</p>
+			)}
+			<ul class="sm__cols" style={`--rows: ${rowsPerColumn(group)}`}>
+				{group.items.map((item) => (
+					<li>
+						<a
+							class:list={['sm__link', item.linkClass]}
+							id={item.id}
+							href={item.href}
+							aria-label={isExternalHref(item.href) ? newTabLinkLabel(item.heading, item.href) : undefined}
+							{...externalLinkAttrs(item.href)}
+						>
+							{item.badge ? (
+								<span class="sm__link-icon">
+									{/* The same tile the docs picker and the installations hub draw. */}
+									<ProductTile product={item.badge} size={BADGE_TILE} />
+								</span>
+							) : (
+								item.icon && (
+									<span class="sm__link-icon">
+										<NavIcon src={item.icon} size={iconSize} alt="" />
+									</span>
+								)
+							)}
+							<span class="sm__link-text">
+								<span class:list={['sm__link-heading', isExternalHref(item.href) && 'sm__link-heading--ext']}>
+									{item.heading}
+									{item.tag && <span class="sm__tag">{item.tag}</span>}
+									{isExternalHref(item.href) && <Icon name="tabler:arrow-up-right" size={14} aria-hidden="true" />}
+								</span>
+								{item.description && <span class="sm__link-desc">{item.description}</span>}
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+			{group.more && (
+				<a class="sm__more" id={group.more.id} href={group.more.href}>
+					{group.more.label}
+					<Icon name="tabler:chevron-right" aria-hidden="true" />
+				</a>
+			)}
+		</div>
+	))}
+</div>

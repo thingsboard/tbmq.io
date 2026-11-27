@@ -180,23 +180,6 @@ const tbmqInstallItems = (prefix: string): SidebarConfig => {
 				{ label: 'GCP GKE', slug: `${prefix}/installation/cluster/helm-cluster-setup-gcp` },
 			],
 		},
-		...(!isPE
-			? [
-					{
-						label: 'TBMQ Lite',
-						badge: { text: 'Beta', variant: 'caution' as const },
-						collapsed: true,
-						items: [
-							{ label: 'Install', slug: `${prefix}/installation/lite` },
-							{ label: 'Getting started', slug: `${prefix}/installation/lite/getting-started` },
-							{ label: 'Configuration', slug: `${prefix}/installation/lite/configuration` },
-							{ label: 'Guarantees and limits', slug: `${prefix}/installation/lite/guarantees-and-limits` },
-							{ label: 'Backup and restore', slug: `${prefix}/installation/lite/backup-and-restore` },
-							{ label: 'Lite compared with TBMQ', slug: `${prefix}/installation/lite/lite-vs-tbmq` },
-						],
-					},
-				]
-			: []),
 		{ label: 'Upgrade instructions', slug: `${prefix}/installation/upgrade-instructions` },
 	];
 };
@@ -373,6 +356,26 @@ export const tbmqPeSidebar: SidebarConfig = [
 	},
 ];
 
+/** TBMQ Lite sidebar (pages at /docs/lite/) */
+export const tbmqLiteSidebar: SidebarConfig = [
+	{
+		label: 'Getting Started',
+		items: [
+			{ label: 'Getting started', slug: 'docs/lite/getting-started' },
+			{ label: 'Guarantees and limits', slug: 'docs/lite/guarantees-and-limits' },
+			{ label: 'Lite compared with TBMQ', slug: 'docs/lite/lite-vs-tbmq' },
+		],
+	},
+	{
+		label: 'Installation',
+		items: [
+			{ label: 'Install', slug: 'docs/lite/installation' },
+			{ label: 'Configuration', slug: 'docs/lite/installation/config' },
+			{ label: 'Backup and restore', slug: 'docs/lite/installation/backup-and-restore' },
+		],
+	},
+];
+
 /** Maps tab group label → URL to navigate when the tab is clicked (optional per-group). */
 export type SidebarTabLinks = Partial<Record<string, string>>;
 export const tbmqSidebarTabLinks: SidebarTabLinks = {
@@ -389,6 +392,10 @@ export const tbmqPeSidebarTabLinks: SidebarTabLinks = {
 	Reference: '/docs/pe/reference/',
 	Releases: '/docs/pe/changelog/',
 };
+export const tbmqLiteSidebarTabLinks: SidebarTabLinks = {
+	'Getting Started': '/docs/lite/',
+	Installation: '/docs/lite/installation/',
+};
 
 /**
  * Maps URL prefix → tab navigation links for that product's sidebar.
@@ -396,6 +403,7 @@ export const tbmqPeSidebarTabLinks: SidebarTabLinks = {
  */
 export const sidebarTabLinksByPrefix: ReadonlyArray<[string, SidebarTabLinks]> = [
 	['/docs/pe/', tbmqPeSidebarTabLinks],
+	['/docs/lite/', tbmqLiteSidebarTabLinks],
 	['/docs/', tbmqSidebarTabLinks],
 ];
 
@@ -404,4 +412,4 @@ export const sidebarTabLinksByPrefix: ReadonlyArray<[string, SidebarTabLinks]> =
  * Route middleware in routeData.ts filters this to show only
  * the relevant version's sidebar items.
  */
-export const sidebar: SidebarConfig = [...tbmqSidebar, ...tbmqPeSidebar];
+export const sidebar: SidebarConfig = [...tbmqSidebar, ...tbmqPeSidebar, ...tbmqLiteSidebar];

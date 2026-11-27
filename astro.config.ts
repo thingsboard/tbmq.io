@@ -1,5 +1,6 @@
 import { satteri } from '@astrojs/markdown-satteri';
 import starlight from '@astrojs/starlight';
+import type { AstroIntegration } from 'astro';
 import { defineConfig, passthroughImageService, sharpImageService } from 'astro/config';
 import { redirects } from './astro.redirects';
 import { sidebar } from './astro.sidebar';
@@ -29,6 +30,27 @@ const site =
 	NETLIFY_PREVIEW_SITE ||
 	`${PROD_ORIGIN}/`;
 
+/** Set by the `starlight-icon-override` Vite plugin; asserted in `assertIconOverrideApplied`. */
+let iconOverrideApplied = false;
+
+/** Fails the build if the `starlight-icon-override` Vite plugin never ran: a green build with
+ *  every icon outside Starlight's built-in set rendered empty. */
+function assertIconOverrideApplied(): AstroIntegration {
+	return {
+		name: 'assert-icon-override-applied',
+		hooks: {
+			'astro:build:done': () => {
+				if (iconOverrideApplied) return;
+				throw new Error(
+					"starlight-icon-override never matched: Starlight no longer imports './Icon.astro' " +
+						'from its user components, so our Icon override is inert and any icon outside ' +
+						"Starlight's built-in set would render empty."
+				);
+			},
+		},
+	};
+}
+
 export default defineConfig({
     site,
     base: '/',
@@ -40,8 +62,8 @@ export default defineConfig({
     vite: {
 				resolve: {
 						alias: {
-								'@starlight/rehype-tabs': fileURLToPath(
-										new URL('./node_modules/@astrojs/starlight/user-components/rehype-tabs.ts', import.meta.url),
+								'@starlight/tabs-processor': fileURLToPath(
+										new URL('./node_modules/@astrojs/starlight/dist/user-components/tabs-processor.js', import.meta.url),
 								),
 						},
 				},
@@ -50,17 +72,29 @@ export default defineConfig({
         },
         plugins: [
             {
+                // Swaps Starlight's `Icon.astro` for ours, which falls back to astro-icon for
+                // names outside Starlight's built-in set. Its user components import
+                // `./Icon.astro` relatively, so the swap keys on that specifier.
+                //
+                // This is the one piece of Starlight coupling here that fails *silently*: when
+                // 0.42 moved everything under `dist/`, a path-substring match stops matching, the
+                // build stays green and every icon quietly reverts to the stock component. So:
+                // match by the specifier and verify the importer here, then refuse to finish a
+                // build where the swap never ran (`assertIconOverrideApplied`, an integration
+                // rather than a Vite `buildEnd`, which fires per environment and could throw on a
+                // pass that resolves no Astro components).
                 name: 'starlight-icon-override',
                 enforce: 'pre',
                 resolveId(id, importer) {
-                    if (
-                        id === './Icon.astro' &&
-                        importer?.includes('@astrojs/starlight/user-components')
-                    ) {
-                        return fileURLToPath(
-                            new URL('./src/components/starlight/Icon.astro', import.meta.url)
+                    if (id !== './Icon.astro' || !importer?.includes('@astrojs/starlight')) return;
+                    if (!importer.includes('/user-components/')) {
+                        throw new Error(
+                            `starlight-icon-override: Starlight imports './Icon.astro' from an unexpected ` +
+                                `path (${importer}). The override did not apply — update the matcher.`
                         );
                     }
+                    iconOverrideApplied = true;
+                    return fileURLToPath(new URL('./src/components/starlight/Icon.astro', import.meta.url));
                 },
             },
             svgo({
@@ -80,7 +114,7 @@ export default defineConfig({
             }),
         ],
     },
-    integrations: [icon(), devServerFileWatcher([
+    integrations: [assertIconOverrideApplied(), icon(), devServerFileWatcher([
         './config/**',
         './astro.sidebar.ts',
 		]), starlight({

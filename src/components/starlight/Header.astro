@@ -1,6 +1,9 @@
 ---
 import HeaderContent from '../Landing/HeaderContent.astro';
 import { Products } from '@models/site.models';
+import { resolveHeaderConfig } from '@util/header-config';
+
+// Docs pages don't pass through `BaseLayout`, so they take the default `docs` look.
 ---
 
-<HeaderContent gitHubPlatform={Products.TBMQ} />
+<HeaderContent gitHubPlatform={Products.TBMQ} headerConfig={resolveHeaderConfig()} />

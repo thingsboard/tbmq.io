@@ -104,14 +104,8 @@
 		constructor() {
 			super();
 			const current = loadTheme();
-			const isForceLight = document.documentElement.dataset.forceLight === 'true';
-			if (isForceLight) {
-				// Force-light pages: only sync the button icon, don't change the theme.
-				this.setAttribute('data-theme', current);
-			} else {
-				// Theme-aware pages: apply the user's stored preference.
-				applyTheme(current);
-			}
+			// Only theme-aware pages render the switch (`HeaderConfig.themeToggle`): apply the stored preference.
+			applyTheme(current);
 			if (typeof StarlightThemeProvider !== 'undefined') {
 				StarlightThemeProvider.updatePickers(current);
 			}
@@ -130,23 +124,12 @@
 <style lang="scss">
 	@use '../styles/variables' as *;
 
-	.theme-toggle-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 40px;
-		height: 40px;
-		padding: 0;
-		border: none;
-		border-radius: $radius-sm;
-		background: transparent;
-		cursor: pointer;
-		color: var(--sl-color-white);
-		transition: border-color $transition-base;
+	// The button's look is `HeaderContent`'s (a secondary button, like search beside it); nesting under
+	// `.head-buttons` lets the square size win.
+	:global(.head-buttons) .theme-toggle-btn {
+		--btn-px: 0px;
 
-		&:focus {
-			outline: none;
-		}
+		width: 40px;
 	}
 
 	.icon {

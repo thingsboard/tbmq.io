@@ -2,10 +2,17 @@ import InstallOptionGrid from '~/components/Installations/InstallOptionGrid.astr
 import InstallSectionNav from '~/components/Installations/InstallSectionNav.astro';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
+import ShowFor from '~/components/ShowFor.astro';
 
 Every option below installs the same broker on top of Kafka, Valkey and PostgreSQL; what differs is where it runs and
 how far it scales. A standalone container is enough to evaluate TBMQ or develop against it; production traffic runs on
 a cluster of broker nodes.
+
+<ShowFor product={props.product} show={[Products.TBMQ]}>
+
+Need one container with no Kafka, Valkey or PostgreSQL beside it? See <DocLink product={Products.TBMQ_LITE} path="installation" bold={false}>TBMQ Lite</DocLink> (Beta), the single-node edition.
+
+</ShowFor>
 
 After the broker is up, the <DocLink product={props.product} path="installation/config" bold={false}>configuration reference</DocLink> lists
 every parameter and its default, and the <DocLink product={props.product} path="installation/upgrade-instructions" bold={false}>upgrade instructions</DocLink> cover

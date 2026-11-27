@@ -1,0 +1,68 @@
+---
+title: Introduction
+description: TBMQ Lite documentation — run the single-container edition of TBMQ with one Docker command, then configure it, back it up and learn its guarantees and limits.
+customDocsTitle: TBMQ Lite Docs | Single-Container MQTT Broker Documentation
+tableOfContents: false
+editUrl: false
+next: false
+hero:
+  title: TBMQ Lite Docs
+  tagline: The single-container edition of TBMQ. One container and one data volume, with no Kafka, PostgreSQL or Valkey beside it.
+  actions:
+    - text: Getting started
+      icon: rocket
+      link: /docs/lite/getting-started/
+    - text: Install
+      icon: right-arrow
+      variant: minimal
+      link: /docs/lite/installation/
+  gridVariant: lines
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import DocLink from '@components/DocLink.astro';
+import { Products, docsLink } from '~/models/site.models';
+
+<Aside type="caution" title="Beta">
+  TBMQ Lite is in public beta. Configuration keys and defaults may still change before the first release.
+  Report problems as <a href="https://github.com/thingsboard/tbmq/issues?q=is%3Aissue%20label%3ALite" target="_blank" rel="noopener noreferrer">GitHub issues</a>
+  and add the `Lite` label.
+</Aside>
+
+<CardGrid>
+  <LinkCard
+    title="Getting started"
+    description="Create MQTT client credentials, publish and subscribe, and see a persistent session keep messages for an offline client."
+    href={docsLink(Products.TBMQ_LITE, 'getting-started')}
+  />
+  <LinkCard
+    title="Guarantees and limits"
+    description="When a message is acknowledged, what a crash or a power cut can lose, the DEVICE-only rule and measured capacity."
+    href={docsLink(Products.TBMQ_LITE, 'guarantees-and-limits')}
+  />
+  <LinkCard
+    title="Lite compared with TBMQ"
+    description="How the single-node edition differs from clustered TBMQ, and how to move credentials between them."
+    href={docsLink(Products.TBMQ_LITE, 'lite-vs-tbmq')}
+  />
+  <LinkCard
+    title="Install"
+    description="One Docker command: ports, the data volume, supported hosts, the first sign-in, health checks and upgrades."
+    href={docsLink(Products.TBMQ_LITE, 'installation')}
+  />
+  <LinkCard
+    title="Configuration"
+    description="The settings that matter: the store, the disk watermark, memory and JAVA_OPTS, listeners, health and the metrics token."
+    href={docsLink(Products.TBMQ_LITE, 'installation/config')}
+  />
+  <LinkCard
+    title="Backup and restore"
+    description="Back up from the UI, the REST API or the command line, and restore a backup or a pre-upgrade checkpoint."
+    href={docsLink(Products.TBMQ_LITE, 'installation/backup-and-restore')}
+  />
+</CardGrid>
+
+TBMQ Lite shares TBMQ's MQTT features, security and REST API, so those guides live in the TBMQ docs: the
+<DocLink product={Products.TBMQ} path="user-guide" bold={false}>user guide</DocLink>, the
+<DocLink product={Products.TBMQ} path="security/overview" bold={false}>security overview</DocLink> and the
+<DocLink product={Products.TBMQ} path="rest-api" bold={false}>REST API</DocLink>.

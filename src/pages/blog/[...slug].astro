@@ -423,14 +423,14 @@ const jsonLd = {
 			lbImg.src = src;
 			lbImg.alt = alt;
 			overlay.classList.add('active');
-			lockScroll();
+			lockScroll('lightbox');
 			closeBtn.focus();
 		}
 
 		function closeLightbox() {
 			if (!overlay.classList.contains('active')) return;
 			overlay.classList.remove('active');
-			unlockScroll();
+			unlockScroll('lightbox');
 			opener?.focus();
 			opener = null;
 		}

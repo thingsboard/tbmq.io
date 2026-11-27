@@ -1,17 +1,18 @@
 ---
 import HeaderContent from './HeaderContent.astro';
 import { Products } from '@models/site.models';
+import type { HeaderConfig } from '@util/header-config';
 
+// The header of a `BaseLayout` page. Docs pages get theirs from Starlight (`starlight/Header.astro`);
+// both render `HeaderContent` inside a `header.header`, which its styles and scripts key on.
 interface Props {
-	githubLink?: string;
-	githubLabel?: string;
-	platformQuery?: string;
 	gitHubPlatform?: Products;
+	headerConfig: HeaderConfig;
 }
 
-const { platformQuery = '', gitHubPlatform } = Astro.props;
+const { gitHubPlatform, headerConfig } = Astro.props;
 ---
 
 <header class="header">
-	<HeaderContent platformQuery={platformQuery} gitHubPlatform={gitHubPlatform} />
+	<HeaderContent gitHubPlatform={gitHubPlatform} headerConfig={headerConfig} />
 </header>
