@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import SiteMenuBody from '@components/SiteMenu/SiteMenuBody.astro';
-import { MENU_ENTRIES, MENU_SECTIONS, inSection, isHere } from '@components/SiteMenu/menu-model';
+import { MENU_ENTRIES, MENU_SECTIONS, currentMark, inSection } from '@components/SiteMenu/menu-model';
 import { SIGN_IN, TRY_FREE } from '@data/cta-destinations';
 
 /**
@@ -24,6 +24,7 @@ const pathname = Astro.url.pathname;
 								data-sm-open-view={sub.id}
 								aria-controls={`sm-sheet-${sub.id}`}
 								data-current={inSection(pathname, sub) || undefined}
+								aria-current={inSection(pathname, sub) ? 'true' : undefined}
 							>
 								{item.label}
 								<Icon name="tabler:chevron-right" class="sm__sheet-chev" aria-hidden="true" />
@@ -33,7 +34,7 @@ const pathname = Astro.url.pathname;
 								class:list={['sm__sheet-row', item.linkClass]}
 								data-analytics-id={item.id}
 								href={item.href}
-								aria-current={isHere(pathname, item.href) ? 'page' : undefined}
+								aria-current={currentMark(pathname, item.href)}
 							>
 								{item.label}
 							</a>

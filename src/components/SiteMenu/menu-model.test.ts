@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MENU_ENTRIES, MENU_SECTIONS, inSection, isHere } from './menu-model.ts';
+import { MENU_ENTRIES, MENU_SECTIONS, currentMark, inSection, isHere } from './menu-model.ts';
 import { MENU_SECTION_PROMOS } from '../../data/menu-featured.ts';
 
 const section = (id: string) => MENU_SECTIONS.find((s) => s.sub.id === id)!.sub;
@@ -73,6 +73,14 @@ test('no page marks two sections', () => {
 		'/blog/x/',
 	])
 		assert.ok(MENU_SECTIONS.filter((s) => inSection(p, s.sub)).length <= 1, p);
+});
+
+test('a row link is the current page only on its own page', () => {
+	assert.equal(currentMark('/blog/', '/blog/'), 'page');
+	assert.equal(currentMark('/blog/some-post/', '/blog/'), 'true');
+	assert.equal(currentMark('/pricing/', '/blog/'), undefined);
+	assert.equal(currentMark('/', '/'), undefined);
+	assert.equal(currentMark('/blog/', undefined), undefined);
 });
 
 test('plain links and their analytics ids', () => {

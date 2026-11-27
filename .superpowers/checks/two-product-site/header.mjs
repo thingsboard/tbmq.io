@@ -128,6 +128,21 @@ if (want('menu')) {
 			await go(page, path);
 			const marked = await page.evaluate(() => [...document.querySelectorAll('nav.sm .sm__row [data-current]')].map((t) => t.dataset.smTrigger));
 			check(`current section on ${path}: ${id} only`, marked.length === 1 && marked[0] === id, marked.join(','));
+			// The underline is for the eye; assistive technology reads `aria-current`, in the row and in the sheet.
+			const spoken = await page.evaluate(() =>
+				[...document.querySelectorAll('nav.sm :is(.sm__row, .sm__list) button[aria-current="true"]')].map(
+					(t) => t.dataset.smTrigger ?? t.dataset.smOpenView
+				)
+			);
+			check(`current section on ${path}: announced on the row and the sheet`, spoken.join() === `${id},${id}`, spoken.join());
+		}
+		for (const [path, want] of [
+			['/blog/', 'page'],
+			['/blog/introducing-tbmq-professional-edition-the-mqtt-broker-for-enterprise-needs/', 'true'],
+		]) {
+			await go(page, path);
+			const got = await page.evaluate(() => [...document.querySelectorAll('nav.sm .sm__row a[aria-current]')].map((a) => `${a.textContent.trim()}=${a.getAttribute('aria-current')}`));
+			check(`Blog link on ${path}: aria-current="${want}"`, got.join() === `Blog=${want}`, got.join());
 		}
 		await go(page, '/pricing/');
 		const page_ = await page.evaluate(() => [...document.querySelectorAll('nav.sm .sm__row [aria-current="page"]')].map((a) => a.textContent.trim()));

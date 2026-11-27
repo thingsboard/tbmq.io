@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import SiteMenuSheet from '@components/SiteMenu/SiteMenuSheet.astro';
-import { MENU_ENTRIES, MENU_SECTIONS, inSection, isHere } from '@components/SiteMenu/menu-model';
+import { MENU_ENTRIES, MENU_SECTIONS, currentMark, inSection } from '@components/SiteMenu/menu-model';
 
 /**
  * The site's main menu: from `$menu-row-from` a row of items with a dropdown panel, below it the menu
@@ -22,6 +22,7 @@ const pathname = Astro.url.pathname;
 						aria-controls="sm-one"
 						data-sm-trigger={sub.id}
 						data-current={inSection(pathname, sub) || undefined}
+						aria-current={inSection(pathname, sub) ? 'true' : undefined}
 					>
 						{item.label}
 						<Icon name="tabler:chevron-down" class="sm__chev" aria-hidden="true" />
@@ -32,7 +33,7 @@ const pathname = Astro.url.pathname;
 						id={item.id}
 						data-analytics-id={item.id}
 						href={item.href}
-						aria-current={isHere(pathname, item.href) ? 'page' : undefined}
+						aria-current={currentMark(pathname, item.href)}
 					>
 						{item.label}
 					</a>
@@ -881,9 +882,10 @@ const pathname = Astro.url.pathname;
 		}
 	}
 
-	// Underlined in the text color: a link on hover, the current page, and the section that contains it.
+	// Underlined in the text color: a link on hover, the current page (or the page above it), and the
+	// section that contains it.
 	a.sm__top:hover::after,
-	a.sm__top[aria-current='page']::after,
+	a.sm__top[aria-current]::after,
 	button.sm__top[data-current]::after {
 		opacity: 1;
 	}
@@ -1336,7 +1338,7 @@ const pathname = Astro.url.pathname;
 			background: var(--sm-fill-strong);
 		}
 
-		&[aria-current='page'],
+		&[aria-current],
 		&[data-current] {
 			color: var(--sm-accent);
 		}

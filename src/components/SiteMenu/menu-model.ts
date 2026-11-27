@@ -25,6 +25,15 @@ export const MENU_SECTIONS: MenuSection[] = MENU_ENTRIES.filter(
 /** Whether the page is `href` or below it. Never true for `/`, which every path starts with. */
 export const isHere = (pathname: string, href?: string) => !!href && href !== '/' && pathname.startsWith(href);
 
+/**
+ * `aria-current` for a link of the row: `page` on that page, `true` on a page below it (a post under
+ * Blog), nothing anywhere else. A section's trigger takes `true` from `inSection`.
+ */
+export const currentMark = (pathname: string, href?: string): 'page' | 'true' | undefined => {
+	if (!isHere(pathname, href)) return undefined;
+	return pathname === href ? 'page' : 'true';
+};
+
 const sectionOwnsPage = (pathname: string, sub: SubMenu) => (sub.owns ?? []).some((path) => isHere(pathname, path));
 
 /**
