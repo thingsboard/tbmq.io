@@ -142,6 +142,41 @@ await withPage({ width: 1440 }, async (page) => {
 	}
 });
 
+// On a phone the sidebar is a popover in the browser's top layer; the product list has to open over it.
+await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+	await go(page, '/docs/getting-started/');
+	await page.evaluate(() => document.getElementById('starlight__sidebar').showPopover());
+	await sleep(300);
+	const state = () =>
+		page.evaluate(() => {
+			const pop = document.getElementById('ps-variants');
+			const r = pop.getBoundingClientRect();
+			const hit = r.width ? document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
+			return {
+				open: !pop.hidden,
+				onTop: !!hit && pop.contains(hit),
+				sidebarOpen: document.getElementById('starlight__sidebar').matches(':popover-open'),
+				onButton: document.activeElement === document.querySelector('button.ps-region'),
+			};
+		});
+	await page.click('button.ps-region');
+	await sleep(200);
+	let s = await state();
+	check('phone: the product list opens over the open sidebar', s.open && s.onTop && s.sidebarOpen, JSON.stringify(s));
+	await page.focus('#ps-variants [role="option"]');
+	await page.keyboard.press('Escape');
+	await sleep(200);
+	s = await state();
+	check('phone: Escape closes the list and leaves the sidebar open', !s.open && s.sidebarOpen && s.onButton, JSON.stringify(s));
+	await page.click('button.ps-region');
+	await sleep(200);
+	await Promise.all([
+		page.waitForNavigation(),
+		page.evaluate(() => document.querySelector('#ps-variants [role="option"]:not(.is-active)').click()),
+	]);
+	check('phone: choosing TBMQ Lite opens its docs', new URL(page.url()).pathname.startsWith('/docs/lite/'), page.url());
+});
+
 if (process.env.SHOT) {
 	mkdirSync(process.env.SHOT, { recursive: true });
 	for (const dark of [true, false]) {

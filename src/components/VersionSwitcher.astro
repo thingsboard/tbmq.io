@@ -148,7 +148,7 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 	<!-- Product popover: the products of the active edition -->
 	{
 		variants && activeVariant && (
-			<div class="ps-popover print:hidden" id="ps-variants" role="listbox" aria-label="Product" hidden>
+			<div class="ps-popover print:hidden" id="ps-variants" role="listbox" aria-label="Product" popover="manual" hidden>
 				<div class="ps-section-label">{activeEdition?.variantsLabel}</div>
 				{variants.map((v) => (
 					<a
@@ -191,9 +191,30 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 
 			const triggers = Array.from(this.querySelectorAll<HTMLButtonElement>('[aria-haspopup="listbox"]'));
 
-			// After first open() the popovers are portalled to <body>, so use
-			// document.getElementById rather than this.querySelector.
+			// Without the Popover API the lists are portalled to <body> on first open(), so
+			// use document.getElementById rather than this.querySelector.
 			const findPopover = (id: string) => document.getElementById(id);
+
+			// The list opens in the browser's top layer, as a manual popover. On phones Starlight's
+			// sidebar is a popover itself, and nothing outside the top layer can paint over it,
+			// whatever its z-index; on desktop the top layer also clears every ancestor's stacking
+			// context and overflow clip. The list stays inside the sidebar in the DOM, so a tap on
+			// it counts as a tap inside the sidebar and does not dismiss that.
+			const canPopover = typeof HTMLElement.prototype.showPopover === 'function';
+			const show = (pop: HTMLElement) => {
+				pop.hidden = false;
+				if (canPopover) {
+					if (!pop.matches(':popover-open')) pop.showPopover();
+				} else if (pop.parentElement !== document.body) {
+					// Older browsers: portal to <body> instead, out of the sidebar's stacking context
+					// (Safari paints the docs content over a fixed element nested under it).
+					document.body.appendChild(pop);
+				}
+			};
+			const hide = (pop: HTMLElement) => {
+				if (canPopover && pop.matches(':popover-open')) pop.hidePopover();
+				pop.hidden = true;
+			};
 
 			const closeAll = () => {
 				triggers.forEach((t) => {
@@ -201,7 +222,7 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 					const popoverId = t.getAttribute('aria-controls');
 					if (popoverId) {
 						const pop = findPopover(popoverId);
-						if (pop) pop.hidden = true;
+						if (pop) hide(pop);
 					}
 				});
 			};
@@ -248,20 +269,13 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 				const isOpen = () => trigger.getAttribute('aria-expanded') === 'true';
 				const open = () => {
 					closeAll();
-					// Portal to <body> so we escape any ancestor stacking context or
-					// overflow clipping (Safari in particular paints the docs main
-					// content over a `position: fixed` popover that's nested under
-					// the sidebar's stacking context). Idempotent — runs once.
-					if (popover.parentElement !== document.body) {
-						document.body.appendChild(popover);
-					}
 					positionPopover(trigger, popover);
 					trigger.setAttribute('aria-expanded', 'true');
-					popover.hidden = false;
+					show(popover);
 				};
 				const close = () => {
 					trigger.setAttribute('aria-expanded', 'false');
-					popover.hidden = true;
+					hide(popover);
 				};
 
 				trigger.addEventListener('click', (e) => {
@@ -276,7 +290,11 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 						open();
 						items[0]?.focus();
 					}
-					if (e.key === 'Escape') close();
+					// Cancelled, so the same Escape does not also close the phone sidebar the list sits in.
+					if (e.key === 'Escape' && isOpen()) {
+						e.preventDefault();
+						close();
+					}
 				});
 
 				popover.addEventListener('keydown', (e) => {
@@ -291,6 +309,7 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 						(items[idx - 1] ?? items[items.length - 1])?.focus();
 					}
 					if (e.key === 'Escape') {
+						e.preventDefault();
 						close();
 						trigger.focus();
 					}
@@ -301,7 +320,7 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 				const target = e.target as Node;
 				// Click inside the trigger / wrapper: handled by per-trigger listeners.
 				if (this.contains(target)) return;
-				// Click inside a portalled popover: keep it open.
+				// Click inside a list portalled to <body> (no Popover API): keep it open.
 				const popoverIds = triggers.map((t) => t.getAttribute('aria-controls')).filter((id): id is string => !!id);
 				for (const id of popoverIds) {
 					const pop = findPopover(id);
@@ -507,6 +526,11 @@ const activeVariant = variants?.find((v) => v.product === currentProduct);
 		// top / left / width / max-height are set by JS (see `positionPopover`)
 		// so the popover can extend past the sidebar boundary into the content
 		// area while staying inside the viewport.
+		// It opens as a `popover`: undo the browser's centring (`inset: 0`, `margin: auto`) and its
+		// system text colour. `z-index` only matters where the Popover API is missing.
+		inset: auto;
+		margin: 0;
+		color: inherit;
 		z-index: 1000;
 		// Plain block flow: rows take their natural height, so a capped
 		// popover overflows into scroll instead of compressing them.
