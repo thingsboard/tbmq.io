@@ -21,7 +21,8 @@ export const footerLegalLinks: { href: string; label: string }[] = [
 	{ href: '/product/terms-of-use/', label: 'Demo Terms of Use' },
 ];
 
-// Opens the cookie preferences dialog (CCPA regs §7015 opt-out link).
+// Opens the cookie preferences dialog. The label follows the CCPA wording; tbmq.io sells or shares no personal data, so it
+// is not a §7015 opt-out link.
 export const PRIVACY_CHOICES_LABEL = 'Your Privacy Choices';
 
 // Under the Marketing switch when the browser sends Global Privacy Control (CCPA regs §7025).
