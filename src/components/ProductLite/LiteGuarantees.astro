@@ -1,12 +1,14 @@
 ---
 import SectionHeader from '@components/Landing/SectionHeader.astro';
 import { Icon } from 'astro-icon/components';
+import { LITE_CAPACITY } from '~/data/lite';
 
 // Wording follows docs/lite/guarantees-and-limits; where that page hedges, so does this one.
 const guarantees = [
 	{
 		icon: 'tabler:checks',
-		title: 'Acknowledged means stored',
+		// Not "acknowledged means stored", as for clustered TBMQ: Lite stores only what a persistent session needs.
+		title: 'When a publish is acknowledged',
 		text: 'A QoS 1 or QoS 2 publish is acknowledged once it has been handed to every online subscriber without a persistent session and written to the store’s write-ahead log for every subscriber with one.',
 	},
 	{
@@ -21,14 +23,15 @@ const guarantees = [
 	},
 ];
 
+const { reference, bestEffort } = LITE_CAPACITY;
 const capacity = [
 	{
-		container: '2 CPUs, 2 GB',
+		container: reference.container,
 		note: 'reference',
-		rate: '7,500 msg/s',
-		latency: 'Ack p99 17 ms median, 52 ms worst 10-second window',
+		rate: `${reference.rate} msg/s`,
+		latency: `Ack p99 ${reference.ackP99MedianMs} ms median, ${reference.ackP99WorstMs} ms worst 10-second window`,
 	},
-	{ container: '1 CPU, 2 GB', note: 'best effort', rate: '3,750 msg/s', latency: '—' },
+	{ container: bestEffort.container, note: 'best effort', rate: `${bestEffort.rate} msg/s`, latency: '—' },
 ];
 
 const limits = [

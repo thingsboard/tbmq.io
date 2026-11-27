@@ -22,7 +22,7 @@ import SectionHeader from '@components/Landing/SectionHeader.astro';
 				class="diagram reveal"
 				viewBox="0 0 640 300"
 				role="img"
-				aria-label="MQTT clients connect to the TBMQ Lite container, which holds the broker and an embedded store and writes to one data volume mounted at /data."
+				aria-label="Publishers send messages to the MQTT broker in the TBMQ Lite container, and the broker delivers them to subscribers. The broker writes to an embedded store in the same process, which keeps its data on one volume mounted at /data."
 			>
 				<defs>
 					<marker id="lite-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
@@ -41,8 +41,12 @@ import SectionHeader from '@components/Landing/SectionHeader.astro';
 				</g>
 				<text class="caption" x="74" y="22" text-anchor="middle">MQTT clients</text>
 
-				<path class="wire" d="M140 100H244" marker-end="url(#lite-arrow)"></path>
-				<path class="wire" d="M248 200H144" marker-end="url(#lite-arrow)"></path>
+				{/* Both client wires end at the broker: it delivers to online subscribers itself, and only
+				    what a persistent session needs goes to the store (docs/lite/installation/config,
+				    "Message pipeline"). A wire from the store to Subscribers would say every message is
+				    stored before it is delivered. */}
+				<path class="wire" d="M140 88H244" marker-end="url(#lite-arrow)"></path>
+				<path class="wire" d="M248 114H192V200H144" marker-end="url(#lite-arrow)"></path>
 
 				<!-- Container -->
 				<rect class="lite-box" x="224" y="36" width="240" height="228" rx="14"></rect>

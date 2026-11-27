@@ -12,10 +12,9 @@ import { Aside, Code, Steps } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
 import { TBMQ_LITE_VER } from '~/data/versions';
+import { LITE_RUN_CMD } from '~/data/lite';
 
-export const runCmd = `docker run -d --name tbmq-lite --restart unless-stopped \\
-  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
-  -v tbmq-lite:/data thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+export const runCmd = LITE_RUN_CMD;
 
 export const runCmdPassword = `docker run -d --name tbmq-lite --restart unless-stopped \\
   -p 1883:1883 -p 8083:8083 -p 8084:8084 \\

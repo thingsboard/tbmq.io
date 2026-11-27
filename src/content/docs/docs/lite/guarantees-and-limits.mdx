@@ -11,6 +11,7 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
+import { LITE_CAPACITY } from '~/data/lite';
 
 ## When a publish is acknowledged
 
@@ -74,8 +75,8 @@ that each receive the topics of 9 publishers, QoS 1 both ways, 402-byte messages
 
 | Container | Highest sustained rate | Ack p99 (median / worst 10-s window) |
 |---|---|---|
-| 2 CPUs, 2 GB (reference) | **7,500 msg/s** | 17 / 52 ms |
-| 1 CPU, 2 GB (best effort) | 3,750 msg/s | — |
+| {LITE_CAPACITY.reference.container} (reference) | **{LITE_CAPACITY.reference.rate} msg/s** | {LITE_CAPACITY.reference.ackP99MedianMs} / {LITE_CAPACITY.reference.ackP99WorstMs} ms |
+| {LITE_CAPACITY.bestEffort.container} (best effort) | {LITE_CAPACITY.bestEffort.rate} msg/s | — |
 
 - "Sustained" means no lost, refused or dropped message, no trimmed or expired queue message, a pipeline that does not
   grow, and an ack p99 under 100 ms in every 10-second window. At 2 CPUs the next rate tried, 9,000 msg/s, failed on

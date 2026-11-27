@@ -1,12 +1,8 @@
 ---
-import { TBMQ_LITE_VER } from '~/data/versions';
+import { LITE_CAPACITY, LITE_RUN_CMD } from '~/data/lite';
 
-// The same command the install guide leads with (docs/lite/installation).
-const command = [
-	'docker run -d --name tbmq-lite --restart unless-stopped \\',
-	'  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\',
-	`  -v tbmq-lite:/data thingsboard/tbmq-lite:${TBMQ_LITE_VER}`,
-].join('\n');
+// The command the install guide leads with (docs/lite/installation); both read it from `data/lite`.
+const command = LITE_RUN_CMD;
 
 interface Stat {
 	value: string;
@@ -18,8 +14,8 @@ const stats: Stat[] = [
 	{ value: '1', label: 'container to run', href: '#lite-build' },
 	{ value: '0', label: 'other services beside it', href: '#lite-build' },
 	{
-		value: '7,500',
-		label: 'msg/s sustained on 2 CPUs and 2 GB',
+		value: LITE_CAPACITY.reference.rate,
+		label: `msg/s sustained on ${LITE_CAPACITY.reference.containerInText}`,
 		href: '/docs/lite/guarantees-and-limits/#capacity',
 	},
 ];

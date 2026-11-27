@@ -2,8 +2,9 @@
 import SectionHeader from '@components/Landing/SectionHeader.astro';
 import ProductTile from '@components/ProductTile.astro';
 import { Icon } from 'astro-icon/components';
+import { LITE_CAPACITY } from '~/data/lite';
 
-// A cut of the table on docs/lite/lite-vs-tbmq, values copied from it.
+// A cut of the table on docs/lite/lite-vs-tbmq, values copied from it; the capacity is shared (`data/lite`).
 const rows: { label: string; lite: string; tbmq: string }[] = [
 	{
 		label: 'Deployment',
@@ -13,7 +14,11 @@ const rows: { label: string; lite: string; tbmq: string }[] = [
 	{ label: 'Scaling and failover', lite: 'One node', tbmq: 'Horizontal scaling across nodes' },
 	{ label: 'Client types', lite: 'DEVICE', tbmq: 'DEVICE and APPLICATION' },
 	{ label: 'Integrations', lite: 'None', tbmq: 'HTTP, MQTT, Kafka' },
-	{ label: 'Measured capacity', lite: '7,500 msg/s on 2 CPUs and 2 GB', tbmq: 'Millions of msg/s' },
+	{
+		label: 'Measured capacity',
+		lite: `${LITE_CAPACITY.reference.rate} msg/s on ${LITE_CAPACITY.reference.containerInText}`,
+		tbmq: 'Millions of msg/s',
+	},
 	{ label: 'License', lite: 'Apache 2.0', tbmq: 'Apache 2.0 (Community Edition)' },
 ];
 

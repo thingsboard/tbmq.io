@@ -10,6 +10,7 @@ sidebar:
 
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
+import { LITE_CAPACITY } from '~/data/lite';
 
 TBMQ Lite and TBMQ are built from the same code and share the MQTT handling, the authentication providers, the REST
 API and the web UI. TBMQ Lite is the single-node broker for production sites that fit one machine, for the edge, labs
@@ -30,7 +31,7 @@ and laptops. Clustered TBMQ is the broker for high availability and scale.
 | Prometheus and actuator info | Behind `TBMQ_METRICS_TOKEN` | Open |
 | Backup | Built in: UI, REST API, command line | Backups of PostgreSQL and the other services |
 | Platforms | `linux/amd64`, `linux/arm64` | `linux/amd64`, `linux/arm64` |
-| Measured capacity | 7,500 msg/s on 2 CPUs and 2 GB | Millions of msg/s, see the <DocLink product={Products.TBMQ} path="reference/1m-throughput-p2p-performance-test" bold={false}>performance tests</DocLink> |
+| Measured capacity | {LITE_CAPACITY.reference.rate} msg/s on {LITE_CAPACITY.reference.containerInText} | Millions of msg/s, see the <DocLink product={Products.TBMQ} path="reference/1m-throughput-p2p-performance-test" bold={false}>performance tests</DocLink> |
 | License | Apache 2.0 | Apache 2.0 (Community Edition) |
 
 ## Which one to pick
