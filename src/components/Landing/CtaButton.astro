@@ -53,6 +53,9 @@ const rel = target === '_blank' ? 'noopener noreferrer' : undefined;
 		&:hover {
 			// Darker, where upstream lightens: lightened, tbmq.io's green leaves white text at 4.0:1 (AA needs 4.5).
 			background-color: color-mix(in srgb, var(--cta-brand) 88%, black);
+			// Not in upstream: both variants restate their ink on hover, because the global `:where(a):hover`
+			// link colour ties with a scoped class and comes later in the production bundle.
+			color: $color-white;
 		}
 	}
 
@@ -68,6 +71,7 @@ const rel = target === '_blank' ? 'noopener noreferrer' : undefined;
 			// On the dark default these resolve to the 55% border and 14% fill.
 			border-color: color-mix(in srgb, var(--cta-line) 69%, currentColor);
 			background-color: color-mix(in srgb, currentColor 14%, transparent);
+			color: var(--cta-outline-ink, #{$color-white});
 		}
 	}
 </style>
