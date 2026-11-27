@@ -11,10 +11,10 @@ sidebar:
 import { Aside, Code, Steps } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
-import { LITE_CAPACITY, LITE_RUN_CMD, liteComposeFile, liteRunCmd } from '~/data/lite';
+import { LITE_CAPACITY, LITE_RUN_CMD, liteComposeFile, liteRunCmd, liteUpgradeCmd } from '~/data/lite';
 
-{/* Every way of starting the broker below is built by `liteRunCmd` (or `liteComposeFile`), so the ports,
-    the volume and the image are the same in all of them. Change those in `src/data/lite.ts`. */}
+{/* Every way of starting the broker below is built by `liteRunCmd`, `liteComposeFile` or `liteUpgradeCmd`,
+    so the ports, the volume and the image are the same in all of them. Change those in `src/data/lite.ts`. */}
 
 export const runCmd = LITE_RUN_CMD;
 
@@ -26,10 +26,7 @@ ${liteRunCmd({ volume: '/srv/tbmq-lite' })}`;
 
 export const composeFile = liteComposeFile({ TBMQ_ADMIN_PASSWORD: 'choose-a-strong-password' });
 
-export const upgradeCmd = `docker pull thingsboard/tbmq-lite:<new version>
-docker stop tbmq-lite
-docker rm tbmq-lite
-${liteRunCmd({ tag: '<new version>' })}`;
+export const upgradeCmd = liteUpgradeCmd('<new version>');
 
 <Aside type="caution" title="Beta">
   TBMQ Lite is in public beta. Configuration keys and defaults may still change before the first release.

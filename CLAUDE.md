@@ -165,10 +165,16 @@ The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER
 
 `src/data/lite.ts` holds what the TBMQ Lite product page and the Lite docs both show:
 
-- **The command that starts the broker.** `liteRunCmd()` builds every `docker run` variant (the lead command `LITE_RUN_CMD`, which the hero also offers, and the password, bind-mount, upgrade, settings and logback variants under `docs/lite/installation/`), and `liteComposeFile()` the Compose file. Change a port, the volume or the image there, and add a new variant through the builder rather than as a literal; `lite.test.ts` pins the text.
+- **The command that starts the broker.** `liteRunCmd()` builds every `docker run` variant (the lead command `LITE_RUN_CMD`, which the hero also offers, and the password, bind-mount, settings and logback variants under `docs/lite/installation/`), `liteComposeFile()` the Compose file, and `liteUpgradeCmd()` the whole upgrade block (pull, stop, remove, run). Change a port, the volume or the image there, and add a new variant through the builder rather than as a literal; `lite.test.ts` pins the text.
 - **The measured capacity**, `LITE_CAPACITY`: read by the hero, the guarantees and comparison sections, the two docs tables and the install guide's sizing sentence.
 
-Still written by hand, so a rename has to search for them: the container and volume name in fenced commands and prose (`docker logs -f tbmq-lite`, `docker volume rm tbmq-lite`), the port table of the install guide, the one-off `docker run` commands of `backup-and-restore.mdx`, and the figures of the other capacity runs in `guarantees-and-limits.mdx`.
+Still written by hand, so a rename has to search for them:
+
+- the image name `thingsboard/tbmq-lite` as plain text: the Deployment row of `lite-vs-tbmq.mdx` and its copy in `ProductLite/LiteCompare.astro`;
+- the image and the volume in the one-off `docker run` commands of `backup-and-restore.mdx` (other entrypoints, no ports, so the builder does not fit them);
+- the container and volume name in fenced commands and prose (`docker logs -f tbmq-lite`, `docker volume rm tbmq-lite`);
+- the port table of the install guide;
+- the figures of the other capacity runs in `guarantees-and-limits.mdx`.
 
 ### Custom Plugins
 

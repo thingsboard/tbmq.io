@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LITE_RUN_CMD, liteComposeFile, liteRunCmd } from './lite.ts';
+import { LITE_RUN_CMD, liteComposeFile, liteRunCmd, liteUpgradeCmd } from './lite.ts';
 import { TBMQ_LITE_VER } from './versions.ts';
 
 // The docs show the command in several variants. Each is built by `liteRunCmd`, and these pin the
@@ -45,6 +45,20 @@ test('another tag replaces the released one', () => {
 	assert.equal(
 		liteRunCmd({ tag: '<new version>' }),
 		[RUN, PORTS, '  -v tbmq-lite:/data thingsboard/tbmq-lite:<new version>'].join('\n')
+	);
+});
+
+test('the upgrade pulls the image it then runs, and replaces the container of the lead command', () => {
+	assert.equal(
+		liteUpgradeCmd('<new version>'),
+		[
+			'docker pull thingsboard/tbmq-lite:<new version>',
+			'docker stop tbmq-lite',
+			'docker rm tbmq-lite',
+			RUN,
+			PORTS,
+			'  -v tbmq-lite:/data thingsboard/tbmq-lite:<new version>',
+		].join('\n')
 	);
 });
 

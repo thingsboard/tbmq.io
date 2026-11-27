@@ -69,6 +69,14 @@ export function liteComposeFile(env: Record<string, string> = {}): string {
 	].join('\n');
 }
 
+/**
+ * The upgrade: pull the image of `tag`, remove the container, and start it again on the same volume.
+ * Built here so the image pulled is the image run.
+ */
+export function liteUpgradeCmd(tag: string): string {
+	return [`docker pull ${IMAGE}:${tag}`, `docker stop ${NAME}`, `docker rm ${NAME}`, liteRunCmd({ tag })].join('\n');
+}
+
 /** The command the install guide leads with, and the one the product page's hero offers to copy. */
 export const LITE_RUN_CMD = liteRunCmd();
 
