@@ -12,19 +12,14 @@ wrapTableCode: true
 import { Aside, Code } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
-import { TBMQ_LITE_VER } from '~/data/versions';
+import { liteRunCmd } from '~/data/lite';
 
-export const runWithEnv = `docker run -d --name tbmq-lite --restart unless-stopped \\
-  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
-  -e STORE_WAL_SYNC=always \\
-  -e TBMQ_METRICS_TOKEN='a-long-random-token' \\
-  -v tbmq-lite:/data thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+{/* Built by `liteRunCmd`, like the commands of the install guide: change the ports, the volume or the
+    image in `src/data/lite.ts`. */}
 
-export const runWithLogback = `docker run -d --name tbmq-lite --restart unless-stopped \\
-  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
-  -v tbmq-lite:/data \\
-  -v "$PWD/logback.xml:/config/logback.xml:ro" \\
-  thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+export const runWithEnv = liteRunCmd({ env: ['STORE_WAL_SYNC=always', "TBMQ_METRICS_TOKEN='a-long-random-token'"] });
+
+export const runWithLogback = liteRunCmd({ mounts: ['"$PWD/logback.xml:/config/logback.xml:ro"'] });
 
 TBMQ Lite reads its settings from environment variables. Set them with `-e NAME=value` on `docker run`, or under
 `environment:` in Compose, and recreate the container to apply a change (the data stays on the volume):

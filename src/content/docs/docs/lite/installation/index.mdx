@@ -11,44 +11,25 @@ sidebar:
 import { Aside, Code, Steps } from '@astrojs/starlight/components';
 import DocLink from '@components/DocLink.astro';
 import { Products } from '~/models/site.models';
-import { TBMQ_LITE_VER } from '~/data/versions';
-import { LITE_RUN_CMD } from '~/data/lite';
+import { LITE_CAPACITY, LITE_RUN_CMD, liteComposeFile, liteRunCmd } from '~/data/lite';
+
+{/* Every way of starting the broker below is built by `liteRunCmd` (or `liteComposeFile`), so the ports,
+    the volume and the image are the same in all of them. Change those in `src/data/lite.ts`. */}
 
 export const runCmd = LITE_RUN_CMD;
 
-export const runCmdPassword = `docker run -d --name tbmq-lite --restart unless-stopped \\
-  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
-  -e TBMQ_ADMIN_PASSWORD='choose-a-strong-password' \\
-  -v tbmq-lite:/data thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+export const runCmdPassword = liteRunCmd({ env: ["TBMQ_ADMIN_PASSWORD='choose-a-strong-password'"] });
 
 export const runCmdBind = `sudo mkdir -p /srv/tbmq-lite
 sudo chown 799:799 /srv/tbmq-lite
-docker run -d --name tbmq-lite --restart unless-stopped \\
-  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
-  -v /srv/tbmq-lite:/data thingsboard/tbmq-lite:${TBMQ_LITE_VER}`;
+${liteRunCmd({ volume: '/srv/tbmq-lite' })}`;
 
-export const composeFile = `services:
-  tbmq-lite:
-    image: thingsboard/tbmq-lite:${TBMQ_LITE_VER}
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-      - "8083:8083"
-      - "8084:8084"
-    environment:
-      TBMQ_ADMIN_PASSWORD: "choose-a-strong-password"
-    volumes:
-      - tbmq-lite:/data
-
-volumes:
-  tbmq-lite:`;
+export const composeFile = liteComposeFile({ TBMQ_ADMIN_PASSWORD: 'choose-a-strong-password' });
 
 export const upgradeCmd = `docker pull thingsboard/tbmq-lite:<new version>
 docker stop tbmq-lite
 docker rm tbmq-lite
-docker run -d --name tbmq-lite --restart unless-stopped \\
-  -p 1883:1883 -p 8083:8083 -p 8084:8084 \\
-  -v tbmq-lite:/data thingsboard/tbmq-lite:<new version>`;
+${liteRunCmd({ tag: '<new version>' })}`;
 
 <Aside type="caution" title="Beta">
   TBMQ Lite is in public beta. Configuration keys and defaults may still change before the first release.
@@ -69,7 +50,7 @@ database on the volume. It supports **DEVICE** clients only. To see how it diffe
 - **Windows and macOS** through Docker Desktop, for development. Use a named volume, as in the commands below.
   These hosts are not tested in the beta.
 
-The broker is sized for a container with 2 CPUs and 2 GB of memory; it also starts in less. See
+The broker is sized for a container with {LITE_CAPACITY.reference.containerInText} of memory; it also starts in less. See
 <DocLink product={Products.TBMQ_LITE} path="guarantees-and-limits">Guarantees and limits</DocLink> for the
 measured capacity.
 
