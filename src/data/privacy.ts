@@ -6,10 +6,9 @@ export const WEBSITE_PRIVACY_HREF = '/privacy-policy/';
 
 export const COOKIE_POLICY_HREF = '/cookie-policy/';
 
-// Form privacy line: `lead`, then the link, then a full stop. No "only": with Marketing consent the hashed email
-// also reaches Google Analytics.
+// Form privacy line: `lead`, then the link, then a full stop.
 export const formPrivacyNote = (noun: 'message' | 'request') => ({
-	lead: `We use these details to answer your ${noun}. See our`,
+	lead: `We use these details only to answer your ${noun}. See our`,
 	linkLabel: 'Privacy Policy',
 });
 
@@ -48,7 +47,7 @@ export const CONSENT_CATEGORIES: { id: TbConsentCategory; title: string; descrip
 		id: 'marketing',
 		title: 'Marketing',
 		description:
-			'Remember the campaign or partner link you arrived from, so we know which campaign or partner brought you when you sign up or contact us (partner program). When you send us a form, Google Analytics also receives the email address you entered, in hashed form, to measure which campaigns bring requests. For this, Google Analytics loads even when Analytics is off; it then sets no cookies, but still receives the pages you view. We do not use them to build advertising profiles.',
+			'Remember the campaign or partner link you arrived from, so we know which campaign or partner brought you when you sign up or contact us (partner program). We do not use it to build advertising profiles.',
 	},
 	{
 		id: 'media',

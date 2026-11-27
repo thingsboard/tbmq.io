@@ -144,7 +144,7 @@ import {
 			// Withdrawal: GTM's tags and Google's search keep running on this page after the update above (GA goes on
 			// sending cookieless hits). Reload, so the page starts without them and the on-load cleanup runs again.
 			const gtmRunning = document.querySelector('script[src*="googletagmanager.com/gtm.js"]') !== null;
-			if ((gtmRunning && !analytics && !marketing) || (isCseLoaded() && !media)) {
+			if ((gtmRunning && !analytics) || (isCseLoaded() && !media)) {
 				location.reload();
 				return;
 			}

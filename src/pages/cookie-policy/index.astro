@@ -44,12 +44,6 @@ const description =
 					request, so we know which campaign or partner it came from;
 				</li>
 				<li>
-					Measure which of our campaigns bring contact requests: when you send us a form, Google Analytics receives the
-					email address you entered, in hashed form. This happens only if you allow Marketing cookies, and no cookie is
-					set for it. For this, Google Analytics also loads if you allow Marketing but not Analytics cookies; it then
-					sets no cookies and sends Google only cookieless measurement data;
-				</li>
-				<li>
 					Improve load-balancing and page load speed using <a href="https://www.cloudflare.com/">Cloudflare</a>;
 				</li>
 				<li>
@@ -70,11 +64,10 @@ const description =
 			<p>
 				Your choice is stored for {CONSENT_MAX_AGE_DAYS} days in the tb_consent cookie, together with the time you made it;
 				after that, or if you clear your cookies, the banner is shown again. Until you allow a category, the tools in that
-				category are not loaded at all: no script runs, no cookie is set and nothing is sent to the provider. The only exception
-				is Google Analytics, which also loads, without setting cookies, when you allow Marketing alone (see above). If you
-				reject a category or withdraw your consent later, the cookies and browser storage of that category on tbmq.io are
-				deleted at once; cookies set by Google on its own domains can only be removed in your browser settings or your Google
-				account. If your browser sends a Global Privacy Control signal, we treat it as a refusal of Marketing cookies.
+				category are not loaded at all: no script runs, no cookie is set and nothing is sent to the provider. If you reject
+				a category or withdraw your consent later, the cookies and browser storage of that category on tbmq.io are deleted
+				at once; cookies set by Google on its own domains can only be removed in your browser settings or your Google account.
+				If your browser sends a Global Privacy Control signal, we treat it as a refusal of Marketing cookies.
 			</p>
 			<p>
 				You may also configure your browser to alert you each time cookies are created. It is also possible to prevent
@@ -154,19 +147,6 @@ const description =
 								<a href="https://policies.google.com/technologies/cookies">Google's cookie page</a>; <a
 									href="https://tools.google.com/dlpage/gaoptout">opt-out add-on</a
 								>
-							</td>
-						</tr>
-						<tr>
-							<td>Google Analytics (user-provided data)</td>
-							<td>Marketing</td>
-							<td>
-								When you send us a form, the email address you entered, in hashed form, so we can measure which
-								campaigns bring requests. We do not use it to build advertising profiles.
-							</td>
-							<td>No cookie</td>
-							<td>-</td>
-							<td>
-								<a href="https://support.google.com/analytics/answer/14077171">About user-provided data collection</a>
 							</td>
 						</tr>
 						<tr>

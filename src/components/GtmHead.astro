@@ -4,9 +4,9 @@ import { CONSENT_COOKIE, CONSENT_VERSION } from '@util/consent';
 
 {
 	/*
-	gtm.js loads only after Analytics or Marketing is granted, so nothing reaches Google before a choice. With Marketing
-	alone, the GA4 tag runs with `analytics_storage` denied and sends cookieless pings (Advanced Consent Mode behaviour),
-	because GA4 user-provided data needs the tag; the Marketing description in `@data/privacy` and both policies say so.
+	gtm.js loads only after Analytics is granted, so nothing reaches Google before a choice. Marketing alone loads nothing:
+	on tbmq.io it is only our own campaign and partner attribution (`attribution.ts`), and the GA4 tag in GTM-TFXSRSWK
+	requires `analytics_storage`. thingsboard.io keeps `analytics || marketing` because its container holds Marketing tags.
 	`tbLoadGtm` runs for a choice stored on an earlier visit (after `load`, below) and for one made on this page
 	(CookieConsent.astro).
 	Global Privacy Control overrides a stored Marketing grant (CCPA regs §7025) for this page; the cookie is left as saved.
@@ -24,8 +24,9 @@ import { CONSENT_COOKIE, CONSENT_VERSION } from '@util/consent';
 	// The Consent Mode v2 signals for a choice: the `default` below and CookieConsent.astro's `update` both use it.
 	window.tbConsentSignals = (consent) => ({
 		analytics_storage: consent && consent.analytics ? 'granted' : 'denied',
-		// Marketing lets Google use the hashed form data (GA4 user-provided data collection).
-		ad_user_data: consent && consent.marketing ? 'granted' : 'denied',
+		// Never granted: GA4 user-provided data collection is off for the tbmq.io property, and there is no Google Ads
+		// link. Granting it with Marketing goes together with describing that processing in both policies.
+		ad_user_data: 'denied',
 		// Never granted: tbmq.io runs no ads, so no Google advertising cookies are set. If ad tags are ever added,
 		// this mapping and the Cookie Policy change together.
 		ad_storage: 'denied',
@@ -61,7 +62,7 @@ import { CONSENT_COOKIE, CONSENT_VERSION } from '@util/consent';
 	let gtmLoaded = false;
 	window.tbLoadGtm = () => {
 		const consent = window.tbConsent;
-		if (gtmLoaded || !consent || !(consent.analytics || consent.marketing)) return;
+		if (gtmLoaded || !consent || !consent.analytics) return;
 		if (location.hostname !== 'tbmq.io' && !gtmDebug) return;
 		// Never inside a frame: demo.tbmq.io embeds the legal pages in its sign-up dialog, where no consent UI is shown.
 		if (window.self !== window.top) return;
