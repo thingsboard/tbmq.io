@@ -141,7 +141,7 @@ function stripDocsPrefix(slug: string): string {
 	return slug.startsWith('docs/') ? slug.slice(5) : slug;
 }
 
-/** Walk src/pages/ for .astro files, skipping dynamic [...] routes and known non-content dirs. */
+/** Walk src/pages/ for .astro and .mdx files, skipping dynamic [...] routes and known non-content dirs. */
 function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pathname: string }>): void {
 	const SKIP_DIRS = new Set(['open-graph', 'docs', 'blog']);
 	const dir = path.join(root, rel);
@@ -158,8 +158,8 @@ function walkAstroPages(root: string, rel: string, out: Array<{ slug: string; pa
 			walkAstroPages(root, path.join(rel, entry.name), out);
 			continue;
 		}
-		if (!entry.name.endsWith('.astro')) continue;
-		const baseName = entry.name.replace(/\.astro$/, '');
+		if (!/\.(astro|mdx)$/.test(entry.name)) continue;
+		const baseName = entry.name.replace(/\.(astro|mdx)$/, '');
 		const slug = baseName === 'index' ? rel.replace(/\\/g, '/') : path.join(rel, baseName).replace(/\\/g, '/');
 		const pathname = '/' + (slug ? slug + '/' : '');
 		out.push({ slug, pathname });

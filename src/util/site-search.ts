@@ -1,0 +1,26 @@
+// Google Programmable Search, shared by the header search modal (`SearchButton.astro`) and the docs search pages
+// (`DocSearchWidget.astro`). cse.js contacts Google's ad endpoints and sets google.com cookies, so it loads only with
+// External media consent.
+
+import { GOOGLE_CSE_CX } from '../consts.ts';
+
+const CSE_SRC = `https://cse.google.com/cse.js?cx=${GOOGLE_CSE_CX}`;
+
+export const hasSearchConsent = () => window.tbConsent?.media === true;
+
+export const isCseLoaded = () => document.querySelector(`script[src="${CSE_SRC}"]`) !== null;
+
+// cse.js scans the DOM for `.gcse-search` once, when it executes: render those elements first.
+// `onError` covers cse.js only: a failure of the second script cse.js loads goes unreported.
+export function loadCse(onError?: () => void): void {
+	if (isCseLoaded()) return;
+	const script = document.createElement('script');
+	script.async = true;
+	script.src = CSE_SRC;
+	if (onError) script.addEventListener('error', onError);
+	document.head.appendChild(script);
+}
+
+// The visitor's own request to Google, in a new tab, for when search here is off.
+export const googleSiteSearchUrl = (query: string) =>
+	`https://www.google.com/search?q=${encodeURIComponent(`site:tbmq.io ${query}`.trim())}`;

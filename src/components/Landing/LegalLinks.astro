@@ -1,17 +1,17 @@
 ---
 /**
- * The legal pages, linked from both footers. Colour comes from the host via
+ * The legal pages, linked from both footers, then the button that reopens the cookie
+ * preferences (`CookieConsent.astro`). Colour comes from the host via
  * `--legal-color` / `--legal-hover-color`, the way `SocialNetworks` reads `--sn-color`.
  */
-const legalLinks = [
-	{ href: '/product/privacy-policy/', label: 'Demo Privacy Policy' },
-	{ href: '/product/terms-of-use/', label: 'Demo Terms of Use' },
-	{ href: '/cookie-policy/', label: 'Cookie Policy' },
-];
+import { PRIVACY_CHOICES_LABEL, footerLegalLinks } from '@data/privacy';
 ---
 
 <nav class="legal" aria-label="Legal">
-	{legalLinks.map(({ href, label }) => <a href={href}>{label}</a>)}
+	{footerLegalLinks.map(({ href, label }) => <a href={href}>{label}</a>)}
+	<button type="button" class="cookie-settings legal-choice" data-cc="show-preferences">
+		{PRIVACY_CHOICES_LABEL}
+	</button>
 </nav>
 
 <style>
@@ -21,7 +21,8 @@ const legalLinks = [
 		gap: 0 1.25rem;
 	}
 
-	.legal a {
+	.legal a,
+	.legal .legal-choice {
 		font-size: 0.875rem;
 		color: var(--legal-color, #8e8292);
 		text-decoration: none;
@@ -29,7 +30,8 @@ const legalLinks = [
 		transition: color 300ms;
 	}
 
-	.legal a:hover {
+	.legal a:hover,
+	.legal .legal-choice:hover {
 		color: var(--legal-hover-color, #fff);
 		text-decoration: underline;
 	}

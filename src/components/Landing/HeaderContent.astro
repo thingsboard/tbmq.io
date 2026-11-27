@@ -76,9 +76,12 @@ const { platformQuery = '', gitHubPlatform } = Astro.props;
 			);
 			subMenus.forEach((menu) => menu.classList.remove('open-sub'));
 			body.style.overflow = '';
+			document.documentElement.removeAttribute('data-sm-sheet-open');
 		} else {
 			header?.classList.add('opened-burger');
 			body.style.overflow = 'hidden';
+			// Read by `CookieConsent.astro`, to keep the cookie banner above the open menu.
+			document.documentElement.setAttribute('data-sm-sheet-open', '');
 		}
 	}
 

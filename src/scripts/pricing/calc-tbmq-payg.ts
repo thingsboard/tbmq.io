@@ -4,6 +4,8 @@
 // the first `pricing:product-activated` event whose detail is 'tbmq'.
 
 import { makeInteractionPusher, bindCtaTracking, bindExportButtons, type CalculatorType } from '@root/scripts/pricing/calc-analytics';
+import { attributionQuery } from '@util/attribution';
+import { onConsentChange } from '@util/consent';
 
 const CALC_TYPE: CalculatorType = 'tbmq_payg';
 
@@ -139,12 +141,13 @@ export function initTbmqPaygCalc() {
 		let mqCtaUrl = `https://license.thingsboard.io/signup?createSubscription=true&productId=${MQ_PLAN.productId}&planId=${MQ_PLAN.planId}&coupon=CFQJ30PWTB`;
 		const mqItemsStr = JSON.stringify(mqItems);
 		if (mqItemsStr !== '{}') mqCtaUrl += '&items=' + encodeURIComponent(mqItemsStr);
-		const mqUtm = localStorage.getItem('utm');
-		if (mqUtm) { try { const u = JSON.parse(mqUtm); Object.keys(u).forEach(k => { mqCtaUrl += '&' + k + '=' + encodeURIComponent(u[k]); }); } catch { /* ignore malformed utm */ } }
-		const mqFpr = localStorage.getItem('fpr');
-		if (mqFpr) mqCtaUrl += '&fpr=' + encodeURIComponent(mqFpr);
+		// Campaign and partner attribution, only with Marketing consent (empty otherwise).
+		const attribution = attributionQuery();
+		if (attribution) mqCtaUrl += '&' + attribution;
 
-		foot.innerHTML = `<div class="calc-total-row"><span class="calc-total-label">Total</span><span class="calc-total-amount">${totalHtml}${tip(totalTip)}</span></div><a class="calc-cta" href="${mqCtaUrl}" target="_blank" rel="noopener noreferrer">${baseOnly ? 'Try 30 days for free' : 'Get started'}</a>`;
+		foot.innerHTML = `<div class="calc-total-row"><span class="calc-total-label">Total</span><span class="calc-total-amount">${totalHtml}${tip(totalTip)}</span></div><a class="calc-cta" data-attribution="self" target="_blank" rel="noopener noreferrer">${baseOnly ? 'Try 30 days for free' : 'Get started'}</a>`;
+		// Set as an attribute, never parsed as markup: the URL carries campaign tags from the visitor's own link.
+		foot.querySelector('.calc-cta')!.setAttribute('href', mqCtaUrl);
 
 		lastTotal = total;
 		if (opts?.track !== false) sendGTM(total);
@@ -236,4 +239,6 @@ export function initTbmqPaygCalc() {
 
 	sliderProgress(sS); sliderProgress(tS); calc({ track: false });
 	requestAnimationFrame(() => { if (c) initAllSliders(c); });
+	// Rebuild the CTA when the visitor accepts or withdraws Marketing on this page.
+	onConsentChange(() => calc({ track: false }));
 }

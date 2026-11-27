@@ -1,12 +1,14 @@
 ---
-import CookieBanner from '../components/CookieBanner.astro';
+import CookieConsent from '../components/CookieConsent.astro';
+import LegalLinks from '../components/Landing/LegalLinks.astro';
 import UtmTracker from '../components/UtmTracker.astro';
 import SeoMeta from '../components/SeoMeta.astro';
+import ThirdPartyScripts from '../components/ThirdPartyScripts.astro';
 import { formatMarketingTitle } from '~/consts';
 import { getOgImageUrl } from '~/util/getOgImageUrl';
 import { marketingJsonLd } from '~/util/structuredData';
 
-interface Props {
+interface LegalPageMeta {
 	title: string;
 	description?: string;
 	ogImage?: string;
@@ -16,7 +18,21 @@ interface Props {
 	jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, ogImage: ogImageProp, noIndex = false, breadcrumb, jsonLd } = Astro.props;
+/* `.astro` callers pass the meta as props; an `.mdx` page using `layout:` gets
+   its frontmatter wrapped in `Astro.props.frontmatter` instead. */
+type Props = LegalPageMeta & { frontmatter?: LegalPageMeta };
+
+const {
+	title,
+	description,
+	ogImage: ogImageProp,
+	noIndex = false,
+	breadcrumb,
+	jsonLd,
+} = Astro.props.frontmatter ?? Astro.props;
+/* Markdown documents carry their own opening date line and section headings;
+   the hand-written HTML pages space those themselves. */
+const isMarkdownPage = Boolean(Astro.props.frontmatter);
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const pageTitle = formatMarketingTitle(title);
 const ogImage = ogImageProp ?? getOgImageUrl(Astro.url.pathname);
@@ -40,20 +56,26 @@ const structuredData =
 			jsonLd={structuredData}
 		/>
 		<link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
+		<ThirdPartyScripts />
 	</head>
 	<body>
-		<div class="legal-page">
+		<div class:list={['legal-page', { 'legal-page--markdown': isMarkdownPage }]}>
 			<slot />
 		</div>
-		<CookieBanner />
+		{/* These pages have no site footer: the legal links and Your Privacy Choices, so consent can be withdrawn here. */}
+		<footer class="legal-footer">
+			<LegalLinks />
+		</footer>
+		<CookieConsent />
 		<UtmTracker />
 		<script is:inline>
 			// The demo broker (demo.tbmq.io) embeds these pages in an <iframe> inside its
-			// sign-up dialog; the website-scope notice and the cookie banner are noise there.
-			// The banner is removed (not hidden) so its own script, which runs later, finds nothing to show.
+			// sign-up dialog; the website-scope notice, the footer and the cookie banner are noise there.
+			// The banner's own reveal script already skips frames; removing its root also keeps its
+			// module script, which runs later, from binding anything.
 			if (window.self !== window.top) {
-				document.querySelectorAll('.scope').forEach((el) => (el.hidden = true));
-				document.getElementById('cookie-banner')?.remove();
+				document.querySelectorAll('.scope, .legal-footer').forEach((el) => (el.hidden = true));
+				document.getElementById('cc-main')?.remove();
 			}
 		</script>
 	</body>
@@ -65,10 +87,29 @@ const structuredData =
 		--sl-main-pad: 0;
 		--sl-line-height: 1.5;
 		// Standalone document — BaseLayout's global token sheet isn't loaded here,
-		// so every theme token this page (and the shared CookieBanner) reads must
+		// so every theme token this page (and the shared CookieConsent) reads must
 		// be pinned locally to its light value, or the var() resolves to nothing.
 		// The mixin is the same light palette :root gets in _theme.scss.
 		@include light-theme-tokens;
+	}
+
+	// The cookie banner and the footer sit outside .legal-page, and nothing else sets a font on this page.
+	#cc-main,
+	.legal-footer {
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	.legal-footer {
+		max-width: 860px;
+		margin: 0 auto;
+		padding: 24px 24px 40px;
+		border-top: 1px solid var(--color-border-light);
+		--legal-color: var(--color-text-secondary);
+		--legal-hover-color: var(--color-text);
+
+		&[hidden] {
+			display: none;
+		}
 	}
 
 	.legal-page {
@@ -143,6 +184,69 @@ const structuredData =
 			border-left: 3px solid var(--color-primary);
 			background: rgba(0, 0, 0, 0.03);
 			text-align: left;
+		}
+
+		// Everything below applies only to the Markdown documents. The
+		// hand-written HTML pages space and mark up their own content, so keeping
+		// these rules scoped leaves them rendering exactly as before.
+		&.legal-page--markdown {
+			// No manual <br /> between sections here: the gap lives on the heading.
+			h2 {
+				margin-top: 40px;
+			}
+
+			h2,
+			h3 {
+				text-align: left;
+			}
+
+			h3 {
+				font-size: 1.1em;
+				font-weight: 600;
+				line-height: 1.3;
+				margin: 28px 0 16px;
+			}
+
+			// The revision-date line each document opens with.
+			h1 + p {
+				margin-bottom: 32px;
+			}
+
+			// Markdown emits <strong>, not <b>.
+			strong {
+				color: var(--color-text);
+				font-weight: 600;
+			}
+
+			// `display: block` lets the wide tables scroll instead of stretching
+			// the 860px column on narrow screens.
+			table {
+				display: block;
+				overflow-x: auto;
+				width: 100%;
+				margin: 0 0 16px;
+				border-collapse: collapse;
+				font-size: 0.95em;
+				text-align: left;
+			}
+
+			th,
+			td {
+				padding: 8px 12px;
+				border: 1px solid var(--color-border-light);
+				text-align: left;
+				vertical-align: top;
+			}
+
+			th {
+				background: var(--color-bg-light);
+				color: var(--color-text);
+				font-weight: 600;
+			}
+
+			li > ul {
+				margin-top: 4px !important;
+			}
 		}
 	}
 </style>

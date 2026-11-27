@@ -73,6 +73,8 @@ const currentYear = new Date().getFullYear();
 		--legal-hover-color: var(--sl-color-white);
 	}
 
+	/* `.sl-markdown-content` puts a top margin on every block after the first, which pushes these below the copyright. */
+	.deepmost :global(.legal),
 	.deepmost :global(.social) {
 		margin-top: 0;
 	}
