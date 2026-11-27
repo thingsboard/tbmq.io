@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Landing/Hero.astro';
+import HeroClusterVisual from '../components/MqttBroker/HeroClusterVisual.astro';
 import TopFeaturesSection from '../components/MqttBroker/TopFeaturesSection.astro';
 import ScenariosSection from '../components/MqttBroker/ScenariosSection.astro';
 import InstallationOptionsSection from '../components/MqttBroker/InstallationOptionsSection.astro';
@@ -206,7 +207,9 @@ const tbmqGroups = [
 				{ text: 'Try it now', href: '/installations/', variant: 'brand' },
 				{ text: 'Learn more', href: '/mqtt/', variant: 'outline', ariaLabel: 'Learn more about MQTT' },
 			]}
-		/>
+		>
+			<HeroClusterVisual slot="visual" />
+		</Hero>
 
 		<div id="content">
 			<TopFeaturesSection />
