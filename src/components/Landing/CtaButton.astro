@@ -51,7 +51,8 @@ const rel = target === '_blank' ? 'noopener noreferrer' : undefined;
 		border-color: var(--cta-brand);
 
 		&:hover {
-			background-color: color-mix(in srgb, var(--cta-brand) 88%, white);
+			// Darker, where upstream lightens: lightened, tbmq.io's green leaves white text at 4.0:1 (AA needs 4.5).
+			background-color: color-mix(in srgb, var(--cta-brand) 88%, black);
 		}
 	}
 
