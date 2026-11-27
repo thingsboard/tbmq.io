@@ -1,36 +1,95 @@
 ---
-
+import { CONSENT_COOKIE, CONSENT_VERSION } from '@util/consent';
 ---
 
+{
+	/*
+	gtm.js loads only after Analytics is granted, so nothing reaches Google before a choice. Marketing alone loads nothing:
+	on tbmq.io it is only our own campaign and partner attribution (`attribution.ts`), and the GA4 tag in GTM-TFXSRSWK
+	requires `analytics_storage`. thingsboard.io keeps `analytics || marketing` because its container holds Marketing tags.
+	`tbLoadGtm` runs for a choice stored on an earlier visit (after `load`, below) and for one made on this page
+	(CookieConsent.astro).
+	Global Privacy Control overrides a stored Marketing grant (CCPA regs §7025) for this page; the cookie is left as saved.
+*/
+}
 <!-- Google Tag Manager -->
-<script is:inline>
+<script is:inline define:vars={{ consentCookie: CONSENT_COOKIE, consentVersion: CONSENT_VERSION }}>
 	window.dataLayer = window.dataLayer || [];
-	window.gtag = function (...args) {
-		window.dataLayer.push(args);
+	// GTM ignores consent/config commands pushed as a plain array, so push `arguments` itself.
+	window.gtag = function () {
+		// eslint-disable-next-line prefer-rest-params
+		window.dataLayer.push(arguments);
 	};
 
-	if (location.hostname !== 'localhost') {
-		const loadGtm = () => {
-			(function (w, d, s, l, i) {
-				w[l] = w[l] || [];
-				w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-				const f = d.getElementsByTagName(s)[0];
-				const j = d.createElement(s);
-				const dl = l !== 'dataLayer' ? '&l=' + l : '';
-				j.async = true;
-				j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-				f.parentNode.insertBefore(j, f);
-			})(window, document, 'script', 'dataLayer', 'GTM-TFXSRSWK');
-		};
+	// The Consent Mode v2 signals for a choice: the `default` below and CookieConsent.astro's `update` both use it.
+	window.tbConsentSignals = (consent) => ({
+		analytics_storage: consent && consent.analytics ? 'granted' : 'denied',
+		// Never granted: GA4 user-provided data collection is off for the tbmq.io property, and there is no Google Ads
+		// link. Granting it with Marketing goes together with describing that processing in both policies.
+		ad_user_data: 'denied',
+		// Never granted: tbmq.io runs no ads, so no Google advertising cookies are set. If ad tags are ever added,
+		// this mapping and the Cookie Policy change together.
+		ad_storage: 'denied',
+		// Never granted: the banner copy promises no remarketing audiences.
+		ad_personalization: 'denied',
+	});
 
-		if (new URL(window.location.href).searchParams.has('gtm_debug')) {
-			loadGtm();
-		} else {
-			// 5s idle fallback (vs the 2.5s default) so tag-manager JS lands
-			// after the LCP paint window for visitors who never interact.
-			// Full tier schedule: DeferredLoadTrigger.astro.
-			(window.__deferOnInteraction || ((cb) => cb()))(loadGtm, 5000);
+	// Consent Mode default from the banner's stored choice (written by CookieConsent.astro), everything optional
+	// denied otherwise.
+	(function () {
+		let consent = null;
+		try {
+			const match = document.cookie.match(new RegExp('(?:^|; )' + consentCookie + '=([^;]*)'));
+			const value = match && JSON.parse(decodeURIComponent(match[1]));
+			if (value && value.v === consentVersion) consent = value;
+		} catch {
+			/**/
 		}
+		if (consent && navigator.globalPrivacyControl === true) consent.marketing = false;
+		// Read by CookieConsent.astro, so the cookie is parsed once per page.
+		window.tbConsent = consent;
+		window.gtag('consent', 'default', {
+			...window.tbConsentSignals(consent),
+			functionality_storage: 'granted',
+			security_storage: 'granted',
+		});
+		window.gtag('set', 'ads_data_redaction', true);
+	})();
+
+	// Production host only, so other hosts never report into the live property;
+	// `?gtm_debug` (Tag Assistant preview) lifts the host check, not the consent one.
+	const gtmDebug = new URLSearchParams(location.search).has('gtm_debug');
+	let gtmLoaded = false;
+	window.tbLoadGtm = () => {
+		const consent = window.tbConsent;
+		if (gtmLoaded || !consent || !consent.analytics) return;
+		if (location.hostname !== 'tbmq.io' && !gtmDebug) return;
+		// Never inside a frame: demo.tbmq.io embeds the legal pages in its sign-up dialog, where no consent UI is shown.
+		if (window.self !== window.top) return;
+		gtmLoaded = true;
+		(function (w, d, s, l, i) {
+			w[l] = w[l] || [];
+			w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+			const f = d.getElementsByTagName(s)[0];
+			const j = d.createElement(s);
+			const dl = l !== 'dataLayer' ? '&l=' + l : '';
+			j.async = true;
+			j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+			f.parentNode.insertBefore(j, f);
+		})(window, document, 'script', 'dataLayer', 'GTM-TFXSRSWK');
+	};
+
+	if (gtmDebug) {
+		window.tbLoadGtm();
+	} else {
+		// First idle moment after `load`, so the tags never compete with the page's own loading work.
+		// Safari has no requestIdleCallback.
+		const whenIdle = () =>
+			window.requestIdleCallback
+				? requestIdleCallback(window.tbLoadGtm, { timeout: 2000 })
+				: setTimeout(window.tbLoadGtm, 0);
+		if (document.readyState === 'complete') whenIdle();
+		else addEventListener('load', whenIdle, { once: true });
 	}
 </script>
 <!-- End Google Tag Manager -->

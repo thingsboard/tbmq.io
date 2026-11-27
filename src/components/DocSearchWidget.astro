@@ -1,26 +1,26 @@
 ---
 import { GOOGLE_CSE_ELEMENT_ATTRS } from '~/consts';
+import SearchConsentNotice from './SearchConsentNotice.astro';
 ---
 
 <div class="doc-search-widget">
+	<SearchConsentNotice descId="doc-search-consent-text" />
 	<div class="gcse-search" {...GOOGLE_CSE_ELEMENT_ATTRS}></div>
 </div>
 
 <script>
-	import { GOOGLE_CSE_CX } from '~/consts';
+	import { onConsentChange } from '@util/consent';
+	import { googleSiteSearchUrl, hasSearchConsent, loadCse } from '@util/site-search';
 
-	// Ensure CSE script is loaded (may already be loaded by SearchButton)
-	if (!document.querySelector('script[src*="cse.google.com"]')) {
-		const script = document.createElement('script');
-		script.async = true;
-		script.src = `https://cse.google.com/cse.js?cx=${GOOGLE_CSE_CX}`;
-		document.head.appendChild(script);
-	}
+	// Google CSE loads only with External media consent (cookie consent); until then the notice stands in,
+	// with a link that runs the same query on google.com in a new tab.
+	const widget = document.querySelector<HTMLElement>('.doc-search-widget');
+	const notice = widget?.querySelector<HTMLElement>('[data-search-consent]');
+	const q = new URLSearchParams(window.location.search).get('q');
 
 	// Execute search from URL param once CSE renders the input
-	const widget = document.querySelector<HTMLElement>('.doc-search-widget');
-	const q = new URLSearchParams(window.location.search).get('q');
-	if (q) {
+	const runQuery = () => {
+		if (!q) return;
 		const tryExecute = (attempts = 0) => {
 			const input = widget?.querySelector<HTMLInputElement>('input.gsc-input');
 			if (input) {
@@ -33,10 +33,35 @@ import { GOOGLE_CSE_ELEMENT_ATTRS } from '~/consts';
 			if (attempts < 100) setTimeout(() => tryExecute(attempts + 1), 100);
 		};
 		tryExecute();
+	};
+
+	let started = false;
+	const start = () => {
+		if (started) return;
+		started = true;
+		if (notice) notice.hidden = true;
+		loadCse();
+		runQuery();
+	};
+
+	if (hasSearchConsent()) start();
+	else if (notice) {
+		notice.querySelector<HTMLAnchorElement>('.search-consent__google')?.setAttribute('href', googleSiteSearchUrl(q ?? ''));
+		notice.hidden = false;
 	}
+	// "Load Google search" here or in the header, or a choice in the cookie banner: search runs in place.
+	onConsentChange(() => {
+		if (hasSearchConsent()) start();
+	});
 </script>
 
 <style is:global>
+	/* The page has its own search box. The header modal could not render here anyway once this widget
+	   has loaded cse.js: cse.js renders only the `.gcse-search` elements present when it executes. */
+	html:has(.doc-search-widget) search-button {
+		display: none;
+	}
+
 	.doc-search-widget {
 		margin-top: 1rem;
 		/* Cap the whole widget so the input and result rows share the same

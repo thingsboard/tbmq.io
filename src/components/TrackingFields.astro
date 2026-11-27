@@ -1,0 +1,6 @@
+---
+// Hidden inputs a contact form posts its attribution in. Empty in the markup: `fillTrackingFields` fills them.
+import { TRACKING_FIELDS } from '@util/tracking-fields';
+---
+
+{TRACKING_FIELDS.map((name) => <input type="hidden" name={name} />)}
