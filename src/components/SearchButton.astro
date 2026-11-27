@@ -19,7 +19,8 @@ import Kbd from '@components/ui/Kbd.astro';
 
 <script>
 	import { GOOGLE_CSE_CX, GOOGLE_CSE_ELEMENT_ATTRS } from '~/consts';
-	import { layerOver } from '~/util/layers';
+	import { dismissSidebar, layerOver } from '~/util/layers';
+	import { lockScroll, unlockScroll } from '~/util/scroll-lock';
 
 	// Runs once per page, however many search buttons it has.
 	if (!(window as any).__tbSearch) {
@@ -68,11 +69,20 @@ import Kbd from '@components/ui/Kbd.astro';
 			.map(([name, value]) => `${name}="${value}"`)
 			.join(' ');
 
+		const isOpen = () => !!modal?.classList.contains('open');
+		// The search button that opened the dialog; focus goes back to it on close.
+		let opener: HTMLElement | null = null;
+
 		const close = () => {
-			if (!modal) return;
+			if (!modal || !isOpen()) return;
 			modal.classList.remove('open');
 			document.documentElement.classList.remove('tb-search-open');
+			unlockScroll('search');
 			stopFocusRetention();
+			// The input that had focus is hidden now; without this, focus falls to <body>.
+			const back = opener;
+			opener = null;
+			if (back?.isConnected && back.getClientRects().length > 0) back.focus({ preventScroll: true });
 		};
 
 		const buildModal = (): HTMLElement => {
@@ -181,10 +191,17 @@ import Kbd from '@components/ui/Kbd.astro';
 			focusOutHandler = null;
 		};
 
-		const open = () => {
+		const open = (trigger: HTMLElement | null) => {
 			init();
 			const m = modal!;
+			if (isOpen()) return;
+			opener = trigger;
+			// The phone sidebar is a popover in the browser's top layer and would be drawn over the dialog.
+			dismissSidebar();
 			document.documentElement.classList.add('tb-search-open');
+			// Holding the page's scroll lock is also what tells `layerOver()` that search covers the page,
+			// so an edge swipe does not open the menu sheet or the sidebar underneath it.
+			lockScroll('search');
 			m.classList.add('open');
 			// Show loader until CSE finishes mounting its input — only matters on
 			// the first open, when cse.js is still being fetched/executed.
@@ -223,7 +240,8 @@ import Kbd from '@components/ui/Kbd.astro';
 
 		// Attach to all search buttons via delegation
 		document.addEventListener('click', (e) => {
-			if ((e.target as Element).closest('search-button')) open();
+			const trigger = (e.target as Element).closest('search-button');
+			if (trigger) open(trigger.querySelector('button'));
 		});
 
 		const platform =
@@ -242,10 +260,11 @@ import Kbd from '@components/ui/Kbd.astro';
 			const key = typeof e.key === 'string' ? e.key : '';
 			const isK = /^[a-z]$/i.test(key) ? key.toLowerCase() === 'k' : e.code === 'KeyK';
 			if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || !isK) return;
-			// Search may open over the mobile menu sheet, but not under any other layer.
-			if (layerOver('menu')) return;
+			// Search may open over the mobile menu sheet, but not under any other layer. Its own lock does
+			// not count, or the shortcut would fall through to the browser while the dialog is open.
+			if (layerOver('search', 'menu')) return;
 			// Already open: only keep the browser from acting on ⌘K / Ctrl K.
-			if (modal?.classList.contains('open')) {
+			if (isOpen()) {
 				e.preventDefault();
 				return;
 			}
@@ -309,11 +328,7 @@ import Kbd from '@components/ui/Kbd.astro';
 </style>
 
 <style is:global>
-	html.tb-search-open {
-		overflow: hidden;
-		scrollbar-gutter: stable;
-	}
-
+	/* The page behind the open dialog is held by the shared scroll lock (`util/scroll-lock.ts`). */
 	#tb-search-modal {
 		display: none;
 		position: fixed;

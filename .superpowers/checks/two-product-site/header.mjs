@@ -337,15 +337,45 @@ if (want('bar')) {
 		await page.click('search-button button');
 		await sleep(300);
 		check('search: the button opens the dialog', await searchOpen());
+		const locked = () => page.evaluate(() => document.documentElement.classList.contains('tb-scroll-locked'));
+		const onButton = () => page.evaluate(() => document.activeElement === document.querySelector('search-button button'));
+		check('search: the open dialog holds the page’s scroll lock', await locked());
+		// Google's script is blocked here, so stand in for the input it mounts: the dialog moves focus to it.
+		const mountInput = () =>
+			page.evaluate(() => {
+				if (document.querySelector('#tb-search-modal input.gsc-input')) return;
+				const input = document.createElement('input');
+				input.className = 'gsc-input';
+				document.querySelector('#tb-search-modal .gcse-search').append(input);
+			});
+		const inInput = () => page.evaluate(() => document.activeElement?.matches('#tb-search-modal input.gsc-input') ?? false);
+		await mountInput();
+		await sleep(200);
+		check('search: focus moves into the dialog', await inInput());
 		await page.keyboard.press('Escape');
 		await sleep(200);
 		check('search: Escape closes it', !(await searchOpen()));
+		check('search: closing unlocks the page and returns focus to the button', !(await locked()) && (await onButton()));
+		await page.evaluate(() => document.activeElement.blur());
 		await page.keyboard.down('Control');
 		await page.keyboard.press('KeyK');
 		await page.keyboard.up('Control');
 		await sleep(300);
 		check('search: Ctrl K opens it', await searchOpen());
+		const prevented = await page.evaluate(() => {
+			const e = new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', ctrlKey: true, bubbles: true, cancelable: true });
+			document.dispatchEvent(e);
+			return e.defaultPrevented;
+		});
+		check('search: Ctrl K in the open dialog is kept from the browser', prevented && (await searchOpen()));
 		await page.keyboard.press('Escape');
+		await sleep(200);
+		check('search: after Ctrl K, Escape returns focus to the button', !(await searchOpen()) && (await onButton()));
+		await page.click('search-button button');
+		await sleep(300);
+		await page.mouse.click(20, 700);
+		await sleep(200);
+		check('search: a click on the backdrop closes it and returns focus', !(await searchOpen()) && (await onButton()));
 
 		const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
 		const before = await theme();
@@ -354,6 +384,69 @@ if (want('bar')) {
 		check('theme switch: one click changes the theme', before !== after, `${before} → ${after}`);
 		const stored = await page.evaluate(() => localStorage.getItem('starlight-theme'));
 		check('theme switch: the choice is stored', stored === after, String(stored));
+	});
+
+	// ── phone: edge swipes leave an open search dialog alone ─────────────────────
+	await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+		await page.setRequestInterception(true);
+		page.on('request', (r) => (/cse\.google\.com/.test(r.url()) ? r.abort() : r.continue()));
+		await go(page, '/docs/pe/getting-started/');
+		await quiet(page);
+		// Synthetic touch events on the document: a real drag would also tap whatever lies under its end.
+		const swipe = async (fromX, toX) => {
+			await page.evaluate(
+				(fromX, toX) => {
+					const touch = (x) => new Touch({ identifier: 1, target: document.body, clientX: x, clientY: 500 });
+					const fire = (type, x, down) =>
+						document.dispatchEvent(
+							new TouchEvent(type, { bubbles: true, touches: down ? [touch(x)] : [], changedTouches: [touch(x)] })
+						);
+					fire('touchstart', fromX, true);
+					fire('touchmove', (fromX + toX) / 2, true);
+					fire('touchend', toX, false);
+				},
+				fromX,
+				toX
+			);
+			await sleep(450);
+		};
+		const state = () =>
+			page.evaluate(() => ({
+				search: !!document.querySelector('#tb-search-modal.open'),
+				sheet: document.querySelector('header.header').hasAttribute('data-sm-open'),
+				sidebar: document.getElementById('starlight__sidebar').matches(':popover-open'),
+			}));
+		// The gestures work on their own, or the checks below would pass for the wrong reason.
+		await swipe(385, 200);
+		let s = await state();
+		check('phone: a swipe from the right edge opens the menu sheet', s.sheet, JSON.stringify(s));
+		await swipe(100, 300);
+		s = await state();
+		check('phone: a swipe back closes it', !s.sheet, JSON.stringify(s));
+
+		await page.click('search-button button');
+		await sleep(300);
+		await swipe(385, 200);
+		s = await state();
+		check('phone, search open: a swipe from the right edge does not open the sheet under it', s.search && !s.sheet, JSON.stringify(s));
+		await swipe(5, 200);
+		s = await state();
+		check('phone, search open: a swipe from the left edge does not open the sidebar over it', s.search && !s.sidebar, JSON.stringify(s));
+		await page.keyboard.press('Escape');
+		await sleep(200);
+
+		// Search opened over the menu sheet: a swipe back must not rewind the sheet behind the dialog.
+		await page.click(TOGGLE);
+		await sleep(450);
+		await page.click('search-button button');
+		await sleep(300);
+		await swipe(100, 300);
+		s = await state();
+		check('phone, search over the sheet: a swipe back leaves the sheet open', s.search && s.sheet, JSON.stringify(s));
+		await page.keyboard.press('Escape');
+		await sleep(200);
+		s = await state();
+		check('phone, search over the sheet: Escape closes search only', !s.search && s.sheet, JSON.stringify(s));
 	});
 }
 
