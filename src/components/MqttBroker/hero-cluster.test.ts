@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+	BROKER_SUBLABEL,
 	GLYPHS,
 	MARK_PATH,
 	PUBLISHERS,
@@ -32,6 +33,7 @@ test('data matches the approved mockup', () => {
 		'vehicle',
 	]);
 	assert.ok(MARK_PATH.startsWith('M37.8721 19.4043'));
+	assert.equal(BROKER_SUBLABEL, 'broker · masterless'); // a property of the cluster, not a fake live status
 });
 
 test('horizontal variant geometry', () => {

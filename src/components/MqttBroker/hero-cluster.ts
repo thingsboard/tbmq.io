@@ -134,7 +134,7 @@ export const SUBSCRIBERS: { icon: Glyph; label: string }[] = [
 	{ icon: 'analytics', label: 'Analytics' },
 ];
 
-export const BROKER_SUBLABEL = 'broker · active';
+export const BROKER_SUBLABEL = 'broker · masterless';
 
 const BROKERS = ['TBMQ node 1', 'TBMQ node 2', 'TBMQ node 3'];
 /** Publisher i sends to broker `PUBLISHER_TO_BROKER[i]`; broker i delivers to subscriber i. */
