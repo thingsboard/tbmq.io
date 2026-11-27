@@ -113,7 +113,9 @@ test('everything lies inside its box', () => {
 		assert.ok(v.tag.y >= 0);
 	}
 	const h = horizontalVariant();
-	for (const c of h.clients) assert.ok(c.y + 44 + 4 <= h.box.h, 'label baseline + descent'); // labels sit 44 below the node centre
+	const labelDy = h.labelDy ?? Number.NaN;
+	assert.equal(labelDy, 44); // labels sit this far below the node centre
+	for (const c of h.clients) assert.ok(c.y + labelDy + 4 <= h.box.h, 'label baseline + descent');
 });
 
 test('label floor thresholds derive from the data', () => {
@@ -142,6 +144,18 @@ test('visibilityCss emits defaults, swaps and floors', () => {
 	assert.ok(css.includes('@container hero-cluster-h (width < 655px){.hero-cluster__h .tag{display:none}}'));
 	assert.ok(css.includes('@container hero-cluster-v (width < 300px){.hero-cluster__v .tag{display:none}}'));
 	assert.ok(!css.includes('.card-title{display:none}'));
+});
+
+test('card titles re-centre when the status line hides', () => {
+	const h = horizontalVariant();
+	const v = verticalVariant();
+	assert.deepEqual(h.inner.title, { dx: 70, dy: -3, soloDy: 6 });
+	assert.equal(v.inner.title.dy, v.inner.title.soloDy); // vertical cards never carry a status line
+	const css = visibilityCss(h, v);
+	assert.ok(
+		css.includes('@container hero-cluster-h (width < 576px){.hero-cluster__h .card-title{transform:translateY(9px)}}')
+	);
+	assert.ok(!css.includes('.hero-cluster__v .card-title{transform'));
 });
 
 test('pace is deterministic and staggered', () => {

@@ -52,6 +52,15 @@ export interface Lane {
 	delay: number;
 }
 
+/** A broker card's internals, offset from its left edge (`x`) and vertical centre (`cy`). */
+export interface CardInner {
+	mark: { dx: number; size: number };
+	/** Title baseline: `dy` above the status line, `soloDy` when the card shows the title alone. */
+	title: { dx: number; dy: number; soloDy: number };
+	/** The green dot and "broker · active"; absent in the vertical variant. */
+	status?: { dot: { dx: number; dy: number; r: number }; text: { dx: number; dy: number } };
+}
+
 export interface Variant {
 	key: 'h' | 'v';
 	box: Box;
@@ -69,6 +78,9 @@ export interface Variant {
 	lanes: Lane[];
 	/** Font size per text role, in `viewBox` units. A role the variant does not draw is absent. */
 	text: { title: number } & Partial<Record<Exclude<TextRole, 'title'>, number>>;
+	inner: CardInner;
+	/** Client labels sit this far under the client's centre; absent where the variant draws no labels. */
+	labelDy?: number;
 }
 
 /** No text in the visual renders smaller than this. */
@@ -204,6 +216,12 @@ export function horizontalVariant(): Variant {
 		],
 		lanes: withPace([...inLanes, ...outLanes]),
 		text: { title: 18, sub: 12.5, label: 13, caption: 12, tag: 11 },
+		inner: {
+			mark: { dx: 20, size: 34 },
+			title: { dx: 70, dy: -3, soloDy: 6 },
+			status: { dot: { dx: 74, dy: 16, r: 4 }, text: { dx: 84, dy: 20 } },
+		},
+		labelDy: 44,
 	};
 }
 
@@ -245,6 +263,7 @@ export function verticalVariant(): Variant {
 		lanes: withPace([...inLanes, ...outLanes]),
 		// The tag is 12, not the horizontal 11, so it holds the floor down to a 300 px render.
 		text: { title: 18, tag: 12 },
+		inner: { mark: { dx: 16, size: 28 }, title: { dx: 58, dy: 6, soloDy: 6 } },
 	};
 }
 
@@ -269,7 +288,8 @@ const variantClass = (key: Variant['key']) => `${CONTAINERS.root}__${key}`;
  * container). The card titles are the largest text and are never hidden: below their
  * threshold the horizontal variant gives way to the vertical one, either because the cluster
  * is too narrow or because the side-by-side panel is too short to draw it that wide (the same
- * rule on the height axis, `minHeightFor`). Phones always get the vertical variant.
+ * rule on the height axis, `minHeightFor`). Phones always get the vertical variant. When the status
+ * lines hide, the card titles shift down onto the cards' centre line.
  */
 export function visibilityCss(h: Variant, v: Variant): string {
 	const swap = `{.${variantClass('h')}{display:none}.${variantClass('v')}{display:block}}`;
@@ -282,10 +302,14 @@ export function visibilityCss(h: Variant, v: Variant): string {
 	for (const variant of [h, v]) {
 		for (const [role, size] of Object.entries(variant.text) as [TextRole, number][]) {
 			if (role === 'title') continue;
-			rules.push(
-				`@container ${CONTAINERS[variant.key]} (width < ${minWidthFor(variant.box, size)}px)` +
-					`{.${variantClass(variant.key)} .${TEXT_CLASS[role]}{display:none}}`
-			);
+			const query = `@container ${CONTAINERS[variant.key]} (width < ${minWidthFor(variant.box, size)}px)`;
+			rules.push(`${query}{.${variantClass(variant.key)} .${TEXT_CLASS[role]}{display:none}}`);
+			// Without its status line a card title moves down to the card's centre line. A CSS
+			// transform on an SVG element is in user units, so the shift is in viewBox units.
+			const shift = variant.inner.title.soloDy - variant.inner.title.dy;
+			if (role === 'sub' && shift !== 0) {
+				rules.push(`${query}{.${variantClass(variant.key)} .${TEXT_CLASS.title}{transform:translateY(${shift}px)}}`);
+			}
 		}
 	}
 	return rules.join('');
