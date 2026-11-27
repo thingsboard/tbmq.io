@@ -1,0 +1,306 @@
+---
+/**
+ * Homepage hero visual: IoT publishers → a three-node TBMQ cluster → subscriber apps.
+ * Pass it to `<Hero>` through the `visual` slot.
+ *
+ * Decorative (`aria-hidden`): everything it says is in the hero's HTML text.
+ *
+ * One data source: the geometry, `viewBox`, aspect ratio, text sizes and card internals of both
+ * variants come from `hero-cluster.ts`. Nothing in the template or the styles repeats a number
+ * from them.
+ *
+ * Text floor: no text renders under 10 px. `visibilityCss()` generates the stylesheet that shows
+ * one variant at a time (so only one animates) and hides each text role below the width at which
+ * it would shrink under the floor; below the card titles' own floor the horizontal variant gives
+ * way to the vertical one. See that function for the derivation.
+ *
+ * Contract with `Hero.astro`: the panel sets `--hero-fit-h`, the height the visual may use, and
+ * side by side it is the `hero-panel` size container (`--hero-fit-h: 100cqh`, plus the panel-height
+ * swap). Each variant takes the panel's width or the width that fits `--hero-fit-h`, whichever is
+ * smaller, and never less than its card titles' floor (`--floor-w`).
+ */
+import {
+	BROKER_SUBLABEL,
+	GLYPHS,
+	MARK_BOX,
+	MARK_PATH,
+	horizontalVariant,
+	minWidthFor,
+	verticalVariant,
+	visibilityCss,
+} from './hero-cluster';
+
+const h = horizontalVariant();
+const v = verticalVariant();
+---
+
+<div class="hero-cluster" aria-hidden="true">
+	<svg class="hero-cluster__sprite" width="0" height="0" focusable="false">
+		{
+			Object.entries(GLYPHS).map(([name, body]) => (
+				<symbol id={`hero-cluster-${name}`} viewBox="0 0 24 24" set:html={body} />
+			))
+		}
+		<symbol id="hero-cluster-mark" viewBox={`0 0 ${MARK_BOX} ${MARK_BOX}`}>
+			<path d={MARK_PATH}></path>
+		</symbol>
+	</svg>
+
+	{
+		[h, v].map((variant) => {
+			const { frame, tag, text, inner, labelDy } = variant;
+			return (
+				<div
+					class={`hero-cluster__${variant.key}`}
+					style={`--w:${variant.box.w};--h:${variant.box.h};--floor-w:${minWidthFor(variant.box, text.title)}px`}
+				>
+					<svg viewBox={`0 0 ${variant.box.w} ${variant.box.h}`} width="100%" height="100%" focusable="false">
+						<rect class="frame" x={frame.x} y={frame.y} width={frame.w} height={frame.h} rx={frame.rx} />
+						{variant.lanes.map((lane) => (
+							<>
+								<path class="lane" d={lane.d} />
+								<path
+									class="pulse"
+									d={lane.d}
+									pathLength="100"
+									style={`animation-duration:${lane.dur}s;animation-delay:${lane.delay}s`}
+								/>
+							</>
+						))}
+						{variant.peers.map((d) => (
+							<path class="peer" d={d} />
+						))}
+						{variant.cards.map((card) => (
+							<>
+								<rect class="card" x={card.x} y={card.y} width={card.w} height={card.h} rx={card.rx} />
+								<use
+									class="mark"
+									href="#hero-cluster-mark"
+									x={card.x + inner.mark.dx}
+									y={card.cy - inner.mark.size / 2}
+									width={inner.mark.size}
+									height={inner.mark.size}
+								/>
+								<text
+									class="card-title"
+									x={card.x + inner.title.dx}
+									y={card.cy + inner.title.dy}
+									font-size={text.title}
+								>
+									{card.title}
+								</text>
+								{inner.status && (
+									<g class="card-sub">
+										<circle
+											class="ok"
+											cx={card.x + inner.status.dot.dx}
+											cy={card.cy + inner.status.dot.dy}
+											r={inner.status.dot.r}
+										/>
+										<text x={card.x + inner.status.text.dx} y={card.cy + inner.status.text.dy} font-size={text.sub}>
+											{BROKER_SUBLABEL}
+										</text>
+									</g>
+								)}
+							</>
+						))}
+						{variant.clients.map((client) => (
+							<>
+								<circle class="node" cx={client.x} cy={client.y} r={client.r} />
+								<use
+									class="glyph"
+									href={`#hero-cluster-${client.icon}`}
+									x={client.x - client.r / 2}
+									y={client.y - client.r / 2}
+									width={client.r}
+									height={client.r}
+								/>
+								{text.label && labelDy !== undefined && (
+									<text class="lbl" x={client.x} y={client.y + labelDy} text-anchor="middle" font-size={text.label}>
+										{client.label}
+									</text>
+								)}
+							</>
+						))}
+						{variant.captions.map((caption) => (
+							<text class="cap" x={caption.x} y={caption.y} text-anchor="middle" font-size={text.caption}>
+								{caption.text}
+							</text>
+						))}
+						<g class="tag">
+							<rect x={tag.x} y={tag.y} width={tag.w} height={tag.h} rx={tag.rx} />
+							<text x={tag.tx} y={tag.ty} text-anchor="middle" font-size={text.tag}>
+								TBMQ CLUSTER
+							</text>
+						</g>
+					</svg>
+				</div>
+			);
+		})
+	}
+</div>
+
+<style is:inline set:html={visibilityCss(h, v)}></style>
+
+<style lang="scss">
+	@use '../../styles/variables' as *;
+
+	// The hero is dark on every theme, so these are fixed values rather than theme tokens.
+	$bg: #060d09;
+	$ink: #fff;
+	$pulse: #4ee08a;
+
+	// Container names match `CONTAINERS` in hero-cluster.ts. No `display` on the variant wrappers or
+	// the text classes here: the generated stylesheet owns those, and a scoped rule would outrank it.
+	.hero-cluster {
+		container: hero-cluster / inline-size;
+		width: 100%;
+		display: grid;
+		justify-items: center;
+	}
+
+	.hero-cluster__sprite {
+		position: absolute;
+		overflow: hidden;
+	}
+
+	.hero-cluster__h,
+	.hero-cluster__v {
+		aspect-ratio: var(--w) / var(--h);
+		width: min(100%, max(var(--hero-fit-h, calc(var(--h) * 1px)) * var(--w) / var(--h), var(--floor-w)));
+
+		svg {
+			display: block;
+			width: 100%;
+			height: 100%;
+			font-family: inherit;
+			overflow: visible;
+		}
+	}
+
+	.hero-cluster__h {
+		container: hero-cluster-h / inline-size;
+	}
+
+	.hero-cluster__v {
+		container: hero-cluster-v / inline-size;
+	}
+
+	.frame {
+		fill: rgba($color-pe, 0.06);
+		stroke: rgba($color-pe, 0.45);
+		stroke-width: 1.2;
+	}
+
+	.tag {
+		rect {
+			fill: $bg;
+			stroke: rgba($color-pe, 0.45);
+		}
+
+		text {
+			fill: rgba($ink, 0.78);
+			letter-spacing: 0.12em;
+		}
+	}
+
+	.card {
+		fill: #0c1a12;
+		stroke: rgba($color-pe, 0.55);
+		stroke-width: 1.2;
+	}
+
+	.mark {
+		fill: $color-pe;
+	}
+
+	.card-title {
+		fill: $ink;
+		font-weight: $font-weight-semibold;
+	}
+
+	.card-sub text {
+		fill: rgba($ink, 0.6);
+	}
+
+	.ok {
+		fill: $pulse;
+	}
+
+	.peer {
+		fill: none;
+		stroke: rgba($color-pe, 0.5);
+		stroke-width: 1.5;
+		stroke-dasharray: 3 4;
+	}
+
+	.lane,
+	.pulse {
+		fill: none;
+		stroke-linecap: round;
+	}
+
+	.lane {
+		stroke: rgba($ink, 0.16);
+		stroke-width: 1.5;
+	}
+
+	// One bright dash per lane, travelling its whole length: with pathLength = 100
+	// the 8-unit dash starts just before the path and ends just past it.
+	.pulse {
+		stroke: $pulse;
+		stroke-width: 3;
+		stroke-dasharray: 8 108;
+		stroke-dashoffset: 8;
+		animation: hero-cluster-pulse 3s linear infinite;
+	}
+
+	.node {
+		fill: rgba($ink, 0.05);
+		stroke: rgba($ink, 0.26);
+		stroke-width: 1.25;
+	}
+
+	.glyph {
+		color: rgba($ink, 0.92);
+	}
+
+	.lbl {
+		fill: rgba($ink, 0.8);
+	}
+
+	.cap {
+		fill: rgba($ink, 0.45);
+		font-weight: $font-weight-semibold;
+		letter-spacing: 0.16em;
+	}
+
+	@keyframes hero-cluster-pulse {
+		from {
+			stroke-dashoffset: 8;
+		}
+
+		to {
+			stroke-dashoffset: -100;
+		}
+	}
+
+	.hero-cluster.is-paused .pulse {
+		animation-play-state: paused;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.pulse {
+			display: none;
+			animation: none;
+		}
+	}
+</style>
+
+<script>
+	// Stop the lane animation while the hero is scrolled out of view.
+	const art = document.querySelector<HTMLElement>('.hero-cluster');
+	if (art && 'IntersectionObserver' in window) {
+		new IntersectionObserver(([entry]) => art.classList.toggle('is-paused', !entry.isIntersecting)).observe(art);
+	}
+</script>

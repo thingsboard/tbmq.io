@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Landing/Hero.astro';
+import HeroClusterVisual from '../components/MqttBroker/HeroClusterVisual.astro';
 import TopFeaturesSection from '../components/MqttBroker/TopFeaturesSection.astro';
 import ScenariosSection from '../components/MqttBroker/ScenariosSection.astro';
 import InstallationOptionsSection from '../components/MqttBroker/InstallationOptionsSection.astro';
@@ -195,27 +196,20 @@ const tbmqGroups = [
 	description={description}
 	pageId="mqtt-broker"
 	gitHubPlatform={Products.TBMQ}
-	preloadLcpImage="/hero/tbmq-cover.webp"
 	openContentLinksInNewTab
 	jsonLd={jsonLd}
 >
 	<main>
 		<Hero
-			product={Products.TBMQ}
 			title={['TBMQ', 'Open-source MQTT Broker']}
 			subtitle={'Scalable, fault-tolerant, and durable messaging for millions of MQTT\u00A0clients'}
 			buttons={[
-				{ text: 'Try it now', href: '/installations/', variant: 'white' },
-				{ text: 'Learn more', href: '/mqtt/', variant: 'outline', srOnlySuffix: ' about MQTT' },
+				{ text: 'Try it now', href: '/installations/', variant: 'brand' },
+				{ text: 'Learn more', href: '/mqtt/', variant: 'outline', ariaLabel: 'Learn more about MQTT' },
 			]}
-			anchorLink="#content"
-			backgroundImage="/hero/tbmq-cover.webp"
-			videoBackground={{
-				webm: 'https://video.thingsboard.io/tbmq-cover-v2.webm',
-				mp4: 'https://video.thingsboard.io/tbmq-cover-v2.mp4',
-			}}
-			achievement={null}
-		/>
+		>
+			<HeroClusterVisual slot="visual" />
+		</Hero>
 
 		<div id="content">
 			<TopFeaturesSection />
@@ -240,16 +234,6 @@ const tbmqGroups = [
 
 <style lang="scss">
 	@use '../styles/variables' as *;
-
-	:global(#mqtt-broker) {
-		--tb-main-color: #{$color-pe};
-		--tb-main-color-hover: #{$color-pe-dark};
-	}
-
-	:global(#mqtt-broker #hero .button:hover) {
-		background-color: $color-pe-dark;
-		filter: none;
-	}
 
 	:global(#mqtt-broker #content a:not(.btn)) {
 		color: $color-brand;
