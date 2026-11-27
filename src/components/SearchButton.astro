@@ -3,8 +3,9 @@ import { Icon } from 'astro-icon/components';
 import Kbd from '@components/ui/Kbd.astro';
 
 /**
- * The header's search button and the Google Programmable Search dialog it opens. `$search-field-from` is
- * where the wide button still fits next to the desktop menu; check it again if the menu gets longer.
+ * The header's search button and the Google Programmable Search dialog it opens. `$bar-roomy-from`
+ * (`_variables.scss`) is where the wide button still fits next to the desktop menu; check it again if the
+ * menu gets longer.
  */
 ---
 
@@ -282,8 +283,6 @@ import Kbd from '@components/ui/Kbd.astro';
 <style lang="scss" is:global>
 	@use '../styles/variables' as *;
 
-	$search-field-from: 1440px;
-
 	.head-buttons .search-toggle-btn {
 		--btn-px: 0px;
 
@@ -302,7 +301,7 @@ import Kbd from '@components/ui/Kbd.astro';
 		display: none;
 	}
 
-	@media screen and (min-width: $search-field-from) {
+	@media screen and (min-width: $bar-roomy-from) {
 		.head-buttons .search-toggle-btn {
 			width: 152px;
 			justify-content: flex-start;

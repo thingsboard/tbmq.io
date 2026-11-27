@@ -150,6 +150,11 @@ $bar-inset: clamp(24px, calc(0.5rem + 2vw), 56px);
 // The desktop menu row shows from this width; below it, Menu opens the mobile menu sheet. Eight
 // items, the docs page's search field and the three buttons need this much.
 $menu-row-from: 1280px;
+// From this width the bar has room to spare beside the menu row: the search button widens into a
+// field, the GitHub button shows its star count and the row's items get their full padding. One
+// threshold for `SiteMenu`, `SearchButton` and `GitHubButton`; re-check the fullest bar (a docs
+// page) at this width after adding a menu item.
+$bar-roomy-from: 1440px;
 // From this size the mobile menu sheet splits into a section sidebar and the open section.
 $menu-split-from: 720px;
 $menu-split-min-height: 540px;

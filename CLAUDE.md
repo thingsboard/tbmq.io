@@ -92,11 +92,11 @@ The header is the upstream ThingsBoard site's (`SiteMenu/`, `Landing/HeaderConte
 - **Data** — `src/data/navigation.ts` (the menu row and its sections, in upstream's shape), `menu-featured.ts` (the promo row under a section), `cta-destinations.ts` (where Sign in and Try for free lead). `SiteMenu/menu-model.test.ts` pins the row, the section ownership and the analytics ids.
 - **Product tiles** — a section's `badge` is drawn by `ProductTile`, the same tile the docs picker and the installations hub use, not upstream's badge sprites. Upstream's customer-logo links are not here either.
 - **`Landing/DemoDialog.astro`** — what "Try for free" opens: the demo sign-up, or the installation docs. Any link with `data-demo-dialog` opens it; "Sign in" deliberately does not (one destination, nothing to choose).
-- **Search and the theme switch** — `SearchButton.astro` keeps this site's own Google search dialog behind upstream's button; `ThemeToggle.astro` stays in the bar because the footer here has no theme choice.
+- **Search and the theme switch** — `SearchButton.astro` keeps this site's own Google search dialog behind upstream's button; `ThemeToggle.astro` stays in the bar because the footer here has no theme choice. The dialog is a plain `div`, so it holds the shared scroll lock as the `search` owner: that is the only way `layerOver()` (edge swipes, the shortcut) knows it covers the page.
 
 **Two layouts render it.** Docs pages get the header from Starlight (`starlight/Header.astro`); marketing pages are standalone documents here, not `<StarlightPage>` as upstream, so `BaseLayout` renders `Landing/Header.astro` itself. Both must put `HeaderContent` directly inside `header.header`: its styles key on `header.header:has(> [data-header-look])`. A page's header comes from `BaseLayout` props, resolved by `util/header-config.ts`: `hero="dark" | "light"` makes the bar see-through over a hero (the dark one needs the hero to be `#hero`), `search` adds the search button (docs pages have it by default), and `forceLightTheme` removes the theme switch. `pageId` is only a hook for a page's own CSS now; the header no longer reads it.
 
-Breakpoints live in `_variables.scss` (`$menu-row-from`, `$menu-split-from`, `$bar-compact-below`) and are mirrored as custom properties in `_theme.scss` for `SiteMenu/menu-query.ts` — change them in the first and the second follows. `$menu-row-from` is wider than upstream's because eight menu items need the room; re-check the bar on a docs page at that width after adding an item.
+Breakpoints live in `_variables.scss` (`$menu-row-from`, `$bar-roomy-from`, `$menu-split-from`, `$bar-compact-below`) and are mirrored as custom properties in `_theme.scss` for `SiteMenu/menu-query.ts` — change them in the first and the second follows. `$menu-row-from` is wider than upstream's because eight menu items need the room; re-check the bar on a docs page at that width, and at `$bar-roomy-from` (where the search field widens and the star count returns), after adding an item.
 
 Analytics ids on links that exist twice (bar and phone sheet) are kept on whichever copy shows: mark both copies with `data-analytics-id` and `SiteMenu`'s script moves the `id`. GTM hooks on these ids and nothing in this repo does, so check GTM before renaming one.
 
@@ -161,6 +161,8 @@ Add a screenshot only when it is genuinely necessary (for example, the UI itself
 `src/data/versions.ts` — centralized product version strings. **Never hardcode version strings** in Docker image tags, download URLs, or code blocks. Import from `~/data/versions`.
 
 The file holds exactly five constants: `TBMQ_VER`, `TBMQ_PREV_VER`, `TBMQ_PE_VER`, `TBMQ_BRANCH`, and `TBMQ_LITE_VER` (the `thingsboard/tbmq-lite` image tag used by the TBMQ Lite pages under `docs/lite/`). The other products' constants have been removed.
+
+`src/data/lite.ts` holds what the TBMQ Lite product page and the Lite docs both show: the `docker run` command (`LITE_RUN_CMD`) and the measured capacity (`LITE_CAPACITY`). Change a figure or the command there, not in a page — the hero, the guarantees and comparison sections and the two docs tables all read it.
 
 ### Custom Plugins
 

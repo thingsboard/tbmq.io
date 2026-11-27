@@ -113,9 +113,9 @@ const stars = GITHUB_STARS[repo];
 			display: inline-flex;
 		}
 
-		// Logo only until the desktop menu row leaves room for the count.
+		// Logo only until the desktop menu row leaves room for the count (`$bar-roomy-from`).
 		@include width-from($menu-row-from) {
-			@include width-below(1440px) {
+			@include width-below($bar-roomy-from) {
 				width: 40px;
 				padding: 0;
 			}
@@ -134,7 +134,7 @@ const stars = GITHUB_STARS[repo];
 		font-variant-numeric: tabular-nums;
 
 		@include width-from($menu-row-from) {
-			@include width-below(1440px) {
+			@include width-below($bar-roomy-from) {
 				display: none;
 			}
 		}

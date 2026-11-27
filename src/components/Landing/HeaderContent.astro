@@ -188,12 +188,16 @@ const showSearch = headerConfig.search && !isDocsSearchPage;
 		}
 	}
 
+	// The menu hangs from the bar's bottom edge by `--sl-nav-height`. Docs pages set it for the whole
+	// page (`_starlight-overrides.scss`), and their bar must keep reading that one value, the same the
+	// sidebar and the table of contents read. Marketing pages are not Starlight pages on this site and
+	// would leave the menu Starlight's 3.5rem default, so only their bar states its height here.
+	header.header:has(> [data-header-look='marketing']) {
+		--sl-nav-height: calc(#{$header-height} + var(--promo-cur, var(--promo-h, 0px)));
+	}
+
 	header.header {
 		--tb-bar-inset: #{$bar-inset};
-		// The menu hangs from the bar's bottom edge by `--sl-nav-height`. Docs pages set it for the whole
-		// page (`_starlight-overrides.scss`); marketing pages are not Starlight pages on this site and would
-		// leave the menu Starlight's 3.5rem default, so the bar states its own height here.
-		--sl-nav-height: calc(#{$header-height} + var(--promo-cur, var(--promo-h, 0px)));
 		position: fixed;
 		// Below the promo banner, following it up as it slides away on scroll.
 		top: var(--promo-cur, var(--promo-h, 0px));

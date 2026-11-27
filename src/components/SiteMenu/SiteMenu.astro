@@ -605,7 +605,10 @@ const pathname = Astro.url.pathname;
 		const rowIds = new Set([...row.querySelectorAll<HTMLElement>('[data-analytics-id]')].map((el) => el.dataset.analyticsId!));
 		for (const id of rowIds) keepIdOnShownCopy(id, wide);
 		const fullHeader = matchMedia(fullHeaderQuery());
-		for (const id of ['Menu_SignIn', 'Menu_TryItNow']) keepIdOnShownCopy(id, fullHeader);
+		const footIds = new Set(
+			[...(sheet?.querySelectorAll<HTMLElement>('.sm__sheet-foot [data-analytics-id]') ?? [])].map((el) => el.dataset.analyticsId!)
+		);
+		for (const id of footIds) keepIdOnShownCopy(id, fullHeader);
 
 		// CSS can hide the focused control at a breakpoint, and focus drops to <body>. `lastFocus` then keeps
 		// it for `hadFocusIn`, unless the control is still shown or the menu hid it itself (`hidden`, `inert`).
@@ -624,7 +627,7 @@ const pathname = Astro.url.pathname;
 			return where.some((el) => !!el && !!at && el.contains(at));
 		};
 
-		// Crossing 1200px closes the open menu, and focus that was in it moves to the other menu.
+		// Crossing `$menu-row-from` closes the open menu, and focus that was in it moves to the other menu.
 		wide.addEventListener('change', (q) => {
 			if (q.matches) {
 				const view = sheetOpen() ? sheet?.dataset.view : undefined;
@@ -1084,7 +1087,8 @@ const pathname = Astro.url.pathname;
 
 	// --- Desktop menu panel ---
 
-	// `--sl-nav-height` is the header's height, plus the promo banner while it shows (`_starlight-overrides.scss`).
+	// `--sl-nav-height` is the header's height, plus the promo banner while it shows: set for the page by
+	// `_starlight-overrides.scss` on docs pages, and on the bar by `HeaderContent` on marketing pages.
 	.sm__one {
 		position: fixed;
 		top: var(--sl-nav-height);
@@ -1709,9 +1713,9 @@ const pathname = Astro.url.pathname;
 			display: none !important;
 		}
 
-		// Up to 1440px the row and the header's buttons only just fit (the search field widens at 1300px,
-		// the star count comes back at 1360px), so each item gets 2px less padding on each side.
-		@include width-below(1440px) {
+		// Below `$bar-roomy-from` the row and the header's buttons only just fit (the search field widens
+		// and the star count comes back at that width), so each item gets 2px less padding on each side.
+		@include width-below($bar-roomy-from) {
 			.sm__top {
 				padding-inline: 6px;
 
