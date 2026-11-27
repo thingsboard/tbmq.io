@@ -1,4 +1,5 @@
-import { DEMO_SIGNUP } from './cta-destinations';
+// A relative specifier with its extension: `installationsHub.test.ts` loads this module under `node --test`.
+import { DEMO_SIGNUP } from './cta-destinations.ts';
 
 /** The ways to get a broker on the installations hub (`/installations/`), one section each. */
 
@@ -81,15 +82,19 @@ export const installSections: InstallSection[] = [
 			{ label: 'See plans', href: '/pricing/' },
 			{ label: 'Explore TBMQ', href: '/product/' },
 		],
-		// Grouped as on the docs installation index.
+		// The guides of the docs installation index (`_includes/docs/mqtt-broker/installation/index.mdx`),
+		// grouped as there. `installationsHub.test.ts` fails when the two lists stop naming the same guides.
 		options: [
 			{
 				title: 'On your servers',
 				items: [
 					{ label: 'Docker', note: '(Linux, macOS)', logo: logo('docker-linux-mac.svg'), href: `${PE}/docker/` },
 					{ label: 'Docker', note: '(Windows)', logo: logo('docker-windows.svg'), href: `${PE}/docker-windows/` },
+					// The one Community guide among Professional ones: only the open-source edition can be
+					// built from the public repository, so the chip says which docs it opens.
 					{
 						label: 'Building from source',
+						note: '(Community Edition)',
 						logo: logo('sources.svg'),
 						href: '/docs/installation/building-from-source/',
 					},
