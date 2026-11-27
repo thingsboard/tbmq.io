@@ -141,6 +141,45 @@ $breakpoint-2xl: 1500px;
 $header-height: 80px;
 $container-max-width: 1080px;
 $container-max-width-sm: 1200px;
+// The page gutter the fixed bar holds its logo and its buttons to.
+$bar-inset: clamp(24px, calc(0.5rem + 2vw), 56px);
+
+// Header breakpoints. Use them only through `width-from` / `width-below`, so no fractional width
+// (zoom, a scaled display) falls between two queries and leaves no menu. Scripts read the matching
+// custom properties in `_theme.scss`.
+// The desktop menu row shows from this width; below it, Menu opens the mobile menu sheet. Eight
+// items, the docs page's search field and the three buttons need this much.
+$menu-row-from: 1280px;
+// From this size the mobile menu sheet splits into a section sidebar and the open section.
+$menu-split-from: 720px;
+$menu-split-min-height: 540px;
+// Below this width Sign in and Try for free move from the header into the mobile menu sheet.
+$bar-compact-below: 600px;
+
+// `width-below` is the exact negation of `width-from` (`not all and`), so the two meet at any
+// fractional width. The minifier rewrites both to range syntax (`width >= …`, Safari 16.4+).
+@mixin width-from($width) {
+	@media (min-width: $width) {
+		@content;
+	}
+}
+
+@mixin width-below($width) {
+	@media not all and (min-width: $width) {
+		@content;
+	}
+}
+
+// The header while it shows white text over a dark hero: transparent at the top, or scrolled while the
+// hero is still under it (`HeaderHeroWatch`). `data-header-hero` must stay on a direct child of the header.
+@mixin bar-over-dark-hero {
+	header.header:not([data-sm-open]):has(> [data-header-hero='dark']):is(
+			:not([data-header-scrolled]),
+			[data-header-over-hero]
+		) {
+		@content;
+	}
+}
 
 // Transitions
 $transition-fast: 0.15s ease;
@@ -229,6 +268,19 @@ $z-tooltip: 1200;
 	// --color-brand), so the inline-SVG nav icons (`fill="currentColor"`) match
 	// the green top menu (hover/active/indicator).
 	--menu-icon-color: var(--color-brand);
+
+	// The header's buttons, menu panel and dialogs (the upstream UI kit's tokens). The accent trio
+	// aliases the brand green, so it sits here with the other var()-valued tokens and follows
+	// whichever --color-brand the scope declares.
+	--accent-fill: var(--color-brand);
+	--accent-on-fill: var(--color-brand-contrast);
+	--accent-ink: var(--color-brand);
+	// Picked by the background behind the control; keeps 3:1 contrast against it.
+	--focus-ring: #17181c;
+	--color-shadow-ui-rgb: 16, 24, 40;
+	--elev-panel:
+		0 1px 2px rgba(var(--color-shadow-ui-rgb), 0.06), 0 18px 40px -18px rgba(var(--color-shadow-ui-rgb), 0.22);
+	--elev-dialog: 0 1px 2px rgba(var(--color-shadow-ui-rgb), 0.12), 0 24px 64px rgba(var(--color-shadow-ui-rgb), 0.24);
 }
 
 // Breakpoint mixins
@@ -553,4 +605,78 @@ $z-tooltip: 1200;
 	margin-right: auto;
 	padding-left: $spacing-5;
 	padding-right: $spacing-5;
+}
+
+// ── Navigation text styles (the header's menu) ─────────────
+
+// The items in the desktop menu row.
+@mixin type-nav {
+	font-size: 15px;
+	font-weight: $font-weight-normal;
+	line-height: 1;
+}
+
+// A link's name in a menu section.
+@mixin type-nav-link {
+	font-size: 15px;
+	font-weight: $font-weight-medium;
+	line-height: 1.4;
+}
+
+// A link's one-line description under its name.
+@mixin type-nav-note {
+	font-size: 13px;
+	font-weight: $font-weight-normal;
+	line-height: 1.4;
+}
+
+// The heading above a group of links.
+@mixin type-nav-label {
+	font-size: $font-size-xs;
+	font-weight: $font-weight-medium;
+	line-height: $line-height-base;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+// The mobile menu sheet's list of sections.
+@mixin type-nav-index {
+	font-size: $font-size-xl;
+	font-weight: $font-weight-medium;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+}
+
+// The same list in the split sheet's sidebar.
+@mixin type-nav-index-sm {
+	@include type-nav-index;
+	font-size: 17px;
+}
+
+// A section's title in the mobile menu sheet.
+@mixin type-card {
+	font-size: $font-size-2xl;
+	font-weight: $font-weight-bold;
+	line-height: 1.2;
+}
+
+// A promo link under a menu section.
+@mixin type-small-strong {
+	font-size: $font-size-sm;
+	font-weight: $font-weight-medium;
+	line-height: calc(22 / 14); // 22px at 14px, and grows with the text
+}
+
+// Hides content visually while leaving it in the a11y tree, in extracted text and
+// in link-label checks that read the accessible name. clip-path rather than a
+// negative margin, which would skew the scrollWidth of an overflow-x container.
+@mixin visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }

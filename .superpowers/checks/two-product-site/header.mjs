@@ -1,6 +1,7 @@
 /* eslint-disable no-undef -- Node and browser globals: these scripts run outside the site code the lint config describes */
-// node header.mjs [menu] [shell] — the site header: the menu (part `menu`) and the bar around it (part `shell`).
-// env SHOT=<dir> also saves the open Products and Learn panels and the open drawer.
+// node header.mjs [menu] [bar] [sheet] [dialog] — the site header: the desktop menu, the bar around it,
+// the phone and tablet menu sheet, and the "Try for free" dialog.
+// env SHOT=<dir> also saves the open Products and Learn panels, the sheet and the dialog.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { check, done, go, sleep, withPage } from './lib.mjs';
@@ -8,35 +9,84 @@ import { check, done, go, sleep, withPage } from './lib.mjs';
 const parts = process.argv.slice(2);
 const want = (name) => parts.length === 0 || parts.includes(name);
 
-const TOP = (id) => `[data-sm-item="${id}"] > .sm__top`;
 const LABELS = ['Products', 'Live Demo', 'Performance', 'Company', 'Learn', 'Docs', 'Blog', 'Pricing'];
+const TRIGGER = (id) => `nav.sm [data-sm-trigger="${id}"]`;
+const TRY = 'header.header .head-buttons .try';
+const TOGGLE = 'header.header [data-sm-toggle]';
+// The notice sits over the bottom of the page and would take the taps meant for the sheet's foot.
+const quiet = (page) => page.addStyleTag({ content: 'astro-dev-toolbar,#cookie-banner{display:none!important}' });
 
-/** Which panels are showing, and the header's open marker. */
-const menuState = (page) =>
+async function shot(page, name) {
+	if (!process.env.SHOT) return;
+	mkdirSync(process.env.SHOT, { recursive: true });
+	await sleep(400);
+	await page.screenshot({ path: join(process.env.SHOT, `${name}.png`) });
+}
+
+/** The desktop panel: which section shows, and what the header says about it. */
+const panelState = (page) =>
 	page.evaluate(() => {
-		const shown = (el) => !!el && !el.hidden && getComputedStyle(el).display !== 'none' && el.getClientRects().length > 0;
-		const items = [...document.querySelectorAll('.sm__item[data-sm-item]')];
+		const shown = (el) => !!el && !el.closest('[hidden]') && el.getClientRects().length > 0;
+		const panel = document.querySelector('[data-sm-one]');
+		const section = [...document.querySelectorAll('[data-sm-panel]')].find(shown);
 		return {
-			open: items.filter((li) => shown(li.querySelector('.sm__panel'))).map((li) => li.dataset.smItem),
-			expanded: items
-				.filter((li) => li.querySelector('.sm__top')?.getAttribute('aria-expanded') === 'true')
-				.map((li) => li.dataset.smItem),
-			marked: items.filter((li) => li.hasAttribute('data-open')).map((li) => li.dataset.smItem),
-			headerOpen: document.querySelector('header.header')?.hasAttribute('data-sm-open') ?? false,
-			focusInHidden: !!document.activeElement?.closest('.sm__panel[hidden]'),
-			focus: document.activeElement?.closest('[data-sm-item]')?.dataset.smItem ?? null,
-			focusIsTop: document.activeElement?.classList.contains('sm__top') ?? false,
-			focusText: document.activeElement?.textContent?.trim().slice(0, 30) ?? '',
+			open: shown(panel),
+			section: section?.dataset.smPanel ?? null,
+			links: section ? [...section.querySelectorAll('a')].filter(shown).map((a) => a.getAttribute('href')) : [],
+			expanded: [...document.querySelectorAll('[data-sm-trigger][aria-expanded="true"]')].map((t) => t.dataset.smTrigger),
+			headerOpen: document.querySelector('header.header').hasAttribute('data-sm-desktop-open'),
+			focus: document.activeElement?.getAttribute('data-sm-trigger') ?? document.activeElement?.getAttribute('href') ?? null,
 		};
 	});
 
-const headerAlpha = (page) =>
+const sheetState = (page) =>
 	page.evaluate(() => {
-		const c = getComputedStyle(document.querySelector('header.header')).backgroundColor;
-		const m = /rgba?\(([^)]+)\)/.exec(c);
-		if (!m) return c === 'transparent' ? 0 : 1;
-		const p = m[1].split(/[,/\s]+/).filter(Boolean);
-		return p.length > 3 ? Number(p[3]) : 1;
+		const shown = (el) => !!el && !el.closest('[hidden]') && el.getClientRects().length > 0;
+		const sheet = document.querySelector('[data-sm-sheet]');
+		const header = document.querySelector('header.header');
+		return {
+			open: shown(sheet),
+			view: sheet.dataset.view,
+			headerOpen: header.hasAttribute('data-sm-open'),
+			rootMarked: document.documentElement.hasAttribute('data-sm-sheet-open'),
+			expanded: header.querySelector('[data-sm-toggle]').getAttribute('aria-expanded'),
+			locked: getComputedStyle(document.documentElement).overflow === 'hidden',
+			top: Math.round(sheet.getBoundingClientRect().top),
+			barBottom: Math.round(header.querySelector('.logo-burger').getBoundingClientRect().bottom),
+		};
+	});
+
+const headerPaint = (page) =>
+	page.evaluate(() => {
+		const header = document.querySelector('header.header');
+		const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(header).backgroundColor);
+		const p = m ? m[1].split(/[,/\s]+/).filter(Boolean).map(Number) : [0, 0, 0, 0];
+		return {
+			alpha: p.length > 3 ? p[3] : 1,
+			dark: p[0] + p[1] + p[2] < 150,
+			ink: getComputedStyle(header.querySelector('.sm__top')).color,
+			scrolled: header.hasAttribute('data-header-scrolled'),
+			overHero: header.hasAttribute('data-header-over-hero'),
+		};
+	});
+
+/** Nothing in the bar overlaps or leaves the window, and the page does not scroll sideways. */
+const barFit = (page) =>
+	page.evaluate(() => {
+		const header = document.querySelector('header.header');
+		const box = (el) => (el && el.getClientRects().length ? el.getBoundingClientRect() : null);
+		const logo = box(header.querySelector('.logo'));
+		const row = box(header.querySelector('.sm__row'));
+		const buttons = box(header.querySelector('.head-buttons'));
+		const tops = [...header.querySelectorAll('.sm__row > li')].map((li) => Math.round(li.getBoundingClientRect().top));
+		return {
+			sideways: document.documentElement.scrollWidth > innerWidth,
+			inWindow: buttons.right <= innerWidth + 0.5 && logo.left >= 0,
+			logoClear: logo.right <= (row ? row.left : buttons.left) + 0.5,
+			rowClear: !row || row.right <= buttons.left + 0.5,
+			oneLine: new Set(tops).size <= 1,
+			rowShown: !!row,
+		};
 	});
 
 if (want('menu')) {
@@ -44,743 +94,465 @@ if (want('menu')) {
 	await withPage({ width: 1440 }, async (page) => {
 		await go(page, '/product/');
 		const r = await page.evaluate(() => {
-			const items = [...document.querySelectorAll('nav.sm .sm__row > li')];
-			const tops = items.map((li) => li.querySelector(':scope > .sm__top'));
+			const tops = [...document.querySelectorAll('nav.sm .sm__row > li > .sm__top')];
+			const count = (sel) => document.querySelectorAll(sel).length;
 			return {
-				labels: tops.map((t) => t?.textContent.trim() ?? ''),
-				buttons: tops.filter((t) => t?.tagName === 'BUTTON').map((t) => t.getAttribute('aria-expanded')),
-				controlsExist: tops
-					.filter((t) => t?.tagName === 'BUTTON')
-					.every((t) => !!document.getElementById(t.getAttribute('aria-controls') ?? '')),
-				pricing: document.querySelectorAll('#Menu_Pricing').length,
-				pricingGtm: document.querySelectorAll('#Menu_Pricing.gtm_button').length,
-				blog: document.querySelectorAll('#blog-link').length,
-				learn: document.querySelectorAll('#learn-link').length,
+				labels: tops.map((t) => t.textContent.trim()),
+				buttons: tops.filter((t) => t.tagName === 'BUTTON').map((t) => t.getAttribute('aria-expanded')),
+				controls: tops.filter((t) => t.tagName === 'BUTTON').every((t) => !!document.getElementById(t.getAttribute('aria-controls'))),
+				ids: ['Menu_Pricing', 'blog-link', 'learn-link', 'Menu_TryItNow', 'Menu_SignIn'].map((id) => count(`[id="${id}"]`)),
+				pricingGtm: count('#Menu_Pricing.gtm_button'),
 				learnHref: document.getElementById('learn-link')?.getAttribute('href'),
-				navLabel: document.querySelector('nav.sm')?.getAttribute('aria-label'),
-				oldMenu: document.querySelectorAll('.head-menu, .main-menu-link').length,
+				navLabel: document.querySelector('nav.sm').getAttribute('aria-label'),
 			};
 		});
-		check('structure: 8 items in order', r.labels.join() === LABELS.join(), r.labels.join());
-		check(
-			'structure: four dropdown buttons, all collapsed, each with its panel',
-			r.buttons.length === 4 && r.buttons.every((v) => v === 'false') && r.controlsExist,
-			JSON.stringify(r.buttons)
-		);
-		check('structure: #Menu_Pricing.gtm_button once', r.pricing === 1 && r.pricingGtm === 1, `${r.pricing}/${r.pricingGtm}`);
-		check('structure: #blog-link once', r.blog === 1, `${r.blog}`);
-		check('structure: #learn-link once, on the hub link', r.learn === 1 && r.learnHref === '/mqtt/', `${r.learn} ${r.learnHref}`);
-		check('structure: nav is labelled', r.navLabel === 'Site menu', `${r.navLabel}`);
-		check('structure: the old menu is gone', r.oldMenu === 0, `${r.oldMenu}`);
+		check('menu row: the eight items in order', JSON.stringify(r.labels) === JSON.stringify(LABELS), r.labels.join(', '));
+		check('menu row: four sections, all closed', r.buttons.length === 4 && r.buttons.every((v) => v === 'false'));
+		check('menu row: each section button names the panel it controls', r.controls);
+		check('analytics ids: each is on exactly one element', r.ids.every((n) => n === 1), r.ids.join(','));
+		check('analytics ids: Menu_Pricing keeps gtm_button', r.pricingGtm === 1);
+		check('analytics ids: learn-link is the guides hub link', r.learnHref === '/mqtt/', r.learnHref);
+		check('menu: the nav is labelled', r.navLabel === 'Site menu', r.navLabel);
 	});
 
-	// ── hover ────────────────────────────────────────────────────────────────────
+	// ── which section a page belongs to ──────────────────────────────────────────
 	await withPage({ width: 1440 }, async (page) => {
-		await go(page, '/product/');
-		await page.hover(TOP('nav-products'));
-		await sleep(400);
-		let s = await menuState(page);
-		check('hover: Products opens', s.open.join() === 'nav-products' && s.expanded.join() === 'nav-products' && s.headerOpen, JSON.stringify(s));
-		const box = await page.evaluate(() => {
-			const panel = document.getElementById('sm-panel-nav-products');
-			const r = panel.getBoundingClientRect();
-			const header = document.querySelector('header.header').getBoundingClientRect();
-			const hrefs = [...panel.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-			const firstLink = panel.querySelector('.sm__link').getBoundingClientRect();
-			const rowFirst = document.querySelector('.sm__row > li > .sm__top').getBoundingClientRect();
-			return {
-				left: r.left,
-				width: r.width,
-				top: r.top,
-				headerBottom: header.bottom,
-				inner: window.innerWidth,
-				hrefs,
-				text: panel.innerText,
-				linkLeft: firstLink.left,
-				rowLeft: rowFirst.left,
-				tiles: panel.querySelectorAll('.product-tile').length,
-			};
-		});
-		check(
-			'hover: the panel is a full-width band under the bar',
-			Math.abs(box.left) <= 1 && Math.abs(box.width - box.inner) <= 1 && Math.abs(box.top - box.headerBottom) <= 1,
-			JSON.stringify({ left: box.left, width: box.width, top: box.top, headerBottom: box.headerBottom })
-		);
-		const need = ['/product/', '/product/lite/', '/pricing/', '/installations/', '/live-demo/'];
-		check(
-			'hover: the Products panel has its links, tiles and the Beta badge',
-			need.every((h) => box.hrefs.includes(h)) && /Beta/i.test(box.text) && box.tiles === 2,
-			`${box.hrefs.join(' ')} tiles=${box.tiles}`
-		);
-		check('hover: panel content lines up with the menu row', Math.abs(box.linkLeft - box.rowLeft) <= 14, `${box.linkLeft} vs ${box.rowLeft}`);
-		await page.hover(TOP('nav-docs'));
-		await sleep(400);
-		s = await menuState(page);
-		check('hover: moving to Docs shows only Docs', s.open.join() === 'nav-docs' && s.expanded.join() === 'nav-docs', JSON.stringify(s));
-		await page.mouse.move(700, 760);
-		await sleep(600);
-		s = await menuState(page);
-		check('hover: leaving closes everything', s.open.length === 0 && !s.headerOpen && s.marked.length === 0, JSON.stringify(s));
-
-		// Staying on the panel keeps it open.
-		await page.hover(TOP('nav-products'));
-		await sleep(400);
-		await page.hover('#sm-panel-nav-products .sm__link');
-		await sleep(600);
-		s = await menuState(page);
-		check('hover: the panel stays open while the pointer is on it', s.open.join() === 'nav-products', JSON.stringify(s));
-	});
-
-	// ── hover: aiming at the panel ───────────────────────────────────────────────
-	// Every panel's content starts at the row's left edge, so the straight line from Learn,
-	// Docs or Company to their own links crosses other items. That must not switch or close.
-	for (const width of [1440, 1920]) {
-		await withPage({ width }, async (page) => {
-			await go(page, '/product/');
-			const centre = (sel) =>
-				page.evaluate((s) => {
-					const r = document.querySelector(s).getBoundingClientRect();
-					return [r.left + r.width / 2, r.top + r.height / 2];
-				}, sel);
-			for (const id of ['nav-learn', 'nav-docs', 'nav-company', 'nav-products']) {
-				for (const ms of [120, 350, 700]) {
-					await page.mouse.move(700, 760);
-					await sleep(350);
-					await page.hover(TOP(id));
-					await sleep(400);
-					const [x0, y0] = await centre(TOP(id));
-					const [x1, y1] = await centre(`#sm-panel-${id} .sm__link`);
-					const steps = Math.max(6, Math.round(ms / 16));
-					for (let i = 1; i <= steps; i++) {
-						await page.mouse.move(x0 + ((x1 - x0) * i) / steps, y0 + ((y1 - y0) * i) / steps);
-						await sleep(ms / steps);
-					}
-					await sleep(450);
-					const s = await menuState(page);
-					check(`aim @${width}: ${id} keeps its panel on a ${ms} ms straight move to its first link`, s.open.join() === id, JSON.stringify(s.open));
-				}
-			}
-			// Moving along the row still switches.
-			await page.mouse.move(700, 760);
-			await sleep(350);
-			await page.hover(TOP('nav-docs'));
-			await sleep(400);
-			const [dx, dy] = await centre(TOP('nav-docs'));
-			const [lx] = await centre(TOP('nav-learn'));
-			for (let i = 1; i <= 10; i++) {
-				await page.mouse.move(dx + ((lx - dx) * i) / 10, dy);
-				await sleep(20);
-			}
-			await sleep(500);
-			const s = await menuState(page);
-			check(`aim @${width}: moving along the row from Docs to Learn switches`, s.open.join() === 'nav-learn', JSON.stringify(s.open));
-		});
-	}
-
-	// ── keyboard ─────────────────────────────────────────────────────────────────
-	await withPage({ width: 1440 }, async (page) => {
-		await go(page, '/product/');
-		await page.focus(TOP('nav-products'));
-		await page.keyboard.press('Enter');
-		await sleep(150);
-		let s = await menuState(page);
-		check('keyboard: Enter opens', s.open.join() === 'nav-products', JSON.stringify(s));
-		await page.keyboard.press('Tab');
-		const first = await page.evaluate(() => {
-			const panel = document.getElementById('sm-panel-nav-products');
-			return document.activeElement === panel.querySelector('a');
-		});
-		check('keyboard: Tab goes to the first link of the open panel', first);
-		await page.keyboard.press('Escape');
-		await sleep(150);
-		s = await menuState(page);
-		check('keyboard: Escape closes and returns focus', s.open.length === 0 && s.focus === 'nav-products' && s.focusIsTop, JSON.stringify(s));
-		await page.keyboard.press('Space');
-		await sleep(150);
-		s = await menuState(page);
-		check('keyboard: Space opens', s.open.join() === 'nav-products', JSON.stringify(s));
-		await page.keyboard.press('Space');
-		await sleep(150);
-		s = await menuState(page);
-		check('keyboard: Space again closes', s.open.length === 0 && !s.headerOpen, JSON.stringify(s));
-
-		// Closed panels are out of the tab order.
-		await page.focus('.sm__row > li:first-child > .sm__top');
-		const seen = [];
-		let inHidden = false;
-		for (let i = 0; i < 7; i++) {
-			await page.keyboard.press('Tab');
-			s = await menuState(page);
-			seen.push(s.focusText);
-			inHidden ||= s.focusInHidden;
-		}
-		check(
-			'keyboard: tabbing the closed row visits only the top items',
-			!inHidden && seen.join() === LABELS.slice(1).join(),
-			seen.join()
-		);
-
-		// Focus leaving an open panel closes it.
-		await page.focus(TOP('nav-company'));
-		await page.keyboard.press('Enter');
-		await sleep(150);
-		await page.focus(TOP('nav-docs'));
-		await sleep(150);
-		s = await menuState(page);
-		check('keyboard: focus leaving a section closes it', s.open.length === 0, JSON.stringify(s));
-	});
-
-	// ── outside click, no shift ──────────────────────────────────────────────────
-	await withPage({ width: 1440 }, async (page) => {
-		await go(page, '/product/');
-		const before = await page.evaluate(() => ({
-			h: document.documentElement.scrollHeight,
-			top: document.querySelector('main').getBoundingClientRect().top,
-		}));
-		await page.focus(TOP('nav-products'));
-		await page.keyboard.press('Enter');
-		await sleep(300);
-		const after = await page.evaluate(() => ({
-			h: document.documentElement.scrollHeight,
-			top: document.querySelector('main').getBoundingClientRect().top,
-		}));
-		check('no shift: an open panel moves nothing', before.h === after.h && before.top === after.top, JSON.stringify({ before, after }));
-		await page.keyboard.press('Escape');
-		await sleep(150);
-
-		await page.click(TOP('nav-products'));
-		await sleep(300);
-		let s = await menuState(page);
-		check('outside click: a click opens', s.open.join() === 'nav-products', JSON.stringify(s));
-		await page.mouse.click(700, 760);
-		await sleep(300);
-		s = await menuState(page);
-		check('outside click: a click on the page closes', s.open.length === 0 && !s.headerOpen, JSON.stringify(s));
-	});
-
-	// ── touch on a wide screen ───────────────────────────────────────────────────
-	await withPage({ width: 1366, height: 1024, touch: true }, async (page) => {
-		await go(page, '/product/');
-		await page.tap(TOP('nav-products'));
-		await sleep(300);
-		let s = await menuState(page);
-		check('touch: a tap opens', s.open.join() === 'nav-products', JSON.stringify(s));
-		await page.tap(TOP('nav-products'));
-		await sleep(300);
-		s = await menuState(page);
-		check('touch: a second tap closes', s.open.length === 0, JSON.stringify(s));
-		await page.tap(TOP('nav-products'));
-		await sleep(300);
-		await page.tap(TOP('nav-docs'));
-		await sleep(300);
-		s = await menuState(page);
-		check('touch: tapping another item switches', s.open.join() === 'nav-docs', JSON.stringify(s));
-	});
-
-	// ── current ──────────────────────────────────────────────────────────────────
-	await withPage({ width: 1440 }, async (page) => {
-		const current = () =>
-			page.evaluate(() => ({
-				// The styling hook and the assistive-tech state go together: aria-current on the item.
-				sections: [...document.querySelectorAll('.sm__top[data-current][aria-current="true"]')].map((b) => b.textContent.trim()),
-				unannounced: document.querySelectorAll('.sm__top[data-current]:not([aria-current="true"])').length,
-				links: [...document.querySelectorAll('.sm__row > li > a.sm__top[aria-current="page"]')].map((a) => a.textContent.trim()),
-			}));
-		await go(page, '/product/lite/');
-		let c = await current();
-		check('current: Products on /product/lite/', c.sections.join() === 'Products' && c.links.length === 0, JSON.stringify(c));
-		await go(page, '/docs/lite/');
-		c = await current();
-		check('current: Docs on /docs/lite/', c.sections.join() === 'Docs' && c.links.length === 0, JSON.stringify(c));
-		await go(page, '/pricing/');
-		c = await current();
-		check('current: Pricing on /pricing/', c.links.join() === 'Pricing' && c.sections.length === 0, JSON.stringify(c));
-		await go(page, '/installations/');
-		c = await current();
-		check('current: Products on /installations/', c.sections.join() === 'Products', JSON.stringify(c));
-	});
-
-	// ── transparent bar ──────────────────────────────────────────────────────────
-	for (const path of ['/', '/pricing/']) {
-		await withPage({ width: 1440 }, async (page) => {
-			await go(page, path);
-			await sleep(300);
-			const a0 = await headerAlpha(page);
-			await page.focus(TOP('nav-products'));
-			await page.keyboard.press('Enter');
-			await sleep(400);
-			const a1 = await headerAlpha(page);
-			const ink = await page.evaluate(() => {
-				const lum = (c) => {
-					const [r, g, b] = /rgba?\(([^)]+)\)/.exec(c)[1].split(/[,/\s]+/).filter(Boolean).map(Number);
-					const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
-					return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-				};
-				const top = document.querySelector('.sm__row > li:nth-child(2) > .sm__top');
-				const header = document.querySelector('header.header');
-				const a = lum(getComputedStyle(top).color);
-				const b = lum(getComputedStyle(header).backgroundColor);
-				return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-			});
-			await page.keyboard.press('Escape');
-			await page.evaluate(() => document.activeElement?.blur());
-			await sleep(400);
-			const a2 = await headerAlpha(page);
-			check(`transparent bar ${path}: clear, solid while open, clear again`, a0 === 0 && a1 === 1 && a2 === 0, `${a0} → ${a1} → ${a2}`);
-			check(`transparent bar ${path}: the row is readable on the solid bar`, ink >= 4.5, ink.toFixed(2));
-		});
-	}
-
-	// ── dark panel contrast ──────────────────────────────────────────────────────
-	await withPage({ width: 1440, dark: true }, async (page) => {
-		await go(page, '/docs/getting-started/');
-		await page.focus(TOP('nav-products'));
-		await page.keyboard.press('Enter');
-		await sleep(400);
-		const r = await page.evaluate(() => {
-			// Resolve any CSS colour to sRGB bytes through a canvas.
-			const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-			const rgb = (c) => {
-				ctx.clearRect(0, 0, 1, 1);
-				ctx.fillStyle = '#000';
-				ctx.fillStyle = c;
-				ctx.fillRect(0, 0, 1, 1);
-				return [...ctx.getImageData(0, 0, 1, 1).data];
-			};
-			const lum = ([r, g, b]) => {
-				const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
-				return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-			};
-			const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-			const panel = document.getElementById('sm-panel-nav-products');
-			const bg = rgb(getComputedStyle(panel).backgroundColor);
-			const of = (sel) => ratio(lum(rgb(getComputedStyle(panel.querySelector(sel)).color)), lum(bg));
-			return {
-				theme: document.documentElement.dataset.theme,
-				alpha: bg[3],
-				bgLum: lum(bg),
-				heading: of('.sm__link-heading'),
-				desc: of('.sm__link-desc'),
-				group: of('.sm__group-name'),
-				promo: of('.sm__promo'),
-			};
-		});
-		check('dark panel contrast: the page is dark', r.theme === 'dark', `${r.theme}`);
-		check('dark panel contrast: the panel is opaque and dark', r.alpha === 255 && r.bgLum < 0.2, JSON.stringify(r));
-		check('dark panel contrast: link headings ≥ 4.5', r.heading >= 4.5, r.heading.toFixed(2));
-		check(
-			'dark panel contrast: descriptions, group names and promos ≥ 4.5',
-			r.desc >= 4.5 && r.group >= 4.5 && r.promo >= 4.5,
-			`${r.desc.toFixed(2)} ${r.group.toFixed(2)} ${r.promo.toFixed(2)}`
-		);
-	});
-
-	// ── drawer ───────────────────────────────────────────────────────────────────
-	await withPage({ width: 390, height: 844 }, async (page) => {
-		await go(page, '/product/');
-		const sheet = () =>
-			page.evaluate(() => ({
-				opened: document.querySelector('header.header').classList.contains('opened-burger'),
-				attr: document.documentElement.hasAttribute('data-sm-sheet-open'),
-			}));
-		const visible = (sel) =>
-			page.evaluate((s) => {
-				const els = [...document.querySelectorAll(s)];
-				return els.length > 0 && els.every((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().height > 0);
-			}, sel);
-		let s0 = await sheet();
-		check('drawer: closed at first', !s0.opened && !s0.attr && !(await visible('.sm__row > li > .sm__top')), JSON.stringify(s0));
-		await page.click('.burger');
-		await sleep(400);
-		s0 = await sheet();
-		check('drawer: the burger opens it and marks <html>', s0.opened && s0.attr, JSON.stringify(s0));
-		const tops = await page.evaluate(() =>
-			[...document.querySelectorAll('.sm__row > li > .sm__top')].map((t) => {
-				const r = t.getBoundingClientRect();
-				return r.height > 0 && r.left >= 0 && r.right <= window.innerWidth;
-			})
-		);
-		check('drawer: all 8 items are visible', tops.length === 8 && tops.every(Boolean), JSON.stringify(tops));
-		await page.click(TOP('nav-products'));
-		await sleep(300);
-		check(
-			'drawer: Products expands in place',
-			(await visible('#sm-panel-nav-products a[href="/product/"]')) && (await visible('#sm-panel-nav-products a[href="/product/lite/"]'))
-		);
-		const inFlow = await page.evaluate(() => {
-			const panel = document.getElementById('sm-panel-nav-products').getBoundingClientRect();
-			const next = document.querySelector('.sm__row > li:nth-child(2) > .sm__top').getBoundingClientRect();
-			return next.top >= panel.bottom - 1;
-		});
-		check('drawer: the next item moves below the expanded section', inFlow);
-		await page.click(TOP('nav-learn'));
-		await sleep(300);
-		let s = await menuState(page);
-		check('drawer: several sections may be open', s.open.join() === 'nav-products,nav-learn', JSON.stringify(s));
-		await page.click(TOP('nav-products'));
-		await sleep(300);
-		s = await menuState(page);
-		check('drawer: a second tap collapses', s.open.join() === 'nav-learn', JSON.stringify(s));
-		await page.click('.burger');
-		await sleep(400);
-		s0 = await sheet();
-		check('drawer: the burger closes it and clears <html>', !s0.opened && !s0.attr, JSON.stringify(s0));
-		await page.click('.burger');
-		await sleep(400);
-		s = await menuState(page);
-		check('drawer: reopened with every section collapsed', s.open.length === 0 && s.expanded.length === 0 && s.marked.length === 0, JSON.stringify(s));
-		const overflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
-		check('drawer: no horizontal overflow', overflow);
-	});
-
-	// ── swipe ────────────────────────────────────────────────────────────────────
-	await withPage({ width: 390, height: 844, touch: true }, async (page) => {
-		await go(page, '/product/');
-		const sheet = () =>
-			page.evaluate(() => ({
-				opened: document.querySelector('header.header').classList.contains('opened-burger'),
-				attr: document.documentElement.hasAttribute('data-sm-sheet-open'),
-			}));
-		const swipe = async (fromX, toX) => {
-			await page.touchscreen.touchStart(fromX, 420);
-			await page.touchscreen.touchMove((fromX + toX) / 2, 420);
-			await page.touchscreen.touchMove(toX, 420);
-			await page.touchscreen.touchEnd();
-			await sleep(400);
-		};
-		await swipe(380, 280);
-		let s = await sheet();
-		check('swipe: left from the right edge opens the drawer', s.opened && s.attr, JSON.stringify(s));
-		await page.tap(TOP('nav-products'));
-		await sleep(300);
-		await swipe(150, 250);
-		s = await sheet();
-		const m = await menuState(page);
-		check('swipe: right closes it, collapsed', !s.opened && !s.attr && m.marked.length === 0 && m.expanded.length === 0, JSON.stringify({ s, m }));
-	});
-
-	// ── crossing the breakpoint ──────────────────────────────────────────────────
-	await withPage({ width: 1440 }, async (page) => {
-		await go(page, '/product/');
-		await page.focus(TOP('nav-products'));
-		await page.keyboard.press('Enter');
-		await sleep(200);
-		await page.setViewport({ width: 1000, height: 900 });
-		await sleep(400);
-		const s = await menuState(page);
-		check('breakpoint: crossing it closes everything', s.expanded.length === 0 && s.marked.length === 0 && !s.headerOpen, JSON.stringify(s));
-	});
-
-	// ── no js ────────────────────────────────────────────────────────────────────
-	await withPage({ width: 1440, js: false }, async (page) => {
-		await go(page, '/product/');
-		await page.hover(TOP('nav-products'));
-		await sleep(300);
-		const shown = await page.evaluate(() => {
-			const p = document.getElementById('sm-panel-nav-products');
-			return getComputedStyle(p).display !== 'none' && p.getBoundingClientRect().height > 0;
-		});
-		check('no js: hovering Products shows its panel', shown);
-	});
-
-	if (process.env.SHOT) {
-		mkdirSync(process.env.SHOT, { recursive: true });
-		const HIDE = 'astro-dev-toolbar,#cookie-banner{display:none!important}';
-		for (const [id, path, dark] of [
-			['nav-products', '/product/', false],
-			['nav-learn', '/product/', false],
-			['nav-docs', '/', false],
-			['nav-products', '/docs/getting-started/', true],
+		for (const [path, id] of [
+			['/product/lite/', 'nav-products'],
+			['/installations/', 'nav-products'],
+			['/docs/lite/', 'nav-docs'],
+			['/docs/installation/', 'nav-docs'],
+			['/mqtt/qos/', 'nav-learn'],
+			['/contact-us/', 'nav-company'],
 		]) {
-			await withPage({ width: 1440, dark }, async (page) => {
-				await go(page, path, 'networkidle2');
-				await page.addStyleTag({ content: HIDE });
-				await page.focus(TOP(id));
-				await page.keyboard.press('Enter');
-				await sleep(500);
-				const file = join(process.env.SHOT, `panel-${id}${path === '/' ? '-home' : ''}${dark ? '+dark' : ''}@1440.png`);
-				await page.screenshot({ path: file, clip: { x: 0, y: 0, width: 1440, height: 620 }, captureBeyondViewport: false });
-				console.log(file);
-			});
+			await go(page, path);
+			const marked = await page.evaluate(() => [...document.querySelectorAll('nav.sm .sm__row [data-current]')].map((t) => t.dataset.smTrigger));
+			check(`current section on ${path}: ${id} only`, marked.length === 1 && marked[0] === id, marked.join(','));
 		}
-		await withPage({ width: 390, height: 844 }, async (page) => {
-			await go(page, '/product/', 'networkidle2');
-			await page.addStyleTag({ content: HIDE });
-			await page.click('.burger');
-			await sleep(300);
-			await page.click(TOP('nav-products'));
-			await sleep(400);
-			const file = join(process.env.SHOT, 'drawer-products@390.png');
-			await page.screenshot({ path: file, captureBeyondViewport: false });
-			console.log(file);
+		await go(page, '/pricing/');
+		const page_ = await page.evaluate(() => [...document.querySelectorAll('nav.sm .sm__row [aria-current="page"]')].map((a) => a.textContent.trim()));
+		check('current page on /pricing/: the Pricing link', page_.join() === 'Pricing', page_.join());
+		await go(page, '/');
+		const none = await page.evaluate(() => document.querySelectorAll('nav.sm .sm__row :is([data-current], [aria-current])').length);
+		check('home: no item marked current', none === 0, String(none));
+	});
+
+	// ── click, keyboard, hover ───────────────────────────────────────────────────
+	await withPage({ width: 1440 }, async (page) => {
+		await go(page, '/product/');
+		await quiet(page);
+
+		await page.click(TRIGGER('nav-products'));
+		await sleep(350);
+		let s = await panelState(page);
+		check('click Products: its section opens', s.open && s.section === 'nav-products', JSON.stringify(s));
+		check('click Products: the button says expanded, the header is marked', s.expanded.join() === 'nav-products' && s.headerOpen);
+		check('Products: both products, then the three promo links', s.links.join() === '/product/,/product/lite/,/pricing/,/installations/,/live-demo/', s.links.join());
+		const lite = await page.evaluate(() => {
+			const a = document.querySelector('[data-sm-panel="nav-products"] a[href="/product/lite/"]');
+			return { tag: a.querySelector('.sm__tag')?.textContent.trim(), tile: !!a.querySelector('.product-tile--tbmq-lite'), desc: a.querySelector('.sm__link-desc')?.textContent.trim() };
 		});
-	}
+		check('Products: TBMQ Lite has its tile, its line and the Beta label', lite.tag === 'Beta' && lite.tile && lite.desc === 'Single-container MQTT broker', JSON.stringify(lite));
+		await shot(page, 'menu-products');
+
+		await page.click(TRIGGER('nav-docs'));
+		await sleep(450);
+		s = await panelState(page);
+		check('click Docs while Products is open: the panel switches', s.section === 'nav-docs' && s.expanded.join() === 'nav-docs', JSON.stringify(s));
+		check('Docs: both docs sets', s.links.join() === '/docs/pe/,/docs/lite/', s.links.join());
+
+		await page.click(TRIGGER('nav-docs'));
+		await sleep(350);
+		s = await panelState(page);
+		check('click the open item again: the panel closes', !s.open && s.expanded.length === 0 && !s.headerOpen, JSON.stringify(s));
+
+		await page.click(TRIGGER('nav-learn'));
+		await sleep(350);
+		s = await panelState(page);
+		check('Learn: five guides and the hub link', s.links.length === 6 && s.links.at(-1) === '/mqtt/' && s.links.slice(0, 5).every((h) => h.startsWith('/mqtt/')), s.links.join());
+		await shot(page, 'menu-learn');
+		// A press on the page itself, not at fixed coordinates: those can land on a link and leave the page.
+		await page.evaluate(() => document.querySelector('main').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
+		await sleep(350);
+		check('a press outside the menu: the panel closes', !(await panelState(page)).open);
+
+		await page.click(TRIGGER('nav-company'));
+		await sleep(350);
+		const company = await page.evaluate(() => {
+			const a = document.querySelector('[data-sm-panel="nav-company"] a[href^="https://thingsboard.io"]');
+			return { target: a.target, rel: a.rel, label: a.getAttribute('aria-label'), arrow: !!a.querySelector('[data-icon="tabler:arrow-up-right"]') };
+		});
+		check('Company: the off-site link opens a new tab and says so', company.target === '_blank' && /noopener/.test(company.rel) && /opens thingsboard\.io in a new tab/.test(company.label ?? '') && company.arrow, JSON.stringify(company));
+		await page.keyboard.press('Escape');
+		await sleep(300);
+
+		// Keyboard: Enter opens, Tab goes into the section, Escape closes and returns to the item.
+		await page.focus(TRIGGER('nav-products'));
+		await page.keyboard.press('Enter');
+		await sleep(350);
+		s = await panelState(page);
+		check('keyboard: Enter opens the section, focus stays on the item', s.open && s.focus === 'nav-products', JSON.stringify(s));
+		await page.keyboard.press('Tab');
+		s = await panelState(page);
+		check('keyboard: Tab moves into the open section', s.focus === '/product/', String(s.focus));
+		await page.keyboard.press('Escape');
+		await sleep(300);
+		s = await panelState(page);
+		check('keyboard: Escape closes and returns focus to the item', !s.open && s.focus === 'nav-products', JSON.stringify(s));
+
+		// Mouse: resting on an item opens its section, moving along the row switches, leaving closes.
+		const centre = (sel) => page.$eval(sel, (el) => {
+			const b = el.getBoundingClientRect();
+			return [b.left + b.width / 2, b.top + b.height / 2];
+		});
+		await page.mouse.move(700, 600);
+		await page.mouse.move(...(await centre(TRIGGER('nav-products'))), { steps: 4 });
+		await sleep(500);
+		s = await panelState(page);
+		check('hover: resting on Products opens it', s.open && s.section === 'nav-products', JSON.stringify(s));
+		await page.mouse.move(...(await centre(TRIGGER('nav-learn'))), { steps: 6 });
+		await sleep(500);
+		s = await panelState(page);
+		check('hover: moving to Learn switches the panel', s.open && s.section === 'nav-learn', JSON.stringify(s));
+		await page.mouse.move(...(await centre('[data-sm-panel="nav-learn"] a')), { steps: 6 });
+		await sleep(500);
+		check('hover: the panel stays open while the pointer is in it', (await panelState(page)).open);
+		await page.mouse.move(700, 800, { steps: 6 });
+		await sleep(700);
+		check('hover: leaving closes the panel', !(await panelState(page)).open);
+	});
 }
 
-if (want('shell')) {
-	const visibleCount = (page, sel) =>
-		page.evaluate(
-			(s) =>
-				[...document.querySelectorAll(s)].filter((el) => {
-					const r = el.getBoundingClientRect();
-					return el.getClientRects().length > 0 && r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
-				}).length,
-			sel
-		);
-
-	// ── no flag ──────────────────────────────────────────────────────────────────
-	await withPage({ width: 1440 }, async (page) => {
-		const requests = [];
-		page.on('request', (req) => requests.push(req.url()));
-		let flags = 0;
-		for (const path of ['/', '/product/', '/docs/getting-started/']) {
-			await go(page, path, 'networkidle2');
-			flags += await page.evaluate(() => document.querySelectorAll('.support-ukraine, a[href*="u24.gov.ua"]').length);
-		}
-		const hits = requests.filter((u) => u.includes('support-ukraine'));
-		check('no flag: no flag link on the three pages', flags === 0, `${flags}`);
-		check('no flag: nothing requests the flag image', hits.length === 0, hits.join(' '));
-	});
-
-	// ── buttons ──────────────────────────────────────────────────────────────────
-	await withPage({ width: 1440 }, async (page) => {
-		await go(page, '/product/');
-		const r = await page.evaluate(() => {
-			const a = (id) => {
-				const el = document.getElementById(id);
-				return el
-					? {
-							n: document.querySelectorAll(`#${id}`).length,
-							href: el.getAttribute('href'),
-							target: el.getAttribute('target'),
-							rel: el.getAttribute('rel') ?? '',
-							cls: el.className,
-							text: el.textContent.trim(),
-							box: el.getBoundingClientRect().toJSON(),
-							border: getComputedStyle(el).borderTopWidth,
-							bg: getComputedStyle(el).backgroundColor,
-						}
-					: null;
-			};
-			return {
-				signin: a('Menu_SignIn'),
-				tryIt: a('Menu_TryItNow'),
-				stray: [...document.querySelectorAll('.head-buttons a')]
-					.map((el) => el.getAttribute('href'))
-					.filter((h) => h === '/pricing/' || h === '/installations/'),
-				dividers: document.querySelectorAll('.head-buttons .divider').length,
-			};
-		});
-		check(
-			'buttons: Sign in',
-			r.signin?.n === 1 &&
-				r.signin.href === 'https://demo.tbmq.io/' &&
-				r.signin.target === '_blank' &&
-				r.signin.rel.includes('noopener') &&
-				r.signin.text === 'Sign in',
-			JSON.stringify(r.signin)
-		);
-		check(
-			'buttons: Try for free',
-			r.tryIt?.n === 1 &&
-				r.tryIt.href === 'https://demo.tbmq.io/signup' &&
-				r.tryIt.target === '_blank' &&
-				r.tryIt.rel.includes('noopener') &&
-				/\bgtm_button\b/.test(r.tryIt.cls) &&
-				r.tryIt.text === 'Try for free',
-			JSON.stringify(r.tryIt)
-		);
-		check('buttons: no Pricing or installations button left in the bar', r.stray.length === 0, r.stray.join(' '));
-		check('buttons: the divider inside the button group is gone', r.dividers === 0, `${r.dividers}`);
-		check(
-			'buttons: Sign in sits left of Try for free, on one line, neither clipped',
-			!!r.signin &&
-				!!r.tryIt &&
-				r.signin.box.right <= r.tryIt.box.left &&
-				Math.abs(r.signin.box.top - r.tryIt.box.top) <= 1 &&
-				r.signin.box.width >= 90 &&
-				r.tryIt.box.width >= 90,
-			JSON.stringify([r.signin?.box, r.tryIt?.box])
-		);
-		check('buttons: Sign in is outlined', r.signin?.border === '1px' && /rgba\(0, 0, 0, 0\)|transparent/.test(r.signin.bg), JSON.stringify([r.signin?.border, r.signin?.bg]));
-	});
-
-	// ── github ───────────────────────────────────────────────────────────────────
-	for (const [width, where] of [
-		[1440, '.head-buttons'],
-		[1200, '.logo-burger'],
-		[390, null],
-	]) {
-		await withPage({ width, height: width < 600 ? 844 : 900 }, async (page) => {
-			await go(page, '/product/');
-			const r = await page.evaluate(() => {
-				const vis = [...document.querySelectorAll('.gh-button')].filter((el) => el.getClientRects().length > 0);
-				const signin = document.getElementById('Menu_SignIn');
-				return {
-					n: vis.length,
-					inHead: vis.filter((el) => el.closest('.head-buttons')).length,
-					inLogo: vis.filter((el) => el.closest('.logo-burger')).length,
-					leftOfSignin: vis[0] && signin ? vis[0].getBoundingClientRect().right <= signin.getBoundingClientRect().left : null,
-				};
-			});
-			const ok =
-				where === null
-					? r.n === 0
-					: where === '.head-buttons'
-						? r.n === 1 && r.inHead === 1 && r.leftOfSignin === true
-						: r.n === 1 && r.inLogo === 1;
-			check(`github @${width}: ${where ? `one visible, in ${where}` : 'none visible'}`, ok, JSON.stringify(r));
-		});
-	}
-
-	// ── bar fits ─────────────────────────────────────────────────────────────────
-	for (const width of [1281, 1366, 1440, 1920]) {
-		await withPage({ width, height: 900 }, async (page) => {
-			// The blog has the fullest bar: marketing type plus search, theme and the star button.
-			for (const path of ['/', '/product/', '/docs/getting-started/', '/blog/', '/pricing/']) {
-				await go(page, path);
-				// The star count widens the GitHub button once it loads: measure with it showing.
-				// Headless Chrome draws no scrollbar; a classic one takes 15px off the bar while the
-				// media queries still see the full window, so measure the bar that much narrower.
-				await page.evaluate(() => {
-					document.querySelectorAll('.gh-button').forEach((b) => {
-						b.querySelector('.gh-count').textContent = '12,345';
-						b.classList.add('is-loaded');
-					});
-					document.querySelector('header.header').style.width = 'calc(100% - 15px)';
-				});
-				await sleep(350);
-				const r = await page.evaluate(() => {
-					const box = (el) => el.getBoundingClientRect();
-					const items = [...document.querySelectorAll('.sm__row > li')];
-					const logo = box(document.querySelector('header.header .logo'));
-					const first = box(items[0]);
-					const last = box(items.at(-1));
-					const head = box(document.querySelector('.head-buttons'));
-					const tryIt = box(document.getElementById('Menu_TryItNow'));
-					const header = box(document.querySelector('header.header'));
-					const kids = [...document.querySelectorAll('.head-buttons > *')].filter((el) => el.getClientRects().length > 0).map(box);
-					return {
-						scrollW: document.documentElement.scrollWidth,
-						inner: window.innerWidth,
-						tops: [...new Set(items.map((li) => li.offsetTop))],
-						rowHeights: [...new Set(items.map((li) => li.querySelector('.sm__top').getBoundingClientRect().height))],
-						logoRight: logo.right,
-						firstLeft: first.left,
-						lastRight: last.right,
-						headLeft: head.left,
-						headRight: head.right,
-						tryRight: tryIt.right,
-						tryLeft: tryIt.left,
-						headerBottom: header.bottom,
-						kidsOverlap: kids.some((k, i) => i > 0 && k.left < kids[i - 1].right - 0.5),
-						kidsOneLine: kids.every((k) => k.bottom <= header.bottom + 0.5 && k.top >= header.top - 0.5),
-						gap: head.left - last.right,
-					};
-				});
-				const label = `bar fits @${width} ${path}`;
-				check(`${label}: no horizontal scrollbar`, r.scrollW <= r.inner, `${r.scrollW} > ${r.inner}`);
-				check(`${label}: the row is one line`, r.tops.length === 1 && r.rowHeights.length === 1, JSON.stringify([r.tops, r.rowHeights]));
-				check(
-					`${label}: logo, menu and buttons do not overlap`,
-					r.logoRight <= r.firstLeft && r.lastRight <= r.headLeft && !r.kidsOverlap && r.kidsOneLine,
-					JSON.stringify({ logoRight: r.logoRight, firstLeft: r.firstLeft, lastRight: r.lastRight, headLeft: r.headLeft, kidsOverlap: r.kidsOverlap, kidsOneLine: r.kidsOneLine })
-				);
-				// Other machines set the row in other fonts: leave room for a few percent of drift.
-				check(`${label}: at least 24px between the menu and the buttons`, r.gap >= 24, `${Math.round(r.gap)}px`);
-				check(`${label}: Try for free is inside the viewport`, r.tryLeft >= 0 && r.tryRight <= r.inner, `${r.tryLeft}–${r.tryRight}`);
-			}
-		});
-	}
-
-	// ── hero buttons ─────────────────────────────────────────────────────────────
+if (want('bar')) {
+	// ── over the home hero, and past it ──────────────────────────────────────────
 	await withPage({ width: 1440 }, async (page) => {
 		await go(page, '/');
+		await quiet(page);
 		await sleep(300);
-		const colour = () =>
-			page.evaluate(() => {
-				const s = getComputedStyle(document.getElementById('Menu_SignIn'));
-				return { color: s.color, border: s.borderTopColor };
-			});
-		const c0 = await colour();
-		await page.evaluate(() => window.scrollTo(0, 200));
+		let p = await headerPaint(page);
+		check('home, top: the bar is see-through with white text', p.alpha === 0 && p.ink === 'rgb(255, 255, 255)', JSON.stringify(p));
+		await page.click(TRIGGER('nav-products'));
+		await sleep(350);
+		p = await headerPaint(page);
+		check('home, top, panel open: the bar turns dark with the panel', p.alpha === 1 && p.dark, JSON.stringify(p));
+		await page.keyboard.press('Escape');
+		await page.evaluate(() => window.scrollTo(0, 300));
 		await sleep(500);
-		const c1 = await colour();
-		const rgb = (c) => /rgba?\(([^)]+)\)/.exec(c)[1].split(/[,\s/]+/).filter(Boolean).slice(0, 3).map(Number);
-		const lum = (c) => rgb(c).reduce((a, v) => a + v, 0) / 3;
-		check('hero buttons: Sign in is white over the hero', c0.color === 'rgb(255, 255, 255)', JSON.stringify(c0));
-		check('hero buttons: Sign in is dark once the bar is solid', lum(c1.color) < 80, JSON.stringify(c1));
+		p = await headerPaint(page);
+		check('home, scrolled inside the hero: a dark bar, still white text', p.scrolled && p.overHero && p.alpha === 1 && p.dark && p.ink === 'rgb(255, 255, 255)', JSON.stringify(p));
+		await page.evaluate(() => window.scrollTo(0, document.getElementById('hero').offsetHeight + 300));
+		await sleep(500);
+		p = await headerPaint(page);
+		check('home, past the hero: a light bar with dark text', p.scrolled && !p.overHero && p.alpha === 1 && !p.dark && p.ink !== 'rgb(255, 255, 255)', JSON.stringify(p));
+
+		await go(page, '/pricing/');
+		await sleep(300);
+		p = await headerPaint(page);
+		check('pricing, top: the bar is see-through over the page', p.alpha === 0, JSON.stringify(p));
+		await page.evaluate(() => window.scrollTo(0, 400));
+		await sleep(500);
+		p = await headerPaint(page);
+		check('pricing, scrolled: the bar is solid', p.scrolled && p.alpha === 1, JSON.stringify(p));
+
+		await go(page, '/product/');
+		await sleep(300);
+		p = await headerPaint(page);
+		check('product: the bar is solid from the top', p.alpha === 1 && !p.dark, JSON.stringify(p));
 	});
 
-	// ── drawer buttons, short drawer ─────────────────────────────────────────────
-	for (const height of [844, 500]) {
-		await withPage({ width: 390, height }, async (page) => {
-			await go(page, '/product/');
-			await page.click('.burger');
-			await sleep(400);
-			if (height === 500) {
-				await page.click(TOP('nav-products'));
-				await page.click(TOP('nav-learn'));
-				await sleep(300);
-			}
-			const inView = (sel) =>
-				page.evaluate((s) => {
-					const el = document.querySelector(s);
-					el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-					const r = el.getBoundingClientRect();
-					const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-					return {
-						ok: r.height > 0 && r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth && (hit === el || el.contains(hit)),
-						top: r.top,
-						bottom: r.bottom,
-					};
-				}, sel);
-			const signin = await inView('#Menu_SignIn');
-			const tryIt = await inView('#Menu_TryItNow');
-			const name = height === 500 ? 'short drawer' : 'drawer buttons';
-			check(`${name}: Sign in and Try for free are reachable`, signin.ok && tryIt.ok, JSON.stringify({ signin, tryIt }));
-			if (height === 844) {
-				const below = await page.evaluate(() => {
-					const last = [...document.querySelectorAll('.sm__row > li > .sm__top')].at(-1).getBoundingClientRect();
-					const b = document.getElementById('Menu_SignIn').getBoundingClientRect();
-					return { ok: b.top >= last.bottom, fromBottom: window.innerHeight - b.bottom };
-				});
-				check('drawer buttons: they sit below the last item, at the bottom', below.ok && below.fromBottom < 60, JSON.stringify(below));
-				const others = await visibleCount(page, '.head-buttons .gh-button, .head-buttons search-button, .head-buttons theme-toggle');
-				check('drawer buttons: the button group shows only its two buttons', others === 0, `${others}`);
-			} else {
-				const firstItem = await inView('.sm__row > li:first-child > .sm__top');
-				const lastItem = await inView('.sm__row > li:last-child > .sm__top');
-				check('short drawer: the first and the last menu item can be scrolled to', firstItem.ok && lastItem.ok, JSON.stringify({ firstItem, lastItem }));
-			}
-		});
-	}
-
-	// ── search and theme unchanged ───────────────────────────────────────────────
+	// ── which buttons each kind of page has ──────────────────────────────────────
 	await withPage({ width: 1440 }, async (page) => {
-		const count = async (path) => {
+		const has = () =>
+			page.evaluate(() => {
+				const h = document.querySelector('header.header');
+				const shown = (sel) => !!h.querySelector(sel) && h.querySelector(sel).getClientRects().length > 0;
+				return { search: shown('search-button button'), theme: shown('theme-toggle button'), github: shown('.gh-button'), signin: shown('.signin'), try: shown('.try'), look: h.querySelector('.logo-burger').dataset.headerLook };
+			});
+		for (const [path, look, search, theme] of [
+			['/docs/pe/getting-started/', 'docs', true, true],
+			['/docs/lite/', 'docs', true, true],
+			['/blog/', 'marketing', true, true],
+			['/pricing/', 'marketing', false, true],
+			['/404.html', 'marketing', false, true],
+			['/product/', 'marketing', false, false],
+			['/', 'marketing', false, false],
+			['/mqtt/qos/', 'marketing', false, false],
+		]) {
 			await go(page, path);
-			return { search: await visibleCount(page, 'search-button'), theme: await visibleCount(page, 'theme-toggle') };
-		};
-		const docs = await count('/docs/getting-started/');
-		const home = await count('/');
-		const product = await count('/product/');
-		check('search and theme: shown on docs', docs.search === 1 && docs.theme === 1, JSON.stringify(docs));
-		check('search and theme: hidden on the landing and the product page', home.search + home.theme + product.search + product.theme === 0, JSON.stringify({ home, product }));
+			const h = await has();
+			check(`${path}: ${look} look, search ${search ? 'on' : 'off'}, theme switch ${theme ? 'on' : 'off'}`, h.look === look && h.search === search && h.theme === theme && h.github && h.signin && h.try, JSON.stringify(h));
+		}
+		await go(page, '/docs/search/');
+		check('/docs/search/: no search button beside the page’s own search box', !(await has()).search);
+
+		await go(page, '/product/');
+		const links = await page.evaluate(() => {
+			const s = document.querySelector('header.header .signin');
+			const t = document.querySelector('header.header .try');
+			return {
+				signin: [s.getAttribute('href'), s.target, s.rel, s.hasAttribute('data-demo-dialog')],
+				try: [t.getAttribute('href'), t.target, t.rel, t.hasAttribute('data-demo-dialog'), t.getAttribute('aria-haspopup'), t.classList.contains('gtm_button')],
+			};
+		});
+		check('Sign in: straight to the demo, in a new tab', JSON.stringify(links.signin) === JSON.stringify(['https://demo.tbmq.io/', '_blank', 'noopener noreferrer', false]), JSON.stringify(links.signin));
+		check('Try for free: opens the dialog, with the demo sign-up as its own link', JSON.stringify(links.try) === JSON.stringify(['https://demo.tbmq.io/signup', '_blank', 'noopener noreferrer', true, 'dialog', true]), JSON.stringify(links.try));
 	});
 
-	if (process.env.SHOT) {
-		mkdirSync(process.env.SHOT, { recursive: true });
-		await withPage({ width: 390, height: 844 }, async (page) => {
-			await go(page, '/product/', 'networkidle2');
-			await page.addStyleTag({ content: 'astro-dev-toolbar,#cookie-banner{display:none!important}' });
-			await page.click('.burger');
-			await sleep(400);
-			const file = join(process.env.SHOT, 'drawer@390.png');
-			await page.screenshot({ path: file, captureBeyondViewport: false });
-			console.log(file);
+	// ── the bar fits at every width, on its fullest pages ────────────────────────
+	for (const width of [320, 360, 390, 414, 599, 600, 719, 720, 900, 1024, 1279, 1280, 1300, 1366, 1439, 1440, 1600, 1920]) {
+		await withPage({ width, height: 800 }, async (page) => {
+			for (const path of ['/docs/pe/getting-started/', '/blog/', '/']) {
+				await go(page, path);
+				const f = await barFit(page);
+				const fits = !f.sideways && f.inWindow && f.logoClear && f.rowClear && f.oneLine;
+				check(`${width}px ${path}: the bar fits`, fits, JSON.stringify(f));
+				if (path === '/') check(`${width}px: the menu row shows from 1280px only`, f.rowShown === width >= 1280, String(f.rowShown));
+			}
 		});
 	}
+
+	// ── search and the theme switch ──────────────────────────────────────────────
+	await withPage({ width: 1440 }, async (page) => {
+		// Google's script is not needed to check that the dialog opens and closes.
+		await page.setRequestInterception(true);
+		page.on('request', (r) => (/cse\.google\.com/.test(r.url()) ? r.abort() : r.continue()));
+		await go(page, '/docs/pe/getting-started/');
+		await quiet(page);
+		const searchOpen = () => page.evaluate(() => !!document.querySelector('#tb-search-modal.open'));
+		await page.click('search-button button');
+		await sleep(300);
+		check('search: the button opens the dialog', await searchOpen());
+		await page.keyboard.press('Escape');
+		await sleep(200);
+		check('search: Escape closes it', !(await searchOpen()));
+		await page.keyboard.down('Control');
+		await page.keyboard.press('KeyK');
+		await page.keyboard.up('Control');
+		await sleep(300);
+		check('search: Ctrl K opens it', await searchOpen());
+		await page.keyboard.press('Escape');
+
+		const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
+		const before = await theme();
+		await page.click('theme-toggle button');
+		const after = await theme();
+		check('theme switch: one click changes the theme', before !== after, `${before} → ${after}`);
+		const stored = await page.evaluate(() => localStorage.getItem('starlight-theme'));
+		check('theme switch: the choice is stored', stored === after, String(stored));
+	});
+}
+
+if (want('sheet')) {
+	// ── phone ────────────────────────────────────────────────────────────────────
+	for (const path of ['/', '/docs/pe/getting-started/']) {
+		await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+			await go(page, path);
+			await quiet(page);
+			await page.click(TOGGLE);
+			await sleep(450);
+			let s = await sheetState(page);
+			check(`phone ${path}: Menu opens the sheet and locks the page`, s.open && s.headerOpen && s.rootMarked && s.expanded === 'true' && s.locked, JSON.stringify(s));
+			check(`phone ${path}: the sheet starts where the bar ends`, Math.abs(s.top - s.barBottom) <= 1, `${s.top} vs ${s.barBottom}`);
+			const rows = await page.evaluate(() => [...document.querySelectorAll('.sm__view--root .sm__sheet-row')].map((r) => r.textContent.trim()));
+			check(`phone ${path}: the same eight items as the desktop row`, JSON.stringify(rows) === JSON.stringify(LABELS), rows.join(', '));
+			if (path === '/') await shot(page, 'sheet');
+
+			await page.click('[data-sm-open-view="nav-products"]');
+			await sleep(450);
+			s = await sheetState(page);
+			const links = await page.evaluate(() =>
+				[...document.querySelectorAll('[data-sm-view="nav-products"] a')].filter((a) => a.getClientRects().length).map((a) => a.getAttribute('href'))
+			);
+			check(`phone ${path}: a row opens its section in place of the list`, s.view === 'nav-products' && links.join() === '/product/,/product/lite/,/pricing/,/installations/,/live-demo/', `${s.view}: ${links.join()}`);
+			if (path === '/') await shot(page, 'sheet-products');
+			await page.click('[data-sm-view="nav-products"] [data-sm-back]');
+			await sleep(450);
+			check(`phone ${path}: Back returns to the list`, (await sheetState(page)).view === 'root');
+
+			await page.click('[data-sm-open-view="nav-docs"]');
+			await sleep(450);
+			await page.keyboard.press('Escape');
+			await sleep(450);
+			s = await sheetState(page);
+			check(`phone ${path}: Escape goes back a level first`, s.open && s.view === 'root', JSON.stringify(s));
+			await page.keyboard.press('Escape');
+			await sleep(300);
+			s = await sheetState(page);
+			check(`phone ${path}: then closes the sheet and unlocks the page`, !s.open && !s.headerOpen && !s.rootMarked && s.expanded === 'false' && !s.locked, JSON.stringify(s));
+		});
+	}
+
+	// ── the account buttons and their analytics ids move into the sheet ───────────
+	await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+		await go(page, '/product/');
+		await quiet(page);
+		const where = () =>
+			page.evaluate(() =>
+				['Menu_SignIn', 'Menu_TryItNow', 'Menu_Pricing', 'blog-link'].map((id) => {
+					const all = document.querySelectorAll(`[id="${id}"]`);
+					return all.length === 1 && !!all[0].closest('[data-sm-sheet]');
+				})
+			);
+		check('phone: the four ids sit on the sheet’s copies', (await where()).every(Boolean), (await where()).join(','));
+		const barButtons = await page.evaluate(() => [...document.querySelectorAll('header.header .head-buttons :is(.signin, .try)')].filter((b) => b.getClientRects().length).length);
+		check('phone: Sign in and Try for free are not in the bar', barButtons === 0, String(barButtons));
+		await page.click(TOGGLE);
+		await sleep(450);
+		const foot = await page.evaluate(() => [...document.querySelectorAll('.sm__sheet-foot a')].filter((a) => a.getClientRects().length).map((a) => [a.textContent.trim(), a.getAttribute('href')]));
+		check('phone: both are at the foot of the sheet', JSON.stringify(foot) === JSON.stringify([['Sign in', 'https://demo.tbmq.io/'], ['Try for free', 'https://demo.tbmq.io/signup']]), JSON.stringify(foot));
+	});
+	await withPage({ width: 1440 }, async (page) => {
+		await go(page, '/product/');
+		const inBar = await page.evaluate(() =>
+			['Menu_SignIn', 'Menu_TryItNow', 'Menu_Pricing', 'blog-link'].map((id) => {
+				const all = document.querySelectorAll(`[id="${id}"]`);
+				return all.length === 1 && !all[0].closest('[data-sm-sheet]');
+			})
+		);
+		check('desktop: the four ids sit on the bar’s copies', inBar.every(Boolean), inBar.join(','));
+	});
+
+	// ── the cookie notice stays on top of the sheet ──────────────────────────────
+	await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+		await go(page, '/product/');
+		await page.addStyleTag({ content: 'astro-dev-toolbar{display:none!important}' });
+		await page.click(TOGGLE);
+		await sleep(450);
+		const top = await page.evaluate(() => {
+			const banner = document.getElementById('cookie-banner');
+			const b = banner.getBoundingClientRect();
+			const el = document.elementFromPoint(b.left + b.width / 2, b.top + 8);
+			return { visible: banner.classList.contains('is-visible'), onTop: banner.contains(el) };
+		});
+		check('phone: the cookie notice shows over the open sheet', top.visible && top.onTop, JSON.stringify(top));
+	});
+
+	// ── tablet: the list beside the open section ─────────────────────────────────
+	await withPage({ width: 900, height: 1100, touch: true }, async (page) => {
+		await go(page, '/docs/lite/');
+		await quiet(page);
+		await page.click(TOGGLE);
+		await sleep(450);
+		const split = await page.evaluate(() => {
+			const shown = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility === 'visible';
+			const sheet = document.querySelector('[data-sm-sheet]');
+			return {
+				view: sheet.dataset.view,
+				list: shown(sheet.querySelector('.sm__view--root .sm__sheet-row')),
+				section: shown(sheet.querySelector('[data-sm-view="nav-docs"] a')),
+				expanded: sheet.querySelector('[data-sm-open-view="nav-docs"]').getAttribute('aria-expanded'),
+			};
+		});
+		check('tablet: the sheet opens on the page’s own section, beside the list', split.view === 'nav-docs' && split.list && split.section && split.expanded === 'true', JSON.stringify(split));
+		await shot(page, 'sheet-tablet');
+	});
+
+	// ── without JavaScript ───────────────────────────────────────────────────────
+	await withPage({ width: 390, height: 844, js: false }, async (page) => {
+		await go(page, '/product/');
+		const r = await page.evaluate(() => {
+			const shown = (el) => !!el && el.getClientRects().length > 0;
+			const h = document.querySelector('header.header');
+			return { jsButton: shown(h.querySelector('[data-sm-toggle]')), link: shown(h.querySelector('a.sm__nojs')), href: h.querySelector('a.sm__nojs').getAttribute('href') };
+		});
+		check('no JavaScript, phone: a plain Menu link replaces the button', !r.jsButton && r.link && r.href === '#sm-sheet', JSON.stringify(r));
+		await go(page, '/product/#sm-sheet');
+		const links = await page.evaluate(() => [...document.querySelectorAll('#sm-sheet a')].filter((a) => a.getClientRects().length).length);
+		check('no JavaScript, phone: that link shows every menu link in one list', links >= 20, String(links));
+	});
+}
+
+if (want('dialog')) {
+	const dialog = (page) =>
+		page.evaluate(() => {
+			const d = document.querySelector('dialog[data-demo-dialog-root]');
+			const option = d.querySelector('[data-demo-option]');
+			const install = d.querySelector('.dd__alt a');
+			return {
+				open: d.open && !d.classList.contains('dd--closing'),
+				title: d.querySelector('#demo-dialog-title').textContent.trim(),
+				labelled: d.getAttribute('aria-labelledby'),
+				option: [option.getAttribute('href'), option.target, option.rel, option.querySelector('.dd__option-name').textContent.trim()],
+				install: [install.getAttribute('href'), install.textContent.trim()],
+				focus: document.activeElement === option ? 'option' : document.activeElement?.className || document.activeElement?.tagName,
+				locked: getComputedStyle(document.documentElement).overflow === 'hidden',
+			};
+		});
+
+	await withPage({ width: 1440 }, async (page) => {
+		await go(page, '/product/');
+		await quiet(page);
+		check('dialog: closed when the page loads', !(await dialog(page)).open);
+		await page.click(TRY);
+		await sleep(500);
+		let d = await dialog(page);
+		check('Try for free opens the dialog and locks the page', d.open && d.locked, JSON.stringify(d));
+		check('dialog: titled, and labelled by its title', d.title === 'Try TBMQ in your browser' && d.labelled === 'demo-dialog-title', d.title);
+		check('dialog: the one choice is the demo sign-up, in a new tab', JSON.stringify(d.option) === JSON.stringify(['https://demo.tbmq.io/signup', '_blank', 'noopener noreferrer', 'Live demo']), JSON.stringify(d.option));
+		check('dialog: the other way is the Community installation docs', JSON.stringify(d.install) === JSON.stringify(['/docs/installation/', 'Install on your own servers']), JSON.stringify(d.install));
+		check('dialog: focus lands on the choice, not on Close', d.focus === 'option', String(d.focus));
+		await shot(page, 'dialog');
+
+		await page.keyboard.press('Escape');
+		await sleep(500);
+		d = await dialog(page);
+		const back = await page.evaluate((sel) => document.activeElement === document.querySelector(sel), TRY);
+		check('dialog: Escape closes it, unlocks the page and returns focus', !d.open && !d.locked && back, JSON.stringify({ ...d, back }));
+
+		await page.click(TRY);
+		await sleep(500);
+		await page.click('.dd__close');
+		await sleep(500);
+		check('dialog: the close button closes it', !(await dialog(page)).open);
+
+		await page.click(TRY);
+		await sleep(500);
+		await page.mouse.click(60, 700);
+		await sleep(500);
+		check('dialog: a click on the backdrop closes it', !(await dialog(page)).open);
+
+		// A modified click is the browser's: the link's own href, no dialog.
+		const modified = await page.evaluate((sel) => {
+			const a = document.querySelector(sel);
+			a.addEventListener('click', (e) => e.preventDefault(), { once: true });
+			const e = new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true });
+			a.dispatchEvent(e);
+			return true;
+		}, TRY);
+		await sleep(400);
+		check('dialog: Ctrl-click on Try for free does not open it', modified && !(await dialog(page)).open);
+
+		// Opened from the menu panel: the panel closes behind it.
+		await page.click(TRIGGER('nav-products'));
+		await sleep(350);
+		await page.click(TRY);
+		await sleep(500);
+		const both = await page.evaluate(() => ({ dialog: document.querySelector('dialog[data-demo-dialog-root]').open, panel: !document.querySelector('[data-sm-one]').hidden }));
+		check('dialog: opening it closes an open menu panel', both.dialog && !both.panel, JSON.stringify(both));
+	});
+
+	await withPage({ width: 390, height: 844, touch: true }, async (page) => {
+		await go(page, '/');
+		await quiet(page);
+		await page.click(TOGGLE);
+		await sleep(450);
+		await page.click('.sm__foot-try');
+		await sleep(600);
+		const r = await page.evaluate(() => {
+			const d = document.querySelector('dialog[data-demo-dialog-root]');
+			const panel = d.querySelector('.dd__panel').getBoundingClientRect();
+			return { open: d.open, sheet: !document.querySelector('[data-sm-sheet]').hidden, atBottom: Math.round(panel.bottom) === innerHeight, fullWidth: Math.round(panel.width) === innerWidth };
+		});
+		check('phone: Try for free in the sheet opens the dialog and closes the sheet', r.open && !r.sheet, JSON.stringify(r));
+		check('phone: the dialog is a sheet at the bottom of the screen', r.atBottom && r.fullWidth, JSON.stringify(r));
+		await shot(page, 'dialog-phone');
+	});
+
+	await withPage({ width: 1440, js: false }, async (page) => {
+		await go(page, '/product/');
+		const r = await page.evaluate(() => ({ href: document.querySelector('header.header .try').getAttribute('href'), open: document.querySelector('dialog[data-demo-dialog-root]').open }));
+		check('no JavaScript: Try for free is a plain link to the demo sign-up', r.href === 'https://demo.tbmq.io/signup' && !r.open, JSON.stringify(r));
+	});
 }
 
 done();

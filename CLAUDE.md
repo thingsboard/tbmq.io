@@ -37,6 +37,7 @@ pnpm lint:redirects   # Detect redirect chains
 pnpm format           # Format with Prettier
 pnpm generate:redirects      # Regenerate public/_redirects + public/redirects.json
 pnpm generate:nav-sprite     # Rebuild public/nav-sprite.svg + its manifest
+pnpm update:stars            # Refresh the GitHub star count in src/data/github-stars.json
 ```
 
 `generate:nav-sprite` already runs as part of `build` and `build:fast`. Run it by hand after adding or editing an icon in `src/assets/images/landings/nav/` — otherwise `NavIcon` finds no manifest entry and renders nothing (it warns in the dev/build log).
@@ -83,6 +84,23 @@ There is **no** `config/locales.ts` and **no** per-language content directories 
 Custom component overrides live in `src/components/starlight/` — these replace default Starlight components (Hero, Sidebar, Footer, Search, Header, etc.). They are registered in the `starlight({ components: {...} })` block of `astro.config.ts`.
 
 Landing/marketing components live under `src/components/` (notably `Landing/`, `MqttBroker/`, `Company/`, `Installations/`).
+
+### Site Header
+
+The header is the upstream ThingsBoard site's (`SiteMenu/`, `Landing/HeaderContent.astro`, the two `Header*Watch` components, `util/modal-dialog.ts`, `util/layers.ts`, `util/scroll-lock.ts`, `styles/_button.scss`), taken as is so its fixes cherry-pick. What is TBMQ's own:
+
+- **Data** — `src/data/navigation.ts` (the menu row and its sections, in upstream's shape), `menu-featured.ts` (the promo row under a section), `cta-destinations.ts` (where Sign in and Try for free lead). `SiteMenu/menu-model.test.ts` pins the row, the section ownership and the analytics ids.
+- **Product tiles** — a section's `badge` is drawn by `ProductTile`, the same tile the docs picker and the installations hub use, not upstream's badge sprites. Upstream's customer-logo links are not here either.
+- **`Landing/DemoDialog.astro`** — what "Try for free" opens: the demo sign-up, or the installation docs. Any link with `data-demo-dialog` opens it; "Sign in" deliberately does not (one destination, nothing to choose).
+- **Search and the theme switch** — `SearchButton.astro` keeps this site's own Google search dialog behind upstream's button; `ThemeToggle.astro` stays in the bar because the footer here has no theme choice.
+
+**Two layouts render it.** Docs pages get the header from Starlight (`starlight/Header.astro`); marketing pages are standalone documents here, not `<StarlightPage>` as upstream, so `BaseLayout` renders `Landing/Header.astro` itself. Both must put `HeaderContent` directly inside `header.header`: its styles key on `header.header:has(> [data-header-look])`. A page's header comes from `BaseLayout` props, resolved by `util/header-config.ts`: `hero="dark" | "light"` makes the bar see-through over a hero (the dark one needs the hero to be `#hero`), `search` adds the search button (docs pages have it by default), and `forceLightTheme` removes the theme switch. `pageId` is only a hook for a page's own CSS now; the header no longer reads it.
+
+Breakpoints live in `_variables.scss` (`$menu-row-from`, `$menu-split-from`, `$bar-compact-below`) and are mirrored as custom properties in `_theme.scss` for `SiteMenu/menu-query.ts` — change them in the first and the second follows. `$menu-row-from` is wider than upstream's because eight menu items need the room; re-check the bar on a docs page at that width after adding an item.
+
+Analytics ids on links that exist twice (bar and phone sheet) are kept on whichever copy shows: mark both copies with `data-analytics-id` and `SiteMenu`'s script moves the `id`. GTM hooks on these ids and nothing in this repo does, so check GTM before renaming one.
+
+The GitHub button renders the count in `src/data/github-stars.json` and replaces it with the live one after load, so the bar never changes width; `pnpm update:stars` refreshes the file.
 
 ### Available Components
 

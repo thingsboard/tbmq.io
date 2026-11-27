@@ -1,9 +1,9 @@
 // Relative specifier ending in `.ts`: `menu-model.test.ts` loads this under `node --test`,
 // which resolves no tsconfig paths.
-import { allSubmenus, mainNavItems, type NavItem, type SubMenu } from '../../data/site-menu.ts';
+import { allSubmenus, mainNavItems, type NavItem, type SubMenu } from '../../data/navigation.ts';
 
-/** A top-level menu item and its section, if it has one. The menu renders from `MENU_ENTRIES`. */
-export interface MenuEntry {
+/** A top-level menu item and its section, if it has one. Both menus render from `MENU_ENTRIES`. */
+interface MenuEntry {
 	item: NavItem;
 	sub?: SubMenu;
 }

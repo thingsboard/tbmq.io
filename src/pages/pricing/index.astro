@@ -91,7 +91,7 @@ const tbmqSubTabs = enrichTabs([
 const jsonLd = pricingJsonLd({ name: title, description, planCount: tbmqSubTabs.length });
 ---
 
-<BaseLayout title={title} description={description} pageId="pricing" jsonLd={jsonLd}>
+<BaseLayout title={title} description={description} pageId="pricing" hero="light" jsonLd={jsonLd}>
 	<PricingBackground />
 	<main class="pricing-page">
 		<PricingHero />

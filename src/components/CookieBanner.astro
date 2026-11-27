@@ -41,6 +41,12 @@
 		display: flex;
 	}
 
+	/* The open phone menu covers the page (its header is at 10000, `SiteMenu`); the notice stays on
+	   top of it, so it can still be answered. */
+	html[data-sm-sheet-open] #cookie-banner {
+		z-index: 10001;
+	}
+
 	#cookie-banner .cookie-text {
 		display: flex;
 		flex-direction: column;

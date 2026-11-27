@@ -15,12 +15,12 @@ pnpm dev --port 4331
 
 node .superpowers/checks/two-product-site/docs.mjs                              # docs picker, sidebars, pagination
 node .superpowers/checks/two-product-site/pages.mjs product-lite installations  # the two pages
-node .superpowers/checks/two-product-site/header.mjs menu shell                 # the menu and the bar (a few minutes)
+node .superpowers/checks/two-product-site/header.mjs menu bar sheet dialog      # the header, part by part (a few minutes)
 ```
 
 Each script prints `ok …` / `FAIL …` lines and exits non-zero on a failure.
 
-- `header.mjs` and `docs.mjs` take `SHOT=<dir>` to also save shots of the open panels, the drawer and the picker.
+- `header.mjs` and `docs.mjs` take `SHOT=<dir>` to also save shots of the open panels, the menu sheet, the dialog and the picker.
 - `pages.mjs` takes `BANNED_TEXT=<regex>` to also assert that neither page's text matches it.
 - `shots.mjs <outDir> <width,width,…> <path>…` takes full-page screenshots (`DARK=1`, `SCROLL=<px>`).
 - `crop.py`, `compare.py`, `diffrows.py` cut regions out of shots and compare two shot folders (need Pillow).

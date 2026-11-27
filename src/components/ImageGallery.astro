@@ -626,7 +626,7 @@ const useCardMode = cardMode && isSingle;
 		let pswp: PhotoSwipe | undefined;
 		let themeObserver: MutationObserver | null = null;
 
-		lb.on('beforeOpen', lockScroll);
+		lb.on('beforeOpen', () => lockScroll('lightbox'));
 
 		lb.on('afterInit', () => {
 			pswp = lb.pswp;
@@ -673,7 +673,7 @@ const useCardMode = cardMode && isSingle;
 		});
 
 		lb.on('destroy', () => {
-			unlockScroll();
+			unlockScroll('lightbox');
 			themeObserver?.disconnect();
 			themeObserver = null;
 			pswp = undefined;

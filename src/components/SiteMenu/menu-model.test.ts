@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MENU_ENTRIES, MENU_SECTIONS, inSection, isHere } from './menu-model.ts';
+import { MENU_SECTION_PROMOS } from '../../data/menu-featured.ts';
 
 const section = (id: string) => MENU_SECTIONS.find((s) => s.sub.id === id)!.sub;
 const hrefs = (id: string) => section(id).groups.flatMap((g) => g.items.map((i) => i.href));
@@ -21,17 +22,22 @@ test('Products and Docs list both products, Lite marked Beta', () => {
 	assert.deepEqual(hrefs('nav-docs'), ['/docs/pe/', '/docs/lite/']);
 	for (const id of ['nav-products', 'nav-docs']) {
 		const [tbmq, lite] = section(id).groups[0]!.items;
-		assert.deepEqual([tbmq!.tile, tbmq!.badge, lite!.tile, lite!.badge], ['tbmq', undefined, 'tbmq-lite', 'Beta']);
+		assert.deepEqual([tbmq!.badge, tbmq!.tag, lite!.badge, lite!.tag], ['tbmq', undefined, 'tbmq-lite', 'Beta']);
 	}
+});
+
+test('only Products has a promo row, ending on the live demo', () => {
 	assert.deepEqual(
-		section('nav-products').promos!.map((p) => [p.href, !!p.featured]),
+		MENU_SECTION_PROMOS['nav-products']!.map((p) => [p.href, !!p.featured]),
 		[
 			['/pricing/', false],
 			['/installations/', false],
 			['/live-demo/', true],
 		]
 	);
-	assert.equal(section('nav-docs').promos, undefined);
+	assert.deepEqual(Object.keys(MENU_SECTION_PROMOS), ['nav-products']);
+	// A promo row keyed by a section that does not exist would never render.
+	for (const id of Object.keys(MENU_SECTION_PROMOS)) assert.ok(section(id), id);
 });
 
 test('Products is current on the product pages and the installations hub', () => {
@@ -46,9 +52,11 @@ test('Docs is current on every docs page, Lite included', () => {
 		assert.equal(inSection(p, section('nav-docs')), true, p);
 });
 
-test('Learn and Company are current below their own links only', () => {
+test('Learn is current on every guide, Company below its own links only', () => {
 	assert.equal(inSection('/mqtt/', section('nav-learn')), true);
 	assert.equal(inSection('/mqtt/qos/', section('nav-learn')), true);
+	// A guide the section does not list.
+	assert.equal(inSection('/mqtt/flow-control/', section('nav-learn')), true);
 	assert.equal(inSection('/contact-us/', section('nav-company')), true);
 	assert.equal(inSection('/contact-us-thanks/', section('nav-company')), false);
 });
@@ -75,12 +83,9 @@ test('plain links and their analytics ids', () => {
 	);
 	assert.deepEqual([byLabel['Blog']!.href, byLabel['Blog']!.id], ['/blog/', 'blog-link']);
 	assert.equal(byLabel['Learn']!.href, undefined);
-	assert.equal(
-		section('nav-learn')
-			.groups.flatMap((g) => g.items)
-			.find((i) => i.href === '/mqtt/')!.id,
-		'learn-link'
-	);
+	// The guides hub is the link under Learn's list, and keeps the id the hub link always had.
+	const [guides] = section('nav-learn').groups;
+	assert.deepEqual([guides!.more!.href, guides!.more!.id], ['/mqtt/', 'learn-link']);
 	assert.equal(isHere('/pricing/', '/pricing/'), true);
 	assert.equal(isHere('/pricing/', '/'), false);
 });

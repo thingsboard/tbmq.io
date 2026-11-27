@@ -54,8 +54,7 @@ const stats: Stat[] = [
 
 	#benchmark-hero {
 		background-color: #00240f;
-		// Clear the fixed header (the .tb-topbar sticky unit pulls content up
-		// by $header-height via a negative margin), then add breathing room.
+		// Clear the fixed header, which overlaps the top of the page, then add breathing room.
 		padding: calc(#{$header-height} + 64px) $spacing-6 $spacing-20;
 	}
 
