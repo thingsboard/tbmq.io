@@ -139,6 +139,8 @@ $breakpoint-2xl: 1500px;
 
 // Layout
 $header-height: 80px;
+// The homepage hero's side gutter, from upstream's split hero (where the fixed bar shares it).
+$bar-inset: clamp(24px, calc(0.5rem + 2vw), 56px);
 $container-max-width: 1080px;
 $container-max-width-sm: 1200px;
 
@@ -346,6 +348,21 @@ $z-tooltip: 1200;
 	@include media-down(md) {
 		font-size: 30px;
 		line-height: 1.2;
+	}
+}
+
+// Hero h1: 48px → 44px (lg) → 34px (md), bold
+@mixin hero-title {
+	font-size: 48px;
+	font-weight: $font-weight-bold;
+	line-height: 1.15;
+
+	@include media-down(lg) {
+		font-size: 44px;
+	}
+
+	@include media-down(md) {
+		font-size: 34px;
 	}
 }
 

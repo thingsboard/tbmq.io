@@ -1,439 +1,309 @@
 ---
-import { Products } from '@models/site.models';
-import { Icon } from 'astro-icon/components';
-import SmartImage from '@components/SmartImage.astro';
+import CtaButton from '@components/Landing/CtaButton.astro';
+import type { Cta } from '@models/cta';
 
-interface HeroButton {
-	text: string;
-	href: string;
-	variant?: 'primary' | 'outline' | 'white';
-	ariaLabel?: string;
-	srOnlySuffix?: string;
-	target?: string;
-}
-
-interface Achievement {
-	href: string;
-	src: string;
-	alt: string;
-	width?: number;
-	height?: number;
-}
-
+// Ported from upstream's `Landing/Hero.astro` (thingsboard.io). The video panel is a `visual`
+// slot here; keep the rest close to upstream so its hero fixes cherry-pick cleanly.
 interface Props {
-	/**
-	 * Product type for styling and features
-	 */
-	product?: Products;
-	/**
-	 * Main title(s) - can be string or array of strings
-	 */
-	title: string | string[];
-	/**
-	 * Subtitle text
-	 */
+	/** Every line but the last is a kicker sitting above the headline. */
+	title: string[];
 	subtitle: string;
-	/**
-	 * Hero buttons
-	 */
-	buttons?: HeroButton[];
-	/**
-	 * Show down arrow for scrolling
-	 */
-	showArrow?: boolean;
-	/**
-	 * Anchor link for arrow/button
-	 */
-	anchorLink?: string;
-	/**
-	 * Custom background image URL
-	 */
-	backgroundImage?: string;
-	/**
-	 * Custom achievement override (if not using default)
-	 */
-	achievement?: Achievement | null;
-	/**
-	 * Additional CSS class for hero section
-	 */
-	className?: string;
+	buttons?: Cta[];
 }
 
-const {
-	title,
-	subtitle,
-	buttons = [],
-	showArrow = true,
-	anchorLink = '#intro',
-	backgroundImage = '/images/hero/tb-cover.webp',
-	achievement,
-	className = '',
-} = Astro.props;
-
-// Achievement badge renders only when an explicit achievement is provided.
-const achievementData = achievement ?? null;
-const titles = Array.isArray(title) ? title : [title];
-// A `background` slot supplies its own dark artwork: it replaces the image
-// cover and needs no dimming overlay on top.
-const hasArt = Astro.slots.has('background');
+const { title, subtitle, buttons = [] } = Astro.props;
 ---
 
-<section id="hero" class:list={['light-text', className, hasArt && 'has-art']}>
-	<!-- arrow-hidden sentinel: IntersectionObserver-driven, replaces a forced-reflow scroll listener -->
-	<div class="hero-scroll-sentinel" aria-hidden="true"></div>
-	<div class="hero-cover" style={hasArt ? undefined : `background-image: url(${backgroundImage})`}>
-		<slot name="background" />
-	</div>
-
-	{
-		achievementData && (
-			<div class="achievement">
-				<a href={achievementData.href}>
-					<SmartImage
-						class="achieve"
-						src={achievementData.src}
-						alt={achievementData.alt}
-						width={achievementData.width || 110}
-						height={achievementData.height || 160}
-					/>
-				</a>
-			</div>
-		)
-	}
-
-	<div id="hero-content">
-		<h1 class="header-animation">
-			{titles.map((t) => <span class="tb-title">{t}</span>)}
+<section id="hero" class="hero">
+	<div class="hero__content">
+		<h1>
+			{title.map((line) => <span class="hero__line">{line}</span>)}
 		</h1>
-		<h2 class="header-animation tb-sub-title">{subtitle}</h2>
+		<p class="hero__subtitle">{subtitle}</p>
 
 		{
 			buttons.length > 0 && (
-				<div class="header-animation hero-buttons">
-					{buttons.map((button) => (
-						<a
-							href={button.href}
-							class:list={[
-								button.variant === 'outline' ? 'learn-tb' : 'button',
-								button.variant === 'primary' && 'accent',
-								button.variant === 'white' && 'white',
-							]}
-							aria-label={button.ariaLabel}
-							target={button.target}
-							rel={button.target === '_blank' ? 'noopener noreferrer' : undefined}
-						>
-							{button.text}
-							{button.srOnlySuffix && <span class="sr-only">{button.srOnlySuffix}</span>}
-						</a>
+				<div class="hero__buttons">
+					{buttons.map(({ text, ...button }) => (
+						<CtaButton {...button}>{text}</CtaButton>
 					))}
 				</div>
 			)
 		}
+	</div>
 
-		{
-			showArrow && (
-				<div class="tb-arrow">
-					<a href={anchorLink} aria-label="Scroll to content">
-						<Icon name="tabler:chevron-down" size="32" />
-					</a>
-				</div>
-			)
-		}
-
-		<slot />
+	<div class="hero__panel">
+		<slot name="visual" />
 	</div>
 </section>
 
 <style lang="scss">
 	@use '../../styles/variables' as *;
 
-	#hero {
-		height: 100vh;
-		padding-top: 0;
-		position: relative;
-		overflow: hidden;
-		background: none;
+	// Source order is the layout — auto-placement gives both arrangements.
+	.hero {
+		display: grid;
+		grid-template-columns: 1fr;
+		// Dark on every theme, so fixed values: a 32px dot grid over near-black.
+		background:
+			radial-gradient(rgba(#fff, 0.06) 1px, transparent 1.5px) 0 0 / 32px 32px,
+			#060d09;
+		color: #fff;
+	}
 
-		.hero-scroll-sentinel {
-			position: absolute;
-			top: 60px;
-			left: 0;
-			width: 1px;
-			height: 1px;
-			pointer-events: none;
-			visibility: hidden;
+	.hero__content {
+		// The same room above the headline and under the buttons, so the copy stays centred.
+		--hero-gap: 56px;
+
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding: calc(#{$header-height} + var(--hero-gap)) clamp(20px, calc(0.5rem + 2vw), 56px) var(--hero-gap);
+
+		@media (max-height: 620px) {
+			--hero-gap: 42px;
 		}
 
-		.hero-cover {
-			position: absolute;
-			z-index: -2;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			right: 0;
-			overflow: hidden;
-			background-size: cover;
-			background-color: #000;
-			background-repeat: no-repeat;
-			background-position: 50% 50%;
-		}
+		// Phones (after the short rule, so it wins): the panel sits right under the copy, centred on its axis.
+		@media (max-width: 599px) {
+			--hero-gap: 48px;
 
-		.achievement {
-			position: absolute;
-			top: 90px;
-			right: 20px;
-			z-index: 100;
-
-			.achieve {
-				width: 100%;
-				height: auto;
-
-				@media (max-width: 768px) {
-					width: 60px;
-				}
-			}
-		}
-
-		#hero-content {
-			height: 100%;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-content: center;
 			align-items: center;
-			background-color: rgba(0, 0, 0, 0.72);
 			text-align: center;
-			padding: 0 20px;
-
-			.tb-title {
-				margin-bottom: 20px;
-				font-size: 22px;
-				font-weight: 400;
-				text-shadow: 0 0 18px rgba(0, 0, 0, 0.66);
-				color: white;
-				display: block;
-
-				@media screen and (min-width: 750px) {
-					font-size: 36px;
-				}
-
-				@media screen and (min-width: 1250px) {
-					margin-bottom: 40px;
-					font-size: 64px;
-				}
-			}
-
-			.tb-sub-title {
-				margin-bottom: 40px;
-				font-size: 14px;
-				line-height: 1.5;
-				text-shadow: 0 0 18px rgba(0, 0, 0, 0.66);
-				color: white;
-				font-weight: 300;
-				max-width: 800px;
-
-				@media screen and (min-width: 750px) {
-					font-size: 20px;
-					margin-bottom: 60px;
-				}
-
-				@media screen and (min-width: 1250px) {
-					font-size: 28px;
-					margin-bottom: 80px;
-				}
-			}
-
-			.hero-buttons {
-				display: flex;
-				gap: 20px;
-				flex-wrap: wrap;
-				justify-content: center;
-			}
-
-			.learn-tb {
-				cursor: pointer;
-				line-height: 40px;
-				font-size: 16px;
-				font-weight: 500;
-				padding: 0 15px;
-				border: 1px solid white;
-				background-color: transparent;
-				transition: 0.6s;
-				text-shadow: 0 0 18px rgba(0, 0, 0, 0.66);
-				color: white;
-				text-decoration: none;
-				display: inline-block;
-				border-radius: 4px;
-
-				&:hover {
-					background-color: white;
-					// Same on-light green as the `.white` button below, for the same contrast reason.
-					color: $color-pe-link;
-					text-shadow: none;
-				}
-
-				@media screen and (min-width: 1250px) {
-					line-height: 60px;
-					font-size: 28px;
-					padding: 0 40px;
-					border-width: 3px;
-				}
-			}
-
-			.button {
-				display: inline-block;
-				border-radius: 4px;
-				padding: 0 15px;
-				line-height: 40px;
-				color: white;
-				background-color: var(--tb-main-color);
-				text-decoration: none;
-				font-size: 16px;
-				font-weight: 500;
-				transition: 0.6s;
-
-				&:hover {
-					filter: brightness(1.2);
-				}
-
-				&.accent {
-					background-color: #ff3d00;
-
-					&:hover {
-						filter: brightness(1.1);
-					}
-				}
-
-				&.white {
-					background-color: white;
-					border: 1px solid white;
-					// Not --tb-main-color: the PE green (#17bb52) is only 2.54:1 on white
-					// and fails WCAG AA even at the 3:1 large-text bar. Same on-light green
-					// as the "Get started" CTA at the bottom of the page.
-					color: $color-pe-link;
-					text-shadow: none;
-
-					&:hover {
-						filter: none;
-						background-color: transparent;
-						color: white;
-						text-shadow: 0 0 18px rgba(0, 0, 0, 0.66);
-					}
-
-					@media screen and (min-width: 1250px) {
-						border-width: 3px;
-					}
-				}
-
-				@media screen and (min-width: 1250px) {
-					padding: 0 40px;
-					line-height: 60px;
-					font-size: 28px;
-				}
-			}
-
-			.tb-arrow {
-				position: fixed;
-				bottom: 40px;
-				left: 0;
-				right: 0;
-				margin: auto;
-				width: 40px;
-				height: 40px;
-				opacity: 1;
-				z-index: 24;
-				color: #fff;
-				text-align: center;
-
-				a {
-					color: #fff;
-				}
-			}
-
-			&.arrow-hidden .tb-arrow {
-				display: none;
-			}
-		}
-
-		&.has-art #hero-content {
-			background-color: transparent;
 		}
 	}
 
-	// Animation
-	.header-animation {
-		max-width: 100%;
-		opacity: 0;
-		transform: translate3d(0, 45px, 0);
-		animation-name: slideup-in;
-		animation-duration: 600ms;
-		animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-		animation-fill-mode: forwards;
+	h1 {
+		@include hero-title;
+		line-height: 1.2;
+		margin: 0 0 20px;
+		// Not in upstream: tbmq.io's base styles colour every heading for a light surface.
+		color: inherit;
+
+		@media (max-width: 599px) {
+			max-width: 7em;
+			text-wrap: balance;
+		}
+
+		@media (max-height: 620px), (max-width: $breakpoint-sm) {
+			margin-bottom: 12px;
+		}
 	}
 
-	.header-animation:nth-child(1) {
-		animation-delay: 0ms;
+	.hero__line {
+		display: block;
+
+		// One title line is a headline, not a kicker to nothing. The fade matches the logo strip's marks.
+		&:not(:last-child) {
+			background-image: linear-gradient(to bottom, rgb(255 255 255 / 62%), rgb(255 255 255 / 38%));
+			-webkit-background-clip: text;
+			background-clip: text;
+			color: transparent;
+		}
 	}
 
-	.header-animation:nth-child(2) {
+	.hero__subtitle {
+		@include text-m;
+		font-size: $font-size-lg;
+		// The mixin colours for a light surface; this one is always black.
+		color: #fff;
+		max-width: 52ch;
+		margin: 0 0 32px;
+		text-wrap: pretty;
+
+		@media (max-width: 599px) {
+			margin-inline: auto;
+		}
+
+		@media (max-height: 620px), (max-width: $breakpoint-sm) {
+			margin-bottom: 20px;
+		}
+	}
+
+	.hero__buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+
+		// From CtaButton, hence `:global`.
+		:global(.cta-button > svg) {
+			width: 20px;
+			height: 20px;
+		}
+
+		:global(.cta-button--brand) {
+			position: relative;
+			overflow: hidden;
+			isolation: isolate;
+		}
+
+		:global(.cta-button--brand::after) {
+			content: '';
+			position: absolute;
+			inset-block: 0;
+			left: 0;
+			width: 45%;
+			z-index: -1;
+			pointer-events: none;
+			background: linear-gradient(100deg, transparent, rgb(255 255 255 / 38%), transparent);
+			transform: translateX(-160%) skewX(-18deg);
+		}
+
+		@media (prefers-reduced-motion: no-preference) {
+			:global(.cta-button--brand:hover::after),
+			:global(.cta-button--brand:focus-visible::after) {
+				animation: hero-shimmer 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+		}
+
+		@media (max-width: 599px) {
+			justify-content: center;
+		}
+	}
+
+	// Holds the `visual` slot, centred and fitted inside it. `--hero-fit-h` is the height the
+	// visual may use in each layout; side by side the panel is also the `hero-panel` size container.
+	.hero__panel {
+		--hero-fit-h: 520px;
+
+		position: relative;
+		display: grid;
+		place-items: center;
+		padding: 0 clamp(20px, calc(0.5rem + 2vw), 56px) 48px;
+		// The glow sits behind the visual, so it follows the panel.
+		background: radial-gradient(ellipse 55% 60% at 50% 50%, rgba($color-pe, 0.16), transparent 72%);
+	}
+
+	h1,
+	.hero__subtitle,
+	.hero__buttons {
+		// `backwards` holds the from-state through the delay, so nothing is parked at 0.
+		animation: hero-rise 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+
+		@media (prefers-reduced-motion: reduce) {
+			animation: none;
+		}
+	}
+
+	.hero__subtitle {
 		animation-delay: 300ms;
 	}
 
-	.header-animation:nth-child(3) {
+	.hero__buttons {
 		animation-delay: 600ms;
 	}
 
-	.header-animation:nth-child(4) {
-		animation-delay: 900ms;
+	@keyframes hero-shimmer {
+		from {
+			transform: translateX(-160%) skewX(-18deg);
+		}
+
+		to {
+			transform: translateX(320%) skewX(-18deg);
+		}
 	}
 
-	.header-animation:nth-child(5) {
-		animation-delay: 1200ms;
-	}
-
-	@keyframes slideup-in {
+	@keyframes hero-rise {
 		from {
 			opacity: 0;
 			transform: translate3d(0, 45px, 0);
 		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0);
+	}
+
+	// Tablets, and any portrait screen from `md`: the panel under the copy, the copy in two
+	// columns — the headline in one, the lede and the actions in the other.
+	@media (min-width: 600px) and (max-width: #{$breakpoint-md - 1px}),
+		(min-width: $breakpoint-md) and (orientation: portrait) {
+		.hero__content {
+			--hero-copy-gap: clamp(#{$spacing-6}, 4vw, #{$spacing-8});
+
+			container-type: inline-size;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: auto auto 1fr;
+			column-gap: var(--hero-copy-gap);
+			align-items: start;
+			justify-items: start;
+		}
+
+		h1 {
+			grid-column: 1;
+			grid-row: 1 / -1;
+			margin-bottom: 0;
+			max-width: 7em;
+			// Sized to its column: seven of its own ems fill half the copy.
+			font-size: clamp(34px, calc((100cqi - var(--hero-copy-gap)) / 2 / 7), 48px);
+
+			@media (max-height: 620px) {
+				font-size: 34px;
+			}
+		}
+
+		.hero__subtitle,
+		.hero__buttons {
+			grid-column: 2;
+		}
+
+		.hero__subtitle {
+			max-width: 34ch;
+		}
+
+		.hero__panel {
+			// Fills what the copy (~300px) leaves before the fold, the logo strip and 64px of the
+			// next section kept in view, but never under 30vw.
+			--hero-fit-h: max(30vw, calc(100svh - var(--promo-h, 0px) - 100px - 64px - 300px));
+		}
+	}
+
+	// Side by side, from `md` in landscape: the copy at its natural width, the panel taking the rest.
+	@media (min-width: $breakpoint-md) and (orientation: landscape) {
+		.hero {
+			// The widest the copy and the panel get together; past it the composition centres.
+			--hero-wide-cap: max(1823px, calc(4000px - 100vw), 53vw);
+			// The copy's column: its natural width, widening to 540 on very wide screens.
+			--hero-band-min: min(22vw, 540px);
+			// The first screen less the promo bar, header, ~100px logo strip and 120px of the next section,
+			// capped at 960px: past it the visual gains nothing.
+			--hero-fold-h: min(960px, calc(100svh - var(--promo-h, 0px) - #{$header-height} - 100px - 120px));
+			// At most 2.6 of the panel's height wide, so the visual is not stranded in a wide empty band. The
+			// height is floored at 320, the copy's shortest side by side, so a phone on its side gets no portrait box.
+			--hero-panel-col: calc(max(var(--hero-fold-h), 320px) * 2.6);
+
+			// The copy takes its own width, the panel the rest up to its cap; past the wide cap it centres.
+			grid-template-columns: minmax(var(--hero-band-min), auto) minmax(0, var(--hero-panel-col));
+			justify-content: center;
+			padding-inline: max(0px, calc((100% - var(--hero-wide-cap)) / 2));
+		}
+
+		.hero__content {
+			align-self: center;
+			padding-inline: $bar-inset;
+		}
+
+		h1 {
+			max-width: 7em;
+			text-wrap: balance;
+
+			@include media-up(lg) {
+				font-size: clamp(48px, 1.85vw, 64px);
+			}
+		}
+
+		.hero__subtitle {
+			max-width: clamp(34ch, calc(34ch + (100vw - 2000px) / 10), 44ch);
+		}
+
+		.hero__panel {
+			// Grows with a taller text column; the visual stays centred in it.
+			align-self: stretch;
+			// Clears the bar so nothing draws behind it.
+			margin-top: $header-height;
+			// The panel's size comes from the grid row and the fold, never from the visual, so the
+			// visual can fit itself to the panel's height (`100cqh`).
+			container: hero-panel / size;
+			--hero-fit-h: 100cqh;
+			min-height: var(--hero-fold-h);
+			padding: 24px $bar-inset 24px 0;
 		}
 	}
 </style>
-
-<script>
-	// Smooth scroll for anchor links
-	document.addEventListener('DOMContentLoaded', () => {
-		const heroLinks = document.querySelectorAll('#hero-content a[href^="#"], #hero .tb-arrow a');
-		heroLinks.forEach((link) => {
-			link.addEventListener('click', (e) => {
-				e.preventDefault();
-				const href = link.getAttribute('href');
-				if (!href) return;
-
-				const target = document.querySelector(href);
-				if (target) {
-					const headerHeight = 60;
-					const targetPosition = target.getBoundingClientRect().top + window.scrollY - headerHeight;
-					window.scrollTo({
-						top: targetPosition,
-						behavior: 'smooth',
-					});
-				}
-			});
-		});
-
-		// Arrow visibility — IntersectionObserver on a sentinel positioned 60px below #hero top.
-		// Avoids per-scroll getBoundingClientRect() reads that forced layout on first paint.
-		const heroContent = document.getElementById('hero-content');
-		const sentinel = document.querySelector<HTMLElement>('#hero .hero-scroll-sentinel');
-		if (heroContent && sentinel) {
-			new IntersectionObserver(
-				([entry]) => heroContent.classList.toggle('arrow-hidden', !entry.isIntersecting),
-				{ threshold: 0 }
-			).observe(sentinel);
-		}
-	});
-</script>
